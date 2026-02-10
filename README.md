@@ -77,9 +77,9 @@ The core of this pipeline is powered by **CatBoost**, a high-performance gradien
 
 Unlike standard regression models that predict a single point estimate (the mean), this model uses **MultiQuantile Loss**. This allows the pipeline to output multiple values simultaneously:
 
-* ** (Lower Bound):** The "bargain" price. Only 5% of similar cars are priced lower than this.
-* ** (Median):** The most likely market price.
-* ** (Upper Bound):** The "premium" price. 95% of similar cars are priced below this.
+* **(Lower Bound):** The "bargain" price. Only 5% of similar cars are priced lower than this.
+* **(Median):** The most likely market price.
+* **(Upper Bound):** The "premium" price. 95% of similar cars are priced below this.
 
 The model minimizes the **Pinball Loss** function for each quantile :
 
