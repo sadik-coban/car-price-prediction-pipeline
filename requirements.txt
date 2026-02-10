@@ -1,0 +1,33 @@
+# --- API & Server (FastAPI) ---
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+
+# --- Web Scraping ---
+requests
+beautifulsoup4
+
+# --- Data Science & Analytics ---
+pandas
+numpy
+scipy
+matplotlib
+shap
+
+# --- Machine Learning ---
+catboost
+scikit-learn
+
+# --- Database & Persistence ---
+sqlalchemy
+# Not: Veritabanı tipine göre (Postgres için psycopg2-binary, MySQL için mysql-connector-python) ekleme yapmalısın
+psycopg2-binary
+
+# --- Cloud & Model Registry ---
+huggingface_hub
+
+# --- Utilities ---
+python-dotenv
+jsonlines
+typing-extensions

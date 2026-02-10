@@ -2,6 +2,9 @@ import re
 import pandas as pd
 from bs4 import BeautifulSoup
 from datetime import datetime
+from sqlalchemy import create_engine
+from dotenv import load_dotenv
+import os
 
 df = pd.read_json("data\\audi\\2026-01-27_02-10\\details.jsonl", lines=True)
 df = df[df["Fiyat"].notna()].copy()
@@ -244,25 +247,15 @@ def process_to_silver_full(raw_item):
     return silver_data
 
 
-# TEST ET
 silver_df = df.apply(
     lambda row: pd.Series(process_to_silver_full(row.to_dict())), axis=1
 )
 
-# 3. Sonuca bak
+
 print(silver_df.head())
-silver_df.to_csv("silver_df_2.csv", index=False)
+
 print(silver_df["kb_mileage"], silver_df["gb_mileage"], silver_df["engine_cc_val"])
 
-# silver_df.to_csv("silver_kontrol.csv", index=False, encoding="utf-8-sig", sep=",")
-
-from sqlalchemy import create_engine
-
-# Supabase bağlantı dizesi (Project Settings -> Database -> Connection String)
-from dotenv import load_dotenv
-import os
-
-# .env dosyasındaki değişkenleri yükle
 load_dotenv()
 
 connection_string = os.getenv("DATABASE_URL")
@@ -274,7 +267,7 @@ existing_ids = pd.read_sql("SELECT ad_id FROM test.car_listings", engine)[
     "ad_id"
 ].tolist()
 
-# 2. silver_df içinden veritabanında OLMAYANLARI filtrele
+# 2. df içinden veritabanında OLMAYANLARI filtrele
 new_df = silver_df[~silver_df["ad_id"].isin(existing_ids)]
 
 # 3. Sadece yenileri gönder
