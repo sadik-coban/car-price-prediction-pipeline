@@ -2,6 +2,18 @@
 
 An end-to-end Machine Learning pipeline designed for automated data collection, persistent storage, and versioned model deployment. This project bypasses local heavy-data tracking in favor of a cloud-native **Hugging Face Model Store** architecture.
 
+## Project Overview
+
+This is a production-ready, end-to-end valuation system for **BMW and Audi** vehicles. Moving beyond simple point-estimates, this project implements a **probabilistic approach** to car pricing, ensuring market-aware and explainable AI.
+
+### Key Technical Pillars:
+
+- **Probabilistic Forecasting:** Powered by **CatBoost MultiQuantile Loss**, the system predicts valuation intervals (0.05, 0.5, 0.95 quantiles). This provides users with a "price range" rather than a single number, reflecting market uncertainty.
+- **Model Observability & Drift:** Implements automated **Data Drift Analysis** using Kolmogorov-Smirnov (KS) tests and Wasserstein Distance to monitor feature distribution shifts between training and production data.
+- **Explainable AI (XAI):** Integrated **SHAP** (Shapley Additive Explanations) to provide local and global transparency, showing exactly how features like mileage, year, and engine size impact each prediction.
+- **Idempotent Data Pipeline:** Automated scraping and database persistence with unique-ID constraints to ensure a clean, non-redundant historical dataset.
+- **Live Ecosystem:** A high-performance **FastAPI** backend serves versioned models from the **Hugging Face Hub**, consumed by a modern **Next.js Dashboard** featuring live predictions and system metrics.
+
 ## Pipeline Workflow
 
 The system follows a linear, automated flow from raw data to production-ready inference:
