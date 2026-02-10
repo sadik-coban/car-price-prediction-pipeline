@@ -1,0 +1,10 @@
+.vscode
+.env
+catboost_info/
+data/
+__pycache__/
+model.cbm
+train_data.csv
+test_data.csv
+metrics.json
+shap_summary.png
