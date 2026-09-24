@@ -6,8 +6,9 @@ Bu dosya analizin girdisi. API'ye doğrudan gitmez: yayın, ondan türetilen gol
 (`data/cars_gold.duckdb`, aşağıda) yükler. 2026-09-24'e kadar bu dosyanın kendisi yayımlanıyordu.
 
 - **Yarı ham (2026-09-24, kullanıcının ilkesi: "dbdeki her şey yarı raw olmalı").** Sayfanın söylemediği
-  değer tahmin edilmez, `NULL` kalır; "Belirtilmemiş"in nasıl okunacağına analiz karar verir. Bir sonraki
-  kurulumdan itibaren geçerli (bugünkü dosya 2026-09-23'te eski kodla kuruldu):
+  değer tahmin edilmez, `NULL` kalır; "Belirtilmemiş"in nasıl okunacağına analiz karar verir. Gerçek dosya
+  2026-09-24'te bu kuralla yeniden kuruldu (eski sözleşmeli önceki dosya
+  `archive/backups/cars-duckdb-eski-sozlesme-2026-09-24/`'te):
   - `is_heavy_damaged` / `kb_is_heavy_damaged` "KısaBilgi - Ağır Hasarlı"dan: Evet / Hayır / `NULL`
     (Belirtilmemiş ya da alan yok; 29.641 satır `False` → `NULL`). Scraper'ın `Agir_Hasar` bayrağı sayfa bir
     şey demediğinde de `False` olduğu için bırakıldı;
@@ -19,10 +20,17 @@ Bu dosya analizin girdisi. API'ye doğrudan gitmez: yayın, ondan türetilen gol
   - yeni ham kolon `kb_paint_change_summary`: kısa bilgi kutusundaki "Boya-değişen" satırı ("2 değişen,
     3 boyalı" gibi), olduğu gibi. Hasar şemasının kaba özeti.
 
-  Yeniden kurulunca analizde yapılacaklar: `analysis/lib/text_flags.descriptions` `description_text`'i
-  okur; `02_missingness`'in `IDENTITY` listesinden `description_clean` çıkar, `kb_paint_change_summary`'ye
-  bir sınıf verilir (§2 eksiklik tablosu değişir). Modele giren değerler değişmez: `load_clean` bu
-  `NULL`'ları zaten 0 sayıyor.
+  Yeniden kurulumla analizde yapılanlar (2026-09-24):
+  - `analysis/lib/text_flags.descriptions` `description_text`'i okuyor; metin bayraklarının hiçbiri
+    değişmedi;
+  - `02_missingness`: `description_clean` `IDENTITY`'den çıktı, `kb_paint_change_summary` "türetilmiş tekrar"
+    (F) sınıfında. NULL'u "Belirtilmemiş" demek olan 45 kolon (gold kurallarının doldurduğu kolonlar,
+    `db/gold_rules.json`'dan okunur) eksik veri listesine ve bloklara girmiyor, ayrıca raporlanıyor: ağır hasar
+    kaydı ilanların %68,2'sinde, panel bayrakları %12,2–%19,1'inde belirtilmemiş (teknik rapor §1–§2);
+  - `load_clean`: `is_heavy_damaged` artık `NULL` taşıdığı için pandas kolonu nullable `boolean` okuyor ve
+    eski `fillna(0)` hata veriyordu; bilinmeyen `False` (ağır hasarsız) sayılıyor, sonuç eskisiyle aynı.
+  Modele giren değerler ve bütün model sayıları değişmedi (metrik referansıyla doğrulandı:
+  `tests/baselines/accept_log.jsonl`).
 - **Güvenli kurulum.** Yeni DB `<out>.tmp`'de kurulur, bitince eskisinin yerine konur; düşerse eski DB
   dokunulmadan kalır. `<out>.wal` varsa, DB başka programda açıksa ya da ham veri eksikse (marka klasörü,
   `details.jsonl`'suz tarama, okunamayan satır) hiçbir şeye dokunmadan durur. `duplicate_ad_ids.csv` DB'nin
@@ -85,5 +93,7 @@ data/raw ──build_duckdb──► data/cars.duckdb (yarı ham, analiz) ──
   - `publish --dry-run`: gold geçti; yarı ham DB ve bugünkü eski DB reddedildi.
 - **API'nin göreceği fark:** yalnız açıklama. `description_clean` kolonu yok; API onu okuyorsa
   `description_text`'e geçmeli (778 satır dışında aynı metin).
-- **Henüz yapılmadı:** gerçek `data/cars.duckdb` hâlâ eski kodun kurduğu dosya (eski sözleşme). Yarı ham olarak
-  yeniden kurulması, analizdeki üç uyarlama ve gold'un teknik rapora yazılması sonraki adımlar (`db_plan.md`).
+- **Gerçek dosyalar (2026-09-24):** `data/cars.duckdb` yarı ham olarak yeniden kuruldu, `data/cars_gold.duckdb`
+  ondan türetildi. Kanıt gerçek dosyalarla tekrarlandı: gold, yedeklenen eski DB ile açıklama dışında hücre hücre
+  aynı (778 / 114 satır, öteki tablolar birebir). S3'e hiçbir şey yüklenmedi; yayın kullanıcının kararı.
+- **Sıradaki:** gold'un teknik rapor §1'e yazılması (`db_plan.md`, Parça 3).

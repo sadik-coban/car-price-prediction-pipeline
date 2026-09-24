@@ -1,11 +1,11 @@
 {
  "_meta": {
   "script": "02_missingness.py",
-  "generated_at": "2026-09-23T23:55:25",
+  "generated_at": "2026-09-24T17:22:51",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
-   "sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+   "sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
    "rows": 45277
   },
   "run_id": null
@@ -479,13 +479,205 @@
      ]
     }
    ],
-   "not": "Katalog eşleştirmesi: standart modeller eşleşir, özel varyantlar eşleşmez → tüm spec birden boş. Gruplar birlikte-eksik payıyla kuruldu: ikisi birden eksik / en az biri eksik ≥ %98."
+   "belirtilmemis": {
+    "kolon": 45,
+    "agir_hasar_pct": 68.2,
+    "kb_agir_hasar_pct": 68.2,
+    "ilk_sahip_pct": 0.0,
+    "panel_bayrak": 39,
+    "panel_min_pct": 12.2,
+    "panel_max_pct": 19.1,
+    "sayac_max_pct": 0.0,
+    "kolonlar": [
+     [
+      "is_heavy_damaged",
+      68.2
+     ],
+     [
+      "kb_is_heavy_damaged",
+      68.2
+     ],
+     [
+      "gb_is_first_owner",
+      0.0
+     ],
+     [
+      "tavan_degisen",
+      19.1
+     ],
+     [
+      "tavan_boyali",
+      19.1
+     ],
+     [
+      "tavan_lokal",
+      19.1
+     ],
+     [
+      "kaput_degisen",
+      13.8
+     ],
+     [
+      "kaput_boyali",
+      13.8
+     ],
+     [
+      "kaput_lokal",
+      13.8
+     ],
+     [
+      "bagaj_degisen",
+      17.0
+     ],
+     [
+      "bagaj_boyali",
+      17.0
+     ],
+     [
+      "bagaj_lokal",
+      17.0
+     ],
+     [
+      "door_fl_degisen",
+      14.9
+     ],
+     [
+      "door_fl_boyali",
+      14.9
+     ],
+     [
+      "door_fl_lokal",
+      14.9
+     ],
+     [
+      "door_fr_degisen",
+      14.5
+     ],
+     [
+      "door_fr_boyali",
+      14.5
+     ],
+     [
+      "door_fr_lokal",
+      14.5
+     ],
+     [
+      "door_rl_degisen",
+      15.2
+     ],
+     [
+      "door_rl_boyali",
+      15.2
+     ],
+     [
+      "door_rl_lokal",
+      15.2
+     ],
+     [
+      "door_rr_degisen",
+      14.1
+     ],
+     [
+      "door_rr_boyali",
+      14.1
+     ],
+     [
+      "door_rr_lokal",
+      14.1
+     ],
+     [
+      "fender_fl_degisen",
+      12.7
+     ],
+     [
+      "fender_fl_boyali",
+      12.7
+     ],
+     [
+      "fender_fl_lokal",
+      12.7
+     ],
+     [
+      "fender_fr_degisen",
+      12.2
+     ],
+     [
+      "fender_fr_boyali",
+      12.2
+     ],
+     [
+      "fender_fr_lokal",
+      12.2
+     ],
+     [
+      "fender_rl_degisen",
+      14.1
+     ],
+     [
+      "fender_rl_boyali",
+      14.1
+     ],
+     [
+      "fender_rl_lokal",
+      14.1
+     ],
+     [
+      "fender_rr_degisen",
+      13.6
+     ],
+     [
+      "fender_rr_boyali",
+      13.6
+     ],
+     [
+      "fender_rr_lokal",
+      13.6
+     ],
+     [
+      "bumper_front_degisen",
+      18.8
+     ],
+     [
+      "bumper_front_boyali",
+      18.8
+     ],
+     [
+      "bumper_front_lokal",
+      18.8
+     ],
+     [
+      "bumper_rear_degisen",
+      19.0
+     ],
+     [
+      "bumper_rear_boyali",
+      19.0
+     ],
+     [
+      "bumper_rear_lokal",
+      19.0
+     ],
+     [
+      "count_changed",
+      0.0
+     ],
+     [
+      "count_painted",
+      0.0
+     ],
+     [
+      "count_local_painted",
+      0.0
+     ]
+    ]
+   },
+   "not": "Katalog eşleştirmesi: standart modeller eşleşir, özel varyantlar eşleşmez → tüm spec birden boş. Gruplar birlikte-eksik payıyla kuruldu: ikisi birden eksik / en az biri eksik ≥ %98. 'Belirtilmemiş' kolonları (gold kurallarının doldurduğu kolonlar) eksik listesine ve bloklara girmez; belirtilmemis'te."
   },
   "feature_drop": [
    [
     "C",
     "Kimlik / metin / zaman",
-    9,
+    8,
     [
      "ad_id",
      "listing_date",
@@ -494,7 +686,6 @@
      "eids_model",
      "url",
      "description_text",
-     "description_clean",
      "scraped_at"
     ],
     "Identity / text / time"
@@ -502,7 +693,7 @@
    [
     "F",
     "Türetilmiş tekrar",
-    8,
+    9,
     [
      "engine_cc_low",
      "engine_cc_val",
@@ -511,7 +702,8 @@
      "power_hp_is_range",
      "count_changed",
      "count_painted",
-     "count_local_painted"
+     "count_local_painted",
+     "kb_paint_change_summary"
     ],
     "Derived duplicate"
    ],
@@ -760,8 +952,8 @@
    {
     "kb": "kb_is_heavy_damaged",
     "gb": "is_heavy_damaged",
-    "kb_eksik_pct": 0.0,
-    "gb_eksik_pct": 0.0,
+    "kb_eksik_pct": 68.2,
+    "gb_eksik_pct": 68.2,
     "kb_tekil": 2,
     "gb_tekil": 2,
     "ayni_pct": 100.0,

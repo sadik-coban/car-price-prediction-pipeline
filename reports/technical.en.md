@@ -36,6 +36,8 @@ Median asking price ₺1.55M, ranging ₺0.85M–₺3.43M (P10–P90).
 
 **"Unspecified" panels were counted as original.** The site gives one of five answers per panel: original, unspecified, painted, locally painted, changed. Across the listings in the model 59,651 panels (15.3%) are unspecified; on 1,235 listings all 13 are. That answer was coded as original by a deliberate decision, on the reasoning that the seller may have forgotten to list damage but no damage is the likelier case. Relative to the same model-and-year median, the median price is 1.034 for original listings, 1.011 for unspecified, 1.011 for lightly damaged ones (1–2 painted or locally painted panels, nothing changed) and 0.979 for all damaged ones — unspecified looks more like lightly damaged than original; price does not back the reasoning, and some unspecified listings may be lightly damaged. The cost: some damaged listings count as original, so damage effects are pulled slightly toward zero.
 
+**The heavy-damage record follows the same rule.** On 68.2% of the listings in the model the page gives no heavy-damage answer ("Belirtilmemiş" or no field); those listings count as not heavily damaged. A heavily damaged car whose listing does not say so looks undamaged to the model.
+
 ### Engine power and size: from bucket to one number
 
 On some listings the site gives engine size and power as an exact value, on others as a **bucket**: among the listings in the model, 7,865 have engine size and 7,797 have power as a bucket (the most common are 1401–1600 cc and 151–175 hp). The model uses one number. The rule: **size = the bucket's upper bound, power = the mean of the lower and upper bounds** (the known bound for an open-ended bucket). The rule was checked against the data: each bucketed listing's three candidates were compared with the median of the same model's un-bucketed (exact) listings — 7,176 listings for size, 7,148 for power (models that have at least one exact listing).
@@ -60,8 +62,8 @@ Of the 117 raw columns, 53 reach the model directly or derived (39 of them damag
 
 | group | reason | cols | columns |
 |---|---|---:|---|
-| C | Identity / text / time | 9 | `ad_id`, `listing_date`, `ad_title`, `location`, `eids_model`, `url` … |
-| F | Derived duplicate | 8 | `engine_cc_low`, `engine_cc_val`, `engine_cc_is_range`, `power_hp_val`, `power_hp_is_range`, `count_changed` … |
+| C | Identity / text / time | 8 | `ad_id`, `listing_date`, `ad_title`, `location`, `eids_model`, `url` … |
+| F | Derived duplicate | 9 | `engine_cc_low`, `engine_cc_val`, `engine_cc_is_range`, `power_hp_val`, `power_hp_is_range`, `count_changed` … |
 | B | kb/gb twin | 11 | `kb_year`, `kb_mileage`, `gb_transmission`, `gb_fuel`, `gb_body_type`, `gb_color` … |
 | A | Quasi-constant (top value ≥ 99%) | 4 | `kb_condition`, `gb_usage_type`, `gb_is_first_owner`, `gb_plate_origin` |
 | D | Missing > 40% | 5 | `gb_mtv_yearly`, `tramer_fee`, `transmission_brand`, `gb_kasko_avg`, `gb_traffic_insurance_avg` |
@@ -102,6 +104,8 @@ Most repeated listings:
 (unlabelled ones are raw column names)](figures/en-16-missing.png)
 
 Missingness is not an issue in the 25 features that remain: the worst is `kb_drivetrain` at 1.5% and 21 have none at all. The chart above covers only the dropped columns.
+
+**"Unspecified" is not missing data.** The database is semi-raw: what the page does not say stays empty. In 45 columns that gap is not missing data but the seller's "unspecified" answer; these columns are kept out of the list and the blocks above. The heavy-damage record is unspecified on 68.2% of the listings, and each of the 39 panel flags on 12.2%–19.1%. The model reads these unknowns as "no" by a deliberate decision: an unspecified panel counts as original, an unspecified heavy-damage record as not heavily damaged (§1). The data sent to the API applies the same rule.
 
 ### Co-missing blocks
 

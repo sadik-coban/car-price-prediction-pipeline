@@ -57,10 +57,12 @@ def lower_tr(s):
 
 def descriptions(listings):
     """
-    EN: The lower-cased description of every listing (from the DB's description_clean; empty if missing).
-    TR: Her ilanın küçültülmüş açıklaması (DB'nin description_clean kolonundan; yoksa boş).
+    EN: The lower-cased description of every listing (from the DB's description_text, which has no page
+        heading since the semi-raw DB of 2026-09-24; empty if missing).
+    TR: Her ilanın küçültülmüş açıklaması (DB'nin description_text kolonundan; 2026-09-24 yarı ham DB'sinden beri
+        sayfa başlığı yok; yoksa boş).
     """
-    return listings["description_clean"].fillna("").astype(str).map(lower_tr)
+    return listings["description_text"].fillna("").astype(str).map(lower_tr)
 
 
 def text_hp(text):

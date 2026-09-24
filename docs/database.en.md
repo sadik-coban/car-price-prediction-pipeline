@@ -7,7 +7,8 @@ derived from it (`data/cars_gold.duckdb`, below). Until 2026-09-24 this file its
 
 - **Semi-raw (2026-09-24, the owner's principle: "everything in the DB should be semi-raw").** A value the
   page does not give is not guessed, it stays `NULL`; the analysis decides how to read "Belirtilmemiş"
-  (unspecified). Applies from the next build (today's file was built on 2026-09-23 with the old code):
+  (unspecified). The real file was rebuilt with this rule on 2026-09-24 (the previous, old-contract file is
+  in `archive/backups/cars-duckdb-eski-sozlesme-2026-09-24/`):
   - `is_heavy_damaged` / `kb_is_heavy_damaged` from "KısaBilgi - Ağır Hasarlı": Evet / Hayır / `NULL`
     (unspecified or missing; 29,641 rows `False` → `NULL`). The scraper's `Agir_Hasar` flag was dropped
     because it is `False` also when the page says nothing;
@@ -21,10 +22,17 @@ derived from it (`data/cars_gold.duckdb`, below). Until 2026-09-24 this file its
   - new raw column `kb_paint_change_summary`: the "Boya-değişen" line of the short-info box (like "2
     değişen, 3 boyalı"), as written. A coarse summary of the damage diagram.
 
-  To do in the analysis after the rebuild: `analysis/lib/text_flags.descriptions` reads `description_text`;
-  `description_clean` leaves `02_missingness`'s `IDENTITY` list and `kb_paint_change_summary` gets a class
-  (the §2 missingness table changes). No value that reaches the model changes: `load_clean` already counts
-  these `NULL`s as 0.
+  Done in the analysis with the rebuild (2026-09-24):
+  - `analysis/lib/text_flags.descriptions` reads `description_text`; none of the text flags changed;
+  - `02_missingness`: `description_clean` left `IDENTITY`, `kb_paint_change_summary` is in the "derived
+    duplicate" (F) class. The 45 columns whose `NULL` means "Belirtilmemiş" (the columns the gold rules fill,
+    read from `db/gold_rules.json`) are kept out of the missing list and the blocks and reported on their own:
+    the heavy-damage record is unspecified on 68.2% of listings, the panel flags on 12.2%–19.1% (technical
+    report §1–§2);
+  - `load_clean`: `is_heavy_damaged` now holds `NULL`, so pandas reads it as nullable `boolean` and the old
+    `fillna(0)` raised; an unknown now counts as `False` (not heavily damaged), the same result as before.
+  No value that reaches the model and none of the model's numbers changed (checked against the metrics
+  baseline: `tests/baselines/accept_log.jsonl`).
 - **Safe build.** The new DB is built in `<out>.tmp` and moved over the old one when complete; a failure
   leaves the old DB untouched. It stops before touching anything when `<out>.wal` exists, when the DB is open
   in another program, or when the raw data is incomplete (a brand folder, a snapshot without
@@ -91,6 +99,8 @@ data/raw ──build_duckdb──► data/cars.duckdb (semi-raw, analysis) ─�
   - `publish --dry-run`: gold passed; the semi-raw DB and today's old DB were refused.
 - **What the API will see:** only the description changes. There is no `description_clean` column; if the API
   reads it, it should switch to `description_text` (the same text except in 778 rows).
-- **Not done yet:** the real `data/cars.duckdb` is still the file the old code built (old contract). Rebuilding
-  it semi-raw, the three analysis follow-ups and writing gold into the technical report are the next steps
-  (`db_plan.md`).
+- **The real files (2026-09-24):** `data/cars.duckdb` was rebuilt semi-raw and `data/cars_gold.duckdb` derived
+  from it. The proof was repeated on the real files: gold equals the backed-up old DB cell for cell except the
+  description (778 / 114 rows, the other tables identical). Nothing was uploaded to S3; publishing is the
+  owner's call.
+- **Next:** writing gold into technical report §1 (`db_plan.md`, Parça 3).

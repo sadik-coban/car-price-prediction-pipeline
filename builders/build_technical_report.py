@@ -182,6 +182,16 @@ def sec_veri(c):
            "and some unspecified listings may be lightly damaged. ")
         + "The cost: some damaged listings count as original, so damage effects are pulled slightly toward zero."))
     A("")
+    # 2026-09-24 (yari ham DB): agir hasar kaydi da "Belirtilmemis" olabiliyor ve ayni kuralla "yok" okunuyor;
+    # rapor bunu hic yazmiyordu. Oran 02_missingness.belirtilmemis'ten.
+    _ub = met["sistematik_missing"]["belirtilmemis"]
+    A(L(f"**Ağır hasar kaydında da aynı kural.** Modele giren ilanlarda sayfanın ağır hasar bilgisi vermediği "
+        f"(\"Belirtilmemiş\" ya da alan yok) ilanların payı {P(_ub['agir_hasar_pct'], lang)}; bunlar ağır hasarsız sayıldı. "
+        f"Ağır hasarlı olup bunu belirtmeyen bir ilan modelde hasarsız görünür.",
+        f"**The heavy-damage record follows the same rule.** On {P(_ub['agir_hasar_pct'], lang)} of the listings in "
+        f"the model the page gives no heavy-damage answer (\"Belirtilmemiş\" or no field); those listings count as "
+        f"not heavily damaged. A heavily damaged car whose listing does not say so looks undamaged to the model."))
+    A("")
 
     # T (2026-09-23): motor gucu/hacmi kovadan tek sayiya — kullanicinin kurali, veriyle olculdu. Sayilar
     # error_drivers.hp_cc_kurali'dan; secilen adayin en iyi oldugu uretecte assert ediliyor.
@@ -426,6 +436,27 @@ def sec_eksiklik(c):
             f"`{_wmax[0]}` at {P(_wmax[1], lang)} and {_zero} have none at all. The chart above "
             f"covers only the dropped columns."))
         A("")
+
+    # 2026-09-24 (yari ham DB, kullanici karari): "Belirtilmemis" NULL'lari eksik veri degil, modelin kodladigi
+    # bilinmeyen; eksik listesine ve bloklara girmez, burada ayrica yazilir. Sayilar 02_missingness.belirtilmemis.
+    _ub = sm["belirtilmemis"]
+    _ilk_tr = (f", ilk sahip bilgisinde {P(_ub['ilk_sahip_pct'], lang)}" if _ub["ilk_sahip_pct"] else "")
+    _ilk_en = (f"; the first-owner field is absent on {P(_ub['ilk_sahip_pct'], lang)}" if _ub["ilk_sahip_pct"] else "")
+    A(L(f"**\"Belirtilmemiş\", eksik veri değil.** Veritabanı yarı ham: sayfanın söylemediği bilgi boş kalıyor. "
+        f"{_ub['kolon']} kolonda bu boşluk eksik veri değil, satıcının \"belirtilmemiş\" cevabı; bu kolonlar yukarıdaki "
+        f"listeye ve bloklara girmiyor. Belirtilmemiş payı ağır hasar kaydında {P(_ub['agir_hasar_pct'], lang)}, "
+        f"{_ub['panel_bayrak']} panel bayrağının her birinde {P(_ub['panel_min_pct'], lang)}–"
+        f"{P(_ub['panel_max_pct'], lang)}{_ilk_tr}. Model bu bilinmeyenleri bilinçli bir kararla \"yok\" okuyor: "
+        f"belirtilmemiş panel orijinal, belirtilmemiş ağır hasar kaydı ağır hasarsız sayılıyor (§{secno('veri')}). "
+        f"API'ye giden veride de aynı kural uygulanıyor.",
+        f"**\"Unspecified\" is not missing data.** The database is semi-raw: what the page does not say stays empty. "
+        f"In {_ub['kolon']} columns that gap is not missing data but the seller's \"unspecified\" answer; these columns "
+        f"are kept out of the list and the blocks above. The heavy-damage record is unspecified on "
+        f"{P(_ub['agir_hasar_pct'], lang)} of the listings, and each of the {_ub['panel_bayrak']} panel flags on "
+        f"{P(_ub['panel_min_pct'], lang)}–{P(_ub['panel_max_pct'], lang)}{_ilk_en}. The model reads these unknowns as "
+        f"\"no\" by a deliberate decision: an unspecified panel counts as original, an unspecified heavy-damage record "
+        f"as not heavily damaged (§{secno('veri')}). The data sent to the API applies the same rule."))
+    A("")
 
     A(L("### Birlikte eksik bloklar", "### Co-missing blocks"))
     A("")

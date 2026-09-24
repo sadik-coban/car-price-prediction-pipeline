@@ -1,9 +1,11 @@
 # Gold DB (API) adımı — plan
 
-> **Durum (2026-09-24): Parça 1 yapıldı** — `db/build_gold_db.py`, `db/gold_rules.json`, yayında sözleşme
+> **Durum (2026-09-24): Parça 1 ve Parça 2 yapıldı.** Parça 2: gerçek DB yarı ham olarak yeniden kuruldu (eski
+> dosya `archive/backups/cars-duckdb-eski-sozlesme-2026-09-24/`), gold türetildi, kanıt gerçek dosyalarla tuttu;
+> analizde üç uyarlama + `load_clean` düzeltmesi; §2'de "belirtilmemiş" ayrı paragraf, §1'de ağır hasar cümlesi;
+> metrik referansı kullanıcı onayıyla güncellendi. **Parça 1:** — `db/build_gold_db.py`, `db/gold_rules.json`, yayında sözleşme
 > denetimi, testler ve gerçek ham veriyle kanıt (sonuçlar `docs/database.md` → "Gold adımı"; kanıt tuttu: tek
-> fark açıklamada, 778 / 114 satır). **Sıradaki:** Parça 2 — gerçek DB'yi yarı ham olarak yeniden kurmak ve
-> analizdeki üç uyarlama (kullanıcı onayıyla); Parça 3 — gold'un teknik rapor §1'e yazılması (yeni analiz
+> fark açıklamada, 778 / 114 satır). **Sıradaki:** Parça 3 — gold'un teknik rapor §1'e yazılması (yeni analiz
 > betiği `analysis/01_gold_contract.py`, `gold_rules.json`'ı okur). Aşağısı onaylanan ilk plan.
 
 ## Context

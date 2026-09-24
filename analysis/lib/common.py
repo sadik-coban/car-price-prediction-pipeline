@@ -122,7 +122,11 @@ def _prepare(raw):
     df["power_hp_val"] = df[["power_hp_low", "power_hp_up"]].mean(axis=1)
     df["engine_cc_val"] = df["engine_cc_up"]
     df["vehicle_age"] = (pd.to_datetime(df["search_date"]).dt.year - df["gb_year"]).clip(lower=0)
-    df["is_heavy_damaged"] = df["is_heavy_damaged"].fillna(0).astype(int)
+    # EN: unknown (NULL in the semi-raw DB) counts as not heavily damaged; pandas reads the column as nullable
+    #     "boolean", which refuses fillna(0), hence False
+    # TR: bilinmeyen (yarı ham DB'de NULL) ağır hasarsız sayılır; pandas kolonu nullable "boolean" okur ve
+    #     fillna(0)'ı kabul etmez, bu yüzden False
+    df["is_heavy_damaged"] = df["is_heavy_damaged"].astype("boolean").fillna(False).astype(int)
     df["segment"] = _SR.apply(df["series"], df["model"])
     for part, col in (("tavan", "roof_state"), ("kaput", "hood_state"), ("bagaj", "trunk_state")):
         df[col] = _panel_state(df, part)

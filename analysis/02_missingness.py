@@ -3,21 +3,30 @@
 EN: Technical report §1–§2 — which raw columns are missing, which go missing together, the kb/gb twins,
     and the account of every raw column (in the model, target, or dropped for a stated reason).
     Co-missing blocks are built from the co-missing share (both missing / either missing), not from
-    correlations (the owner's decision).
+    correlations (the owner's decision). The columns whose NULL means "the page does not say"
+    ("Belirtilmemiş": heavy damage, first owner, the panel flags) are not missing data: the model codes that
+    unknown as no / original, the same rule the gold DB applies (db/gold_rules.json, read here). They are
+    left out of the missing list and the blocks and reported on their own (owner's decision 2026-09-24).
 TR: Teknik rapor §1–§2 — hangi ham kolonlar eksik, hangileri birlikte eksik, kb/gb ikizleri ve her ham
     kolonun dökümü (modelde, hedef ya da gerekçesiyle atıldı). Birlikte-eksik bloklar korelasyondan değil,
-    birlikte-eksik payından kurulur (ikisi birden eksik / en az biri eksik; kullanıcının kararı).
+    birlikte-eksik payından kurulur (ikisi birden eksik / en az biri eksik; kullanıcının kararı). NULL'u
+    "sayfa söylemiyor" demek olan kolonlar ("Belirtilmemiş": ağır hasar, ilk sahip, panel bayrakları) eksik
+    veri değil: model bu bilinmeyeni hayır / orijinal kodlar; gold DB'nin uyguladığı kuralın aynısı
+    (db/gold_rules.json, burada okunur). Eksik listesine ve bloklara girmez, ayrıca raporlanır (kullanıcı
+    kararı 2026-09-24).
 Output / Çıktı: metrics/02_missingness.json
 """
 
 # %% [1] Setup | Kurulum
+import json
+
 import duckdb
 import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import fcluster, linkage
 from scipy.spatial.distance import squareform
 
-from lib.common import DB_PATH, FEATURES, NUM, load_clean, save_metrics
+from lib.common import DB_PATH, FEATURES, NUM, ROOT, load_clean, save_metrics
 
 MISSING_TOKENS = ["", "-", "nan", "None", "NaN"]
 MIN_RATE = 2          # columns above this missing % are listed | bu eksik yüzdesinin üstündekiler listelenir
@@ -27,9 +36,13 @@ DAMAGE_FEATURES = ("roof_state", "hood_state", "trunk_state", "door_", "fender_"
 FEATURE_SOURCES = {"vehicle_age": ["gb_year", "search_date"], "power_hp_val": ["power_hp_low", "power_hp_up"],
                    "engine_cc_val": ["engine_cc_up"], "segment": ["series", "model"]}
 IDENTITY = ["ad_id", "url", "listing_date", "ad_title", "location", "scraped_at", "description_text",
-            "description_clean", "eids_model"]
+            "eids_model"]
+# EN: kb_paint_change_summary is the page's own "Boya-değişen" line ("2 değişen, 3 boyalı"): a coarse summary
+#     of the 39 damage flags the model already uses, so it is a derived duplicate like the damage counters.
+# TR: kb_paint_change_summary sayfanın kendi "Boya-değişen" satırı ("2 değişen, 3 boyalı"): modelin zaten
+#     kullandığı 39 hasar bayrağının kaba özeti; hasar sayaçları gibi türetilmiş tekrar.
 DERIVED = ["engine_cc_low", "engine_cc_val", "engine_cc_is_range", "power_hp_val", "power_hp_is_range",
-           "count_changed", "count_painted", "count_local_painted"]
+           "count_changed", "count_painted", "count_local_painted", "kb_paint_change_summary"]
 # EN: body type — the owner's decision: kb is more general (gb merges the seat count).
 # TR: kasa tipi — kullanıcının kararı: kb daha genel (gb koltuk sayısıyla birleşik).
 TWIN_REASON_BY_HAND = {"gb_body_type": ("kb daha genel: gb kasa tipini koltuk sayısıyla birleştiriyor",
@@ -46,6 +59,33 @@ CLASSES = [("model", "modelde (doğrudan ya da türetilerek)", "in the model (di
 
 
 # %% [2] Analysis functions | Analiz fonksiyonları — pure: no file I/O, they only return values
+def unknown_coded(gold_rules):
+    """
+    EN: The columns whose NULL means "Belirtilmemiş" (not stated) and whose unknown is coded no / 0 — the
+        fill columns of db/gold_rules.json, in its order. Returns: list of column names.
+    TR: NULL'u "Belirtilmemiş" demek olan ve bilinmeyeni hayır / 0 kodlanan kolonlar — db/gold_rules.json'un
+        doldurduğu kolonlar, onun sırasıyla. Döndürür: kolon adları listesi.
+    """
+    return [c for rule in gold_rules["fill"] for c in rule["columns"]]
+
+
+def unspecified_summary(raw, coded):
+    """
+    EN: How often the page leaves a coded column unstated: heavy damage (and its kb twin), first owner, the
+        panel flags' range, the damage counters' maximum, and every column's %. Stops if a column is absent.
+    TR: Sayfanın kodlanan kolonu ne sıklıkla belirtmediği: ağır hasar (ve kb ikizi), ilk sahip, panel
+        bayraklarının aralığı, hasar sayaçlarının en yükseği ve her kolonun %'si. Kolon yoksa durur.
+    """
+    assert all(c in raw.columns for c in coded), f"coded column not in the raw table: {set(coded) - set(raw.columns)}"
+    pct = {c: round(float(raw[c].isna().mean() * 100), 1) for c in coded}
+    panels = [c for c in coded if c.endswith(("_degisen", "_boyali", "_lokal"))]
+    counts = [c for c in coded if c.startswith("count_")]
+    return {"kolon": len(coded), "agir_hasar_pct": pct["is_heavy_damaged"], "kb_agir_hasar_pct": pct["kb_is_heavy_damaged"],
+            "ilk_sahip_pct": pct["gb_is_first_owner"], "panel_bayrak": len(panels),
+            "panel_min_pct": min(pct[c] for c in panels), "panel_max_pct": max(pct[c] for c in panels),
+            "sayac_max_pct": max(pct[c] for c in counts), "kolonlar": [[c, pct[c]] for c in coded]}
+
+
 def is_missing(col):
     """
     EN: Missing mask of one raw column; empty strings, '-' and text 'nan'/'None' count as missing.
@@ -202,9 +242,11 @@ def to_metrics(res):
                             "Yalnız KMeans/PCA için genel medyanla dolduruldu. torque_nm %27.6 eksik olduğu için çıkarıldı."),
             "column_missing_all": res["rates"],
             "sistematik_missing": {"column_missing_all": res["rates"], "sistematik_gruplar": res["blocks"],
+                                   "belirtilmemis": res["unspecified"],
                                    "not": ("Katalog eşleştirmesi: standart modeller eşleşir, özel varyantlar eşleşmez → "
                                            "tüm spec birden boş. Gruplar birlikte-eksik payıyla kuruldu: ikisi birden "
-                                           "eksik / en az biri eksik ≥ %98.")},
+                                           "eksik / en az biri eksik ≥ %98. 'Belirtilmemiş' kolonları (gold kurallarının "
+                                           "doldurduğu kolonlar) eksik listesine ve bloklara girmez; belirtilmemis'te.")},
             "feature_drop": [[code, names[code][0], len(by_class[code]), by_class[code], names[code][1]]
                              for code, *_ in CLASSES if code not in ("model", "hedef") and by_class[code]],
             "kolon_hesabi": {"ham": sum(len(v) for v in by_class.values()), "modelde": len(by_class["model"]),
@@ -224,14 +266,17 @@ raw = load_clean(derived=False)
 listings = load_clean()
 with duckdb.connect(str(DB_PATH), read_only=True) as con:
     db_columns = [r[0] for r in con.execute("DESCRIBE car_listings").fetchall()]
+gold_rules = json.loads((ROOT / "db" / "gold_rules.json").read_text(encoding="utf-8"))
 
 # %% [5] Compute | Hesapla — look at the results here | sonuçlara burada bak
-rates = missing_rates(raw, MIN_RATE)
+coded = unknown_coded(gold_rules)
+rates = missing_rates(raw.drop(columns=coded), MIN_RATE)
 blocks = comissing_blocks(raw, rates, BLOCK_RATE, BLOCK_DIST)
 used, flags = columns_used(list(raw.columns), FEATURES)
 twins, twin_reasons = twin_pairs(raw, used)
 classes = classify_columns(raw, used, twin_reasons, blocks)
-res = {"rates": rates, "blocks": blocks, "flags": flags, "twins": twins, "twin_reasons": twin_reasons,
+res = {"rates": rates, "blocks": blocks, "unspecified": unspecified_summary(raw, coded),
+       "flags": flags, "twins": twins, "twin_reasons": twin_reasons,
        "classes": classes, "feature_missing": feature_missing(listings, FEATURES),
        "table_columns": {"tablo_kolon": len(db_columns), "ham_kolon": len([c for c in db_columns if c != "id"])}}
 print({k: len(v) for k, v in classes.items()}, "| blocks:", [b["kolon_sayisi"] for b in blocks])

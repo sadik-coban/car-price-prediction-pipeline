@@ -36,6 +36,8 @@ Medyan ilan fiyatı ₺1.55M, ₺0.85M–₺3.43M arası (P10–P90).
 
 **"Belirtilmemiş" panel orijinal sayıldı.** Site her panel için beş cevaptan birini veriyor: orijinal, belirtilmemiş, boyalı, lokal boyalı, değişmiş. Modele giren ilanlarda 59.651 panel (%15.3) belirtilmemiş; 1.235 ilanda 13 panelin hiçbiri belirtilmemiş. Bu cevap bilinçli bir kararla orijinal gibi kodlandı; gerekçe, satıcının hasarı yazmayı unutmuş olabileceği ama hasar olmamasının daha olası sayılması. Aynı model ve yılın medyanına oranla medyan fiyat orijinal ilanlarda 1.034, belirtilmemişte 1.011, hafif hasarlıda (1–2 boyalı ya da lokal panel, değişen yok) 1.011, bütün hasarlılarda 0.979 — belirtilmemiş, orijinalden çok hafif hasarlıya benziyor; fiyat bu gerekçeyi desteklemiyor ve belirtilmemiş ilanların bir kısmı hafif hasarlı olabilir. Bedeli: hasarlı ilanların bir kısmı orijinal sayıldığı için hasar etkileri hafifçe sıfıra çekilir.
 
+**Ağır hasar kaydında da aynı kural.** Modele giren ilanlarda sayfanın ağır hasar bilgisi vermediği ("Belirtilmemiş" ya da alan yok) ilanların payı %68.2; bunlar ağır hasarsız sayıldı. Ağır hasarlı olup bunu belirtmeyen bir ilan modelde hasarsız görünür.
+
 ### Motor gücü ve hacmi: kovadan tek sayıya
 
 Site motor hacmini ve gücünü ilanların bir kısmında kesin değer, bir kısmında **kova** olarak veriyor: modele giren ilanlardan 7.865 tanesinde hacim, 7.797 tanesinde güç kova (en sık kovalar 1401–1600 cc ve 151–175 hp). Model tek sayı kullanıyor. Kural: **hacim = kovanın üst sınırı, güç = alt ve üst sınırın ortalaması** (açık uçlu kovada bilinen sınır). Kural veriyle sınandı: kovalı ilanın üç adayı, aynı modelin kovasız (kesin değerli) ilanlarının medyanıyla karşılaştırıldı — hacimde 7.176, güçte 7.148 ilan (kesin değerli ilanı olan modellerde).
@@ -60,8 +62,8 @@ Model (`model`) · Seri (`series`) · Marka (`brand`) · Kasa Tipi (`kb_body_typ
 
 | grup | gerekçe | kolon | kolonlar |
 |---|---|---:|---|
-| C | Kimlik / metin / zaman | 9 | `ad_id`, `listing_date`, `ad_title`, `location`, `eids_model`, `url` … |
-| F | Türetilmiş tekrar | 8 | `engine_cc_low`, `engine_cc_val`, `engine_cc_is_range`, `power_hp_val`, `power_hp_is_range`, `count_changed` … |
+| C | Kimlik / metin / zaman | 8 | `ad_id`, `listing_date`, `ad_title`, `location`, `eids_model`, `url` … |
+| F | Türetilmiş tekrar | 9 | `engine_cc_low`, `engine_cc_val`, `engine_cc_is_range`, `power_hp_val`, `power_hp_is_range`, `count_changed` … |
 | B | kb/gb ikizi | 11 | `kb_year`, `kb_mileage`, `gb_transmission`, `gb_fuel`, `gb_body_type`, `gb_color` … |
 | A | Yarı-sabit (en sık değer ≥ %99) | 4 | `kb_condition`, `gb_usage_type`, `gb_is_first_owner`, `gb_plate_origin` |
 | D | Eksik > %40 | 5 | `gb_mtv_yearly`, `tramer_fee`, `transmission_brand`, `gb_kasko_avg`, `gb_traffic_insurance_avg` |
@@ -102,6 +104,8 @@ En çok tekrar eden ilanlar:
 (etiketsiz olanlar ham kolon adı)](figures/tr-16-missing.png)
 
 Geriye kalan 25 öznitelikte eksiklik sorun değil: en yükseği `kb_drivetrain` ile %1.5, 21'inde hiç eksik yok. Yukarıdaki grafik yalnız atılan kolonları gösteriyor.
+
+**"Belirtilmemiş", eksik veri değil.** Veritabanı yarı ham: sayfanın söylemediği bilgi boş kalıyor. 45 kolonda bu boşluk eksik veri değil, satıcının "belirtilmemiş" cevabı; bu kolonlar yukarıdaki listeye ve bloklara girmiyor. Belirtilmemiş payı ağır hasar kaydında %68.2, 39 panel bayrağının her birinde %12.2–%19.1. Model bu bilinmeyenleri bilinçli bir kararla "yok" okuyor: belirtilmemiş panel orijinal, belirtilmemiş ağır hasar kaydı ağır hasarsız sayılıyor (§1). API'ye giden veride de aynı kural uygulanıyor.
 
 ### Birlikte eksik bloklar
 
