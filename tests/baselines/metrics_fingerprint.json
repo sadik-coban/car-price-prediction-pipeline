@@ -168,6 +168,29 @@
   "error_drivers.hp_cc_kurali.power_hp.secilen": "orta",
   "error_drivers.hp_cc_kurali.tanim": "referans = ayni modelin kesin (kovasiz) degerli ilanlarinin medyani; fark = |aday − referans|; yalniz iki siniri da bilinen kovalar ve referansi olan modeller; yuzdelikler 5/25/50/75/95; konum = (referans − alt) / (ust − alt)"
  },
+ "01_gold_contract": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
+  "_meta.generated_at": "2026-09-24T17:40:51",
+  "_meta.run_id": null,
+  "_meta.script": "01_gold_contract.py",
+  "error_drivers.gold_sozlesme.aciklama_bos_satir": 114,
+  "error_drivers.gold_sozlesme.alinmayan": {
+   "len": 1,
+   "sha256": "5918395faaac733e766006479800e6b33a371b4cf8da4a01a2c6a8718fbe5b03"
+  },
+  "error_drivers.gold_sozlesme.gold_kolon": 116,
+  "error_drivers.gold_sozlesme.gruplar": {
+   "len": 3,
+   "sha256": "32ae4c22b23532467945d4751a95553c70237d7e1b36205ea608bab530a80f27"
+  },
+  "error_drivers.gold_sozlesme.not": "Sayımlar bütün car_listings tablosunda (her taramanın her satırı; gold dosyası bu satırları tutar). Kurallar db/gold_rules.json'dan; gold'u db/build_gold_db.py kurar.",
+  "error_drivers.gold_sozlesme.tablo_satir": 45277,
+  "error_drivers.gold_sozlesme.toplam_hucre": 353390,
+  "error_drivers.gold_sozlesme.yari_ham_kolon": 117
+ },
  "01_unspecified_panels": {
   "_meta.data_until": "2026-06-27",
   "_meta.db.path": "data/cars.duckdb",

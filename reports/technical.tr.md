@@ -38,6 +38,19 @@ Medyan ilan fiyatı ₺1.55M, ₺0.85M–₺3.43M arası (P10–P90).
 
 **Ağır hasar kaydında da aynı kural.** Modele giren ilanlarda sayfanın ağır hasar bilgisi vermediği ("Belirtilmemiş" ya da alan yok) ilanların payı %68.2; bunlar ağır hasarsız sayıldı. Ağır hasarlı olup bunu belirtmeyen bir ilan modelde hasarsız görünür.
 
+### API'ye giden veri (gold)
+
+Analiz yarı ham veritabanını okuyor: sayfanın söylemediği bilgi boş kalıyor, nasıl okunacağına analiz karar veriyor. Canlı fiyat API'si ise bilinmeyenin "hayır" ya da 0 olduğu eski sözleşmeyi bekliyor. Bu yüzden API'ye ayrı bir dosya gidiyor: aynı 45.277 satır (her taramanın her ilanı), aynı sıra ve kimlikler; yalnız aşağıdaki boşluklar dolduruluyor ve bir kolon çıkarılıyor. Doldurma kuralı analizin kuralıyla aynı: belirtilmemiş panel orijinal, belirtilmemiş ağır hasar kaydı ağır hasarsız sayılıyor.
+
+| grup | kolon | yazılan değer | doldurulan hücre | etkilenen satır |
+|---|---:|---|---:|---:|
+| ağır hasar kaydı (2 kolon) ve ilk sahip | 3 | hayır | 59.402 | 29.733 |
+| panel bayrakları (13 panel × değişen / boyalı / lokal) | 39 | 0 | 293.988 | 10.328 |
+| hasar sayaçları | 3 | 0 | 0 | 0 |
+| **toplam** | 45 |  | 353.390 |  |
+
+API'ye gitmeyen tek kolon `kb_paint_change_summary`: sayfanın ham "Boya-değişen" satırı, hasar bayraklarının kaba özeti. Açıklama sayfa başlığı olmadan `description_text` olarak gidiyor; yalnız başlıktan ibaret 114 satırda boş. Sonuç 116 kolon + kimlik (yarı ham veritabanında 117); öteki her hücre yarı ham veritabanındakiyle aynı. Buradaki sayımlar gold dosyasının tuttuğu bütün tarama satırları üzerinden; belirtilmemiş payları (§2) ise modele giren tekil ilanlar üzerinden.
+
 ### Motor gücü ve hacmi: kovadan tek sayıya
 
 Site motor hacmini ve gücünü ilanların bir kısmında kesin değer, bir kısmında **kova** olarak veriyor: modele giren ilanlardan 7.865 tanesinde hacim, 7.797 tanesinde güç kova (en sık kovalar 1401–1600 cc ve 151–175 hp). Model tek sayı kullanıyor. Kural: **hacim = kovanın üst sınırı, güç = alt ve üst sınırın ortalaması** (açık uçlu kovada bilinen sınır). Kural veriyle sınandı: kovalı ilanın üç adayı, aynı modelin kovasız (kesin değerli) ilanlarının medyanıyla karşılaştırıldı — hacimde 7.176, güçte 7.148 ilan (kesin değerli ilanı olan modellerde).

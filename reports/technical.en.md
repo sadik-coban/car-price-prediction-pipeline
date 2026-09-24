@@ -38,6 +38,19 @@ Median asking price ₺1.55M, ranging ₺0.85M–₺3.43M (P10–P90).
 
 **The heavy-damage record follows the same rule.** On 68.2% of the listings in the model the page gives no heavy-damage answer ("Belirtilmemiş" or no field); those listings count as not heavily damaged. A heavily damaged car whose listing does not say so looks undamaged to the model.
 
+### The data the API gets (gold)
+
+The analysis reads the semi-raw database: what the page does not say stays empty, and the analysis decides how to read it. The live price API expects the old contract, where an unknown reads as "no" or 0. So the API gets a separate file: the same 45,277 rows (every listing of every snapshot), the same order and ids; only the gaps below are filled and one column is left out. The filling rule is the analysis' rule: an unspecified panel counts as original, an unspecified heavy-damage record as not heavily damaged.
+
+| group | columns | value written | cells filled | rows affected |
+|---|---:|---|---:|---:|
+| heavy-damage record (2 columns) and first owner | 3 | no | 59,402 | 29,733 |
+| panel flags (13 panels × changed / painted / local) | 39 | 0 | 293,988 | 10,328 |
+| damage counters | 3 | 0 | 0 | 0 |
+| **total** | 45 |  | 353,390 |  |
+
+The one column the API does not get is `kb_paint_change_summary`: the page's raw "Boya-değişen" line, a coarse summary of the damage flags. The description goes as `description_text` without the page heading; it is empty on the 114 rows that held only the heading. The result is 116 columns + id (117 in the semi-raw database); every other cell equals the semi-raw database. These counts are over every snapshot row the gold file holds; the unspecified shares in §2 are over the unique listings in the model.
+
 ### Engine power and size: from bucket to one number
 
 On some listings the site gives engine size and power as an exact value, on others as a **bucket**: among the listings in the model, 7,865 have engine size and 7,797 have power as a bucket (the most common are 1401–1600 cc and 151–175 hp). The model uses one number. The rule: **size = the bucket's upper bound, power = the mean of the lower and upper bounds** (the known bound for an open-ended bucket). The rule was checked against the data: each bucketed listing's three candidates were compared with the median of the same model's un-bucketed (exact) listings — 7,176 listings for size, 7,148 for power (models that have at least one exact listing).

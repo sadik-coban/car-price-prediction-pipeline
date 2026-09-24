@@ -193,6 +193,51 @@ def sec_veri(c):
         f"not heavily damaged. A heavily damaged car whose listing does not say so looks undamaged to the model."))
     A("")
 
+    # 2026-09-24 (kullanici: "gold dbye gecen taraflari da rapora yazmam gerekiyor"): API'ye giden gold dosyasi
+    # yari ham DB'den neyle ayrisiyor. Sayilar 01_gold_contract'tan; kurallar db/gold_rules.json'dan.
+    _gs = v["ed"]["gold_sozlesme"]
+    _gad = {"heavy_damage_first_owner": ("ağır hasar kaydı (2 kolon) ve ilk sahip",
+                                         "heavy-damage record (2 columns) and first owner"),
+            "panel_flags": (f"panel bayrakları ({_y['panel']} panel × değişen / boyalı / lokal)",
+                            f"panel flags ({_y['panel']} panels × changed / painted / local)"),
+            "damage_counts": ("hasar sayaçları", "damage counters")}
+    assert _gs["alinmayan"] == ["kb_paint_change_summary"], f"metin tek alinmayan kolonu anlatiyor: {_gs['alinmayan']}"
+    A(L("### API'ye giden veri (gold)", "### The data the API gets (gold)"))
+    A("")
+    A(L(f"Analiz yarı ham veritabanını okuyor: sayfanın söylemediği bilgi boş kalıyor, nasıl okunacağına analiz "
+        f"karar veriyor. Canlı fiyat API'si ise bilinmeyenin \"hayır\" ya da 0 olduğu eski sözleşmeyi bekliyor. Bu "
+        f"yüzden API'ye ayrı bir dosya gidiyor: aynı {num(_gs['tablo_satir'], lang)} satır (her taramanın her "
+        f"ilanı), aynı sıra ve kimlikler; yalnız aşağıdaki boşluklar dolduruluyor ve bir kolon çıkarılıyor. "
+        f"Doldurma kuralı analizin kuralıyla aynı: belirtilmemiş panel orijinal, belirtilmemiş ağır hasar kaydı "
+        f"ağır hasarsız sayılıyor.",
+        f"The analysis reads the semi-raw database: what the page does not say stays empty, and the analysis "
+        f"decides how to read it. The live price API expects the old contract, where an unknown reads as \"no\" "
+        f"or 0. So the API gets a separate file: the same {num(_gs['tablo_satir'], lang)} rows (every listing of "
+        f"every snapshot), the same order and ids; only the gaps below are filled and one column is left out. "
+        f"The filling rule is the analysis' rule: an unspecified panel counts as original, an unspecified "
+        f"heavy-damage record as not heavily damaged."))
+    A("")
+    T([L("grup", "group"), L("kolon", "columns"), L("yazılan değer", "value written"),
+       L("doldurulan hücre", "cells filled"), L("etkilenen satır", "rows affected")],
+      [[(_gad[g["ad"]][0] if lang == "tr" else _gad[g["ad"]][1]), g["kolon"],
+        (L("hayır", "no") if g["deger"] is False else str(g["deger"])),
+        num(g["doldurulan_hucre"], lang), num(g["etkilenen_satir"], lang)] for g in _gs["gruplar"]]
+      + [[L("**toplam**", "**total**"), sum(g["kolon"] for g in _gs["gruplar"]), "", num(_gs["toplam_hucre"], lang), ""]],
+      "lrlrr")
+    A(L(f"API'ye gitmeyen tek kolon `kb_paint_change_summary`: sayfanın ham \"Boya-değişen\" satırı, hasar "
+        f"bayraklarının kaba özeti. Açıklama sayfa başlığı olmadan `description_text` olarak gidiyor; yalnız "
+        f"başlıktan ibaret {num(_gs['aciklama_bos_satir'], lang)} satırda boş. Sonuç {_gs['gold_kolon']} kolon + "
+        f"kimlik (yarı ham veritabanında {_gs['yari_ham_kolon']}); öteki her hücre yarı ham veritabanındakiyle "
+        f"aynı. Buradaki sayımlar gold dosyasının tuttuğu bütün tarama satırları üzerinden; belirtilmemiş payları "
+        f"(§{secno('eksiklik')}) ise modele giren tekil ilanlar üzerinden.",
+        f"The one column the API does not get is `kb_paint_change_summary`: the page's raw \"Boya-değişen\" line, a "
+        f"coarse summary of the damage flags. The description goes as `description_text` without the page "
+        f"heading; it is empty on the {num(_gs['aciklama_bos_satir'], lang)} rows that held only the heading. The "
+        f"result is {_gs['gold_kolon']} columns + id ({_gs['yari_ham_kolon']} in the semi-raw database); every other "
+        f"cell equals the semi-raw database. These counts are over every snapshot row the gold file holds; the "
+        f"unspecified shares in §{secno('eksiklik')} are over the unique listings in the model."))
+    A("")
+
     # T (2026-09-23): motor gucu/hacmi kovadan tek sayiya — kullanicinin kurali, veriyle olculdu. Sayilar
     # error_drivers.hp_cc_kurali'dan; secilen adayin en iyi oldugu uretecte assert ediliyor.
     _hk = v["ed"]["hp_cc_kurali"]

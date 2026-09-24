@@ -1,12 +1,15 @@
 # Gold DB (API) adımı — plan
 
-> **Durum (2026-09-24): Parça 1 ve Parça 2 yapıldı.** Parça 2: gerçek DB yarı ham olarak yeniden kuruldu (eski
+> **Durum (2026-09-24): üç parça da yapıldı.** Parça 3: `analysis/01_gold_contract.py` → teknik rapor §1 "API'ye
+> giden veri (gold)" (tablo + açıklama, tr/en); testi `tests/analysis/test_01_gold_contract.py`. Kalan tek iş
+> kullanıcının: gold'u S3'e yayımlamak (`python db/publish_data_to_s3.py --dry-run`, sonra `--dry-run`'sız).
+>
+> Parça 1 ve Parça 2 yapıldı. Parça 2: gerçek DB yarı ham olarak yeniden kuruldu (eski
 > dosya `archive/backups/cars-duckdb-eski-sozlesme-2026-09-24/`), gold türetildi, kanıt gerçek dosyalarla tuttu;
 > analizde üç uyarlama + `load_clean` düzeltmesi; §2'de "belirtilmemiş" ayrı paragraf, §1'de ağır hasar cümlesi;
 > metrik referansı kullanıcı onayıyla güncellendi. **Parça 1:** — `db/build_gold_db.py`, `db/gold_rules.json`, yayında sözleşme
 > denetimi, testler ve gerçek ham veriyle kanıt (sonuçlar `docs/database.md` → "Gold adımı"; kanıt tuttu: tek
-> fark açıklamada, 778 / 114 satır). **Sıradaki:** Parça 3 — gold'un teknik rapor §1'e yazılması (yeni analiz
-> betiği `analysis/01_gold_contract.py`, `gold_rules.json`'ı okur). Aşağısı onaylanan ilk plan.
+> fark açıklamada, 778 / 114 satır). Aşağısı onaylanan ilk plan.
 
 ## Context
 Analiz yarı ham `data/cars.duckdb`'yi okuyor (bilinmeyen = NULL, 2026-09-24). Canlı API (depo dışında) ise eski

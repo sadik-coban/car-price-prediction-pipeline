@@ -96,4 +96,6 @@ data/raw ──build_duckdb──► data/cars.duckdb (yarı ham, analiz) ──
 - **Gerçek dosyalar (2026-09-24):** `data/cars.duckdb` yarı ham olarak yeniden kuruldu, `data/cars_gold.duckdb`
   ondan türetildi. Kanıt gerçek dosyalarla tekrarlandı: gold, yedeklenen eski DB ile açıklama dışında hücre hücre
   aynı (778 / 114 satır, öteki tablolar birebir). S3'e hiçbir şey yüklenmedi; yayın kullanıcının kararı.
-- **Sıradaki:** gold'un teknik rapor §1'e yazılması (`db_plan.md`, Parça 3).
+- **Raporda (2026-09-24):** teknik rapor §1 → "API'ye giden veri (gold)". Sayıları `analysis/01_gold_contract.py`
+  sayar (bütün tarama satırları üzerinden, kurallar `db/gold_rules.json`'dan): 353.390 hücre doldurulur
+  (59.402 ağır hasar + ilk sahip, 293.988 panel bayrağı), `kb_paint_change_summary` gitmez, 114 açıklama boş.

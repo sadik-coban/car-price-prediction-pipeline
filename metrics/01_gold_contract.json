@@ -1,0 +1,49 @@
+{
+ "_meta": {
+  "script": "01_gold_contract.py",
+  "generated_at": "2026-09-24T17:40:51",
+  "data_until": "2026-06-27",
+  "db": {
+   "path": "data/cars.duckdb",
+   "sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
+   "rows": 45277
+  },
+  "run_id": null
+ },
+ "error_drivers": {
+  "gold_sozlesme": {
+   "tablo_satir": 45277,
+   "yari_ham_kolon": 117,
+   "gold_kolon": 116,
+   "gruplar": [
+    {
+     "ad": "heavy_damage_first_owner",
+     "deger": false,
+     "kolon": 3,
+     "doldurulan_hucre": 59402,
+     "etkilenen_satir": 29733
+    },
+    {
+     "ad": "panel_flags",
+     "deger": 0,
+     "kolon": 39,
+     "doldurulan_hucre": 293988,
+     "etkilenen_satir": 10328
+    },
+    {
+     "ad": "damage_counts",
+     "deger": 0,
+     "kolon": 3,
+     "doldurulan_hucre": 0,
+     "etkilenen_satir": 0
+    }
+   ],
+   "toplam_hucre": 353390,
+   "alinmayan": [
+    "kb_paint_change_summary"
+   ],
+   "aciklama_bos_satir": 114,
+   "not": "Sayımlar bütün car_listings tablosunda (her taramanın her satırı; gold dosyası bu satırları tutar). Kurallar db/gold_rules.json'dan; gold'u db/build_gold_db.py kurar."
+  }
+ }
+}

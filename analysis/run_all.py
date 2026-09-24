@@ -23,7 +23,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 ANALYSIS = ROOT / "analysis"
-ORDER = ["01_dedup_leakage.py", "01_engine_rule.py", "01_unspecified_panels.py", "02_missingness.py",
+ORDER = ["01_dedup_leakage.py", "01_engine_rule.py", "01_unspecified_panels.py", "01_gold_contract.py",
+         "02_missingness.py",
          "03_association.py", "03_segment_quality.py", "03_brand_ablation.py", "04_target.py", "05_segmentation.py",
          "06_hedonic.py", "07_model_comparison.py", "07_final_model.py", "07_lofo.py", "07_text_flag.py",
          "08_conformal_coverage.py", "08_residuals.py", "08_large_errors.py", "09_drift.py", "09_backtest.py",

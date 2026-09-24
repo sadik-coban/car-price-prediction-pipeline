@@ -120,6 +120,23 @@
   "error_drivers.hp_cc_kurali.power_hp.secilen": "str",
   "error_drivers.hp_cc_kurali.tanim": "str"
  },
+ "01_gold_contract": {
+  "_meta.data_until": "str",
+  "_meta.db.path": "str",
+  "_meta.db.rows": "int",
+  "_meta.db.sha256": "str",
+  "_meta.generated_at": "str",
+  "_meta.run_id": "null",
+  "_meta.script": "str",
+  "error_drivers.gold_sozlesme.aciklama_bos_satir": "int",
+  "error_drivers.gold_sozlesme.alinmayan": "list",
+  "error_drivers.gold_sozlesme.gold_kolon": "int",
+  "error_drivers.gold_sozlesme.gruplar": "list",
+  "error_drivers.gold_sozlesme.not": "str",
+  "error_drivers.gold_sozlesme.tablo_satir": "int",
+  "error_drivers.gold_sozlesme.toplam_hucre": "int",
+  "error_drivers.gold_sozlesme.yari_ham_kolon": "int"
+ },
  "01_unspecified_panels": {
   "_meta.data_until": "str",
   "_meta.db.path": "str",

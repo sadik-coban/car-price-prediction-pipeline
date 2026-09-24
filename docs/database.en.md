@@ -103,4 +103,7 @@ data/raw ──build_duckdb──► data/cars.duckdb (semi-raw, analysis) ─�
   from it. The proof was repeated on the real files: gold equals the backed-up old DB cell for cell except the
   description (778 / 114 rows, the other tables identical). Nothing was uploaded to S3; publishing is the
   owner's call.
-- **Next:** writing gold into technical report §1 (`db_plan.md`, Parça 3).
+- **In the report (2026-09-24):** technical report §1 → "The data the API gets (gold)". Its numbers are counted
+  by `analysis/01_gold_contract.py` (over every snapshot row, rules from `db/gold_rules.json`): 353,390 cells are
+  filled (59,402 heavy damage + first owner, 293,988 panel flags), `kb_paint_change_summary` is not sent, 114
+  descriptions are empty.
