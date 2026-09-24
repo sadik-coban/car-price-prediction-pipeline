@@ -1,0 +1,19 @@
+{
+  "_about": {
+    "en": "What the scraper collects: per-brand price ranges, the selected brands and the listing search query. Read by scraper/collection.py (the scraper) and analysis/01_dedup_leakage.py (technical report §1 prints these filters and counts their footprint in the data). brands.DEFAULT is used for a selected brand without its own range; not_selected lists brands that were scraped once and are switched off.",
+    "tr": "Scraper'ın ne topladığı: marka başına fiyat aralıkları, seçili markalar ve ilan arama sorgusu. scraper/collection.py (scraper) ve analysis/01_dedup_leakage.py okur (teknik rapor §1 bu filtreleri basar ve verideki karşılıklarını sayar). brands.DEFAULT kendi aralığı olmayan seçili marka için kullanılır; not_selected bir kez taranıp kapatılan markalar."
+  },
+  "brands": {
+    "audi": {"min": 300000, "max": 6500000, "step": 100000},
+    "bmw": {"min": 300000, "max": 6500000, "step": 100000},
+    "DEFAULT": {"min": 200000, "max": 8000000, "step": 100000}
+  },
+  "selected_brands": ["audi", "bmw"],
+  "not_selected": ["volkswagen", "skoda", "seat", "volvo", "mercedes-benz", "renault", "fiat"],
+  "listing_query": {
+    "category": "otomobil",
+    "fuels": ["Benzin", "Dizel", "Hibrit", "LPG"],
+    "max_km": 700000,
+    "min_year": 2005
+  }
+}

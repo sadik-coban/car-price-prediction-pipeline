@@ -1,0 +1,151 @@
+{
+ "_meta": {
+  "script": "01_dedup_leakage.py",
+  "generated_at": "2026-09-24T12:51:16",
+  "data_until": "2026-06-27",
+  "db": {
+   "path": "data/cars.duckdb",
+   "sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+   "rows": 45277
+  },
+  "run_id": null
+ },
+ "meta": {
+  "n_raw": 45159,
+  "n_dedup": 29988,
+  "snapshots": [
+   "2026-01-18",
+   "2026-01-27",
+   "2026-03-21",
+   "2026-06-27"
+  ],
+  "brands": {
+   "bmw": 17896,
+   "audi": 12092
+  }
+ },
+ "methodology": {
+  "icerik_duplike": {
+   "kati_tanim_fazla": 137,
+   "kati_tanim_pct": 0.46,
+   "gevsek_tanim_fazla": 209,
+   "gevsek_tanim_pct": 0.7,
+   "fiyatsiz_tanim_fazla": 1278,
+   "fiyatsiz_tanim_pct": 4.26,
+   "fiyatsiz_yuvarlak_olmayan_km_fazla": 113,
+   "km_yuvarlak_pct": 86.5,
+   "duplike_grup_sayisi": 127,
+   "kati_tanim_kolonlari": [
+    "price",
+    "gb_mileage",
+    "gb_year",
+    "brand",
+    "series",
+    "model",
+    "kb_fuel",
+    "is_heavy_damaged",
+    "count_painted",
+    "count_changed",
+    "power_hp_up",
+    "engine_cc_up"
+   ],
+   "en_cok_tekrar": [
+    {
+     "model": "320i Sport Line",
+     "n_tekrar": 4,
+     "fiyat": 4900000.0,
+     "yil": 2025
+    },
+    {
+     "model": "318i Standart",
+     "n_tekrar": 3,
+     "fiyat": 717000.0,
+     "yil": 2005
+    },
+    {
+     "model": "A3 Sportback 1.6 Ambition",
+     "n_tekrar": 3,
+     "fiyat": 890000.0,
+     "yil": 2010
+    },
+    {
+     "model": "116d Joy Plus",
+     "n_tekrar": 3,
+     "fiyat": 1044950.0,
+     "yil": 2015
+    },
+    {
+     "model": "320i First Edition Sport Line",
+     "n_tekrar": 3,
+     "fiyat": 2530000.0,
+     "yil": 2019
+    }
+   ],
+   "not": "ad_id-dedup DIŞINDA içerik-bazlı duplike kontrolü: ad_id farklı ama tüm ayırt edici özellikler (fiyat, km, yaş, model, hasar, motor) aynı. Düşük oran veri toplama temizliğini doğrular. Bir kısmı gerçek tekrar ilan, bir kısmı tesadüfi çakışma (yaygın modellerde benzer özellikli farklı araçlar)."
+  }
+ },
+ "error_drivers": {
+  "fiyat_degisimi": {
+   "ilan": 29988,
+   "coklu": 10831,
+   "coklu_pct": 36.1,
+   "degisen": 4703,
+   "degisen_pct": 15.7,
+   "indirim": 2801,
+   "zam": 1854,
+   "donup_ayni": 48
+  },
+  "plaka_kapsami": {
+   "dagilim": [
+    {
+     "plaka": "(TR) Türkiye",
+     "satir": 45159,
+     "ilan": 29988
+    },
+    {
+     "plaka": "(bilinmiyor)",
+     "satir": 118,
+     "ilan": 77
+    }
+   ],
+   "egitime_giren_ilan": 29988,
+   "elenen_ilan": 54,
+   "iki_etiketli_ilan": 23,
+   "not": "Yabancı/mavi plakalı ilanlar veritabanına hiç yazılmadı (build_duckdb.py); burada elenenler plaka bilgisi BOŞ olan ilanlardır. Eğitim, doğrulama ve backtest'in tamamı TR plakalı ilanlar üzerindedir."
+  },
+  "kapsam": {
+   "markalar": [
+    "audi",
+    "bmw"
+   ],
+   "fiyat_min": 300000,
+   "fiyat_max": 6500000,
+   "max_km": 700000,
+   "min_yil": 2005,
+   "yakit_filtresi": [
+    "Benzin",
+    "Dizel",
+    "Hibrit",
+    "LPG"
+   ],
+   "yol": "otomobil",
+   "olculen": {
+    "fiyat_max": 6500000.0,
+    "tavanda": 10,
+    "tavan_ust_yuzde1": 38,
+    "km_max": 648000.0,
+    "yil_min": 2005,
+    "min_yilda": 541,
+    "suv": 6,
+    "elektrik": 0,
+    "yakit": {
+     "Benzin": 14882,
+     "Dizel": 12982,
+     "LPG & Benzin": 1224,
+     "Hibrit": 900
+    }
+   },
+   "yas_tavani": 21
+  }
+ }
+}

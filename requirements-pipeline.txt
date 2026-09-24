@@ -1,0 +1,46 @@
+# Pipeline + yayın kolu için çalışma ortamı (lokal .venv, Python 3.14).
+# Kurulum:
+#   python -m venv .venv
+#   .\.venv\Scripts\Activate.ps1
+#   pip install -r requirements-pipeline.txt
+#   pip freeze > requirements-pipeline.lock.txt      <-- reprodüksiyon için ŞART
+#
+# Sürüm pini BİLEREK yok: en yeni sürümler kurulur, ardından .lock.txt ile sabitlenir.
+# Bit-reprodüksiyonun iki yarısı: (1) kodun determinizmi, (2) bu lock dosyası.
+#
+# Kapsam: scraper/ + db/ (build_duckdb, lib/process_for_db, publish_data_to_s3) + analysis/ + builders/
+# Eski conda ortamı (environment.yml, py3.11) archive/obsolete/kok-arac-config/'da; kanonik değil.
+
+# --- çekirdek veri ---
+numpy
+pandas
+scipy
+pyarrow      # dogrudan import edilmiyor; pandas 3.x'in ok-tabanli string dtype'i icin
+duckdb
+
+# --- modelleme ---
+scikit-learn
+lightgbm
+catboost
+statsmodels
+shap
+joblib
+
+# --- figürler ---
+matplotlib
+
+# --- veri toplama (scraper/ + db/lib/process_for_db.py) ---
+# Bunlar 2026-09-23 denetiminde eksik bulundu: listede olmadıkları için
+# `build_duckdb.py` temiz bir ortamda import'ta düşüyordu.
+requests
+beautifulsoup4
+lxml
+jsonlines
+
+# --- notebook kapısı (nbclient ile sınama) ---
+nbformat
+nbclient
+
+# --- yayın (S3) ---
+boto3
+python-dotenv

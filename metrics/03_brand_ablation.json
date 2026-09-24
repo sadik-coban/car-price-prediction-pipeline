@@ -1,0 +1,44 @@
+{
+ "_meta": {
+  "script": "03_brand_ablation.py",
+  "generated_at": "2026-09-23T23:56:19",
+  "data_until": "2026-06-27",
+  "db": {
+   "path": "data/cars.duckdb",
+   "sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+   "rows": 45277
+  },
+  "run_id": null
+ },
+ "domain": {
+  "brand_ablation": {
+   "sadece_brand": {
+    "MAE": 162812.0,
+    "MedAE": 99426.0,
+    "RMSE": 267224.0,
+    "MAPE": 8.8,
+    "R2": 0.9413
+   },
+   "seri_model": {
+    "MAE": 109775.0,
+    "MedAE": 75320.0,
+    "RMSE": 176225.0,
+    "MAPE": 6.49,
+    "R2": 0.9745
+   },
+   "brand_seri_model": {
+    "MAE": 109776.0,
+    "MedAE": 75320.0,
+    "RMSE": 176225.0,
+    "MAPE": 6.49,
+    "R2": 0.9745
+   },
+   "dogrulama": {
+    "brand_split_cv": 26,
+    "oof_ayni": false,
+    "max_fark_tl": 7856.33
+   },
+   "not": "TAM MODELDE kimlik ablasyonu: marka/seri/model kolonları değişir; \"yalnız marka\" kolu seri ve model adından türetilen segmenti de çıkarır, diğer öznitelikler sabit. Manşetle aynı 5-fold OOF ve parametreler; model/seri fold-içi TF-IDF+SVD ile girer, brand kategorik. brand+seri+model = manşet model. dogrulama: marka CV fold modellerinde kaç bölme kazandı ve iki kolun OOF'u aynı mı."
+  }
+ }
+}

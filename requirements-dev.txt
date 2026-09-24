@@ -1,0 +1,7 @@
+# EN: development / test dependencies — not needed to run the pipeline.
+# TR: geliştirme / test bağımlılıkları — pipeline'ı çalıştırmak için gerekmez.
+#   pip install -r requirements-dev.txt
+#   python -m pytest tests -v
+#   python -m pytest tests --cov=db --cov-branch --cov-report=term-missing   # coverage | kapsam
+pytest==9.1.1
+pytest-cov==7.1.0

@@ -1,0 +1,290 @@
+{
+ "_meta": {
+  "script": "07_lofo.py",
+  "generated_at": "2026-09-24T00:08:24",
+  "data_until": "2026-06-27",
+  "db": {
+   "path": "data/cars.duckdb",
+   "sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+   "rows": 45277
+  },
+  "run_id": null
+ },
+ "methodology": {
+  "lofo": [
+   [
+    "gb_mileage",
+    54922.4,
+    "single"
+   ],
+   [
+    "vehicle_age",
+    46049.1,
+    "single"
+   ],
+   [
+    "DAMAGE_COLS",
+    25473.2,
+    "group"
+   ],
+   [
+    "MODEL_SERIES",
+    19413.0,
+    "group"
+   ],
+   [
+    "model",
+    15398.9,
+    "single"
+   ],
+   [
+    "is_heavy_damaged",
+    5207.3,
+    "single"
+   ],
+   [
+    "hood_state",
+    2774.4,
+    "single"
+   ],
+   [
+    "series",
+    2071.1,
+    "single"
+   ],
+   [
+    "fender_changed",
+    1851.1,
+    "single"
+   ],
+   [
+    "door_painted",
+    1250.5,
+    "single"
+   ],
+   [
+    "door_changed",
+    970.3,
+    "single"
+   ],
+   [
+    "fender_painted",
+    701.3,
+    "single"
+   ],
+   [
+    "trunk_state",
+    673.2,
+    "single"
+   ],
+   [
+    "ENGINE",
+    523.7,
+    "group"
+   ],
+   [
+    "bumper_local",
+    499.2,
+    "single"
+   ],
+   [
+    "bumper_painted",
+    439.9,
+    "single"
+   ],
+   [
+    "fender_local",
+    420.2,
+    "single"
+   ],
+   [
+    "engine_cc_val",
+    366.6,
+    "single"
+   ],
+   [
+    "door_local",
+    329.6,
+    "single"
+   ],
+   [
+    "bumper_changed",
+    314.8,
+    "single"
+   ],
+   [
+    "roof_state",
+    228.8,
+    "single"
+   ],
+   [
+    "power_hp_val",
+    -300.6,
+    "single"
+   ]
+  ],
+  "lofo_agac": {
+   "taban": [
+    274,
+    258,
+    212,
+    212,
+    307
+   ],
+   "vehicle_age": [
+    314,
+    434,
+    330,
+    379,
+    335
+   ],
+   "gb_mileage": [
+    127,
+    146,
+    107,
+    115,
+    143
+   ],
+   "power_hp_val": [
+    227,
+    180,
+    235,
+    163,
+    236
+   ],
+   "engine_cc_val": [
+    224,
+    199,
+    239,
+    213,
+    234
+   ],
+   "door_changed": [
+    204,
+    247,
+    254,
+    245,
+    230
+   ],
+   "door_painted": [
+    218,
+    186,
+    231,
+    220,
+    235
+   ],
+   "door_local": [
+    200,
+    234,
+    250,
+    225,
+    304
+   ],
+   "fender_changed": [
+    214,
+    190,
+    200,
+    187,
+    220
+   ],
+   "fender_painted": [
+    223,
+    208,
+    226,
+    219,
+    245
+   ],
+   "fender_local": [
+    254,
+    202,
+    233,
+    182,
+    246
+   ],
+   "bumper_changed": [
+    207,
+    225,
+    233,
+    229,
+    268
+   ],
+   "bumper_painted": [
+    251,
+    199,
+    226,
+    221,
+    247
+   ],
+   "bumper_local": [
+    236,
+    204,
+    256,
+    198,
+    283
+   ],
+   "is_heavy_damaged": [
+    195,
+    242,
+    205,
+    215,
+    219
+   ],
+   "roof_state": [
+    217,
+    247,
+    242,
+    191,
+    253
+   ],
+   "hood_state": [
+    233,
+    221,
+    228,
+    238,
+    268
+   ],
+   "trunk_state": [
+    228,
+    234,
+    183,
+    227,
+    253
+   ],
+   "model": [
+    313,
+    282,
+    240,
+    217,
+    345
+   ],
+   "series": [
+    259,
+    228,
+    235,
+    176,
+    248
+   ],
+   "ENGINE": [
+    234,
+    190,
+    185,
+    210,
+    214
+   ],
+   "DAMAGE_COLS": [
+    117,
+    118,
+    133,
+    112,
+    154
+   ],
+   "MODEL_SERIES": [
+    345,
+    304,
+    278,
+    290,
+    327
+   ]
+  }
+ }
+}

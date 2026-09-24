@@ -1,0 +1,64 @@
+{
+ "_meta": {
+  "script": "08_conformal_coverage.py",
+  "generated_at": "2026-09-24T00:08:30",
+  "data_until": "2026-06-27",
+  "db": {
+   "path": "data/cars.duckdb",
+   "sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+   "rows": 45277
+  },
+  "run_id": "5ca6dedde5b2"
+ },
+ "domain": {
+  "conformal": {
+   "by_quantile": [
+    [
+     "Q1",
+     81.6
+    ],
+    [
+     "Q2",
+     91.8
+    ],
+    [
+     "Q3",
+     92.7
+    ],
+    [
+     "Q4",
+     94.0
+    ]
+   ],
+   "coverage_hedef": 90,
+   "not": "Q1 (ucuz) under-coverage: model ucuzlarda daha belirsiz (dürüst bulgu)."
+  }
+ },
+ "report": {
+  "conformal_q": 0.1412297144167473,
+  "conformal_all": 89.99933306655996,
+  "conformal_by_pred": [
+   [
+    "Q1",
+    81.01907429638521
+   ],
+   [
+    "Q2",
+    91.00973722822462
+   ],
+   [
+    "Q3",
+    93.26397225556889
+   ],
+   [
+    "Q4",
+    94.70454848606109
+   ]
+  ],
+  "q_bounds": [
+   1150000.0,
+   1545000.0,
+   2275000.0
+  ]
+ }
+}

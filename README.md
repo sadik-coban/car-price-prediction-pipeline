@@ -1,171 +1,111 @@
-# Car Price Prediction Pipeline
+# İkinci el araç fiyat analizi — veriden rapora
 
-An end-to-end Machine Learning pipeline designed for automated data collection, persistent storage, and versioned model deployment. This project bypasses local heavy-data tracking in favor of a cloud-native **Hugging Face Model Store** architecture.
+> 🇬🇧 English: [README.en.md](README.en.md)
 
-## Project Overview
+Depo, canlı zincirin **tamamını** taşır: ilan toplamadan yayınlanan rapora kadar.
+Öncesinde raporların üreticisi yoktu — metinleri başka bir depodaki Next.js sayfalarından
+elle transkribe edilmiş, grafikleri o sayfaların ekran görüntüsüydü.
 
-This is a production-ready, end-to-end valuation system for **BMW and Audi** vehicles. Moving beyond simple point-estimates, this project implements a **probabilistic approach** to car pricing, ensuring market-aware and explainable AI.
-
-### Key Technical Pillars:
-
-- **Probabilistic Forecasting:** Powered by **CatBoost MultiQuantile Loss**, the system predicts valuation intervals (0.05, 0.5, 0.95 quantiles). This provides users with a "price range" rather than a single number, reflecting market uncertainty.
-- **Model Observability & Drift:** Implements automated **Data Drift Analysis** using Kolmogorov-Smirnov (KS) tests and Wasserstein Distance to monitor feature distribution shifts between training and production data.
-- **Explainable AI (XAI):** Integrated **SHAP** (Shapley Additive Explanations) to provide local and global transparency, showing exactly how features like mileage, year, and engine size impact each prediction.
-- **Idempotent Data Pipeline:** Automated scraping and database persistence with unique-ID constraints to ensure a clean, non-redundant historical dataset.
-- **Live Ecosystem:** A high-performance **FastAPI** backend serves versioned models from the **Hugging Face Hub**, consumed by a modern **Next.js Dashboard** featuring live predictions and system metrics.
-
-## Pipeline Workflow
-
-The system follows a linear, automated flow from raw data to production-ready inference:
-
-1. **Scrape:** Raw car advertisements are collected via custom scrapers.
-2. **Database (Persistence):** Extracted data is pushed to a persistence store.
-* *Logic:* Ad IDs are used as unique identifiers. The system utilizes `INSERT IGNORE` or `UPSERT` logic—if an `ad_id` already exists, the record is **not overwritten**, ensuring data integrity and historical consistency.
-
-
-3. **Preprocess:** Raw data is cleaned, features are engineered, and categorical variables are encoded for the CatBoost regressor.
-4. **Train:** The model is trained on the latest available data from the database.
-5. **Hugging Face Model Store:** * The trained model (`model.cbm`) and evaluation metrics (`metrics.json`) are pushed to the HF Hub.
-* **Versioning:** Files are organized in versioned folders (e.g., `v1/`, `v2/`) to allow easy rollback and comparison.
-
-
-6. **Inference:** The production environment pulls the specific versioned model from Hugging Face for real-time or batch predictions.
+**Altın kural:** hiçbir veri sayısı elle yazılmaz. Her rakam JSON'dan okunur ya da koddan
+türetilir. Bilinçli istisna [docs/decisions.md](docs/decisions.md)'de işaretli (elle yazılmış örnek notları). Atılan kolon tablosu
+(`feature_drop`) 2026-09-23'e kadar elle yazılıydı ve veriyle uyuşmuyordu; artık her ham kolon koddan tek bir
+sınıfa atanıyor ve sayılar hesaplanıyor.
 
 ---
 
-## Project Structure
+## Zincir
 
-```text
-├── scraper/                 # Web scraping scripts
-├── data_pipeline/           # Database connection and preprocessing logic
-├── training/                # Model training and evaluation
-├── api/                     # Prediction scripts (API)
-├── .env.example             # Template for DB_URL and HF_TOKEN
-├── .gitignore               # Optimized for Python/ML (ignores data and .env)
-├── test.car_listings.sql    # Database schema (Tables, Indexes, Constraints)
-└── requirements.txt         # Project dependencies
+```
+scraper/ ──► data/raw/{audi,bmw}/<tarih>/details.jsonl
+   └─ db/build_duckdb.py (← lib/process_for_db.py) ──► data/cars.duckdb (yarı ham)
+        │
+        ├─ analysis/NN_*.py        her soru kendi betiğinde ──► metrics/NN_*.json
+        │     └─ 07_model_comparison ──► data/analysis/oof.parquet (OOF) ──► 07_final_model · 08_* · shap/*
+        ├─ analysis/shap/NN_*.py   SHAP raporunun soruları ──► metrics/shap/*.json + reports/figures/*-sh-*.png
+        │
+        └─ builders/ (analiz yapmaz, yalnız metrics/*.json okur)
+              ├─ build_site_data.py ──► data/site_data.json
+              ├─ build_technical_report.py ──► reports/technical ×{tr,en} · reports/figures
+              ├─ build_business_report.py ──► reports/business ×{tr,en} · reports/figures
+              └─ build_shap_report.py ──► reports/shap ×{tr,en}
+
+   db/publish_data_to_s3.py ──► S3  (yayın kolu; rapor zincirinin parçası değil; gold adımı yazılana kadar
+                                     yeniden kurulan DB yayımlanmaz — docs/database.md)
 ```
 
----
+## Nasıl koşulur
 
-## Model Registry & Versioning
-
-Instead of using DVC, this project leverages the **Hugging Face Hub** as a central artifact repository. Each training run generates a set of artifacts:
-
-| Artifact | Description |
-| --- | --- |
-| `model.cbm` | The serialized CatBoost model. |
-| `train_data.csv` | A snapshot of the training split used. |
-| `test_data.csv` | A snapshot of the test split for reproducibility. |
-| `metrics.json` | Detailed performance scores: **R², MAE, RMSE, MAPE, and Coverage.** |
-| `shap_summary.png` | Feature importance visualization. |
-
-> **Note:** Models are accessed via the `huggingface_hub` library, allowing the inference service to pull the latest "stable" tag or a specific version folder.
-
----
-
-## Model Architecture: CatBoost & MultiQuantile Loss
-
-The core of this pipeline is powered by **CatBoost**, a high-performance gradient boosting library specifically optimized for handling categorical features—making it the perfect fit for car data (Brand, Model, Fuel Type, etc.).
-
-### 1. Why CatBoost?
-
-* **Native Categorical Handling:** CatBoost processes categorical variables without requiring manual One-Hot Encoding or Label Encoding, preserving the relational information between car features.
-* **Robustness:** It is less sensitive to hyperparameter tuning and naturally resists overfitting compared to other GBM frameworks.
-
-### 2. Understanding MultiQuantile Loss
-
-Unlike standard regression models that predict a single point estimate (the mean), this model uses **MultiQuantile Loss**. This allows the pipeline to output multiple values simultaneously:
-
-* ** (Lower Bound):** The "bargain" price. Only 5% of similar cars are priced lower than this.
-* ** (Median):** The most likely market price.
-* ** (Upper Bound):** The "premium" price. 95% of similar cars are priced below this.
-
-The model minimizes the **Pinball Loss** function for each quantile :
-
-### 3. Business Value of Quantiles
-
-In the car market, a single price is often misleading due to variations in vehicle condition or urgency of sale. By providing a **valuation interval** (e.g., $1.2M - $1.4M), we offer:
-
-* **Confidence:** A measure of how certain the model is about the price.
-* **Risk Assessment:** Identifying "outlier" listings that are priced far outside the predicted 90% interval ( to ).
-
----
-## Execution Sequence
-
-To run the pipeline from end-to-end, execute the scripts in the following order. Each script handles a specific stage of the data lifecycle:
-
-### 1. Data Collection
+Tüm script'ler yollarını `__file__`'a göre çözer → **nereden koşulursa koşulsun çalışır**,
+`cd` şartı yok.
 
 ```bash
-python scraper/main.py
+# 0) ortam (repo kökünde)
+python -m venv .venv && .venv/Scripts/activate      # Windows: .\.venv\Scripts\Activate.ps1
+pip install -r requirements-pipeline.txt
+
+# 1) veri toplama (opsiyonel — yeni snapshot gerekiyorsa)
+python scraper/main.py                        # -> data/raw/<marka>/<tarih>/  (kazıma kodu yalnız yerelde)
+python db/build_duckdb.py                     # -> data/cars.duckdb (+ yanına duplicate_ad_ids.csv)
+
+# 2) hepsi: analiz betikleri bağımlılık sırasıyla + derleyiciler   (~16 dk)
+python analysis/run_all.py
+python analysis/run_all.py --from 07          # 07'den itibaren (+ derleyiciler)
+python analysis/run_all.py --only 08          # yalnız 08_* betikleri (derleyicisiz)
+
+# tek bir soru: yalnız kendi metrics/<betik>.json'unu yazar
+python analysis/08_conformal_coverage.py
+
+# 3) yalnız raporlar (metrikler hazırsa, ~1 dk)
+python builders/build_site_data.py
+python builders/build_technical_report.py
+python builders/build_business_report.py
+python builders/build_shap_report.py
 ```
 
-* **Action:** Triggers the web scraper to fetch the latest car advertisements.
-* **Result:** Raw data is collected and prepared for staging.
+> **Windows notu:** script'ler Türkçe karakter basar. Çıktı dosyaya yönlendirilirse
+> `PYTHONIOENCODING=utf-8 PYTHONUTF8=1` şarttır, yoksa cp1252 `UnicodeEncodeError` verir.
 
-### 2. Database Persistence & Deduplication
+**Veri değişmediyse raporları yeniden üretmek bir dakika sürer** — ağır hesap analiz betiklerinde kalır
+(en ağırları `07_lofo` ~6 dk, `07_model_comparison` ~4 dk, `06_hedonic` bootstrap ~1,5 dk, `shap/02` ve
+`shap/04` ~1 dk).
 
-```bash
-python pipeline/process_for_db.py
-```
+## Belgeler
 
-* **Action:** Checks the scraped data against the existing database records.
-* **Result:** Only unique `ad_id`s are appended to the database. No data is overwritten.
+- [Analiz betikleri nasıl okunur](docs/analysis-scripts.md) — üç katman, hücre hücre koşum, ortak kod, tutarlılık kapısı
+- [Kararlar ve sınırlar](docs/decisions.md) — iş / teknik ayrımı, metin analizi neden arşivde, gizlilik, dürüst çerçeve
+- [Veritabanı notları](docs/database.md) — yarı ham kurallar, güvenli kurulum, **gold adımı (API): DB'yi yeniden kurmadan önce okuyun**
+- [Yeniden üretilebilirlik](docs/reproducibility.md) — determinizm, referans karşılaştırması, bilinen kalıntı
+- Raporlar: [teknik](reports/technical.tr.md) · [karar notu](reports/business.tr.md) · [SHAP](reports/shap.tr.md) (İngilizceleri `*.en.md`)
 
-### 3. Model Training & Evaluation
-
-```bash
-python pipeline/model_train.py
-```
-
-* **Action:** Preprocesses the data, trains the CatBoost model, and generates performance artifacts.
-* **Result:** Creates `model.cbm`, `metrics.json`, and `shap_summary.png` locally.
-
-### 4. Cloud Deployment (Hugging Face)
-
-```bash
-python pipeline/upload_to_server.py
-```
-
-* **Action:** Packages the training artifacts into a versioned folder.
-* **Result:** Uploads the entire versioned bundle to the **Hugging Face Model Store**.
 ---
 
-## ⚙️ Setup & Configuration
+## İçerik
 
-1. **Clone the repo:**
-```bash
-git clone https://github.com/sadik-coban/car-price-prediction-pipeline.git
-```
+| yol | ne |
+|---|---|
+| `scraper/` | ilan toplama → `data/raw/`; ne toplandığı (markalar, fiyat aralıkları, arama sorgusu) `collection_config.json`'da, `collection.py` okur — analiz (`01_dedup_leakage`) de aynı dosyayı okur. Kazıma kodu (`main.py`, `getlistofcars.py`, `getdetails.py`) depoda yok, yalnız yerelde; depoda bu iki ayar dosyası izlenir |
+| `db/` | `build_duckdb` (→ yarı ham `cars.duckdb`; güvenli kurulum) + `lib/process_for_db` (ham JSONL → satır ayrıştırıcıları) + `lib/damage_mappings.json` (hasar şemasının 13 parça / 5 durum etiketi; `analysis/01_unspecified_panels` da okur) · `publish_data_to_s3` (S3 yayını; `--dry-run` yalnız kontrol eder, S3'e bağlanmaz) + `lib/s3_publish` (S3 bağlantısı) |
+| `tests/` | pytest testleri — `tests/db/`: raw → DB kolu (gerçek veride görülen her biçim, yarı ham kurallar, uçtan uca kurulum, güvenli kurulum) ve S3 yayın kolu (doğrulama, sürüm, yükleme sırası, manifest). Kayıtlar sahte ve gerçek biçimli; her şey geçici klasörde; ağ, `.env` ve `data/` yok. Kurulum `pip install -r requirements-dev.txt`, koşum `python -m pytest tests -v`, kapsam `python -m pytest tests --cov=db --cov-branch --cov-report=term-missing` |
+| `analysis/` | **bütün hesap**: soru başına bir betik, numara = teknik raporun bölümü (`01_dedup_leakage` · `01_engine_rule` · `01_unspecified_panels` · `02_missingness` · `03_association` · `03_segment_quality` · `03_brand_ablation` · `04_target` · `05_segmentation` · `06_hedonic` · `07_model_comparison` · `07_final_model` (servis dosyaları) · `07_lofo` · `07_text_flag` · `08_conformal_coverage` · `08_residuals` · `08_large_errors` · `09_drift` · `09_backtest` · `10_free_text`) + `shap/` (SHAP raporunun bölümleri: `02_oof_shap` · `03_what_sets_price` · `04_variants` · `06_one_listing`) + `lib/` (ortak kod: `common.py` · `cv.py` · `segment_rule.py` · `text_flags.py` · `labels.py`) + `run_all.py` + `frozen/text_ablation.json` (arşivlenen metin analizinden dondurulmuş ablasyon) |
+| `builders/` | **analiz yapmayan** derleyiciler, yalnız `metrics/*.json` okur: `build_site_data.py` (→ `site_data.json`, aynı şema) · `build_technical_report.py` · `build_business_report.py` · `build_shap_report.py`; ortak kod `report_lib/` altında: `metrics_view.py` (tek okuyucu + tutarlılık kapısı) · `report_common.py` (ortak sayılar, figürler, biçimleyiciler) · `column_labels.py` |
+| `metrics/` | betik başına bir JSON (`metrics/<betik>.json`, `metrics/shap/<betik>.json`); bölümleri `meta` · `domain` · `methodology` (site ağacı) · `error_drivers` · `oof_shap` · `shap*` · `report` (yalnız raporun kullandığı sayılar), her birinde `_meta` |
+| `reports/` | `business.{tr,en}.md` · `technical.{tr,en}.md` · `shap.{tr,en}.md` — hepsi üretilmiş dosya, elle düzenlenmez; hangi figürün hangi rapora girdiği `builders/report_lib/report_common.py`'deki `BUSINESS_FIGS` / `TECHNICAL_FIGS` listelerinde · `figures/` raporların figürleri (`{tr,en}-NN-*.png`, SHAP'inkiler `-sh-` — onları `analysis/shap/` çizer); md dosyaları `figures/...` ile gösterir |
+| `docs/` | uzun belgeler, tr + en (aşağıda "Belgeler") |
+| **`data/`** | **tüm ağır veri — `.gitignore`'lı**: `raw/` · `cars.duckdb` · `site_data.json` · `serving/` · `analysis/` (OOF ve OOF SHAP artefaktları) · `langextract/` |
+| `archive/` | **arşiv, git dışı** (dizini `archive/README.md`): `obsolete/` · `analysis-history/` — metin analizi 2026-09-19'da yayımlanan işten çıkarıldı ([docs/decisions.md](docs/decisions.md)); SHAP raporunun sürümlü arşivi: `shap-v1-deneme-2026-09-20/` (kütüphane varyantlarının tamamı, 46 figür) · `shap-v2-final-model-2026-09-20/` (budanmış, final modelden çizilmiş, 22 figür) · `shap-v3-oof-vakalar-2026-09-21/` (OOF, altı vaka dökümü + üç waterfall, üreteç betiğiyle) · `robustness-2026-09-21/` (model sağlamlığı raporu: betik + 2 md + 10 figür + ölçüm JSON'u) · `backups/` · `experiments/` · `published-report/` |
 
+### `.gitignore` notu
 
-2. **Environment Variables:**
-Create a `.env` file from the example:
-```bash
-cp .env.example .env
-# Add your Database URL, Hugging Face Write Token and Base URL of scraped website
-```
+Desen **`/data/`** — baştaki eğik çizgi kasıtlı. Çıplak `data/` yazılsaydı gitignore onu
+**her derinlikte** eşleştirirdi ve `metrics` gibi klasörler de sessizce takipsiz
+kalırdı. (Bu yüzden o klasörün adı `data` değil `metrics`.)
 
----
-### Environment Configuration
+## Depo kökünün dışında ne kaldı, neden
 
-Create a `.env` file in the root directory and define the following variables:
+**Depoya yalnız canlı zincir giriyor.** Aşağıdakiler **diskte duruyor ama git'te izlenmiyor**
+(`.gitignore`); hiçbiri silinmedi:
 
-```env
-# Database Connection
-DATABASE_URL=postgresql://user:password@localhost:5432/db_name
-
-# Hugging Face API Access
-HF_TOKEN=your_hugging_face_write_token_here
-
-# Scraper Settings
-BASE_URL=https://www.example.com
-```
----
-### Why this approach?
-
-* **No Overwrites:** The Database logic ensures we don't lose old ad data if prices change; we keep the first instance of the ad for a cleaner "original price" baseline.
-* **Decoupled Data:** GitHub stays light (source code only). Hugging Face handles the heavy lifting of model storage.
-* **Transparency:** Metrics are versioned alongside the model, so you always know *why* a model is performing the way it is.
----
+| kök klasörü | ne | git |
+|---|---|---|
+| `archive/` | arşivin tek çatısı (2026-09-24'e kadar kökte beş ayrı klasör): `obsolete/` (eski `obselete/` — taşındı, silinmedi, gerekçeler kendi `README.md`'sinde; 2026-09-18'e kadarki yöntem ve karar kaydı `archive/obsolete/docs/`'ta, kökteki bugünkü `docs/` ile karıştırılmasın) · `analysis-history/` (eski `_arsiv/`) · `backups/` (eski `backup/`) · `experiments/` (deneyler, büyük hatalar · domain analizleri — kalıcı bulgu çıkarsa üreteci depo köküne taşınır) · `published-report/` (eski `car-price-export/`: yayınlanmış raporun dondurulmuş kopyası — sayı denetiminin referansı). Dizin: `archive/README.md` | izlenmez |
+| `.claude/memory/` | proje kararlarının yazılı kaydı | izlenmez |

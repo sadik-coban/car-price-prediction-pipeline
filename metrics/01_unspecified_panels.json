@@ -1,0 +1,56 @@
+{
+ "_meta": {
+  "script": "01_unspecified_panels.py",
+  "generated_at": "2026-09-24T04:19:37",
+  "data_until": "2026-06-27",
+  "db": {
+   "path": "data/cars.duckdb",
+   "sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+   "rows": 45277
+  },
+  "run_id": null
+ },
+ "error_drivers": {
+  "belirtilmemis": {
+   "yapi": {
+    "panel": 13,
+    "bayrak": 39,
+    "cevap_sayisi": 5,
+    "grup_panel": {
+     "bumper": 2,
+     "door": 4,
+     "fender": 4
+    },
+    "tek_panel": 3
+   },
+   "eslesen_ilan": 29988,
+   "ilan": 29988,
+   "cift_kayit_atlanan": 0,
+   "panel_sayisi": 389844,
+   "belirtilmemis_panel": 59651,
+   "belirtilmemis_pct": 15.3,
+   "hepsi_belirtilmemis": 1235,
+   "en_az_bir": 6236,
+   "hucre_min_n": 5,
+   "kanit": {
+    "orijinal": {
+     "ilan": 9079,
+     "medyan_oran": 1.0341
+    },
+    "belirtilmemis": {
+     "ilan": 1144,
+     "medyan_oran": 1.0111
+    },
+    "hasarli": {
+     "ilan": 17571,
+     "medyan_oran": 0.9789
+    },
+    "hafif_hasarli": {
+     "ilan": 4968,
+     "medyan_oran": 1.0108,
+     "tanim": "1-2 boyali/lokal panel, degisen yok"
+    }
+   }
+  }
+ }
+}

@@ -1,0 +1,60 @@
+{
+ "_meta": {
+  "script": "10_free_text.py",
+  "generated_at": "2026-09-24T00:09:20",
+  "data_until": "2026-06-27",
+  "db": {
+   "path": "data/cars.duckdb",
+   "sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+   "rows": 45277
+  },
+  "run_id": null
+ },
+ "error_drivers": {
+  "metin_kaynak": {
+   "llm_metin": 13904,
+   "llm_modeldeki_ilan": 13867,
+   "ilan": 29988,
+   "llm_kapsam_pct": 46.2,
+   "ablasyon_agac": 300,
+   "ablasyon_kategorik": [
+    "brand",
+    "kb_body_type",
+    "kb_drivetrain",
+    "segment",
+    "kb_transmission",
+    "kb_fuel"
+   ],
+   "ablasyon_sayisal": [
+    "vehicle_age",
+    "gb_mileage",
+    "power_hp_val",
+    "engine_cc_val",
+    "count_painted",
+    "count_changed",
+    "count_local_painted",
+    "is_heavy_damaged"
+   ],
+   "ablasyon_model_seri": false
+  }
+ },
+ "report": {
+  "text_ablation": {
+   "ablation": {
+    "r2_structured": 0.9645,
+    "r2_structured_plus_text": 0.966,
+    "delta_r2": 0.0015
+   },
+   "llm": {
+    "kutuphane": "LangExtract",
+    "model": "gemini-3.1-flash-lite",
+    "siniflar": [
+     "hasar",
+     "bakim",
+     "modifiye"
+    ]
+   },
+   "kaynak": "_arsiv/text_analysis (2026-09-19'da arsivlenen metin analizi kosumu): ablasyon metrics/text_insights.json->delta_r2, model adi langextract/extgemini.py MODEL_NAME. Arsiv git disi oldugu icin degerler 2026-09-22'de bu dosyaya donduruldu; teknik rapor buradan okur."
+  }
+ }
+}

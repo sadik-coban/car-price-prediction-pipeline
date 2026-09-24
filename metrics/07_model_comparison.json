@@ -1,0 +1,194 @@
+{
+ "_meta": {
+  "script": "07_model_comparison.py",
+  "generated_at": "2026-09-24T00:01:41",
+  "data_until": "2026-06-27",
+  "db": {
+   "path": "data/cars.duckdb",
+   "sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+   "rows": 45277
+  },
+  "run_id": "5ca6dedde5b2"
+ },
+ "error_drivers": {
+  "taban_esit_kosul": {
+   "ilan": 29236,
+   "pct": 97.49,
+   "taban_mae": 178897.0,
+   "model_mae": 105984.0,
+   "fark_tl": 72913.0,
+   "iyilesme_pct": 40.8,
+   "not": "Emsali olan ilanlar = taban merdiveninin model+yıl basamağı (fold içi)."
+  }
+ },
+ "meta": {
+  "repro": {
+   "seed": 42,
+   "catboost_device": "CPU",
+   "lgb_deterministic": true,
+   "row_order": "ORDER BY ad_id",
+   "n_jobs": 16,
+   "cv_agac": [
+    274,
+    258,
+    212,
+    212,
+    307
+   ]
+  }
+ },
+ "domain": {
+  "model_compare": {
+   "lightgbm": {
+    "MAE": 109776.0,
+    "MedAE": 75320.0,
+    "RMSE": 176225.0,
+    "MAPE": 6.49,
+    "R2": 0.9745
+   },
+   "catboost": {
+    "MAE": 110085.0,
+    "MedAE": 74927.0,
+    "RMSE": 176130.0,
+    "MAPE": 6.44,
+    "R2": 0.9745
+   },
+   "catboost_svd": {
+    "MAE": 110085.0,
+    "MedAE": 74927.0,
+    "RMSE": 176130.0,
+    "MAPE": 6.44,
+    "R2": 0.9745
+   },
+   "catboost_native": {
+    "MAE": 112925.0,
+    "MedAE": 77660.0,
+    "RMSE": 178312.0,
+    "MAPE": 6.58,
+    "R2": 0.9739
+   },
+   "not": "CatBoost iki şekilde: TF-IDF-SVD beslemeli (LightGBM ile aynı girdi, adil karşılaştırma) ve kendi native text motoru. Ana karşılaştırma TF-IDF-SVD üzerinden."
+  },
+  "dealer_coverage": {
+   "singleton_pct": 2.03,
+   "thin_pct": 7.32,
+   "comped_pct": 92.68,
+   "groups": 2194,
+   "cv_fallback_pct": 2.51,
+   "not": "(model, gb_year) grup boyutları, ilanın kendisi dahil. comped = grubunda en az 5 ilan olanların oranı (yani en az 4 emsal); thin = 5'ten az; singleton = grupta tek ilan (emsalsiz). Taban bu ilanlarda tanımsız değil: fold içinde (model) medyanına, o da yoksa genel medyana iner."
+  },
+  "model_yil_medyani": {
+   "taban": {
+    "MAE": 191224.0,
+    "MedAE": 130000.0,
+    "RMSE": 305050.0,
+    "MAPE": 11.2,
+    "R2": 0.9235
+   },
+   "model": {
+    "MAE": 109776.0,
+    "MedAE": 75320.0,
+    "RMSE": 176225.0,
+    "MAPE": 6.49,
+    "R2": 0.9745
+   },
+   "kapsama": [
+    [
+     "model+yıl",
+     29236,
+     97.49
+    ],
+    [
+     "model",
+     596,
+     1.99
+    ],
+    [
+     "global",
+     156,
+     0.52
+    ]
+   ],
+   "metrik_kirilim": [
+    [
+     "model+yıl",
+     29236,
+     97.49,
+     10.69,
+     178897.0,
+     0.945
+    ],
+    [
+     "model",
+     596,
+     1.99,
+     26.7,
+     559323.0,
+     0.6082
+    ],
+    [
+     "global",
+     156,
+     0.52,
+     47.38,
+     1095135.0,
+     -0.2359
+    ]
+   ],
+   "fallback_pct": 2.51,
+   "merdiven": [
+    "(model, yıl) medyanı",
+    "(model) medyanı — tüm yıllar",
+    "global medyan"
+   ],
+   "not": "Galerinin yaptığı iş: aynı model + aynı yıl, medyana bak. Fallback'lı OOF median tabanı — medyanlar HER fold'da yalnız train'de (sızıntısız, modelle aynı 5-fold). Test'te o (model, yıl) hücresi train'de yoksa merdiven iner: (model) tüm yıllar → global. taban = tüm satırların OOF metrikleri; metrik_kirilim = [basamak, n, %, MAPE, MAE, R2] (fallback basamaklarında hata belirgin artar — emsalsizde taban zaten zayıf). Model metrikleri kıyas için; aynı protokol → fark gerçek kazanç."
+  },
+  "final_results": {
+   "model_karsilastirma": {
+    "naive": {
+     "MAE": 203621.0,
+     "MedAE": 142500.0,
+     "RMSE": 308976.0,
+     "MAPE": 11.65,
+     "R2": 0.9216
+    },
+    "dealer": {
+     "MAE": 191224.0,
+     "MedAE": 130000.0,
+     "RMSE": 305050.0,
+     "MAPE": 11.2,
+     "R2": 0.9235
+    },
+    "lightgbm_tfidf_svd": {
+     "MAE": 109776.0,
+     "MedAE": 75320.0,
+     "RMSE": 176225.0,
+     "MAPE": 6.49,
+     "R2": 0.9745
+    },
+    "catboost_tfidf_svd": {
+     "MAE": 110085.0,
+     "MedAE": 74927.0,
+     "RMSE": 176130.0,
+     "MAPE": 6.44,
+     "R2": 0.9745
+    },
+    "catboost_native": {
+     "MAE": 112925.0,
+     "MedAE": 77660.0,
+     "RMSE": 178312.0,
+     "MAPE": 6.58,
+     "R2": 0.9739
+    },
+    "kazanan": "catboost",
+    "not": "İKİ medyan tabanı + ÜÇ model varyantı, hepsi aynı 5-fold OOF ile. Tabanlar: naive (seri+yıl medyanı = kaba arama), dealer (model+yıl medyanı — basamak-başına fallback için bkz. domain.model_yil_medyani). Modeller: LightGBM (TF-IDF+SVD), CatBoost (TF-IDF+SVD, LightGBM ile aynı girdi=adil), CatBoost (kendi native text motoru). kazanan yalnız MODEL varyantları arasında seçilir. Metrikler sızıntısız OOF; final modeller tüm veriyle eğitildi."
+   },
+   "egitim": {
+    "n_arac": 29988,
+    "n_feature": 25,
+    "hedef": "log1p(price)"
+   },
+   "not": "Metrikler 5-fold OOF (sızıntısız). Final modeller tüm veriyle eğitildi (production)."
+  }
+ }
+}

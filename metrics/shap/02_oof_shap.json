@@ -1,0 +1,297 @@
+{
+ "_meta": {
+  "script": "shap/02_oof_shap.py",
+  "generated_at": "2026-09-24T00:10:13",
+  "data_until": "2026-06-27",
+  "db": {
+   "path": "data/cars.duckdb",
+   "sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+   "rows": 45277
+  },
+  "run_id": "5ca6dedde5b2"
+ },
+ "oof_shap": {
+  "kapi": {
+   "max_fark_tl": 0.0,
+   "ortalama_fark_tl": 0.0,
+   "mape_yeniden": 6.4898,
+   "mape_yayimlanan": 6.49,
+   "is_parcacigi": 16,
+   "esik_max_tl": 1.0,
+   "esik_mape": 0.01
+  },
+  "n": 29988,
+  "gruplar": [
+   "brand",
+   "kb_body_type",
+   "kb_drivetrain",
+   "segment",
+   "kb_transmission",
+   "kb_fuel",
+   "roof_state",
+   "hood_state",
+   "trunk_state",
+   "vehicle_age",
+   "gb_mileage",
+   "power_hp_val",
+   "engine_cc_val",
+   "door_changed",
+   "door_painted",
+   "door_local",
+   "fender_changed",
+   "fender_painted",
+   "fender_local",
+   "bumper_changed",
+   "bumper_painted",
+   "bumper_local",
+   "is_heavy_damaged",
+   "MODEL_SERIES (text)"
+  ],
+  "kuresel": [
+   [
+    "vehicle_age",
+    0.287,
+    42.0
+   ],
+   [
+    "power_hp_val",
+    0.1324,
+    19.4
+   ],
+   [
+    "gb_mileage",
+    0.0842,
+    12.3
+   ],
+   [
+    "MODEL_SERIES (text)",
+    0.0666,
+    9.8
+   ],
+   [
+    "segment",
+    0.0282,
+    4.1
+   ],
+   [
+    "hood_state",
+    0.0169,
+    2.5
+   ],
+   [
+    "is_heavy_damaged",
+    0.0103,
+    1.5
+   ],
+   [
+    "door_painted",
+    0.0088,
+    1.3
+   ],
+   [
+    "fender_changed",
+    0.0084,
+    1.2
+   ],
+   [
+    "fender_painted",
+    0.0082,
+    1.2
+   ],
+   [
+    "kb_body_type",
+    0.007,
+    1.0
+   ],
+   [
+    "engine_cc_val",
+    0.0052,
+    0.8
+   ],
+   [
+    "door_changed",
+    0.0048,
+    0.7
+   ],
+   [
+    "kb_transmission",
+    0.0043,
+    0.6
+   ],
+   [
+    "door_local",
+    0.0025,
+    0.4
+   ],
+   [
+    "fender_local",
+    0.0024,
+    0.4
+   ],
+   [
+    "trunk_state",
+    0.0021,
+    0.3
+   ],
+   [
+    "roof_state",
+    0.0011,
+    0.2
+   ],
+   [
+    "kb_fuel",
+    0.0009,
+    0.1
+   ],
+   [
+    "bumper_painted",
+    0.0007,
+    0.1
+   ],
+   [
+    "bumper_changed",
+    0.0005,
+    0.1
+   ],
+   [
+    "bumper_local",
+    0.0003,
+    0.0
+   ],
+   [
+    "kb_drivetrain",
+    0.0001,
+    0.0
+   ],
+   [
+    "brand",
+    0.0001,
+    0.0
+   ]
+  ],
+  "kuresel_ayri": [
+   [
+    "vehicle_age",
+    0.287,
+    36.7
+   ],
+   [
+    "MODEL_SERIES (text)",
+    0.1659,
+    21.2
+   ],
+   [
+    "power_hp_val",
+    0.1324,
+    16.9
+   ],
+   [
+    "gb_mileage",
+    0.0842,
+    10.8
+   ],
+   [
+    "segment",
+    0.0282,
+    3.6
+   ],
+   [
+    "hood_state",
+    0.0169,
+    2.2
+   ],
+   [
+    "is_heavy_damaged",
+    0.0103,
+    1.3
+   ],
+   [
+    "door_painted",
+    0.0088,
+    1.1
+   ],
+   [
+    "fender_changed",
+    0.0084,
+    1.1
+   ],
+   [
+    "fender_painted",
+    0.0082,
+    1.1
+   ],
+   [
+    "kb_body_type",
+    0.007,
+    0.9
+   ],
+   [
+    "engine_cc_val",
+    0.0052,
+    0.7
+   ],
+   [
+    "door_changed",
+    0.0048,
+    0.6
+   ],
+   [
+    "kb_transmission",
+    0.0043,
+    0.5
+   ],
+   [
+    "door_local",
+    0.0025,
+    0.3
+   ],
+   [
+    "fender_local",
+    0.0024,
+    0.3
+   ],
+   [
+    "trunk_state",
+    0.0021,
+    0.3
+   ],
+   [
+    "roof_state",
+    0.0011,
+    0.1
+   ],
+   [
+    "kb_fuel",
+    0.0009,
+    0.1
+   ],
+   [
+    "bumper_painted",
+    0.0007,
+    0.1
+   ],
+   [
+    "bumper_changed",
+    0.0005,
+    0.1
+   ],
+   [
+    "bumper_local",
+    0.0003,
+    0.0
+   ],
+   [
+    "kb_drivetrain",
+    0.0001,
+    0.0
+   ],
+   [
+    "brand",
+    0.0001,
+    0.0
+   ]
+  ],
+  "gruplama_kurali": "kuresel = mean|sum phi| (grup ici isaretli toplam, sonra mutlak ortalama); kuresel_ayri = sum mean|phi| (her uye ayri, iptal yok). Tek uyeli gruplarda ayni.",
+  "not": "Her ilan, onu egitimde hic gormemis fold modeliyle aciklandi (5-fold, ureticinin kurulumunun aynisi). SHAP degerleri log1p(fiyat) uzayinda ve text_only_key ile 24 kaleme gruplandi."
+ }
+}

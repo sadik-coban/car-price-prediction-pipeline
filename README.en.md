@@ -1,0 +1,110 @@
+# Used car price analysis — from data to report
+
+> 🇹🇷 Türkçe (varsayılan): [README.md](README.md)
+
+This repository carries the **entire** live chain: from collecting listings to the published report.
+Before it existed the reports had no producer — their text had been hand-transcribed from Next.js
+pages in a different repo, and their charts were screenshots of those pages.
+
+**Golden rule:** no data figure is ever hand-written. Every number is read from JSON or derived in
+code. The deliberate exception is flagged in [docs/decisions.md](docs/decisions.md) (hand-written example notes). The dropped-column table
+(`feature_drop`) was hand-written until 2026-09-23 and did not match the data; every raw column is now
+assigned to exactly one class in code and the counts are computed.
+
+---
+
+## The chain
+
+```
+scraper/ ──► data/raw/{audi,bmw}/<date>/details.jsonl
+   └─ db/build_duckdb.py (← lib/process_for_db.py) ──► data/cars.duckdb (semi-raw)
+        │
+        ├─ analysis/NN_*.py        one script per question ──► metrics/NN_*.json
+        │     └─ 07_model_comparison ──► data/analysis/oof.parquet (OOF) ──► 07_final_model · 08_* · shap/*
+        ├─ analysis/shap/NN_*.py   the SHAP report's questions ──► metrics/shap/*.json + reports/figures/*-sh-*.png
+        │
+        └─ builders/ (no analysis; read metrics/*.json only)
+              ├─ build_site_data.py ──► data/site_data.json
+              ├─ build_technical_report.py ──► reports/technical ×{tr,en} · reports/figures
+              ├─ build_business_report.py ──► reports/business ×{tr,en} · reports/figures
+              └─ build_shap_report.py ──► reports/shap ×{tr,en}
+
+   db/publish_data_to_s3.py ──► S3  (publishing arm; not part of the report chain; a rebuilt DB is not
+                                     published until the gold step exists — docs/database.md)
+```
+
+## How to run
+
+Every script resolves its paths against `__file__` → **it runs from anywhere**, no `cd` required.
+
+```bash
+# 0) environment (at the repo root)
+python -m venv .venv && .venv/Scripts/activate      # Windows: .\.venv\Scripts\Activate.ps1
+pip install -r requirements-pipeline.txt
+
+# 1) data collection (optional — only if a new snapshot is needed)
+python scraper/main.py                        # -> data/raw/<brand>/<date>/  (scraping code is local only)
+python db/build_duckdb.py                     # -> data/cars.duckdb (+ duplicate_ad_ids.csv next to it)
+
+# 2) everything: the analysis scripts in dependency order + the builders   (~16 min)
+python analysis/run_all.py
+python analysis/run_all.py --from 07          # from 07 on (+ builders)
+python analysis/run_all.py --only 08          # only the 08_* scripts (no builders)
+
+# a single question: writes only its own metrics/<script>.json
+python analysis/08_conformal_coverage.py
+
+# 3) reports only (metrics already there, ~1 min)
+python builders/build_site_data.py
+python builders/build_technical_report.py
+python builders/build_business_report.py
+python builders/build_shap_report.py
+```
+
+> **Windows note:** the scripts print Turkish characters. If output is redirected to a file,
+> `PYTHONIOENCODING=utf-8 PYTHONUTF8=1` is required, otherwise cp1252 raises `UnicodeEncodeError`.
+
+**If the data hasn't changed, regenerating the reports takes about a minute** — the heavy compute stays in
+the analysis scripts (heaviest: `07_lofo` ~6 min, `07_model_comparison` ~4 min, the `06_hedonic` bootstrap
+~1.5 min, `shap/02` and `shap/04` ~1 min).
+
+## Documents
+
+- [How to read the analysis scripts](docs/analysis-scripts.en.md) — three layers, cell-by-cell runs, shared code, consistency gate
+- [Decisions and limits](docs/decisions.en.md) — business / technical split, why the text analysis is archived, privacy, honest framing
+- [Database notes](docs/database.en.md) — semi-raw rules, safe build, **the gold step (API): read before rebuilding the DB**
+- [Reproducibility](docs/reproducibility.en.md) — determinism, the reference comparison, the known residue
+- Reports: [technical](reports/technical.en.md) · [decision note](reports/business.en.md) · [SHAP](reports/shap.en.md) (Turkish: `*.tr.md`)
+
+---
+
+## Contents
+
+| path | what |
+|---|---|
+| `scraper/` | listing collection → `data/raw/`; what is collected (brands, price ranges, search query) lives in `collection_config.json`, read by `collection.py` — the analysis (`01_dedup_leakage`) reads the same file. The scraping code (`main.py`, `getlistofcars.py`, `getdetails.py`) is not in the repository, only local; the repository tracks these two config files |
+| `db/` | `build_duckdb` (→ semi-raw `cars.duckdb`; safe build) + `lib/process_for_db` (raw JSONL → row parsers) + `lib/damage_mappings.json` (the damage diagram's 13 panel / 5 status labels; `analysis/01_unspecified_panels` reads it too) · `publish_data_to_s3` (S3 publishing; `--dry-run` only checks, no S3 connection) + `lib/s3_publish` (the S3 connection) |
+| `tests/` | pytest tests — `tests/db/`: the raw → DB arm (every format seen in the real data, the semi-raw rules, an end-to-end build, the safe build) and the S3 publishing arm (validation, versioning, upload order, manifest). Records are fake but in the real formats; everything runs in temp folders; no network, no `.env`, no `data/`. Install `pip install -r requirements-dev.txt`, run `python -m pytest tests -v`, coverage `python -m pytest tests --cov=db --cov-branch --cov-report=term-missing` |
+| `analysis/` | **all computation**: one script per question, number = technical report section (`01_dedup_leakage` · `01_engine_rule` · `01_unspecified_panels` · `02_missingness` · `03_association` · `03_segment_quality` · `03_brand_ablation` · `04_target` · `05_segmentation` · `06_hedonic` · `07_model_comparison` · `07_final_model` (serving files) · `07_lofo` · `07_text_flag` · `08_conformal_coverage` · `08_residuals` · `08_large_errors` · `09_drift` · `09_backtest` · `10_free_text`) + `shap/` (the SHAP report's sections: `02_oof_shap` · `03_what_sets_price` · `04_variants` · `06_one_listing`) + `lib/` (shared code: `common.py` · `cv.py` · `segment_rule.py` · `text_flags.py` · `labels.py`) + `run_all.py` + `frozen/text_ablation.json` (ablation frozen from the archived text analysis) |
+| `builders/` | builders that **do no analysis** and read only `metrics/*.json`: `build_site_data.py` (→ `site_data.json`, same schema) · `build_technical_report.py` · `build_business_report.py` · `build_shap_report.py`; shared code under `report_lib/`: `metrics_view.py` (the single reader + consistency gate) · `report_common.py` (shared numbers, figures, formatters) · `column_labels.py` |
+| `metrics/` | one JSON per script (`metrics/<script>.json`, `metrics/shap/<script>.json`); sections `meta` · `domain` · `methodology` (the site tree) · `error_drivers` · `oof_shap` · `shap*` · `report` (numbers only the reports use), each with `_meta` |
+| `reports/` | `business.{tr,en}.md` · `technical.{tr,en}.md` · `shap.{tr,en}.md` — all generated, never hand-edited; which figure goes into which report is set by `BUSINESS_FIGS` / `TECHNICAL_FIGS` in `builders/report_lib/report_common.py` · `figures/` the report figures (`{tr,en}-NN-*.png`; the SHAP ones, `-sh-`, are drawn by `analysis/shap/`); the markdown files reference them as `figures/...` |
+| `docs/` | the long documents, tr + en ("Documents" below) |
+| **`data/`** | **all heavy data — `.gitignore`d**: `raw/` · `cars.duckdb` · `site_data.json` · `serving/` · `analysis/` (OOF and OOF SHAP artefacts) · `langextract/` |
+| `archive/` | **archive, outside git** (index in `archive/README.md`): `obsolete/` · `analysis-history/` — the text analysis was taken out of the published work on 2026-09-19 ([docs/decisions.en.md](docs/decisions.en.md)); the SHAP report's versioned archive: `shap-v1-deneme-2026-09-20/` (every library variant, 46 figures) · `shap-v2-final-model-2026-09-20/` (pruned, drawn from the final model, 22 figures) · `shap-v3-oof-vakalar-2026-09-21/` (OOF, six case breakdowns + three waterfalls, with the generator script) · `robustness-2026-09-21/` (model robustness report: script + 2 md + 10 figures + measurement JSON) · `backups/` · `experiments/` · `published-report/` |
+
+### `.gitignore` note
+
+The pattern is **`/data/`** — the leading slash is deliberate. A bare `data/` would match
+**at every depth**, and folders like `metrics` would silently go untracked too.
+(That is why that folder is called `metrics`, not `data`.)
+
+## What stayed outside the repository root, and why
+
+**Only the live chain is tracked.** The folders below **stay on disk but are not
+tracked by git** (`.gitignore`); none of them were deleted:
+
+| root folder | what | git |
+|---|---|---|
+| `archive/` | the single archive root (five separate root folders until 2026-09-24): `obsolete/` (formerly `obselete/` — moved, not deleted, reasons in its own `README.md`; the method and decision log up to 2026-09-18 is in `archive/obsolete/docs/`, not to be confused with today's root `docs/`) · `analysis-history/` (formerly `_arsiv/`) · `backups/` (formerly `backup/`) · `experiments/` (experiments, large errors · domain analyses — if a finding sticks, its producer moves into the repository root) · `published-report/` (formerly `car-price-export/`: frozen copy of the published report — the reference for number audits). Index: `archive/README.md` | untracked |
+| `.claude/memory/` | written record of project decisions | untracked |

@@ -1,0 +1,366 @@
+{
+ "_meta": {
+  "script": "shap/03_what_sets_price.py",
+  "generated_at": "2026-09-24T04:20:38",
+  "data_until": "2026-06-27",
+  "db": {
+   "path": "data/cars.duckdb",
+   "sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+   "rows": 45277
+  },
+  "run_id": "5ca6dedde5b2"
+ },
+ "shap": {
+  "n": 29988,
+  "lightgbm_tfidf_svd": [
+   [
+    "vehicle_age",
+    0.287,
+    43.9
+   ],
+   [
+    "ENGINE",
+    0.1347,
+    20.6
+   ],
+   [
+    "gb_mileage",
+    0.0842,
+    12.9
+   ],
+   [
+    "MODEL_SERIES (text)",
+    0.0666,
+    10.2
+   ],
+   [
+    "DAMAGE",
+    0.0412,
+    6.3
+   ],
+   [
+    "segment",
+    0.0282,
+    4.3
+   ],
+   [
+    "kb_body_type",
+    0.007,
+    1.1
+   ],
+   [
+    "kb_transmission",
+    0.0043,
+    0.7
+   ],
+   [
+    "kb_fuel",
+    0.0009,
+    0.1
+   ],
+   [
+    "kb_drivetrain",
+    0.0001,
+    0.0
+   ],
+   [
+    "brand",
+    0.0001,
+    0.0
+   ]
+  ],
+  "oof_ayri": [
+   [
+    "vehicle_age",
+    0.287,
+    36.7
+   ],
+   [
+    "MODEL_SERIES (text)",
+    0.1659,
+    21.2
+   ],
+   [
+    "ENGINE",
+    0.1376,
+    17.6
+   ],
+   [
+    "gb_mileage",
+    0.0842,
+    10.8
+   ],
+   [
+    "DAMAGE",
+    0.0672,
+    8.6
+   ],
+   [
+    "segment",
+    0.0282,
+    3.6
+   ],
+   [
+    "kb_body_type",
+    0.007,
+    0.9
+   ],
+   [
+    "kb_transmission",
+    0.0043,
+    0.5
+   ],
+   [
+    "kb_fuel",
+    0.0009,
+    0.1
+   ],
+   [
+    "kb_drivetrain",
+    0.0001,
+    0.0
+   ],
+   [
+    "brand",
+    0.0001,
+    0.0
+   ]
+  ],
+  "n_svd": 170,
+  "fold_sira": [
+   [
+    "vehicle_age",
+    "ENGINE",
+    "MODEL_SERIES (text)",
+    "gb_mileage",
+    "DAMAGE",
+    "segment",
+    "kb_body_type",
+    "kb_transmission",
+    "kb_fuel",
+    "kb_drivetrain",
+    "brand"
+   ],
+   [
+    "vehicle_age",
+    "ENGINE",
+    "gb_mileage",
+    "MODEL_SERIES (text)",
+    "DAMAGE",
+    "segment",
+    "kb_body_type",
+    "kb_transmission",
+    "kb_fuel",
+    "kb_drivetrain",
+    "brand"
+   ],
+   [
+    "vehicle_age",
+    "ENGINE",
+    "gb_mileage",
+    "MODEL_SERIES (text)",
+    "DAMAGE",
+    "segment",
+    "kb_body_type",
+    "kb_transmission",
+    "kb_fuel",
+    "brand",
+    "kb_drivetrain"
+   ],
+   [
+    "vehicle_age",
+    "ENGINE",
+    "gb_mileage",
+    "MODEL_SERIES (text)",
+    "DAMAGE",
+    "segment",
+    "kb_body_type",
+    "kb_transmission",
+    "kb_fuel",
+    "kb_drivetrain",
+    "brand"
+   ],
+   [
+    "vehicle_age",
+    "ENGINE",
+    "gb_mileage",
+    "MODEL_SERIES (text)",
+    "DAMAGE",
+    "segment",
+    "kb_body_type",
+    "kb_transmission",
+    "kb_fuel",
+    "kb_drivetrain",
+    "brand"
+   ]
+  ],
+  "tipik": {
+   "brand": [
+    0.0,
+    62.3
+   ],
+   "kb_body_type": [
+    0.37,
+    25.4
+   ],
+   "kb_drivetrain": [
+    0.01,
+    58.0
+   ],
+   "segment": [
+    2.43,
+    50.2
+   ],
+   "kb_transmission": [
+    0.21,
+    5.5
+   ],
+   "kb_fuel": [
+    0.05,
+    30.0
+   ],
+   "DAMAGE": [
+    3.85,
+    36.4
+   ],
+   "vehicle_age": [
+    23.48,
+    57.9
+   ],
+   "gb_mileage": [
+    7.75,
+    47.4
+   ],
+   "ENGINE": [
+    12.29,
+    45.2
+   ],
+   "MODEL_SERIES (text)": [
+    5.51,
+    54.5
+   ]
+  },
+  "direction": {
+   "vehicle_age": -0.9911873895358259,
+   "gb_mileage": -0.9613258258036923,
+   "power_hp_val": 0.8944759603791989
+  },
+  "dep_facts": {
+   "age_young": 0.6438298522085231,
+   "age_young_n": 1383,
+   "age_old": -0.6356432814827508,
+   "age_old_n": 2649,
+   "hp_low": -0.16131827598120305,
+   "hp_high": 0.35895856764006573,
+   "age_ratio": 3.5947452763778025,
+   "hp_ratio": 1.682493372787762,
+   "age_price_ratio": 5.684931506849315,
+   "age_gap_top": [
+    "gb_mileage",
+    "ENGINE",
+    "DAMAGE"
+   ],
+   "hp_bands": [
+    [
+     0,
+     150,
+     -0.16131827598120305
+    ],
+    [
+     150,
+     200,
+     0.07460500683612667
+    ],
+    [
+     200,
+     250,
+     0.14412260044862496
+    ],
+    [
+     250,
+     1000000000,
+     0.35895856764006573
+    ]
+   ],
+   "age_abs": [
+    [
+     0,
+     5,
+     0.5769974695778658
+    ],
+    [
+     5,
+     9,
+     0.33265629366075505
+    ],
+    [
+     9,
+     13,
+     0.08433234658413913
+    ],
+    [
+     13,
+     17,
+     0.2709328875451622
+    ],
+    [
+     17,
+     100,
+     0.6109556073956836
+    ]
+   ],
+   "km_centers": [
+    28000.0,
+    127000.0,
+    223000.0,
+    385000.0
+   ],
+   "km_rates": [
+    8.674806066933199,
+    11.392363156436947,
+    7.249831075710221
+   ],
+   "km_n_last": 1723,
+   "km_flat": true,
+   "km_son_min": true
+  },
+  "km_age": {
+   "young": -0.03035346303574969,
+   "old": -0.00576016277354033,
+   "n_young": 2232,
+   "n_old": 9000
+  },
+  "cohorts": {
+   "tr": {
+    "split": [
+     "Yaş (yıl) < 9.5",
+     "Yaş (yıl) >= 9.5"
+    ],
+    "name": "Yaş (yıl)",
+    "v0": 0.3957670116521294,
+    "v1": 0.2299870002594688
+   },
+   "en": {
+    "split": [
+     "Age (years) < 9.5",
+     "Age (years) >= 9.5"
+    ],
+    "name": "Age (years)",
+    "v0": 0.3957670116521294,
+    "v1": 0.2299870002594688
+   }
+  },
+  "figures": [
+   "tr-sh-01-importance.png",
+   "tr-sh-02-beeswarm.png",
+   "tr-sh-03-dependence.png",
+   "tr-sh-04-cohorts.png",
+   "tr-sh-05-km-age.png",
+   "en-sh-01-importance.png",
+   "en-sh-02-beeswarm.png",
+   "en-sh-03-dependence.png",
+   "en-sh-04-cohorts.png",
+   "en-sh-05-km-age.png"
+  ]
+ }
+}

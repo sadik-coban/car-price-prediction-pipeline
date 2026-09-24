@@ -1,0 +1,28 @@
+{
+  "_about": {
+    "en": "The site's damage diagram: 13 panel labels -> silver status column, 5 status labels -> enum. Read by db/lib/process_for_db.py and analysis/01_unspecified_panels.py. Labels are written exactly as arabam.com shows them.",
+    "tr": "Sitenin hasar şeması: 13 parça etiketi -> silver durum kolonu, 5 durum etiketi -> enum. db/lib/process_for_db.py ve analysis/01_unspecified_panels.py okur. Etiketler arabam.com'da göründüğü gibi yazılı."
+  },
+  "panels": {
+    "Tavan": "roof_status",
+    "Motor Kaputu": "engine_hood_status",
+    "Arka Kaput": "trunk_lid_status",
+    "Ön Tampon": "bumper_front_status",
+    "Arka Tampon": "bumper_rear_status",
+    "Sol Ön Kapı": "door_fl_status",
+    "Sağ Ön Kapı": "door_fr_status",
+    "Sol Arka Kapı": "door_rl_status",
+    "Sağ Arka Kapı": "door_rr_status",
+    "Sol Ön Çamurluk": "fender_fl_status",
+    "Sağ Ön Çamurluk": "fender_fr_status",
+    "Sol Arka Çamurluk": "fender_rl_status",
+    "Sağ Arka Çamurluk": "fender_rr_status"
+  },
+  "statuses": {
+    "Orjinal": "original",
+    "Belirtilmemiş": "unspecified",
+    "Boyalı": "painted",
+    "Lokal boyalı": "local_painted",
+    "Değişmiş": "changed"
+  }
+}

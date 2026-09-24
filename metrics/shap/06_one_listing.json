@@ -1,0 +1,69 @@
+{
+ "_meta": {
+  "script": "shap/06_one_listing.py",
+  "generated_at": "2026-09-24T04:20:41",
+  "data_until": "2026-06-27",
+  "db": {
+   "path": "data/cars.duckdb",
+   "sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+   "rows": 45277
+  },
+  "run_id": "5ca6dedde5b2"
+ },
+ "shap_case": {
+  "name": "118i Standart",
+  "year": 2007,
+  "price": 595000.0,
+  "pred": 519679.7698413808,
+  "top": [
+   [
+    "vehicle_age",
+    -0.6125110603728345,
+    {
+     "tr": "19 yıl",
+     "en": "19 yr"
+    }
+   ],
+   [
+    "MODEL_SERIES (text)",
+    -0.14042941816122098,
+    {
+     "tr": "118i Standart",
+     "en": "118i Standart"
+    }
+   ],
+   [
+    "power_hp_val",
+    -0.1153967496393607,
+    {
+     "tr": "138 hp",
+     "en": "138 hp"
+    }
+   ]
+  ],
+  "rest": -0.2681453240243005,
+  "n_rest": 21,
+  "visible": [
+   "vehicle_age",
+   "MODEL_SERIES (text)",
+   "power_hp_val",
+   "is_heavy_damaged",
+   "gb_mileage",
+   "hood_state",
+   "segment",
+   "door_painted",
+   "kb_transmission"
+  ],
+  "n_other": 15,
+  "wf_max": 10,
+  "n_items": 24,
+  "km_label": {
+   "tr": "330.000 km",
+   "en": "330,000 km"
+  },
+  "figures": [
+   "tr-sh-06-waterfall.png",
+   "en-sh-06-waterfall.png"
+  ]
+ }
+}

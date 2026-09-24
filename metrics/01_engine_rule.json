@@ -1,0 +1,270 @@
+{
+ "_meta": {
+  "script": "01_engine_rule.py",
+  "generated_at": "2026-09-23T23:55:20",
+  "data_until": "2026-06-27",
+  "db": {
+   "path": "data/cars.duckdb",
+   "sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+   "rows": 45277
+  },
+  "run_id": null
+ },
+ "error_drivers": {
+  "hp_cc_kurali": {
+   "tanim": "referans = ayni modelin kesin (kovasiz) degerli ilanlarinin medyani; fark = |aday − referans|; yalniz iki siniri da bilinen kovalar ve referansi olan modeller; yuzdelikler 5/25/50/75/95; konum = (referans − alt) / (ust − alt)",
+   "engine_cc": {
+    "birim": "cc",
+    "secilen": "ust",
+    "aralikli": 7865,
+    "acik_uclu": 38,
+    "degersiz": 356,
+    "referansli": 7176,
+    "referans_model": 339,
+    "icinde_pct": 97.9,
+    "konum_medyan": 0.975,
+    "konum_ceyrek": [
+     0.839,
+     0.99
+    ],
+    "adaylar": {
+     "alt": {
+      "medyan": 194.0,
+      "ortalama": 191.9,
+      "yuzdelik": [
+       97.0,
+       167.0,
+       194.0,
+       197.0,
+       197.0
+      ]
+     },
+     "orta": {
+      "medyan": 95.5,
+      "ortalama": 91.4,
+      "yuzdelik": [
+       2.5,
+       67.5,
+       95.5,
+       97.5,
+       104.5
+      ]
+     },
+     "ust": {
+      "medyan": 5.0,
+      "ortalama": 28.4,
+      "yuzdelik": [
+       2.0,
+       2.0,
+       5.0,
+       32.0,
+       102.0
+      ]
+     }
+    },
+    "kova_kazanan": [
+     [
+      1201,
+      1400,
+      123,
+      "ust",
+      {
+       "alt": 189.0,
+       "orta": 89.5,
+       "ust": 10.0
+      }
+     ],
+     [
+      1401,
+      1600,
+      4015,
+      "ust",
+      {
+       "alt": 196.0,
+       "orta": 96.5,
+       "ust": 3.0
+      }
+     ],
+     [
+      1601,
+      1800,
+      146,
+      "ust",
+      {
+       "alt": 197.0,
+       "orta": 97.5,
+       "ust": 2.0
+      }
+     ],
+     [
+      1801,
+      2000,
+      2572,
+      "ust",
+      {
+       "alt": 167.0,
+       "orta": 67.5,
+       "ust": 32.0
+      }
+     ],
+     [
+      2501,
+      3000,
+      248,
+      "ust",
+      {
+       "alt": 466.0,
+       "orta": 216.5,
+       "ust": 33.0
+      }
+     ]
+    ],
+    "kova_disi_coklu_pct": 26.4,
+    "ornek_kova": {
+     "alt": 1401,
+     "ust": 1600,
+     "n": 4015,
+     "en_sik_kesin": 1598,
+     "en_sik_kesin_n": 4279
+    }
+   },
+   "power_hp": {
+    "birim": "hp",
+    "secilen": "orta",
+    "aralikli": 7797,
+    "acik_uclu": 2,
+    "degersiz": 426,
+    "referansli": 7148,
+    "referans_model": 337,
+    "icinde_pct": 84.2,
+    "konum_medyan": 0.583,
+    "konum_ceyrek": [
+     0.292,
+     0.792
+    ],
+    "adaylar": {
+     "alt": {
+      "medyan": 17.0,
+      "ortalama": 15.5,
+      "yuzdelik": [
+       1.0,
+       8.0,
+       17.0,
+       19.0,
+       33.0
+      ]
+     },
+     "orta": {
+      "medyan": 7.0,
+      "ortalama": 10.2,
+      "yuzdelik": [
+       2.0,
+       4.0,
+       7.0,
+       12.0,
+       38.0
+      ]
+     },
+     "ust": {
+      "medyan": 14.0,
+      "ortalama": 13.6,
+      "yuzdelik": [
+       0.0,
+       5.0,
+       14.0,
+       20.0,
+       35.0
+      ]
+     }
+    },
+    "kova_kazanan": [
+     [
+      101,
+      125,
+      1266,
+      "orta",
+      {
+       "alt": 9.0,
+       "orta": 3.0,
+       "ust": 15.0
+      }
+     ],
+     [
+      126,
+      150,
+      1361,
+      "ust",
+      {
+       "alt": 24.0,
+       "orta": 12.0,
+       "ust": 0.0
+      }
+     ],
+     [
+      151,
+      175,
+      2128,
+      "ust",
+      {
+       "alt": 19.0,
+       "orta": 7.0,
+       "ust": 5.0
+      }
+     ],
+     [
+      176,
+      200,
+      1695,
+      "alt",
+      {
+       "alt": 8.0,
+       "orta": 11.0,
+       "ust": 23.0
+      }
+     ],
+     [
+      201,
+      225,
+      256,
+      "alt",
+      {
+       "alt": 3.0,
+       "orta": 9.0,
+       "ust": 21.0
+      }
+     ],
+     [
+      226,
+      250,
+      132,
+      "alt+orta",
+      {
+       "alt": 7.0,
+       "orta": 7.0,
+       "ust": 17.0
+      }
+     ],
+     [
+      251,
+      275,
+      171,
+      "alt",
+      {
+       "alt": 7.0,
+       "orta": 11.0,
+       "ust": 23.0
+      }
+     ]
+    ],
+    "kova_disi_coklu_pct": 90.3,
+    "ornek_kova": {
+     "alt": 151,
+     "ust": 175,
+     "n": 2128,
+     "en_sik_kesin": 170,
+     "en_sik_kesin_n": 4613
+    }
+   }
+  }
+ }
+}

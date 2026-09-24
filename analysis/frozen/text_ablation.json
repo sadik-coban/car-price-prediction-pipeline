@@ -1,0 +1,40 @@
+{
+ "ablation": {
+  "r2_structured": 0.9645,
+  "r2_structured_plus_text": 0.966,
+  "delta_r2": 0.0015
+ },
+ "setup": {
+  "n_estimators": 300,
+  "categorical": [
+   "brand",
+   "kb_body_type",
+   "kb_drivetrain",
+   "segment",
+   "kb_transmission",
+   "kb_fuel"
+  ],
+  "numeric": [
+   "vehicle_age",
+   "gb_mileage",
+   "power_hp_val",
+   "engine_cc_val",
+   "count_painted",
+   "count_changed",
+   "count_local_painted",
+   "is_heavy_damaged"
+  ],
+  "function": "structured_vs_text_delta"
+ },
+ "llm": {
+  "kutuphane": "LangExtract",
+  "model": "gemini-3.1-flash-lite",
+  "siniflar": [
+   "hasar",
+   "bakim",
+   "modifiye"
+  ]
+ },
+ "kaynak": "_arsiv/text_analysis (2026-09-19'da arsivlenen metin analizi kosumu): ablasyon metrics/text_insights.json->delta_r2, model adi langextract/extgemini.py MODEL_NAME. Arsiv git disi oldugu icin degerler 2026-09-22'de bu dosyaya donduruldu; teknik rapor buradan okur.",
+ "frozen": "EN: frozen 2026-09-23 from the archived text-analysis run (_arsiv/text_analysis, git-ignored): ablation from metrics/text_insights.json, setup read with ast from steps/build_text_insights.py::structured_vs_text_delta, model name from langextract/extgemini.py. No LLM is run. | TR: 2026-09-23'te arşivdeki metin analizi koşumundan donduruldu (_arsiv/text_analysis, git dışı): ablasyon metrics/text_insights.json'dan, kurulum steps/build_text_insights.py::structured_vs_text_delta kaynağından ast ile, model adı langextract/extgemini.py'den. LLM koşulmaz."
+}

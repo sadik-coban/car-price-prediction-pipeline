@@ -1,0 +1,778 @@
+{
+ "_meta": {
+  "script": "02_missingness.py",
+  "generated_at": "2026-09-23T23:55:25",
+  "data_until": "2026-06-27",
+  "db": {
+   "path": "data/cars.duckdb",
+   "sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+   "rows": 45277
+  },
+  "run_id": null
+ },
+ "meta": {
+  "n_features": 25
+ },
+ "methodology": {
+  "feature_kept": [
+   "model",
+   "series",
+   "brand",
+   "kb_body_type",
+   "kb_drivetrain",
+   "segment",
+   "kb_transmission",
+   "kb_fuel",
+   "roof_state",
+   "hood_state",
+   "trunk_state",
+   "vehicle_age",
+   "gb_mileage",
+   "power_hp_val",
+   "engine_cc_val",
+   "door_changed",
+   "door_painted",
+   "door_local",
+   "fender_changed",
+   "fender_painted",
+   "fender_local",
+   "bumper_changed",
+   "bumper_painted",
+   "bumper_local",
+   "is_heavy_damaged"
+  ],
+  "column_missing": [
+   [
+    "kb_drivetrain",
+    1.5
+   ],
+   [
+    "power_hp_val",
+    1.4
+   ],
+   [
+    "engine_cc_val",
+    1.2
+   ],
+   [
+    "kb_body_type",
+    1.0
+   ],
+   [
+    "model",
+    0.0
+   ],
+   [
+    "series",
+    0.0
+   ],
+   [
+    "brand",
+    0.0
+   ],
+   [
+    "segment",
+    0.0
+   ],
+   [
+    "kb_transmission",
+    0.0
+   ],
+   [
+    "kb_fuel",
+    0.0
+   ],
+   [
+    "roof_state",
+    0.0
+   ],
+   [
+    "hood_state",
+    0.0
+   ],
+   [
+    "trunk_state",
+    0.0
+   ],
+   [
+    "vehicle_age",
+    0.0
+   ],
+   [
+    "gb_mileage",
+    0.0
+   ],
+   [
+    "door_changed",
+    0.0
+   ],
+   [
+    "door_painted",
+    0.0
+   ],
+   [
+    "door_local",
+    0.0
+   ],
+   [
+    "fender_changed",
+    0.0
+   ],
+   [
+    "fender_painted",
+    0.0
+   ],
+   [
+    "fender_local",
+    0.0
+   ],
+   [
+    "bumper_changed",
+    0.0
+   ],
+   [
+    "bumper_painted",
+    0.0
+   ],
+   [
+    "bumper_local",
+    0.0
+   ],
+   [
+    "is_heavy_damaged",
+    0.0
+   ]
+  ],
+  "impute_note": "Sayısal özniteliklerde doldurma yapılmadı: eksik değerler LightGBM/CatBoost'a NaN olarak girer ve kütüphanenin kendi eksik-değer yönlendirmesi kullanılır. Yalnız KMeans/PCA için genel medyanla dolduruldu. torque_nm %27.6 eksik olduğu için çıkarıldı.",
+  "column_missing_all": [
+   [
+    "tramer_fee",
+    84.4
+   ],
+   [
+    "transmission_brand",
+    74.1
+   ],
+   [
+    "gb_drivetrain",
+    74.0
+   ],
+   [
+    "gb_traffic_insurance_avg",
+    54.3
+   ],
+   [
+    "gb_kasko_avg",
+    51.1
+   ],
+   [
+    "gb_mtv_yearly",
+    40.6
+   ],
+   [
+    "city_fuel_cons",
+    31.4
+   ],
+   [
+    "highway_fuel_cons",
+    31.4
+   ],
+   [
+    "production_year_start",
+    29.9
+   ],
+   [
+    "production_year_end",
+    29.9
+   ],
+   [
+    "rpm_max",
+    29.3
+   ],
+   [
+    "rpm_min",
+    29.3
+   ],
+   [
+    "weight_kg",
+    27.7
+   ],
+   [
+    "kb_fuel_cons_avg",
+    27.6
+   ],
+   [
+    "kb_fuel_tank",
+    27.6
+   ],
+   [
+    "gb_segment",
+    27.6
+   ],
+   [
+    "torque_nm",
+    27.6
+   ],
+   [
+    "cylinder_count",
+    27.6
+   ],
+   [
+    "max_speed_kmh",
+    27.6
+   ],
+   [
+    "accel_0_100",
+    27.6
+   ],
+   [
+    "length_mm",
+    27.6
+   ],
+   [
+    "width_mm",
+    27.6
+   ],
+   [
+    "height_mm",
+    27.6
+   ],
+   [
+    "curb_weight_kg",
+    27.6
+   ],
+   [
+    "trunk_capacity_lt",
+    27.6
+   ],
+   [
+    "wheelbase_mm",
+    27.6
+   ],
+   [
+    "front_tire_spec",
+    27.6
+   ],
+   [
+    "seat_count",
+    27.5
+   ],
+   [
+    "gb_warranty_status",
+    22.1
+   ],
+   [
+    "kb_trade_available",
+    19.1
+   ],
+   [
+    "gb_trade_available",
+    19.1
+   ],
+   [
+    "eids_model",
+    11.7
+   ]
+  ],
+  "sistematik_missing": {
+   "column_missing_all": [
+    [
+     "tramer_fee",
+     84.4
+    ],
+    [
+     "transmission_brand",
+     74.1
+    ],
+    [
+     "gb_drivetrain",
+     74.0
+    ],
+    [
+     "gb_traffic_insurance_avg",
+     54.3
+    ],
+    [
+     "gb_kasko_avg",
+     51.1
+    ],
+    [
+     "gb_mtv_yearly",
+     40.6
+    ],
+    [
+     "city_fuel_cons",
+     31.4
+    ],
+    [
+     "highway_fuel_cons",
+     31.4
+    ],
+    [
+     "production_year_start",
+     29.9
+    ],
+    [
+     "production_year_end",
+     29.9
+    ],
+    [
+     "rpm_max",
+     29.3
+    ],
+    [
+     "rpm_min",
+     29.3
+    ],
+    [
+     "weight_kg",
+     27.7
+    ],
+    [
+     "kb_fuel_cons_avg",
+     27.6
+    ],
+    [
+     "kb_fuel_tank",
+     27.6
+    ],
+    [
+     "gb_segment",
+     27.6
+    ],
+    [
+     "torque_nm",
+     27.6
+    ],
+    [
+     "cylinder_count",
+     27.6
+    ],
+    [
+     "max_speed_kmh",
+     27.6
+    ],
+    [
+     "accel_0_100",
+     27.6
+    ],
+    [
+     "length_mm",
+     27.6
+    ],
+    [
+     "width_mm",
+     27.6
+    ],
+    [
+     "height_mm",
+     27.6
+    ],
+    [
+     "curb_weight_kg",
+     27.6
+    ],
+    [
+     "trunk_capacity_lt",
+     27.6
+    ],
+    [
+     "wheelbase_mm",
+     27.6
+    ],
+    [
+     "front_tire_spec",
+     27.6
+    ],
+    [
+     "seat_count",
+     27.5
+    ],
+    [
+     "gb_warranty_status",
+     22.1
+    ],
+    [
+     "kb_trade_available",
+     19.1
+    ],
+    [
+     "gb_trade_available",
+     19.1
+    ],
+    [
+     "eids_model",
+     11.7
+    ]
+   ],
+   "sistematik_gruplar": [
+    {
+     "kolon_sayisi": 16,
+     "ort_eksik_pct": 27.6,
+     "birliktelik_pct": 98.8,
+     "ornek_kolonlar": [
+      "weight_kg",
+      "kb_fuel_cons_avg",
+      "kb_fuel_tank",
+      "gb_segment",
+      "torque_nm",
+      "cylinder_count",
+      "max_speed_kmh",
+      "accel_0_100"
+     ],
+     "kolonlar": [
+      "weight_kg",
+      "kb_fuel_cons_avg",
+      "kb_fuel_tank",
+      "gb_segment",
+      "torque_nm",
+      "cylinder_count",
+      "max_speed_kmh",
+      "accel_0_100",
+      "length_mm",
+      "width_mm",
+      "height_mm",
+      "curb_weight_kg",
+      "trunk_capacity_lt",
+      "wheelbase_mm",
+      "front_tire_spec",
+      "seat_count"
+     ]
+    },
+    {
+     "kolon_sayisi": 2,
+     "ort_eksik_pct": 31.4,
+     "birliktelik_pct": 100.0,
+     "ornek_kolonlar": [
+      "city_fuel_cons",
+      "highway_fuel_cons"
+     ],
+     "kolonlar": [
+      "city_fuel_cons",
+      "highway_fuel_cons"
+     ]
+    },
+    {
+     "kolon_sayisi": 2,
+     "ort_eksik_pct": 29.9,
+     "birliktelik_pct": 100.0,
+     "ornek_kolonlar": [
+      "production_year_start",
+      "production_year_end"
+     ],
+     "kolonlar": [
+      "production_year_start",
+      "production_year_end"
+     ]
+    },
+    {
+     "kolon_sayisi": 2,
+     "ort_eksik_pct": 29.3,
+     "birliktelik_pct": 100.0,
+     "ornek_kolonlar": [
+      "rpm_max",
+      "rpm_min"
+     ],
+     "kolonlar": [
+      "rpm_max",
+      "rpm_min"
+     ]
+    }
+   ],
+   "not": "Katalog eşleştirmesi: standart modeller eşleşir, özel varyantlar eşleşmez → tüm spec birden boş. Gruplar birlikte-eksik payıyla kuruldu: ikisi birden eksik / en az biri eksik ≥ %98."
+  },
+  "feature_drop": [
+   [
+    "C",
+    "Kimlik / metin / zaman",
+    9,
+    [
+     "ad_id",
+     "listing_date",
+     "ad_title",
+     "location",
+     "eids_model",
+     "url",
+     "description_text",
+     "description_clean",
+     "scraped_at"
+    ],
+    "Identity / text / time"
+   ],
+   [
+    "F",
+    "Türetilmiş tekrar",
+    8,
+    [
+     "engine_cc_low",
+     "engine_cc_val",
+     "engine_cc_is_range",
+     "power_hp_val",
+     "power_hp_is_range",
+     "count_changed",
+     "count_painted",
+     "count_local_painted"
+    ],
+    "Derived duplicate"
+   ],
+   [
+    "B",
+    "kb/gb ikizi",
+    11,
+    [
+     "kb_year",
+     "kb_mileage",
+     "gb_transmission",
+     "gb_fuel",
+     "gb_body_type",
+     "gb_color",
+     "kb_is_heavy_damaged",
+     "gb_drivetrain",
+     "gb_condition",
+     "gb_seller_type",
+     "gb_trade_available"
+    ],
+    "kb/gb twin"
+   ],
+   [
+    "A",
+    "Yarı-sabit (en sık değer ≥ %99)",
+    4,
+    [
+     "kb_condition",
+     "gb_usage_type",
+     "gb_is_first_owner",
+     "gb_plate_origin"
+    ],
+    "Quasi-constant (top value ≥ 99%)"
+   ],
+   [
+    "D",
+    "Eksik > %40",
+    5,
+    [
+     "gb_mtv_yearly",
+     "tramer_fee",
+     "transmission_brand",
+     "gb_kasko_avg",
+     "gb_traffic_insurance_avg"
+    ],
+    "Missing > 40%"
+   ],
+   [
+    "E",
+    "Katalog bloğu (birlikte eksik)",
+    22,
+    [
+     "kb_fuel_cons_avg",
+     "kb_fuel_tank",
+     "gb_segment",
+     "torque_nm",
+     "cylinder_count",
+     "max_speed_kmh",
+     "accel_0_100",
+     "city_fuel_cons",
+     "highway_fuel_cons",
+     "length_mm",
+     "width_mm",
+     "height_mm",
+     "weight_kg",
+     "curb_weight_kg",
+     "trunk_capacity_lt",
+     "wheelbase_mm",
+     "seat_count",
+     "front_tire_spec",
+     "production_year_start",
+     "production_year_end",
+     "rpm_max",
+     "rpm_min"
+    ],
+    "Catalogue block (co-missing)"
+   ],
+   [
+    "G",
+    "Modele alınmadı, gerekçe kayıtlı değil",
+    4,
+    [
+     "kb_color",
+     "kb_trade_available",
+     "kb_seller_type",
+     "gb_warranty_status"
+    ],
+    "Not in the model, no recorded reason"
+   ]
+  ],
+  "kolon_hesabi": {
+   "ham": 117,
+   "modelde": 53,
+   "hasar_bayragi": 39,
+   "hedef": 1,
+   "atilan": 63,
+   "ikiz_gerekce": {
+    "kb_year": [
+     "`gb_year` ile birebir aynı",
+     "identical to `gb_year`"
+    ],
+    "kb_mileage": [
+     "`gb_mileage` ile birebir aynı",
+     "identical to `gb_mileage`"
+    ],
+    "gb_transmission": [
+     "`kb_transmission` ile birebir aynı",
+     "identical to `kb_transmission`"
+    ],
+    "gb_fuel": [
+     "`kb_fuel` ile birebir aynı",
+     "identical to `kb_fuel`"
+    ],
+    "gb_body_type": [
+     "kb daha genel: gb kasa tipini koltuk sayısıyla birleştiriyor",
+     "kb is more general: gb merges body type with the seat count"
+    ],
+    "gb_color": [
+     "`kb_color` ile birebir aynı",
+     "identical to `kb_color`"
+    ],
+    "gb_drivetrain": [
+     "%74 boş",
+     "74% empty"
+    ],
+    "gb_condition": [
+     "`kb_condition` ile birebir aynı",
+     "identical to `kb_condition`"
+    ],
+    "gb_trade_available": [
+     "`kb_trade_available` ile birebir aynı",
+     "identical to `kb_trade_available`"
+    ],
+    "gb_seller_type": [
+     "`kb_seller_type` ile birebir aynı",
+     "identical to `kb_seller_type`"
+    ],
+    "kb_is_heavy_damaged": [
+     "`is_heavy_damaged` ile birebir aynı",
+     "identical to `is_heavy_damaged`"
+    ]
+   },
+   "not": "feature_drop = [grup, gerekçe (TR), kolon sayısı, kolonlar, gerekçe (EN)]; her ham kolon öncelik sırasıyla tek bir sınıfa atanır (modelde > hedef > C > F > B > A > D > E > G)."
+  },
+  "kb_gb_ikiz": [
+   {
+    "kb": "kb_year",
+    "gb": "gb_year",
+    "kb_eksik_pct": 0.0,
+    "gb_eksik_pct": 0.0,
+    "kb_tekil": 22,
+    "gb_tekil": 22,
+    "ayni_pct": 100.0,
+    "tutulan": "gb_year"
+   },
+   {
+    "kb": "kb_mileage",
+    "gb": "gb_mileage",
+    "kb_eksik_pct": 0.0,
+    "gb_eksik_pct": 0.0,
+    "kb_tekil": 3109,
+    "gb_tekil": 3109,
+    "ayni_pct": 100.0,
+    "tutulan": "gb_mileage"
+   },
+   {
+    "kb": "kb_transmission",
+    "gb": "gb_transmission",
+    "kb_eksik_pct": 0.0,
+    "gb_eksik_pct": 0.0,
+    "kb_tekil": 3,
+    "gb_tekil": 3,
+    "ayni_pct": 100.0,
+    "tutulan": "kb_transmission"
+   },
+   {
+    "kb": "kb_fuel",
+    "gb": "gb_fuel",
+    "kb_eksik_pct": 0.0,
+    "gb_eksik_pct": 0.0,
+    "kb_tekil": 4,
+    "gb_tekil": 4,
+    "ayni_pct": 100.0,
+    "tutulan": "kb_fuel"
+   },
+   {
+    "kb": "kb_body_type",
+    "gb": "gb_body_type",
+    "kb_eksik_pct": 1.0,
+    "gb_eksik_pct": 0.7,
+    "kb_tekil": 9,
+    "gb_tekil": 23,
+    "ayni_pct": 77.5,
+    "tutulan": "kb_body_type"
+   },
+   {
+    "kb": "kb_color",
+    "gb": "gb_color",
+    "kb_eksik_pct": 0.0,
+    "gb_eksik_pct": 0.0,
+    "kb_tekil": 24,
+    "gb_tekil": 24,
+    "ayni_pct": 100.0,
+    "tutulan": null
+   },
+   {
+    "kb": "kb_drivetrain",
+    "gb": "gb_drivetrain",
+    "kb_eksik_pct": 1.5,
+    "gb_eksik_pct": 74.0,
+    "kb_tekil": 4,
+    "gb_tekil": 4,
+    "ayni_pct": 27.5,
+    "tutulan": "kb_drivetrain"
+   },
+   {
+    "kb": "kb_condition",
+    "gb": "gb_condition",
+    "kb_eksik_pct": 0.0,
+    "gb_eksik_pct": 0.0,
+    "kb_tekil": 2,
+    "gb_tekil": 2,
+    "ayni_pct": 100.0,
+    "tutulan": null
+   },
+   {
+    "kb": "kb_trade_available",
+    "gb": "gb_trade_available",
+    "kb_eksik_pct": 19.1,
+    "gb_eksik_pct": 19.1,
+    "kb_tekil": 2,
+    "gb_tekil": 2,
+    "ayni_pct": 100.0,
+    "tutulan": null
+   },
+   {
+    "kb": "kb_seller_type",
+    "gb": "gb_seller_type",
+    "kb_eksik_pct": 0.0,
+    "gb_eksik_pct": 0.0,
+    "kb_tekil": 3,
+    "gb_tekil": 3,
+    "ayni_pct": 100.0,
+    "tutulan": null
+   },
+   {
+    "kb": "kb_is_heavy_damaged",
+    "gb": "is_heavy_damaged",
+    "kb_eksik_pct": 0.0,
+    "gb_eksik_pct": 0.0,
+    "kb_tekil": 2,
+    "gb_tekil": 2,
+    "ayni_pct": 100.0,
+    "tutulan": "is_heavy_damaged"
+   }
+  ]
+ },
+ "error_drivers": {
+  "ham_kolon": {
+   "tablo_kolon": 118,
+   "ham_kolon": 117
+  }
+ }
+}

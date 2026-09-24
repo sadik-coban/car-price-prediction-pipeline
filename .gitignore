@@ -1,10 +1,42 @@
-.vscode
+# --- ağır veri ---------------------------------------------------------------
+# Tümü data/ altında tek yerde. Desen KÖK-ÇAPALI (baştaki "/") — çıplak "data/"
+# yazılsaydı gitignore onu HER derinlikte eşleştirirdi ve car_price_report/metrics
+# gibi klasörler de sessizce takipsiz kalırdı. (Metrik klasörünün adı bu yüzden
+# "data" değil "metrics".)
+/data/
+
+# --- depoya girmeyen klasörler (hepsi DİSKTE duruyor, silinmedi) --------------
+# 2026-09-23: canlı zincir depo kökünde; aşağıdakiler yerelde kalır.
+# NOT: .gitignore satır-sonu yorumu DESTEKLEMEZ ("/archive/  # arşiv" yazılsaydı
+# boşluklar desene dahil olur ve hiçbir şey eşleşmezdi) — yorumlar ayrı satırda.
+
+# arşiv — 2026-09-24'ten beri tek çatı: obsolete (eski mimari) · analysis-history (metin analizi, SHAP
+# sürümleri, sağlamlık) · backups · experiments · published-report (yayınlanmış raporun dondurulmuş
+# kopyası). Dizin: archive/README.md
+/archive/
+
+# --- ortam / sırlar ----------------------------------------------------------
 .env
-catboost_info/
-data/
+.venv/
+venv/
+
+# --- artıklar ----------------------------------------------------------------
 __pycache__/
-model.cbm
-train_data.csv
-test_data.csv
-metrics.json
-shap_summary.png
+# pytest-cov'un ölçüm verisi (python -m pytest tests --cov=db)
+.coverage
+.vscode
+catboost_info/
+*.safetensors
+notes.txt
+
+# --- ajan yapılandırması (yayımlanan işin parçası değil) ---------------------
+/.claude/
+CLAUDE.md
+
+harness-research
+
+# --- scraper: kazıma kodu yayımlanmaz (yerelde duruyor) -----------------------
+# Yalnız toplama ayarı izlenir: analysis/01_dedup_leakage.py ve tests/scraper onu okur, klonda da çalışsınlar.
+/scraper/*
+!/scraper/collection_config.json
+!/scraper/collection.py

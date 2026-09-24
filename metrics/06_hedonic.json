@@ -1,0 +1,320 @@
+{
+ "_meta": {
+  "script": "06_hedonic.py",
+  "generated_at": "2026-09-23T23:57:57",
+  "data_until": "2026-06-27",
+  "db": {
+   "path": "data/cars.duckdb",
+   "sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+   "rows": 45277
+  },
+  "run_id": null
+ },
+ "domain": {
+  "hedonic": {
+   "r2": 0.9312,
+   "age_pct": -6.64,
+   "damage_pct": -11.6,
+   "km100k_pct": -15.11,
+   "hp100_pct": 19.86,
+   "cc_litre_pct": 7.49,
+   "not": "Dönem etkisi modelde yok (kullanıcı kararı): dönemler havuzlanarak kestirildi."
+  },
+  "hedonic_reliability": {
+   "model_r2": 0.9312,
+   "n": 29554,
+   "birim": {
+    "hp": "100 HP",
+    "cc": "1 litre"
+   },
+   "motor_etki": {
+    "hp100_pct": 19.9,
+    "cc_litre_pct": 7.5
+   },
+   "bootstrap": [
+    {
+     "terim": "yaş",
+     "nokta": -0.0687,
+     "boot_ort": -0.0687,
+     "ci_lo": -0.0695,
+     "ci_hi": -0.068,
+     "std": 0.0004,
+     "yuzde_etki": -6.64,
+     "sifir_iceriyor": false
+    },
+    {
+     "terim": "yaş²",
+     "nokta": 0.0008,
+     "boot_ort": 0.0008,
+     "ci_lo": 0.0007,
+     "ci_hi": 0.001,
+     "std": 0.0001,
+     "yuzde_etki": 0.08,
+     "sifir_iceriyor": false
+    },
+    {
+     "terim": "km(100K)",
+     "nokta": -0.1638,
+     "boot_ort": -0.1639,
+     "ci_lo": -0.1673,
+     "ci_hi": -0.1604,
+     "std": 0.0018,
+     "yuzde_etki": -15.11,
+     "sifir_iceriyor": false
+    },
+    {
+     "terim": "km²",
+     "nokta": 0.0155,
+     "boot_ort": 0.0155,
+     "ci_lo": 0.0127,
+     "ci_hi": 0.0184,
+     "std": 0.0015,
+     "yuzde_etki": 1.56,
+     "sifir_iceriyor": false
+    },
+    {
+     "terim": "yaş×km",
+     "nokta": -0.0062,
+     "boot_ort": -0.0062,
+     "ci_lo": -0.0074,
+     "ci_hi": -0.005,
+     "std": 0.0006,
+     "yuzde_etki": -0.62,
+     "sifir_iceriyor": false
+    },
+    {
+     "terim": "ağır hasar",
+     "nokta": -0.1233,
+     "boot_ort": -0.1232,
+     "ci_lo": -0.1321,
+     "ci_hi": -0.114,
+     "std": 0.0046,
+     "yuzde_etki": -11.6,
+     "sifir_iceriyor": false
+    },
+    {
+     "terim": "boyalı",
+     "nokta": -0.0105,
+     "boot_ort": -0.0105,
+     "ci_lo": -0.0114,
+     "ci_hi": -0.0096,
+     "std": 0.0005,
+     "yuzde_etki": -1.05,
+     "sifir_iceriyor": false
+    },
+    {
+     "terim": "değişen",
+     "nokta": -0.0311,
+     "boot_ort": -0.0311,
+     "ci_lo": -0.0332,
+     "ci_hi": -0.029,
+     "std": 0.0011,
+     "yuzde_etki": -3.06,
+     "sifir_iceriyor": false
+    },
+    {
+     "terim": "+100 HP",
+     "nokta": 0.1812,
+     "boot_ort": 0.1812,
+     "ci_lo": 0.1659,
+     "ci_hi": 0.1972,
+     "std": 0.008,
+     "yuzde_etki": 19.86,
+     "sifir_iceriyor": false
+    },
+    {
+     "terim": "+1 litre",
+     "nokta": 0.0723,
+     "boot_ort": 0.0723,
+     "ci_lo": 0.051,
+     "ci_hi": 0.0933,
+     "std": 0.011,
+     "yuzde_etki": 7.49,
+     "sifir_iceriyor": false
+    }
+   ],
+   "vif": [
+    [
+     "age",
+     3.69
+    ],
+    [
+     "I(age ** 2)",
+     4.84
+    ],
+    [
+     "km10",
+     4.03
+    ],
+    [
+     "I(km10 ** 2)",
+     3.61
+    ],
+    [
+     "age:km10",
+     7.25
+    ],
+    [
+     "dmg",
+     1.05
+    ],
+    [
+     "painted",
+     1.25
+    ],
+    [
+     "changed",
+     1.12
+    ],
+    [
+     "hp100",
+     4.77
+    ],
+    [
+     "cc_L",
+     5.56
+    ]
+   ],
+   "vif_ham": [
+    [
+     "age",
+     34.54
+    ],
+    [
+     "I(age ** 2)",
+     66.54
+    ],
+    [
+     "km10",
+     29.95
+    ],
+    [
+     "I(km10 ** 2)",
+     34.49
+    ],
+    [
+     "age:km10",
+     96.28
+    ],
+    [
+     "dmg",
+     1.05
+    ],
+    [
+     "painted",
+     1.25
+    ],
+    [
+     "changed",
+     1.12
+    ],
+    [
+     "hp100",
+     4.77
+    ],
+    [
+     "cc_L",
+     5.56
+    ]
+   ],
+   "vif_kukla": [
+    "C(segment)[T.D]",
+    62.42
+   ],
+   "merkez": {
+    "yas": 11.0,
+    "km": 181000.0
+   },
+   "yakit_korelasyon": [
+    {
+     "yakit": "Benzin",
+     "pearson": 0.806,
+     "pearson_log": 0.731,
+     "spearman": 0.407,
+     "cc_hp_oran": 9.8,
+     "n": 14693
+    },
+    {
+     "yakit": "Dizel",
+     "pearson": 0.836,
+     "pearson_log": 0.863,
+     "spearman": 0.694,
+     "cc_hp_oran": 11.1,
+     "n": 12783
+    },
+    {
+     "yakit": "LPG & Benzin",
+     "pearson": 0.9,
+     "pearson_log": 0.863,
+     "spearman": 0.805,
+     "cc_hp_oran": 13.9,
+     "n": 1199
+    },
+    {
+     "yakit": "Hibrit",
+     "pearson": 0.429,
+     "pearson_log": 0.522,
+     "spearman": 0.308,
+     "cc_hp_oran": 10.0,
+     "n": 879
+    }
+   ],
+   "genel_korelasyon": 0.73,
+   "varsayim": {
+    "homoskedastisite_p": 0.0,
+    "normallik_p": 0.0,
+    "not": "Breusch-Pagan ve Jarque-Bera ihlal (p<0.05). Bu yüzden çıkarım çıplak OLS p-değerine değil, satır bootstrap'inin %2.5–97.5 yüzdeliklerine dayanıyor."
+   },
+   "bootstrap_ayar": {
+    "n_boot": 1000,
+    "n_istenen": 1000,
+    "n_jobs": 16,
+    "sure_sn": 89.8
+   },
+   "not": "Ham (log yok) cc+HP: birim başına yorum. Yaş ve km medyan araca ortalandı; doğrusal katsayılar o noktadaki marjinal etki. Güven aralıkları satır bootstrap'inden.",
+   "model_etkili": {
+    "r2": 0.9648,
+    "n_model": 735,
+    "katsayi_pct": {
+     "yas": [
+      -6.64,
+      -5.8
+     ],
+     "km100k": [
+      -15.11,
+      -14.83
+     ],
+     "hp100": [
+      19.86,
+      19.3
+     ],
+     "cc_litre": [
+      7.49,
+      5.97
+     ],
+     "agir_hasar": [
+      -11.6,
+      -12.46
+     ],
+     "boyali": [
+      -1.05,
+      -0.98
+     ],
+     "degisen": [
+      -3.06,
+      -3.12
+     ]
+    },
+    "not": "C(model) eklenmiş tek OLS (bootstrap yok); katsayi_pct = [model yok, model var], yüzde etki."
+   }
+  }
+ },
+ "error_drivers": {
+  "hedonik_eksik": {
+   "hp": 426,
+   "cc": 356,
+   "ikisi_birden": 348,
+   "toplam": 434
+  }
+ }
+}
