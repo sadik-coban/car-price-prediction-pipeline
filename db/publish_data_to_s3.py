@@ -1,16 +1,22 @@
 """
 publish_data_to_s3.py
-EN: Publishes a locally built data/cars.duckdb to S3 — the object the API's data-refresh poll reads, if that poll
-    is enabled (the service lives outside this repo and is not verified here). WHAT and IN WHICH ORDER:
-      1. the file is validated (a DuckDB file with a non-empty car_listings);
+EN: Publishes the locally built GOLD database data/cars_gold.duckdb (db/build_gold_db.py) to S3 as
+    data/cars.duckdb — the object the API's data-refresh poll reads, if that poll is enabled (the service lives
+    outside this repo and is not verified here). WHAT and IN WHICH ORDER:
+      1. the file is validated: a DuckDB file with a non-empty car_listings that keeps the gold contract
+         (columns = id + GOLD_COLUMNS, no NULL in a gold rule column) — so the semi-raw analysis DB, or an
+         old-contract file, can never reach the API;
       2. its sha256 is computed and the version is set (the manifest on S3 + 1, unless --version is given);
       3. data/cars.duckdb is uploaded FIRST, then data/manifest.json (version, sha256, build time, row count),
          so the poll never sees a new manifest pointing at a missing or old file.
     HOW to talk to S3 is in lib/s3_publish.py. --dry-run does steps 1–2 and prints the manifest without
     connecting to S3 or reading .env.
-TR: Yerelde kurulan data/cars.duckdb'yi S3'e yayımlar — API'nin veri tazeleme yoklamasının okuduğu nesne, o
-    yoklama açıksa (servis bu deponun dışında, burada doğrulanmıyor). NE ve HANGİ SIRAYLA:
-      1. dosya doğrulanır (boş olmayan bir car_listings'i olan DuckDB dosyası);
+TR: Yerelde kurulan GOLD veritabanı data/cars_gold.duckdb'yi (db/build_gold_db.py) S3'e data/cars.duckdb adıyla
+    yayımlar — API'nin veri tazeleme yoklamasının okuduğu nesne, o yoklama açıksa (servis bu deponun dışında,
+    burada doğrulanmıyor). NE ve HANGİ SIRAYLA:
+      1. dosya doğrulanır: car_listings'i boş olmayan ve gold sözleşmesini tutan bir DuckDB dosyası (kolonlar =
+         id + GOLD_COLUMNS, kural kolonlarında NULL yok) — yarı ham analiz DB'si ya da eski sözleşmeli bir dosya
+         API'ye asla gidemez;
       2. sha256 hesaplanır ve sürüm belirlenir (S3'teki manifest + 1; --version verilmediyse);
       3. ÖNCE data/cars.duckdb, SONRA data/manifest.json (sürüm, sha256, kurulum zamanı, satır sayısı) yüklenir;
          böylece yoklama eksik ya da eski bir dosyayı gösteren yeni bir manifest görmez.
@@ -28,10 +34,11 @@ from pathlib import Path
 
 import duckdb
 
+from build_gold_db import contract_problems
 from lib import s3_publish
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DUCKDB = ROOT / "data" / "cars.duckdb"
+DEFAULT_DUCKDB = ROOT / "data" / "cars_gold.duckdb"
 # EN: tables that must exist before publishing. dashboard_cache / options_cache left the list in 2026-09: their
 #     producer (build_aggregates.py) is archived and no live code reads them; keeping them would make a fresh DB
 #     fail to publish.
@@ -46,10 +53,11 @@ MANIFEST_KEY = "data/manifest.json"
 
 def validate_duckdb(path):
     """
-    EN: Checks that path is a DuckDB file with every required table and a non-empty car_listings.
-        Returns: the car_listings row count. Raises ValueError otherwise.
-    TR: path'in, zorunlu tabloların hepsi bulunan ve car_listings'i boş olmayan bir DuckDB dosyası olduğunu
-        sınar. Döndürür: car_listings satır sayısı. Değilse ValueError.
+    EN: Checks that path is a DuckDB file with every required table, a non-empty car_listings and the gold
+        contract (build_gold_db.contract_problems). Returns: the car_listings row count. Raises ValueError otherwise.
+    TR: path'in, zorunlu tabloların hepsi bulunan, car_listings'i boş olmayan ve gold sözleşmesini tutan
+        (build_gold_db.contract_problems) bir DuckDB dosyası olduğunu sınar. Döndürür: car_listings satır sayısı.
+        Değilse ValueError.
     """
     try:
         con = duckdb.connect(str(path), read_only=True)
@@ -63,6 +71,9 @@ def validate_duckdb(path):
         rows = con.execute("SELECT count(*) FROM car_listings").fetchone()[0]
         if not rows:
             raise ValueError("car_listings is empty | car_listings boş")
+        problems = contract_problems(con)
+        if problems:
+            raise ValueError("not a gold DB (python db/build_gold_db.py) | gold DB değil: " + "; ".join(problems))
         return int(rows)
     finally:
         con.close()
@@ -112,7 +123,8 @@ def prepare(duckdb_path, version=None, now=None):
     """
     path = Path(duckdb_path)
     if not path.exists():
-        raise FileNotFoundError(f"{path} not found — build it first | bulunamadı — önce: python db/build_duckdb.py")
+        raise FileNotFoundError(f"{path} not found — build it first | bulunamadı — önce: python db/build_duckdb.py "
+                                f"&& python db/build_gold_db.py")
     rows = validate_duckdb(path)
     return {"path": path, "rows": rows, "sha256": file_sha256(path),
             "built_at": (now or datetime.now(timezone.utc)).isoformat(), "version": version,
@@ -144,7 +156,7 @@ def main(argv=None, connect=s3_publish.connect):
         Döndürür: çıkış kodu (0 = başarı, 1 = hata; sebep stderr'e yazılır).
     """
     ap = argparse.ArgumentParser(description="Publish cars.duckdb local→S3 | cars.duckdb'yi S3'e yayımla")
-    ap.add_argument("--duckdb", default=str(DEFAULT_DUCKDB), help="built database (default: data/cars.duckdb)")
+    ap.add_argument("--duckdb", default=str(DEFAULT_DUCKDB), help="gold database (default: data/cars_gold.duckdb)")
     ap.add_argument("--version", type=int, default=None, help="manifest version (default: S3 manifest + 1)")
     ap.add_argument("--dry-run", action="store_true", help="validate and show the manifest; no S3, no .env")
     args = ap.parse_args(argv)

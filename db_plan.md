@@ -1,7 +1,10 @@
 # Gold DB (API) adımı — plan
 
-> **Durum: bekliyor (2026-09-24).** Plan onaylandı, henüz uygulanmadı. Tanımın kaynağı `docs/database.md`
-> → "Sonraki iş: gold adımı"; açıklama kolonu kararı bu planda güncel hâliyle.
+> **Durum (2026-09-24): Parça 1 yapıldı** — `db/build_gold_db.py`, `db/gold_rules.json`, yayında sözleşme
+> denetimi, testler ve gerçek ham veriyle kanıt (sonuçlar `docs/database.md` → "Gold adımı"; kanıt tuttu: tek
+> fark açıklamada, 778 / 114 satır). **Sıradaki:** Parça 2 — gerçek DB'yi yarı ham olarak yeniden kurmak ve
+> analizdeki üç uyarlama (kullanıcı onayıyla); Parça 3 — gold'un teknik rapor §1'e yazılması (yeni analiz
+> betiği `analysis/01_gold_contract.py`, `gold_rules.json`'ı okur). Aşağısı onaylanan ilk plan.
 
 ## Context
 Analiz yarı ham `data/cars.duckdb`'yi okuyor (bilinmeyen = NULL, 2026-09-24). Canlı API (depo dışında) ise eski

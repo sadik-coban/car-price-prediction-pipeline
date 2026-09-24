@@ -186,16 +186,77 @@ class FakeStore:
 @pytest.fixture
 def make_duckdb(tmp_path):
     """
-    EN: Factory: make_duckdb(rows=3, table="car_listings") builds a small DuckDB file in a temp folder.
-    TR: Fabrika: make_duckdb(rows=3, table="car_listings") geçici klasörde küçük bir DuckDB dosyası kurar.
+    EN: Factory: make_duckdb(rows=3, table="car_listings", gold=True) builds a small DuckDB file in a temp folder.
+        gold=True: car_listings in the gold contract (id + GOLD_COLUMNS, every gold rule column filled, the other
+        columns NULL except ad_id and price); gold=False: a bare (ad_id, price) table.
+    TR: Fabrika: make_duckdb(rows=3, table="car_listings", gold=True) geçici klasörde küçük bir DuckDB dosyası kurar.
+        gold=True: gold sözleşmesinde car_listings (id + GOLD_COLUMNS, her kural kolonu dolu, ad_id ve fiyat
+        dışındaki öteki kolonlar NULL); gold=False: yalın bir (ad_id, price) tablosu.
     """
-    def _make(rows=3, table="car_listings", name="cars.duckdb"):
+    from build_gold_db import GOLD_COLUMNS, RULES
+
+    def _make(rows=3, table="car_listings", name="cars.duckdb", gold=True):
         """EN: Builds the file and returns its path. / TR: Dosyayı kurar ve yolunu döndürür."""
         path = tmp_path / name
         con = duckdb.connect(str(path))
-        con.execute(f"CREATE TABLE {table} (ad_id BIGINT, price DOUBLE)")
-        for i in range(rows):
-            con.execute(f"INSERT INTO {table} VALUES (?, ?)", [i, 1_000_000 + i])
+        if gold:
+            cols = [("id", "BIGINT")] + GOLD_COLUMNS
+            con.execute(f"CREATE TABLE {table} ({', '.join(f'{n} {t}' for n, t in cols)})")
+            filled = list(RULES["fill"])
+            for i in range(rows):
+                values = {"id": i + 1, "ad_id": i, "price": 1_000_000 + i, **RULES["fill"]}
+                names = ["id", "ad_id", "price"] + filled
+                con.execute(f"INSERT INTO {table} ({', '.join(names)}) VALUES ({', '.join('?' * len(names))})",
+                            [values[n] for n in names])
+        else:
+            con.execute(f"CREATE TABLE {table} (ad_id BIGINT, price DOUBLE)")
+            for i in range(rows):
+                con.execute(f"INSERT INTO {table} VALUES (?, ?)", [i, 1_000_000 + i])
         con.close()
         return path
     return _make
+
+
+S1, S2 = "2026-01-18_19-56", "2026-01-27_02-10"
+SECOND = {"search_date": S2, "scraped_at": "2026-01-26T23:14:02.146290+00:00"}
+
+
+def small_tree(data_dir):
+    """
+    EN: The fake raw tree of the end-to-end test: 8 records, 6 kept (one blue plate, one empty page dropped).
+    TR: Uçtan uca testin sahte ham ağacı: 8 kayıt, 6'sı tutulur (bir mavi plaka, bir boş sayfa atılır).
+    """
+    return write_raw_tree(data_dir, {
+        ("audi", S1): [
+            raw_record(10000001, Hasar_Listesi=damage_list(Tavan="Belirtilmemiş", Motor_Kaputu="Değişmiş",
+                                                           Sol_Ön_Kapı="Boyalı", Sağ_Ön_Kapı="Lokal boyalı")),
+            raw_record(10000002, **{"KısaBilgi - Motor Hacmi": "1401 - 1600 cm3", "KısaBilgi - Motor Gücü": "101 - 125 HP",
+                                    "KısaBilgi - Ağır Hasarlı": "Evet", "Agir_Hasar": True,
+                                    "Genel Bakış - Aracın ilk sahibiyim": "-"}),
+            raw_record(10000003, **{"Genel Bakış - Plaka Uyruğu": "Mavi plakalı"}),
+            raw_record(10000004, **{"Genel Bakış - Plaka Uyruğu": MISSING, "KısaBilgi - Ağır Hasarlı": MISSING}),
+        ],
+        ("audi", S2): [
+            raw_record(10000001, Fiyat="1.200.000 TL", **SECOND, **{"KısaBilgi - Ağır Hasarlı": "Belirtilmemiş"}),
+            raw_record(10000005, **SECOND, **{"KısaBilgi - Motor Hacmi": "1200 cm3' e kadar",
+                                              "KısaBilgi - Motor Gücü": "50 HP'ye kadar"}),
+        ],
+        ("bmw", S1): [
+            raw_record(10000006, brand="bmw", **{"KısaBilgi - Motor Gücü": "601 HP ve üzeri",
+                                                 "Aciklama_HTML": "<h5>Açıklama</h5><div></div>"}),
+            {"url": "https://www.arabam.com/ilan/bos", "search_date": S1},          # empty page | boş sayfa
+        ],
+    })
+
+
+def make_old_db(path):
+    """
+    EN: A previous DB holding the two archived cache tables (to be carried over).
+    TR: İki arşiv önbellek tablosunu taşıyan önceki bir DB (taşınmak üzere).
+    """
+    con = duckdb.connect(str(path))
+    con.execute("CREATE TABLE dashboard_cache (scope_brand VARCHAR, payload VARCHAR)")
+    con.execute("INSERT INTO dashboard_cache VALUES ('__ALL__', '{}'), ('audi', '{}')")
+    con.execute("CREATE TABLE options_cache (scope_brand VARCHAR, payload VARCHAR)")
+    con.execute("INSERT INTO options_cache VALUES ('__ALL__', '{}')")
+    con.close()

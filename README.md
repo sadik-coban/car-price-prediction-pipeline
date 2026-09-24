@@ -29,8 +29,9 @@ scraper/ ──► data/raw/{audi,bmw}/<tarih>/details.jsonl
               ├─ build_business_report.py ──► reports/business ×{tr,en} · reports/figures
               └─ build_shap_report.py ──► reports/shap ×{tr,en}
 
-   db/publish_data_to_s3.py ──► S3  (yayın kolu; rapor zincirinin parçası değil; gold adımı yazılana kadar
-                                     yeniden kurulan DB yayımlanmaz — docs/database.md)
+   db/build_gold_db.py (← gold_rules.json): data/cars.duckdb ──► data/cars_gold.duckdb (API sözleşmesi)
+      └─ db/publish_data_to_s3.py ──► S3 "data/cars.duckdb"  (yayın kolu; rapor zincirinin parçası değil;
+                                       yalnız gold sözleşmesini tutan dosyayı yükler — docs/database.md)
 ```
 
 ## Nasıl koşulur
@@ -46,6 +47,7 @@ pip install -r requirements-pipeline.txt
 # 1) veri toplama (opsiyonel — yeni snapshot gerekiyorsa)
 python scraper/main.py                        # -> data/raw/<marka>/<tarih>/  (kazıma kodu yalnız yerelde)
 python db/build_duckdb.py                     # -> data/cars.duckdb (+ yanına duplicate_ad_ids.csv)
+python db/build_gold_db.py                    # -> data/cars_gold.duckdb (API'ye giden; yayın yalnız bunu yükler)
 
 # 2) hepsi: analiz betikleri bağımlılık sırasıyla + derleyiciler   (~16 dk)
 python analysis/run_all.py
@@ -106,7 +108,7 @@ ile kabul edilir, sonra raporlar yeniden üretilir. Gerekçesiz kabul reddedilir
 | yol | ne |
 |---|---|
 | `scraper/` | ilan toplama → `data/raw/`; ne toplandığı (markalar, fiyat aralıkları, arama sorgusu) `collection_config.json`'da, `collection.py` okur — analiz (`01_dedup_leakage`) de aynı dosyayı okur. Kazıma kodu (`main.py`, `getlistofcars.py`, `getdetails.py`) depoda yok, yalnız yerelde; depoda bu iki ayar dosyası izlenir |
-| `db/` | `build_duckdb` (→ yarı ham `cars.duckdb`; güvenli kurulum) + `lib/process_for_db` (ham JSONL → satır ayrıştırıcıları) + `lib/damage_mappings.json` (hasar şemasının 13 parça / 5 durum etiketi; `analysis/01_unspecified_panels` da okur) · `publish_data_to_s3` (S3 yayını; `--dry-run` yalnız kontrol eder, S3'e bağlanmaz) + `lib/s3_publish` (S3 bağlantısı) |
+| `db/` | `build_duckdb` (→ yarı ham `cars.duckdb`; güvenli kurulum) + `lib/process_for_db` (ham JSONL → satır ayrıştırıcıları) + `lib/damage_mappings.json` (hasar şemasının 13 parça / 5 durum etiketi; `analysis/01_unspecified_panels` da okur) · `build_gold_db` (→ `cars_gold.duckdb`, API sözleşmesi: bilinmeyen = hayır/0; kurallar ve gerekçeleri `gold_rules.json`'da) · `publish_data_to_s3` (S3 yayını; yalnız gold sözleşmesini tutan dosyayı yükler; `--dry-run` yalnız kontrol eder, S3'e bağlanmaz) + `lib/s3_publish` (S3 bağlantısı) |
 | `tests/` | pytest testleri — `tests/db/`: raw → DB kolu (gerçek veride görülen her biçim, yarı ham kurallar, uçtan uca kurulum, güvenli kurulum) ve S3 yayın kolu (doğrulama, sürüm, yükleme sırası, manifest). Kayıtlar sahte ve gerçek biçimli; her şey geçici klasörde; ağ, `.env` ve `data/` yok · `tests/metrics/`, `tests/reports/`, `tests/repo/`: doğrulama kapısı (yukarıda); `tests/repo/test_hooks.py` yerel Claude Code hook'larını sınar, hook'lar yoksa atlanır · `tests/baselines/`: metrik referansı, istisnalar, kabul kaydı. Kurulum `pip install -r requirements-dev.txt`, koşum `python tools/verify.py` (ya da `python -m pytest tests -v`), kapsam `python -m pytest tests --cov=db --cov-branch --cov-report=term-missing` |
 | `analysis/` | **bütün hesap**: soru başına bir betik, numara = teknik raporun bölümü (`01_dedup_leakage` · `01_engine_rule` · `01_unspecified_panels` · `02_missingness` · `03_association` · `03_segment_quality` · `03_brand_ablation` · `04_target` · `05_segmentation` · `06_hedonic` · `07_model_comparison` · `07_final_model` (servis dosyaları) · `07_lofo` · `07_text_flag` · `08_conformal_coverage` · `08_residuals` · `08_large_errors` · `09_drift` · `09_backtest` · `10_free_text`) + `shap/` (SHAP raporunun bölümleri: `02_oof_shap` · `03_what_sets_price` · `04_variants` · `06_one_listing`) + `lib/` (ortak kod: `common.py` · `cv.py` · `segment_rule.py` · `text_flags.py` · `labels.py`) + `run_all.py` + `frozen/text_ablation.json` (arşivlenen metin analizinden dondurulmuş ablasyon) |
 | `builders/` | **analiz yapmayan** derleyiciler, yalnız `metrics/*.json` okur: `build_site_data.py` (→ `site_data.json`, aynı şema) · `build_technical_report.py` · `build_business_report.py` · `build_shap_report.py`; ortak kod `report_lib/` altında: `metrics_view.py` (tek okuyucu + tutarlılık kapısı) · `report_common.py` (ortak sayılar, figürler, biçimleyiciler) · `column_labels.py` |

@@ -2,7 +2,8 @@
 
 > 🇬🇧 English: [database.en.md](database.en.md) · ← [README](../README.md)
 
-Bu dosya analizin girdisi; bugüne kadar `publish_data_to_s3.py` ile S3'e de gitti (API okuyor).
+Bu dosya analizin girdisi. API'ye doğrudan gitmez: yayın, ondan türetilen gold dosyayı
+(`data/cars_gold.duckdb`, aşağıda) yükler. 2026-09-24'e kadar bu dosyanın kendisi yayımlanıyordu.
 
 - **Yarı ham (2026-09-24, kullanıcının ilkesi: "dbdeki her şey yarı raw olmalı").** Sayfanın söylemediği
   değer tahmin edilmez, `NULL` kalır; "Belirtilmemiş"in nasıl okunacağına analiz karar verir. Bir sonraki
@@ -44,36 +45,45 @@ Bu dosya analizin girdisi; bugüne kadar `publish_data_to_s3.py` ile S3'e de git
   yeniden kuruldu; **S3'e yüklemek ayrı bir adım** (önce `python db/publish_data_to_s3.py --dry-run`, sonra
   `--dry-run`'sız).
 
-## Sonraki iş: gold adımı (API) — henüz yazılmadı
+## Gold adımı (API) — yazıldı 2026-09-24
 
-Kullanıcı kararı (2026-09-24): not alındı, şimdi yapılmıyor. Analiz yarı ham DB'yi okur; canlı API (bu
-deponun dışında) eski sözleşmeyi bekler: bilinmeyen ağır hasar / ilk sahip `false`, "Belirtilmemiş" panel `0`,
-118 kolon, `description_clean` dahil. Tek dosya ikisine birden hizmet edemez.
-
-> ⚠️ **Sıra:** yarı ham DB gerçekten yeniden kurulmadan önce gold yazılmalı. Kurulduktan sonra gold olmadan
-> `publish_data_to_s3.py` koşulursa API'ye `NULL`'lar gider ve `description_clean` kolonu kaybolur. Bugünkü
-> `data/cars.duckdb` eski sözleşmeli; S3 bugün güvende.
+Analiz yarı ham DB'yi okur; canlı API (bu deponun dışında) eski sözleşmeyi bekler: bilinmeyen ağır hasar / ilk
+sahip `false`, "Belirtilmemiş" panel `0`. Tek dosya ikisine birden hizmet edemediği için API'ye ayrı bir gold
+dosyası gider.
 
 ```
 data/raw ──build_duckdb──► data/cars.duckdb (yarı ham, analiz) ──build_gold_db──► data/cars_gold.duckdb (API)
                                                                                    └─publish_data_to_s3─► S3 "data/cars.duckdb"
 ```
 
-- **`db/build_gold_db.py`** yarı ham DB'yi yalnız okur, `data/cars_gold.duckdb`'yi güvenli yazar
-  (`.tmp` + yer değiştirme, `.wal` kontrolü). Kurallar tek listede (`GOLD_RULES`), gerekçeleriyle:
-  - `is_heavy_damaged`, `kb_is_heavy_damaged`, `gb_is_first_owner` → `COALESCE(x, false)`;
-  - 39 panel bayrağı ve 3 hasar sayacı → `COALESCE(x, 0)`;
-  - `kb_paint_change_summary` alınmaz; `description_clean` = `description_text`, `description_text`'in hemen
-    arkasına. Sonuç: bugünkü 118 kolon, aynı ad, tip ve sırayla;
-  - öteki tablolar (`duplicate_ad_ids`, `price_history`, `dashboard_cache`, `options_cache`) aynen.
-- **`publish_data_to_s3.py`**: varsayılan girdi `data/cars_gold.duckdb`; S3 nesne adı aynı kalır; "dosya yok"
-  ipucu iki adımı söyler.
+- **`db/build_gold_db.py`** yarı ham DB'yi yalnız okur, `data/cars_gold.duckdb`'yi güvenli yazar (`.tmp` + yer
+  değiştirme, `.wal` kontrolü). Önce girdinin gerçekten yarı ham DB olduğunu sınar (kolonlar `id` +
+  `DB_COLUMNS`); eski sözleşmeli ya da gold bir dosya reddedilir. Kurallar gerekçeleriyle
+  **`db/gold_rules.json`**'da (teknik raporun gold bölümü de aynı dosyayı okuyacak):
+  - `is_heavy_damaged`, `kb_is_heavy_damaged`, `gb_is_first_owner`: `NULL` → `false`;
+  - 39 panel bayrağı ve 3 hasar sayacı: `NULL` → `0` ("Belirtilmemiş" panel, analizdeki gibi orijinal sayılır);
+  - `kb_paint_change_summary` alınmaz;
+  - açıklama yarı ham DB'deki gibi: yalnız başlıksız `description_text`, **`description_clean` yok** (kullanıcı
+    kararı 2026-09-24: "açıklama metni aynı kalsın, description_text olsun; API yapısına dokunuyorsa API'de fix
+    atarım");
+  - sonuç 116 kolon + `id`; satırlar, sıra, id'ler, tipler ve öteki her hücre aynı; öteki dört tablo aynen.
+- **`publish_data_to_s3.py`**: varsayılan girdi `data/cars_gold.duckdb`, S3 nesne adı aynı (`data/cars.duckdb`).
+  Yüklemeden önce gold sözleşmesini sınar (kolonlar = `id` + gold kolonları, kural kolonlarında `NULL` yok);
+  yarı ham ya da eski sözleşmeli bir dosya API'ye gidemez.
 - **Koşum sırası:** `build_duckdb.py` → `build_gold_db.py` → (kullanıcı) `publish_data_to_s3.py`.
-- **Testler** (`tests/db/test_build_gold_db.py`): kural kolonlarında `NULL` → false/0 ve `NULL`
-  olmayana dokunulmaması; kural dışı kolonlar ve dört tablo hücre hücre aynı; şema bugünküyle aynı; güvenli
-  yazma; yayının yeni varsayılanı.
-- **Kanıt:** gold, eski kodun ham veriden ürettiği DB ile hücre hücre karşılaştırılır. Eski kod
-  `archive/obsolete/pipeline-yedek-2026-09-24/`'te; bugünkü DB'yi birebir ürettiği doğrulandı (klasörün README'si
-  nasıl koşulacağını anlatır). Beklenen farklar yalnız açıklamada: `description_text` her satırda (başlık yok;
-  yalnız başlıktan ibaret 114 satır `NULL`), `description_clean` tam 778 satırda. Başka hiçbir hücre
-  değişmemeli.
+- **Testler** (`tests/db/test_build_gold_db.py` + yayın testleri): kural dosyası DB kolonlarıyla uyumlu; kural
+  kolonlarında `NULL` → false/0, bilinen değer değişmiyor; kural dışı kolonlar ve dört tablo hücre hücre aynı;
+  şema ve tipler; girdi denetimi; güvenli yazma; yayının gold olmayan dosyayı ve kural kolonundaki `NULL`'u
+  reddetmesi.
+- **Kanıt (2026-09-24, gerçek ham veriyle, geçici klasörde):** yeni kodla kurulan yarı ham DB → gold, bugünkü
+  `data/cars.duckdb` ile (eski kodun ürünü, eski sözleşme) hücre hücre karşılaştırıldı:
+  - kolonlar: eskisi eksi `description_clean` = gold (117; ad, sıra ve tip aynı); 45.277 satır, id'ler aynı;
+  - farklı tek kolon `description_text` (her satırda sayfa başlığı yok). Eski `description_clean` ile yalnız 778
+    satırda ayrışıyor (satıcının baştaki "-" / ":" işareti); yalnız başlıktan ibaret 114 satır `NULL`;
+  - `duplicate_ad_ids`, `price_history` ve iki önbellek birebir aynı;
+  - gold'un doldurduğu hücre: 59.402 (ağır hasar ×2 + ilk sahip), 293.988 (panel bayrakları), 0 (sayaçlar);
+  - `publish --dry-run`: gold geçti; yarı ham DB ve bugünkü eski DB reddedildi.
+- **API'nin göreceği fark:** yalnız açıklama. `description_clean` kolonu yok; API onu okuyorsa
+  `description_text`'e geçmeli (778 satır dışında aynı metin).
+- **Henüz yapılmadı:** gerçek `data/cars.duckdb` hâlâ eski kodun kurduğu dosya (eski sözleşme). Yarı ham olarak
+  yeniden kurulması, analizdeki üç uyarlama ve gold'un teknik rapora yazılması sonraki adımlar (`db_plan.md`).

@@ -2,7 +2,8 @@
 
 > 🇹🇷 Türkçe (varsayılan): [database.md](database.md) · ← [README](../README.en.md)
 
-This file is the analysis' input; until now it also went to S3 via `publish_data_to_s3.py` (the API reads it).
+This file is the analysis' input. It does not go to the API directly: publishing uploads the gold file
+derived from it (`data/cars_gold.duckdb`, below). Until 2026-09-24 this file itself was published.
 
 - **Semi-raw (2026-09-24, the owner's principle: "everything in the DB should be semi-raw").** A value the
   page does not give is not guessed, it stays `NULL`; the analysis decides how to read "Belirtilmemiş"
@@ -47,36 +48,49 @@ This file is the analysis' input; until now it also went to S3 via `publish_data
   rebuilt locally; **uploading it to S3 is a separate step** (first `python db/publish_data_to_s3.py --dry-run`,
   then without `--dry-run`).
 
-## Next: the gold step (API) — not written yet
+## The gold step (API) — written 2026-09-24
 
-Owner's decision (2026-09-24): noted, not done now. The analysis reads the semi-raw DB; the live API (outside
-this repo) expects the old contract: unknown heavy damage / first owner `false`, "Belirtilmemiş" panel `0`,
-118 columns including `description_clean`. One file cannot serve both.
-
-> ⚠️ **Order:** the gold step must be written before the semi-raw DB is actually rebuilt. Running
-> `publish_data_to_s3.py` after such a rebuild without gold would send `NULL`s to the API and drop the
-> `description_clean` column. Today's `data/cars.duckdb` has the old contract; S3 is safe today.
+The analysis reads the semi-raw DB; the live API (outside this repo) expects the old contract: unknown heavy
+damage / first owner `false`, "Belirtilmemiş" panel `0`. One file cannot serve both, so the API gets a separate
+gold file.
 
 ```
 data/raw ──build_duckdb──► data/cars.duckdb (semi-raw, analysis) ──build_gold_db──► data/cars_gold.duckdb (API)
-                                                                                      └─publish_data_to_s3─► S3 "data/cars.duckdb"
+                                                                                   └─publish_data_to_s3─► S3 "data/cars.duckdb"
 ```
 
-- **`db/build_gold_db.py`** only reads the semi-raw DB and writes `data/cars_gold.duckdb` safely (`.tmp`
-  + move, `.wal` check). The rules sit in one list (`GOLD_RULES`) with their reasons:
-  - `is_heavy_damaged`, `kb_is_heavy_damaged`, `gb_is_first_owner` → `COALESCE(x, false)`;
-  - the 39 panel flags and the 3 damage counts → `COALESCE(x, 0)`;
-  - `kb_paint_change_summary` is left out; `description_clean` = `description_text`, right after
-    `description_text`. Result: today's 118 columns with the same names, types and order;
-  - the other tables (`duplicate_ad_ids`, `price_history`, `dashboard_cache`, `options_cache`) as they are.
-- **`publish_data_to_s3.py`**: default input `data/cars_gold.duckdb`; the S3 object name stays; the "file
-  not found" hint names both steps.
+- **`db/build_gold_db.py`** only reads the semi-raw DB and writes `data/cars_gold.duckdb` safely (`.tmp` + move,
+  `.wal` check). It first checks that the input really is the semi-raw DB (columns `id` + `DB_COLUMNS`); an
+  old-contract or a gold file is refused. The rules, with their reasons, are in **`db/gold_rules.json`** (the
+  technical report's gold section will read the same file):
+  - `is_heavy_damaged`, `kb_is_heavy_damaged`, `gb_is_first_owner`: `NULL` → `false`;
+  - the 39 panel flags and the 3 damage counters: `NULL` → `0` (a "Belirtilmemiş" panel counts as original, as in
+    the analysis);
+  - `kb_paint_change_summary` is left out;
+  - the description as in the semi-raw DB: only the heading-free `description_text`, **no `description_clean`**
+    (owner's decision 2026-09-24: keep the description as `description_text`; if it touches the API, the owner
+    fixes the API);
+  - result: 116 columns + `id`; rows, order, ids, types and every other cell unchanged; the four other tables as
+    they are.
+- **`publish_data_to_s3.py`**: default input `data/cars_gold.duckdb`, S3 object name unchanged
+  (`data/cars.duckdb`). Before uploading it checks the gold contract (columns = `id` + the gold columns, no `NULL`
+  in a rule column); a semi-raw or old-contract file cannot reach the API.
 - **Run order:** `build_duckdb.py` → `build_gold_db.py` → (owner) `publish_data_to_s3.py`.
-- **Tests** (`tests/db/test_build_gold_db.py`): `NULL` → false/0 in the rule columns and non-`NULL`
-  values untouched; non-rule columns and the four tables equal cell by cell; the schema equals today's; the
-  safe write; the publisher's new default.
-- **Proof:** gold is compared cell by cell with the DB the old code builds from the raw data. The old code is
-  in `archive/obsolete/pipeline-yedek-2026-09-24/`; it was checked to reproduce today's DB exactly (the folder's
-  README explains how to run it). Expected differences only in the description: `description_text` in every
-  row (no heading; the 114 heading-only rows `NULL`), `description_clean` in exactly 778 rows. No other cell
-  may change.
+- **Tests** (`tests/db/test_build_gold_db.py` + the publishing tests): the rule file fits the DB columns; `NULL` →
+  false/0 in the rule columns and known values untouched; non-rule columns and the four tables equal cell by
+  cell; schema and types; the input check; the safe write; the publisher refusing a non-gold file and a `NULL` in
+  a rule column.
+- **Proof (2026-09-24, real raw data, in a temp folder):** a semi-raw DB built by the new code → gold, compared
+  cell by cell with today's `data/cars.duckdb` (built by the old code, old contract):
+  - columns: old minus `description_clean` = gold (117; same names, order and types); 45,277 rows, same ids;
+  - the only differing column is `description_text` (the page heading is gone in every row). Against the old
+    `description_clean` only 778 rows differ (the seller's leading "-" / ":"); the 114 heading-only rows are
+    `NULL`;
+  - `duplicate_ad_ids`, `price_history` and both caches identical;
+  - cells gold fills: 59,402 (heavy damage ×2 + first owner), 293,988 (panel flags), 0 (counters);
+  - `publish --dry-run`: gold passed; the semi-raw DB and today's old DB were refused.
+- **What the API will see:** only the description changes. There is no `description_clean` column; if the API
+  reads it, it should switch to `description_text` (the same text except in 778 rows).
+- **Not done yet:** the real `data/cars.duckdb` is still the file the old code built (old contract). Rebuilding
+  it semi-raw, the three analysis follow-ups and writing gold into the technical report are the next steps
+  (`db_plan.md`).

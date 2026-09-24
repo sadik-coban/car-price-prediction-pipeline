@@ -36,6 +36,36 @@ def test_validate_empty_table(make_duckdb):
         P.validate_duckdb(make_duckdb(rows=0))
 
 
+def test_default_input_is_gold():
+    """
+    EN: The default file is the gold DB; the S3 object keeps the name the API polls.
+    TR: Varsayılan dosya gold DB; S3 nesnesi API'nin yokladığı adı korur.
+    """
+    assert P.DEFAULT_DUCKDB.name == "cars_gold.duckdb" and P.DATA_KEY == "data/cars.duckdb"
+
+
+def test_validate_refuses_non_gold_table(make_duckdb):
+    """
+    EN: A car_listings that is not the gold contract (here a bare ad_id + price table) is refused.
+    TR: Gold sözleşmesinde olmayan bir car_listings (burada yalın ad_id + price tablosu) reddedilir.
+    """
+    with pytest.raises(ValueError, match="not a gold DB.*columns"):
+        P.validate_duckdb(make_duckdb(gold=False))
+
+
+def test_validate_refuses_null_in_rule_column(make_duckdb):
+    """
+    EN: A NULL left in a gold rule column (an unknown panel) is refused, so the API never gets it.
+    TR: Bir gold kural kolonunda kalan NULL (bilinmeyen panel) reddedilir; API'ye asla gitmez.
+    """
+    path = make_duckdb(rows=3)
+    con = duckdb.connect(str(path))
+    con.execute("UPDATE car_listings SET tavan_boyali = NULL WHERE id = 2")
+    con.close()
+    with pytest.raises(ValueError, match="NULL left.*tavan_boyali"):
+        P.validate_duckdb(path)
+
+
 def test_validate_not_duckdb(tmp_path):
     """EN: A file that is not DuckDB → ValueError. / TR: DuckDB olmayan dosya → ValueError."""
     bad = tmp_path / "bad.duckdb"

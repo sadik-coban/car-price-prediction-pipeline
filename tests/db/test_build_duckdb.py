@@ -14,59 +14,14 @@ import hashlib
 import duckdb
 import pandas as pd
 import pytest
-from conftest import MISSING, damage_list, raw_record, write_raw_tree
+from conftest import S1, S2, make_old_db, raw_record, small_tree, write_raw_tree
 
 import build_duckdb as BD
 from lib.process_for_db import DAMAGE_PART_MAP
 
-S1, S2 = "2026-01-18_19-56", "2026-01-27_02-10"
-SECOND = {"search_date": S2, "scraped_at": "2026-01-26T23:14:02.146290+00:00"}
-
-
 def sha(path):
     """EN: sha256 of a file. / TR: Dosyanın sha256'sı."""
     return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def small_tree(data_dir):
-    """
-    EN: The fake raw tree of the end-to-end test: 8 records, 6 kept (one blue plate, one empty page dropped).
-    TR: Uçtan uca testin sahte ham ağacı: 8 kayıt, 6'sı tutulur (bir mavi plaka, bir boş sayfa atılır).
-    """
-    return write_raw_tree(data_dir, {
-        ("audi", S1): [
-            raw_record(10000001, Hasar_Listesi=damage_list(Tavan="Belirtilmemiş", Motor_Kaputu="Değişmiş",
-                                                           Sol_Ön_Kapı="Boyalı", Sağ_Ön_Kapı="Lokal boyalı")),
-            raw_record(10000002, **{"KısaBilgi - Motor Hacmi": "1401 - 1600 cm3", "KısaBilgi - Motor Gücü": "101 - 125 HP",
-                                    "KısaBilgi - Ağır Hasarlı": "Evet", "Agir_Hasar": True,
-                                    "Genel Bakış - Aracın ilk sahibiyim": "-"}),
-            raw_record(10000003, **{"Genel Bakış - Plaka Uyruğu": "Mavi plakalı"}),
-            raw_record(10000004, **{"Genel Bakış - Plaka Uyruğu": MISSING, "KısaBilgi - Ağır Hasarlı": MISSING}),
-        ],
-        ("audi", S2): [
-            raw_record(10000001, Fiyat="1.200.000 TL", **SECOND, **{"KısaBilgi - Ağır Hasarlı": "Belirtilmemiş"}),
-            raw_record(10000005, **SECOND, **{"KısaBilgi - Motor Hacmi": "1200 cm3' e kadar",
-                                              "KısaBilgi - Motor Gücü": "50 HP'ye kadar"}),
-        ],
-        ("bmw", S1): [
-            raw_record(10000006, brand="bmw", **{"KısaBilgi - Motor Gücü": "601 HP ve üzeri",
-                                                 "Aciklama_HTML": "<h5>Açıklama</h5><div></div>"}),
-            {"url": "https://www.arabam.com/ilan/bos", "search_date": S1},          # empty page | boş sayfa
-        ],
-    })
-
-
-def make_old_db(path):
-    """
-    EN: A previous DB holding the two archived cache tables (to be carried over).
-    TR: İki arşiv önbellek tablosunu taşıyan önceki bir DB (taşınmak üzere).
-    """
-    con = duckdb.connect(str(path))
-    con.execute("CREATE TABLE dashboard_cache (scope_brand VARCHAR, payload VARCHAR)")
-    con.execute("INSERT INTO dashboard_cache VALUES ('__ALL__', '{}'), ('audi', '{}')")
-    con.execute("CREATE TABLE options_cache (scope_brand VARCHAR, payload VARCHAR)")
-    con.execute("INSERT INTO options_cache VALUES ('__ALL__', '{}')")
-    con.close()
 
 
 @pytest.fixture(scope="module")

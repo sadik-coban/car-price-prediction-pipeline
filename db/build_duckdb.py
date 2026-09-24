@@ -17,9 +17,9 @@ EN: Builds the SEMI-RAW database data/cars.duckdb from data/raw/{audi,bmw}/<snap
     leaves the old DB untouched. It stops before touching anything when <out>.wal exists (the old DB was not
     closed cleanly), when the old DB is open in another program, or when the raw data is incomplete (a missing
     brand folder, a snapshot folder without details.jsonl, an unreadable line).
-    NOTE — the API: the live API expects the OLD contract (unknown = false / 0, a description_clean column).
-    Until the gold step exists (docs/database.md → "Sonraki iş: gold adımı"), a DB rebuilt with this script must NOT be
-    published to S3.
+    NOTE — the API: this semi-raw file is NOT what the API gets. The live API expects unknown = false / 0;
+    db/build_gold_db.py derives data/cars_gold.duckdb from this file, and publish_data_to_s3.py uploads only a
+    file that keeps that gold contract (docs/database.md → "Gold adımı").
 TR: data/raw/{audi,bmw}/<tarama>/details.jsonl'den YARI HAM veritabanı data/cars.duckdb'yi kurar (analiz okur).
     Satırlar lib/process_for_db.py'den gelir; bu betik yalnız dosyaları okur, TR plakalıları tutar ve tabloları
     yazar. NE yazılır:
@@ -36,8 +36,9 @@ TR: data/raw/{audi,bmw}/<tarama>/details.jsonl'den YARI HAM veritabanı data/car
     dokunulmadan kalır. <out>.wal varsa (eski DB düzgün kapanmamış), eski DB başka programda açıksa ya da ham
     veri eksikse (marka klasörü yok, details.jsonl'suz tarama klasörü, okunamayan satır) hiçbir şeye dokunmadan
     durur.
-    NOT — API: canlı API ESKİ sözleşmeyi bekliyor (bilinmeyen = false / 0, description_clean kolonu). Gold adımı
-    yazılana kadar (docs/database.md → "Sonraki iş: gold adımı") bu betikle yeniden kurulan DB S3'e yayımlanMAMALI.
+    NOT — API: bu yarı ham dosya API'ye giden dosya DEĞİL. Canlı API bilinmeyen = false / 0 bekler;
+    db/build_gold_db.py bu dosyadan data/cars_gold.duckdb'yi türetir ve publish_data_to_s3.py yalnız o gold
+    sözleşmesini tutan dosyayı yükler (docs/database.md → "Gold adımı").
 Run / Koşum:
     python db/build_duckdb.py [--out PATH]
 """

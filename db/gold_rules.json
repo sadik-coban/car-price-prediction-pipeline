@@ -1,0 +1,92 @@
+{
+ "_about": {
+  "en": "Silver → gold: the API contract applied to the semi-raw DB by db/build_gold_db.py. Rows, row order, ids and every other column stay as they are. Kept as data (not code) so that the report side can read the same rules without importing db/ code — the rule lives in one place.",
+  "tr": "Silver → gold: db/build_gold_db.py'nin yarı ham DB'ye uyguladığı API sözleşmesi. Satırlar, sıraları, id'ler ve öteki her kolon olduğu gibi kalır. Kod değil veri olarak tutulur; rapor tarafı aynı kuralları db/ kodunu import etmeden okuyabilsin — kural tek yerde durur."
+ },
+ "fill": [
+  {
+   "name": "heavy_damage_first_owner",
+   "value": false,
+   "columns": [
+    "is_heavy_damaged",
+    "kb_is_heavy_damaged",
+    "gb_is_first_owner"
+   ],
+   "reason": {
+    "en": "The API contract predates the semi-raw DB: a heavy-damage record the page does not state, or a missing first-owner field, reads as 'no'.",
+    "tr": "API sözleşmesi yarı ham DB'den eski: sayfanın belirtmediği ağır hasar kaydı ya da olmayan ilk sahip alanı 'hayır' okunur."
+   }
+  },
+  {
+   "name": "panel_flags",
+   "value": 0,
+   "columns": [
+    "tavan_degisen",
+    "tavan_boyali",
+    "tavan_lokal",
+    "kaput_degisen",
+    "kaput_boyali",
+    "kaput_lokal",
+    "bagaj_degisen",
+    "bagaj_boyali",
+    "bagaj_lokal",
+    "door_fl_degisen",
+    "door_fl_boyali",
+    "door_fl_lokal",
+    "door_fr_degisen",
+    "door_fr_boyali",
+    "door_fr_lokal",
+    "door_rl_degisen",
+    "door_rl_boyali",
+    "door_rl_lokal",
+    "door_rr_degisen",
+    "door_rr_boyali",
+    "door_rr_lokal",
+    "fender_fl_degisen",
+    "fender_fl_boyali",
+    "fender_fl_lokal",
+    "fender_fr_degisen",
+    "fender_fr_boyali",
+    "fender_fr_lokal",
+    "fender_rl_degisen",
+    "fender_rl_boyali",
+    "fender_rl_lokal",
+    "fender_rr_degisen",
+    "fender_rr_boyali",
+    "fender_rr_lokal",
+    "bumper_front_degisen",
+    "bumper_front_boyali",
+    "bumper_front_lokal",
+    "bumper_rear_degisen",
+    "bumper_rear_boyali",
+    "bumper_rear_lokal"
+   ],
+   "reason": {
+    "en": "A panel the seller marked 'Belirtilmemiş' (not stated) counts as original: all three flags 0, the same reading the analysis uses (technical report §1).",
+    "tr": "Satıcının 'Belirtilmemiş' dediği panel orijinal sayılır: üç bayrağı da 0; analizin kullandığı okumanın aynısı (teknik rapor §1)."
+   }
+  },
+  {
+   "name": "damage_counts",
+   "value": 0,
+   "columns": [
+    "count_changed",
+    "count_painted",
+    "count_local_painted"
+   ],
+   "reason": {
+    "en": "Precaution: the damage counters are never empty in the real data, and the old contract has no NULL here.",
+    "tr": "Önlem: hasar sayaçları gerçek veride hiç boş değil ve eski sözleşmede burada NULL yok."
+   }
+  }
+ ],
+ "drop": [
+  {
+   "column": "kb_paint_change_summary",
+   "reason": {
+    "en": "New raw column of the semi-raw DB (the 'Boya-değişen' summary line); not part of the API contract.",
+    "tr": "Yarı ham DB'nin yeni ham kolonu ('Boya-değişen' özet satırı); API sözleşmesinde yok."
+   }
+  }
+ ]
+}
