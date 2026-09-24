@@ -46,3 +46,21 @@ together with its script.
 `analysis/lib/cv.py`, exactly as in `07_model_comparison`. The rebuilt LightGBM OOF predictions match 07's stored
 OOF **to the kuruş** (max difference ₺0.00). The match is checked as a gate on every run — if it fails, the
 file is not written. (The CatBoost variants are not rebuilt here.)
+
+**Verification gate and metrics baseline (2026-09-24).** Determinism is not measured once and left alone; it
+is checked on every change by `tools/verify.py`. `tests/baselines/` holds two snapshots of the 24 metrics
+files: `metrics_shape.json` (every key path and its JSON type) and `metrics_fingerprint.json` (the value of
+each scalar; for lists, the length and the sha256 of their canonical JSON). The first baseline is the metrics
+of commit `b2395e0` on the `restructure-2026-09` branch. Rules:
+- the default is **exact equality**. The only keys allowed to move are listed in
+  `tests/baselines/exemptions.json`, each with a tr/en reason: `_meta.generated_at` (the run stamp), the
+  bootstrap run time of `06_hedonic`, and the `catboost_native*` keys of `shap/04_variants` (the residue
+  above). An exemption that no longer matches any key fails the test, so no stale exemption stays;
+- the baseline changes only through `python tools/snapshot_metrics.py --accept "<reason>"`. The
+  `metrics_view` consistency gate must pass first and the reason cannot be empty; every accept is logged in
+  `tests/baselines/accept_log.jsonl` with the time, the reason, the number of changed keys and the first
+  differences;
+- reports are a pure function of the metrics. The test runs the builders into a temp folder through the
+  `CARDATASYS_OUT` environment variable and compares the output with the repository: the md files ignoring
+  line ends, the figures byte for byte, `site_data.json` as JSON. If the reports are not rebuilt after an
+  accept, this test fails.

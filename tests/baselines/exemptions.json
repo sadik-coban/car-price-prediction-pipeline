@@ -1,0 +1,40 @@
+{
+  "_about": {
+    "en": "Metric keys allowed to differ from the baseline between runs of the same code on the same data. Each entry needs a reason; tests/metrics checks that every entry still matches a key. Everything else must stay exactly equal.",
+    "tr": "Aynı kodun aynı veride koşumları arasında referanstan farklı çıkabilen metrik anahtarları. Her girdinin gerekçesi olmalı; tests/metrics her girdinin hâlâ bir anahtara uyduğunu sınar. Geri kalan her şey birebir aynı kalmalı."
+  },
+  "exemptions": [
+    {
+      "file": "*",
+      "path": "_meta.generated_at",
+      "reason": {
+        "en": "When the script ran; changes on every run.",
+        "tr": "Betiğin koştuğu an; her koşumda değişir."
+      }
+    },
+    {
+      "file": "06_hedonic",
+      "path": "domain.hedonic_reliability.bootstrap_ayar.sure_sn",
+      "reason": {
+        "en": "Wall-clock seconds of the bootstrap; depends on the machine load, not on the data.",
+        "tr": "Bootstrap'in saniye cinsinden süresi; makinenin yüküne bağlı, veriye değil."
+      }
+    },
+    {
+      "file": "shap/04_variants",
+      "path": "domain.shap.catboost_native*",
+      "reason": {
+        "en": "Native CatBoost SHAP attribution flips between two states run to run while the predictions stay identical (docs/reproducibility.md, known residue).",
+        "tr": "Native CatBoost SHAP atfı, tahminler birebir aynıyken koşumdan koşuma iki durum arasında gidip geliyor (docs/reproducibility.md, bilinen kalıntı)."
+      }
+    },
+    {
+      "file": "shap/04_variants",
+      "path": "shap_final.catboost_native*",
+      "reason": {
+        "en": "Same residue as above: the native model's SHAP shares used by SHAP report §4.",
+        "tr": "Yukarıdakiyle aynı kalıntı: SHAP raporu §4'ün kullandığı native model SHAP payları."
+      }
+    }
+  ]
+}

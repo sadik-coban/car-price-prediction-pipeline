@@ -13,6 +13,7 @@ TR: Sitenin tek veri dosyası data/site_data.json'u metrics/*.json'dan derler. A
 Run / Koşum: python builders/build_site_data.py
 """
 import json
+import os
 import pathlib
 import sys
 
@@ -22,8 +23,10 @@ sys.path.insert(0, str(HERE))
 from report_lib import metrics_view as MV      # noqa: E402  the single metrics reader | tek metrik okuyucu
 from report_lib.column_labels import COLUMN_LABELS  # noqa: E402
 
-SITE_OUT = ROOT / "data" / "site_data.json"
-LABELS_OUT = ROOT / "data" / "serving" / "column_labels.json"
+# EN: CARDATASYS_OUT redirects the outputs (tests); unset → the repo | TR: CARDATASYS_OUT çıktıları yönlendirir
+OUT_ROOT = pathlib.Path(os.environ.get("CARDATASYS_OUT") or ROOT)
+SITE_OUT = OUT_ROOT / "data" / "site_data.json"
+LABELS_OUT = OUT_ROOT / "data" / "serving" / "column_labels.json"
 # EN: the keys the site reads; a missing one stops the build | TR: sitenin okuduğu anahtarlar; eksikse durur
 SITE_KEYS = {
     "meta": ["n_dedup", "n_raw", "snapshots", "n_features", "brands", "repro"],
@@ -64,7 +67,7 @@ def main():
     LABELS_OUT.parent.mkdir(parents=True, exist_ok=True)
     SITE_OUT.write_text(json.dumps(site, ensure_ascii=False, indent=2), encoding="utf-8")
     LABELS_OUT.write_text(json.dumps(COLUMN_LABELS, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"[✓] {SITE_OUT.relative_to(ROOT)} ({SITE_OUT.stat().st_size / 1e6:.1f} MB) · "
+    print(f"[✓] {SITE_OUT} ({SITE_OUT.stat().st_size / 1e6:.1f} MB) · "
           f"domain {len(site['domain'])} · methodology {len(site['methodology'])} · run {site['meta']['run_id']}")
 
 

@@ -9,6 +9,7 @@ TR: Teknik rapor ve karar notu derleyicilerinin paylaştıkları: metrik görün
     aritmetik; veri üzerindeki her hesap analysis/'te), figür şablonları ve figürler (metrik değerlerinden
     çizilir), sayı/etiket biçimleyicileri ve TR/EN etiket sözlükleri. Burada analiz yok.
 """
+import os
 import pathlib
 import re
 from decimal import Decimal, ROUND_HALF_UP
@@ -23,7 +24,10 @@ from .column_labels import COLUMN_LABELS           # noqa: E402
 
 # --- Paths: from __file__, independent of cwd | Yollar: __file__'a göre, cwd'ye bağlı değil ---------------
 ROOT = pathlib.Path(__file__).resolve().parents[2]  # repo root | depo kökü
-REPORTS_DIR = ROOT / "reports"                     # the six report md files | altı rapor md'si
+# EN: where the outputs go; CARDATASYS_OUT redirects them (tests rebuild the reports into a temp folder)
+# TR: çıktıların gittiği yer; CARDATASYS_OUT yönlendirir (testler raporları geçici klasöre yeniden üretir)
+OUT_ROOT = pathlib.Path(os.environ.get("CARDATASYS_OUT") or ROOT)
+REPORTS_DIR = OUT_ROOT / "reports"                 # the six report md files | altı rapor md'si
 FIGDIR = REPORTS_DIR / "figures"
 FIGDIR.mkdir(parents=True, exist_ok=True)
 

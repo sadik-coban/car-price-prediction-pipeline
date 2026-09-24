@@ -44,3 +44,19 @@ betiğiyle birlikte `archive/analysis-history/shap-v3-oof-vakalar-2026-09-21/` a
 `analysis/lib/cv.py` ile, `07_model_comparison`'daki kurulumun aynısıyla yeniden kurulur. Yeniden üretilen
 LightGBM OOF tahminleri 07'nin sakladığı OOF ile **kuruşu kuruşuna** eşleşti (max fark ₺0.00). Eşleşme her
 koşumda kapı olarak sınanır — tutmazsa dosya yazılmaz. (CatBoost varyantları burada yeniden kurulmaz.)
+
+**Doğrulama kapısı ve metrik referansı (2026-09-24).** Determinizm bir kez ölçülüp bırakılmıyor, her
+değişiklikte `tools/verify.py` ile sınanıyor. `tests/baselines/` 24 metrik dosyasının iki anlık görüntüsünü
+tutar: `metrics_shape.json` (her anahtar yolu ve JSON tipi) ve `metrics_fingerprint.json` (skalerin değeri;
+listelerin uzunluğu ve kanonik JSON'unun sha256'sı). İlk referans `restructure-2026-09` dalındaki `b2395e0`
+commit'inin metrikleridir. Kurallar:
+- varsayılan **birebir eşitlik**. Oynamasına izin verilen anahtarlar yalnız
+  `tests/baselines/exemptions.json`'da, her biri tr/en gerekçesiyle: `_meta.generated_at` (koşum damgası),
+  `06_hedonic`'in bootstrap süresi ve `shap/04_variants`'ın `catboost_native*` anahtarları (yukarıdaki
+  kalıntı). Artık hiçbir anahtarla eşleşmeyen istisna testi düşürür; bayat istisna kalmaz;
+- referans yalnız `python tools/snapshot_metrics.py --accept "<gerekçe>"` ile değişir. Önce `metrics_view`
+  tutarlılık kapısı geçmeli, gerekçe boş olamaz; her kabul `tests/baselines/accept_log.jsonl`'a tarih,
+  gerekçe, değişen anahtar sayıları ve ilk farklarla yazılır;
+- raporlar metriklerin saf fonksiyonudur. Test, derleyicileri `CARDATASYS_OUT` ortam değişkeniyle geçici bir
+  klasöre koşar ve çıktıyı depodakiyle karşılaştırır: md'ler satır sonları hariç, figürler bayt bayt,
+  `site_data.json` JSON olarak. Referans kabul edildikten sonra raporlar yeniden üretilmezse bu test düşer.

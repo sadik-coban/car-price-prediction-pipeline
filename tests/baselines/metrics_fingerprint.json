@@ -1,0 +1,1462 @@
+{
+ "01_dedup_leakage": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+  "_meta.generated_at": "2026-09-24T12:51:16",
+  "_meta.run_id": null,
+  "_meta.script": "01_dedup_leakage.py",
+  "error_drivers.fiyat_degisimi.coklu": 10831,
+  "error_drivers.fiyat_degisimi.coklu_pct": 36.1,
+  "error_drivers.fiyat_degisimi.degisen": 4703,
+  "error_drivers.fiyat_degisimi.degisen_pct": 15.7,
+  "error_drivers.fiyat_degisimi.donup_ayni": 48,
+  "error_drivers.fiyat_degisimi.ilan": 29988,
+  "error_drivers.fiyat_degisimi.indirim": 2801,
+  "error_drivers.fiyat_degisimi.zam": 1854,
+  "error_drivers.kapsam.fiyat_max": 6500000,
+  "error_drivers.kapsam.fiyat_min": 300000,
+  "error_drivers.kapsam.markalar": {
+   "len": 2,
+   "sha256": "b10636aba362079889c4bc3305cf6b4d846e6c7df4e1aa229f62fc87df537a56"
+  },
+  "error_drivers.kapsam.max_km": 700000,
+  "error_drivers.kapsam.min_yil": 2005,
+  "error_drivers.kapsam.olculen.elektrik": 0,
+  "error_drivers.kapsam.olculen.fiyat_max": 6500000.0,
+  "error_drivers.kapsam.olculen.km_max": 648000.0,
+  "error_drivers.kapsam.olculen.min_yilda": 541,
+  "error_drivers.kapsam.olculen.suv": 6,
+  "error_drivers.kapsam.olculen.tavan_ust_yuzde1": 38,
+  "error_drivers.kapsam.olculen.tavanda": 10,
+  "error_drivers.kapsam.olculen.yakit.Benzin": 14882,
+  "error_drivers.kapsam.olculen.yakit.Dizel": 12982,
+  "error_drivers.kapsam.olculen.yakit.Hibrit": 900,
+  "error_drivers.kapsam.olculen.yakit.LPG & Benzin": 1224,
+  "error_drivers.kapsam.olculen.yil_min": 2005,
+  "error_drivers.kapsam.yakit_filtresi": {
+   "len": 4,
+   "sha256": "2559a14b17f058991c0fe9d1f0b5d632c55e850da79390904cbafe6215ea3871"
+  },
+  "error_drivers.kapsam.yas_tavani": 21,
+  "error_drivers.kapsam.yol": "otomobil",
+  "error_drivers.plaka_kapsami.dagilim": {
+   "len": 2,
+   "sha256": "125ff282a7f55a54c1d8ebc6a509accb127c5e20fbabcd28922b9a1c33c4543d"
+  },
+  "error_drivers.plaka_kapsami.egitime_giren_ilan": 29988,
+  "error_drivers.plaka_kapsami.elenen_ilan": 54,
+  "error_drivers.plaka_kapsami.iki_etiketli_ilan": 23,
+  "error_drivers.plaka_kapsami.not": "Yabancı/mavi plakalı ilanlar veritabanına hiç yazılmadı (build_duckdb.py); burada elenenler plaka bilgisi BOŞ olan ilanlardır. Eğitim, doğrulama ve backtest'in tamamı TR plakalı ilanlar üzerindedir.",
+  "meta.brands.audi": 12092,
+  "meta.brands.bmw": 17896,
+  "meta.n_dedup": 29988,
+  "meta.n_raw": 45159,
+  "meta.snapshots": {
+   "len": 4,
+   "sha256": "680d5fc8b20bec8ffebd15079a0894d6919b3785667c194996512383885b2ea7"
+  },
+  "methodology.icerik_duplike.duplike_grup_sayisi": 127,
+  "methodology.icerik_duplike.en_cok_tekrar": {
+   "len": 5,
+   "sha256": "f9a78ced15463fac62970f1f3dd3a01966270ec15eccca035939d05eb6a45d0d"
+  },
+  "methodology.icerik_duplike.fiyatsiz_tanim_fazla": 1278,
+  "methodology.icerik_duplike.fiyatsiz_tanim_pct": 4.26,
+  "methodology.icerik_duplike.fiyatsiz_yuvarlak_olmayan_km_fazla": 113,
+  "methodology.icerik_duplike.gevsek_tanim_fazla": 209,
+  "methodology.icerik_duplike.gevsek_tanim_pct": 0.7,
+  "methodology.icerik_duplike.kati_tanim_fazla": 137,
+  "methodology.icerik_duplike.kati_tanim_kolonlari": {
+   "len": 12,
+   "sha256": "3cb4b8c73bfd94dd4059ac229e0351b1710c5738f8c060fd59808b8b8eae2025"
+  },
+  "methodology.icerik_duplike.kati_tanim_pct": 0.46,
+  "methodology.icerik_duplike.km_yuvarlak_pct": 86.5,
+  "methodology.icerik_duplike.not": "ad_id-dedup DIŞINDA içerik-bazlı duplike kontrolü: ad_id farklı ama tüm ayırt edici özellikler (fiyat, km, yaş, model, hasar, motor) aynı. Düşük oran veri toplama temizliğini doğrular. Bir kısmı gerçek tekrar ilan, bir kısmı tesadüfi çakışma (yaygın modellerde benzer özellikli farklı araçlar)."
+ },
+ "01_engine_rule": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+  "_meta.generated_at": "2026-09-23T23:55:20",
+  "_meta.run_id": null,
+  "_meta.script": "01_engine_rule.py",
+  "error_drivers.hp_cc_kurali.engine_cc.acik_uclu": 38,
+  "error_drivers.hp_cc_kurali.engine_cc.adaylar.alt.medyan": 194.0,
+  "error_drivers.hp_cc_kurali.engine_cc.adaylar.alt.ortalama": 191.9,
+  "error_drivers.hp_cc_kurali.engine_cc.adaylar.alt.yuzdelik": {
+   "len": 5,
+   "sha256": "ccfe81b842f283518a56bba102fefa36549f0e386eea391d0ce3a05d379c6f40"
+  },
+  "error_drivers.hp_cc_kurali.engine_cc.adaylar.orta.medyan": 95.5,
+  "error_drivers.hp_cc_kurali.engine_cc.adaylar.orta.ortalama": 91.4,
+  "error_drivers.hp_cc_kurali.engine_cc.adaylar.orta.yuzdelik": {
+   "len": 5,
+   "sha256": "4da963b7a0e9c33960360308ba0a830dc8820ef8466bb472ea662f05bfb249f8"
+  },
+  "error_drivers.hp_cc_kurali.engine_cc.adaylar.ust.medyan": 5.0,
+  "error_drivers.hp_cc_kurali.engine_cc.adaylar.ust.ortalama": 28.4,
+  "error_drivers.hp_cc_kurali.engine_cc.adaylar.ust.yuzdelik": {
+   "len": 5,
+   "sha256": "cf77ada848a4a5135719b44f70a66fabdbb6448bd1a71bc6da1d5fafa11cc142"
+  },
+  "error_drivers.hp_cc_kurali.engine_cc.aralikli": 7865,
+  "error_drivers.hp_cc_kurali.engine_cc.birim": "cc",
+  "error_drivers.hp_cc_kurali.engine_cc.degersiz": 356,
+  "error_drivers.hp_cc_kurali.engine_cc.icinde_pct": 97.9,
+  "error_drivers.hp_cc_kurali.engine_cc.konum_ceyrek": {
+   "len": 2,
+   "sha256": "5165c7e9a810bb04cf1b96c2584b6e162dc0f94665691c373d61a891d471bcf1"
+  },
+  "error_drivers.hp_cc_kurali.engine_cc.konum_medyan": 0.975,
+  "error_drivers.hp_cc_kurali.engine_cc.kova_disi_coklu_pct": 26.4,
+  "error_drivers.hp_cc_kurali.engine_cc.kova_kazanan": {
+   "len": 5,
+   "sha256": "d26220507d4ba3bb8b0b2f1879904d913469a4885d80493d6b3d76b8dca0bb4d"
+  },
+  "error_drivers.hp_cc_kurali.engine_cc.ornek_kova.alt": 1401,
+  "error_drivers.hp_cc_kurali.engine_cc.ornek_kova.en_sik_kesin": 1598,
+  "error_drivers.hp_cc_kurali.engine_cc.ornek_kova.en_sik_kesin_n": 4279,
+  "error_drivers.hp_cc_kurali.engine_cc.ornek_kova.n": 4015,
+  "error_drivers.hp_cc_kurali.engine_cc.ornek_kova.ust": 1600,
+  "error_drivers.hp_cc_kurali.engine_cc.referans_model": 339,
+  "error_drivers.hp_cc_kurali.engine_cc.referansli": 7176,
+  "error_drivers.hp_cc_kurali.engine_cc.secilen": "ust",
+  "error_drivers.hp_cc_kurali.power_hp.acik_uclu": 2,
+  "error_drivers.hp_cc_kurali.power_hp.adaylar.alt.medyan": 17.0,
+  "error_drivers.hp_cc_kurali.power_hp.adaylar.alt.ortalama": 15.5,
+  "error_drivers.hp_cc_kurali.power_hp.adaylar.alt.yuzdelik": {
+   "len": 5,
+   "sha256": "29b5e209f19544c7d86940178c347f14facaee8ef8a6d135de6681593b58bcae"
+  },
+  "error_drivers.hp_cc_kurali.power_hp.adaylar.orta.medyan": 7.0,
+  "error_drivers.hp_cc_kurali.power_hp.adaylar.orta.ortalama": 10.2,
+  "error_drivers.hp_cc_kurali.power_hp.adaylar.orta.yuzdelik": {
+   "len": 5,
+   "sha256": "321bc8a603ebb272a96b299e128c3aa32de03df77f1c6f8d015ff8b41648c2b2"
+  },
+  "error_drivers.hp_cc_kurali.power_hp.adaylar.ust.medyan": 14.0,
+  "error_drivers.hp_cc_kurali.power_hp.adaylar.ust.ortalama": 13.6,
+  "error_drivers.hp_cc_kurali.power_hp.adaylar.ust.yuzdelik": {
+   "len": 5,
+   "sha256": "09217595d74095d264048822092fa6401825135ad0e5c917578114828c5c0114"
+  },
+  "error_drivers.hp_cc_kurali.power_hp.aralikli": 7797,
+  "error_drivers.hp_cc_kurali.power_hp.birim": "hp",
+  "error_drivers.hp_cc_kurali.power_hp.degersiz": 426,
+  "error_drivers.hp_cc_kurali.power_hp.icinde_pct": 84.2,
+  "error_drivers.hp_cc_kurali.power_hp.konum_ceyrek": {
+   "len": 2,
+   "sha256": "287f2813bc7d4cb9cf655aa763523682a9db3a34ff51b1d0adba1e6c3d31d9bd"
+  },
+  "error_drivers.hp_cc_kurali.power_hp.konum_medyan": 0.583,
+  "error_drivers.hp_cc_kurali.power_hp.kova_disi_coklu_pct": 90.3,
+  "error_drivers.hp_cc_kurali.power_hp.kova_kazanan": {
+   "len": 7,
+   "sha256": "8e2f09f0854bde645a2e6a490e13839ce9a2f6070c44db58d15e2ce0025a238a"
+  },
+  "error_drivers.hp_cc_kurali.power_hp.ornek_kova.alt": 151,
+  "error_drivers.hp_cc_kurali.power_hp.ornek_kova.en_sik_kesin": 170,
+  "error_drivers.hp_cc_kurali.power_hp.ornek_kova.en_sik_kesin_n": 4613,
+  "error_drivers.hp_cc_kurali.power_hp.ornek_kova.n": 2128,
+  "error_drivers.hp_cc_kurali.power_hp.ornek_kova.ust": 175,
+  "error_drivers.hp_cc_kurali.power_hp.referans_model": 337,
+  "error_drivers.hp_cc_kurali.power_hp.referansli": 7148,
+  "error_drivers.hp_cc_kurali.power_hp.secilen": "orta",
+  "error_drivers.hp_cc_kurali.tanim": "referans = ayni modelin kesin (kovasiz) degerli ilanlarinin medyani; fark = |aday − referans|; yalniz iki siniri da bilinen kovalar ve referansi olan modeller; yuzdelikler 5/25/50/75/95; konum = (referans − alt) / (ust − alt)"
+ },
+ "01_unspecified_panels": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+  "_meta.generated_at": "2026-09-24T04:19:37",
+  "_meta.run_id": null,
+  "_meta.script": "01_unspecified_panels.py",
+  "error_drivers.belirtilmemis.belirtilmemis_panel": 59651,
+  "error_drivers.belirtilmemis.belirtilmemis_pct": 15.3,
+  "error_drivers.belirtilmemis.cift_kayit_atlanan": 0,
+  "error_drivers.belirtilmemis.en_az_bir": 6236,
+  "error_drivers.belirtilmemis.eslesen_ilan": 29988,
+  "error_drivers.belirtilmemis.hepsi_belirtilmemis": 1235,
+  "error_drivers.belirtilmemis.hucre_min_n": 5,
+  "error_drivers.belirtilmemis.ilan": 29988,
+  "error_drivers.belirtilmemis.kanit.belirtilmemis.ilan": 1144,
+  "error_drivers.belirtilmemis.kanit.belirtilmemis.medyan_oran": 1.0111,
+  "error_drivers.belirtilmemis.kanit.hafif_hasarli.ilan": 4968,
+  "error_drivers.belirtilmemis.kanit.hafif_hasarli.medyan_oran": 1.0108,
+  "error_drivers.belirtilmemis.kanit.hafif_hasarli.tanim": "1-2 boyali/lokal panel, degisen yok",
+  "error_drivers.belirtilmemis.kanit.hasarli.ilan": 17571,
+  "error_drivers.belirtilmemis.kanit.hasarli.medyan_oran": 0.9789,
+  "error_drivers.belirtilmemis.kanit.orijinal.ilan": 9079,
+  "error_drivers.belirtilmemis.kanit.orijinal.medyan_oran": 1.0341,
+  "error_drivers.belirtilmemis.panel_sayisi": 389844,
+  "error_drivers.belirtilmemis.yapi.bayrak": 39,
+  "error_drivers.belirtilmemis.yapi.cevap_sayisi": 5,
+  "error_drivers.belirtilmemis.yapi.grup_panel.bumper": 2,
+  "error_drivers.belirtilmemis.yapi.grup_panel.door": 4,
+  "error_drivers.belirtilmemis.yapi.grup_panel.fender": 4,
+  "error_drivers.belirtilmemis.yapi.panel": 13,
+  "error_drivers.belirtilmemis.yapi.tek_panel": 3
+ },
+ "02_missingness": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+  "_meta.generated_at": "2026-09-23T23:55:25",
+  "_meta.run_id": null,
+  "_meta.script": "02_missingness.py",
+  "error_drivers.ham_kolon.ham_kolon": 117,
+  "error_drivers.ham_kolon.tablo_kolon": 118,
+  "meta.n_features": 25,
+  "methodology.column_missing": {
+   "len": 25,
+   "sha256": "d86677d3c128583151be6ad2130c173ac54f56ab5b61ab60470ced90f4bbd93b"
+  },
+  "methodology.column_missing_all": {
+   "len": 32,
+   "sha256": "5d70ea639d4351b48431784106167bc9f4a92a39f429c0a31908def604faeaa3"
+  },
+  "methodology.feature_drop": {
+   "len": 7,
+   "sha256": "2192a12c57dcfd017eb25ca2847498feb806308c217d199946afa47e27851167"
+  },
+  "methodology.feature_kept": {
+   "len": 25,
+   "sha256": "4d97e40501764779a66fe6c99d45010455b93b92f08cadbd825568154066203e"
+  },
+  "methodology.impute_note": "Sayısal özniteliklerde doldurma yapılmadı: eksik değerler LightGBM/CatBoost'a NaN olarak girer ve kütüphanenin kendi eksik-değer yönlendirmesi kullanılır. Yalnız KMeans/PCA için genel medyanla dolduruldu. torque_nm %27.6 eksik olduğu için çıkarıldı.",
+  "methodology.kb_gb_ikiz": {
+   "len": 11,
+   "sha256": "7dad8bb783ab995cdfccf10a04e4539bef2f6cc899d87582270d857cbb8249b1"
+  },
+  "methodology.kolon_hesabi.atilan": 63,
+  "methodology.kolon_hesabi.ham": 117,
+  "methodology.kolon_hesabi.hasar_bayragi": 39,
+  "methodology.kolon_hesabi.hedef": 1,
+  "methodology.kolon_hesabi.ikiz_gerekce.gb_body_type": {
+   "len": 2,
+   "sha256": "7eacbcc6257bbc6ea4aab7434d74fbccc4531a0650ebd2cf89c5cc5f10ac0a4f"
+  },
+  "methodology.kolon_hesabi.ikiz_gerekce.gb_color": {
+   "len": 2,
+   "sha256": "a007d75897bb08ef32689eab4ebc5711e3b8b789110502a9d02689f3f97ebe4f"
+  },
+  "methodology.kolon_hesabi.ikiz_gerekce.gb_condition": {
+   "len": 2,
+   "sha256": "258eaed1887dbdf5608d77104a9ff857e721c706b46c922e5ec5aa1206ef6a74"
+  },
+  "methodology.kolon_hesabi.ikiz_gerekce.gb_drivetrain": {
+   "len": 2,
+   "sha256": "b3210cca0a48a66d210909612d7957a227b68af00309c2274d316cb7c135bf8d"
+  },
+  "methodology.kolon_hesabi.ikiz_gerekce.gb_fuel": {
+   "len": 2,
+   "sha256": "6f0fa76a2d9841bbf993e2bcdf5e995361f7f5aed70b6e7ffd30e2ec54b53f1f"
+  },
+  "methodology.kolon_hesabi.ikiz_gerekce.gb_seller_type": {
+   "len": 2,
+   "sha256": "f899ce1ac05fe4b4f3297c4bc466cbd4db8fe850c26b56def1c2a94a3a404b04"
+  },
+  "methodology.kolon_hesabi.ikiz_gerekce.gb_trade_available": {
+   "len": 2,
+   "sha256": "9a94e15809b1447fa5b67878b30d83316fdb68030f666d2d20a4074eceaff55b"
+  },
+  "methodology.kolon_hesabi.ikiz_gerekce.gb_transmission": {
+   "len": 2,
+   "sha256": "404476a769fef1c1678b4b4beca55ba4f954137bdf3c4fae1bb77c1f153ca7fd"
+  },
+  "methodology.kolon_hesabi.ikiz_gerekce.kb_is_heavy_damaged": {
+   "len": 2,
+   "sha256": "13e8dc7645769dc850e8a2cc16d39fadbb4643f8ff98486b6783c4df4bfa3cd8"
+  },
+  "methodology.kolon_hesabi.ikiz_gerekce.kb_mileage": {
+   "len": 2,
+   "sha256": "9ea2614b030542c2298f83cb8bd098d237d6c30896ce5116bc29c5653794b670"
+  },
+  "methodology.kolon_hesabi.ikiz_gerekce.kb_year": {
+   "len": 2,
+   "sha256": "69e4bbfa7b06738d2f04ded6ce0d8e7886c077bcbaa8368a5cb125703ec9ce04"
+  },
+  "methodology.kolon_hesabi.modelde": 53,
+  "methodology.kolon_hesabi.not": "feature_drop = [grup, gerekçe (TR), kolon sayısı, kolonlar, gerekçe (EN)]; her ham kolon öncelik sırasıyla tek bir sınıfa atanır (modelde > hedef > C > F > B > A > D > E > G).",
+  "methodology.sistematik_missing.column_missing_all": {
+   "len": 32,
+   "sha256": "5d70ea639d4351b48431784106167bc9f4a92a39f429c0a31908def604faeaa3"
+  },
+  "methodology.sistematik_missing.not": "Katalog eşleştirmesi: standart modeller eşleşir, özel varyantlar eşleşmez → tüm spec birden boş. Gruplar birlikte-eksik payıyla kuruldu: ikisi birden eksik / en az biri eksik ≥ %98.",
+  "methodology.sistematik_missing.sistematik_gruplar": {
+   "len": 4,
+   "sha256": "c9773abca75b27949633bd3523f05d07d0ff811afbb6058b00802181e9f90b06"
+  }
+ },
+ "03_association": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+  "_meta.generated_at": "2026-09-23T23:55:37",
+  "_meta.run_id": null,
+  "_meta.script": "03_association.py",
+  "domain.numeric_correlation.labels": {
+   "len": 14,
+   "sha256": "dbec2fd90bab90de11cefca2448b8353c285a8627e2936844bfdad5e2180f9c3"
+  },
+  "domain.numeric_correlation.not": "Sayısal feature korelasyonu (kategorik için Cramér/Theil ayrı). Pearson=lineer, Spearman=monotonik ilişki. |r|>0.5 çiftler dikkat çeker; çoklu-bağlantı VIF ile ayrıca kontrol edildi (değerler: hedonic_reliability.vif).",
+  "domain.numeric_correlation.pearson": {
+   "len": 14,
+   "sha256": "0f998c259785acb8d34437a291cc7ba9d31a3b200752c4b382a80cb990c8082f"
+  },
+  "domain.numeric_correlation.spearman": {
+   "len": 14,
+   "sha256": "b7d9e3d76b1fcd3a5154e7856eb3b4844c35ef2d370bfca3f3a0f867f4b1ebfc"
+  },
+  "domain.numeric_correlation.yuksek_ciftler": {
+   "len": 3,
+   "sha256": "285e430609c76b829e8dc5ef600260f349c165a53501b558d1c5bc773b94ad55"
+  },
+  "methodology.assoc_model": "Kategorik ilişki Cramér's V (simetrik) + Theil's U (asimetrik) ile ölçüldü. model/series yüksek-kardinaliteli (Cramér's V üste-yanlı olabilir); Theil's U yönlü — model markayı/segmenti ~belirler, tersi değil. Etiketler column_labels ile TR/EN.",
+  "methodology.cramers_matrix.labels": {
+   "len": 11,
+   "sha256": "870d99fbdb00b1fb4e052117a8cf8c1e548f712ce870a654711daff4a6d538e9"
+  },
+  "methodology.cramers_matrix.matrix": {
+   "len": 11,
+   "sha256": "ed6edd7c44ae165f7fb1e2e45d92455c840675d6a788d221890f652bde521c34"
+  },
+  "methodology.cramers_null.P": 5,
+  "methodology.cramers_null.labels": {
+   "len": 11,
+   "sha256": "870d99fbdb00b1fb4e052117a8cf8c1e548f712ce870a654711daff4a6d538e9"
+  },
+  "methodology.cramers_null.matrix": {
+   "len": 11,
+   "sha256": "675b9a2a37aea9031d1de48498a15d83f882133e32c7eda9f600294f3963d381"
+  },
+  "methodology.g_mpv": "Segment seri ve model adından türetildi (segment_of, deterministik; çözülemeyen kalırsa durur). Ham gb_segment kirli olduğu için kullanılmadı.",
+  "methodology.theils_matrix.labels": {
+   "len": 11,
+   "sha256": "870d99fbdb00b1fb4e052117a8cf8c1e548f712ce870a654711daff4a6d538e9"
+  },
+  "methodology.theils_matrix.matrix": {
+   "len": 11,
+   "sha256": "598211766c94e2628b8f2dab67c58e42c81454b90b145f909b0559948b54c6fc"
+  },
+  "methodology.theils_null.P": 5,
+  "methodology.theils_null.labels": {
+   "len": 11,
+   "sha256": "870d99fbdb00b1fb4e052117a8cf8c1e548f712ce870a654711daff4a6d538e9"
+  },
+  "methodology.theils_null.matrix": {
+   "len": 11,
+   "sha256": "41c753249df0e6527233274b865b527f8a83d2378b786efb8bfe5ac389e8dccf"
+  }
+ },
+ "03_brand_ablation": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+  "_meta.generated_at": "2026-09-23T23:56:19",
+  "_meta.run_id": null,
+  "_meta.script": "03_brand_ablation.py",
+  "domain.brand_ablation.brand_seri_model.MAE": 109776.0,
+  "domain.brand_ablation.brand_seri_model.MAPE": 6.49,
+  "domain.brand_ablation.brand_seri_model.MedAE": 75320.0,
+  "domain.brand_ablation.brand_seri_model.R2": 0.9745,
+  "domain.brand_ablation.brand_seri_model.RMSE": 176225.0,
+  "domain.brand_ablation.dogrulama.brand_split_cv": 26,
+  "domain.brand_ablation.dogrulama.max_fark_tl": 7856.33,
+  "domain.brand_ablation.dogrulama.oof_ayni": false,
+  "domain.brand_ablation.not": "TAM MODELDE kimlik ablasyonu: marka/seri/model kolonları değişir; \"yalnız marka\" kolu seri ve model adından türetilen segmenti de çıkarır, diğer öznitelikler sabit. Manşetle aynı 5-fold OOF ve parametreler; model/seri fold-içi TF-IDF+SVD ile girer, brand kategorik. brand+seri+model = manşet model. dogrulama: marka CV fold modellerinde kaç bölme kazandı ve iki kolun OOF'u aynı mı.",
+  "domain.brand_ablation.sadece_brand.MAE": 162812.0,
+  "domain.brand_ablation.sadece_brand.MAPE": 8.8,
+  "domain.brand_ablation.sadece_brand.MedAE": 99426.0,
+  "domain.brand_ablation.sadece_brand.R2": 0.9413,
+  "domain.brand_ablation.sadece_brand.RMSE": 267224.0,
+  "domain.brand_ablation.seri_model.MAE": 109775.0,
+  "domain.brand_ablation.seri_model.MAPE": 6.49,
+  "domain.brand_ablation.seri_model.MedAE": 75320.0,
+  "domain.brand_ablation.seri_model.R2": 0.9745,
+  "domain.brand_ablation.seri_model.RMSE": 176225.0
+ },
+ "03_segment_quality": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+  "_meta.generated_at": "2026-09-23T23:55:38",
+  "_meta.run_id": null,
+  "_meta.script": "03_segment_quality.py",
+  "domain.series_segment_matrix": {
+   "len": 28,
+   "sha256": "7926cbbf98ebb2b7c27d8ec770547d17e60a1295dcc13f087ffa5cbf1bfb3e4a"
+  },
+  "error_drivers.segment_kalite.coklu_segment_seri": {
+   "len": 3,
+   "sha256": "3be570c5dc4ac064712ed1f0e4de1ffefdfe186d6ceab85338be49ff4e3a2d23"
+  },
+  "error_drivers.segment_kalite.g_segmenti.kasa": {
+   "len": 2,
+   "sha256": "c982a9d33b363ac532dc629fc27e2c39bd57579a46ceb63f43da6f0dd7f9e4b5"
+  },
+  "error_drivers.segment_kalite.g_segmenti.mpv_n": 214,
+  "error_drivers.segment_kalite.g_segmenti.n": 215,
+  "error_drivers.segment_kalite.g_segmenti.seri": {
+   "len": 1,
+   "sha256": "c0ee58067a6c10e90f71ea45214982874dac44b98cc5e976b37a900753b43b5b"
+  },
+  "error_drivers.segment_kalite.harita_n": 32,
+  "error_drivers.segment_kalite.model_adindan": {
+   "len": 4,
+   "sha256": "2949f43b955309c66aff162b91f4a91a2433627f4ae3b930dbc529ffb7b651bf"
+  },
+  "error_drivers.segment_kalite.not": "Segment seri + gerekirse model adindan turetiliyor; ham gb_segment kullanilmiyor. 'G' gercek bir segment degil (govdesi MPV). Cozulemeyen seri/model kalirsa uretec durur.",
+  "error_drivers.segment_kalite.uyusmazlik.capraz": {
+   "len": 5,
+   "sha256": "c1968f0ba23c13d570f8c93736b3871a7c241f48cfdadd27a10646f069e47e9b"
+  },
+  "error_drivers.segment_kalite.uyusmazlik.farkli": 404,
+  "error_drivers.segment_kalite.uyusmazlik.ham_dolu": 21723,
+  "error_drivers.segment_kalite.uyusmazlik.pct": 1.86,
+  "error_drivers.segment_kalite.yol.harita": 29832,
+  "error_drivers.segment_kalite.yol.model_tablosu": 19,
+  "error_drivers.segment_kalite.yol.temel_sinif": 137
+ },
+ "04_target": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+  "_meta.generated_at": "2026-09-23T23:56:20",
+  "_meta.run_id": null,
+  "_meta.script": "04_target.py",
+  "domain.price_dist.median": 1545000.0,
+  "domain.price_dist.p10": 845000.0,
+  "domain.price_dist.p90": 3425000.0,
+  "domain.price_dist.skew_log": 0.2836429495479539,
+  "domain.price_dist.skew_raw": 1.6249902867591544,
+  "domain.price_histogram": {
+   "len": 26,
+   "sha256": "05327c56aef097a302a3ac3abc110e8c396ae2f668cf4dfd271915af8759e291"
+  }
+ },
+ "05_segmentation": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+  "_meta.generated_at": "2026-09-23T23:56:23",
+  "_meta.run_id": null,
+  "_meta.script": "05_segmentation.py",
+  "domain.age_depreciation": {
+   "len": 21,
+   "sha256": "428d0e5795a181ebc6c8abb44b1ce138e12d146d2cfeebdabc9d4f55a6a00333"
+  },
+  "domain.age_km_note": "Medyan tipik fiyat, ortalama aykırı-etkili. Açıklık = fiyat çarpıklığı.",
+  "domain.body_median": {
+   "len": 7,
+   "sha256": "8523126177989ce24b2639eb1d3b25ba47837d644c95cce2a60235f66e05fbfe"
+  },
+  "domain.brand_compare.audi_medyan": 1475000.0,
+  "domain.brand_compare.audi_n": 12092,
+  "domain.brand_compare.audi_ortalama": 1822023.2974694013,
+  "domain.brand_compare.bmw_medyan": 1575000.0,
+  "domain.brand_compare.bmw_n": 17896,
+  "domain.brand_compare.bmw_ortalama": 1910680.0848793027,
+  "domain.brand_compare.cliffs_delta": 0.0663,
+  "domain.brand_compare.mwu_p": 1.6737972933552e-22,
+  "domain.brand_compare.not": "Mann-Whitney U: iki markanın fiyat dağılımı farkı (p<0.05 anlamlı). Cliff's δ: etki büyüklüğü (|δ|>0.33 orta, >0.47 büyük fark).",
+  "domain.km_price": {
+   "len": 16,
+   "sha256": "23513bb45e9d3fe48217842160af4af99469cb9dffd8a1a410bb0128610dbb17"
+  },
+  "domain.km_price_kapsam.disarida": 653,
+  "domain.km_price_kapsam.ust_sinir": 400000,
+  "domain.kmeans": {
+   "len": 3,
+   "sha256": "f6170ea8dcb45c831ec2e855c5f34f968d9053d800cf30e81cf957ef540f4066"
+  },
+  "domain.pca_scatter": {
+   "len": 29988,
+   "sha256": "b33226026ba511b1a4fe109d44f3e012484b3d32a9c156021e19aea2c179b2ac"
+  },
+  "domain.pca_scatter_13": {
+   "len": 29988,
+   "sha256": "4da37cd26bbf5f7cf161d9d73aec52d9468451acb9ecfeed05a69f86d6409717"
+  },
+  "domain.segment_ladder": {
+   "len": 6,
+   "sha256": "c7a1fe2b01f5f4316f77242999aac2118d0b806efda7c14af58166ad75687871"
+  },
+  "methodology.kmeans_selection.elbow": {
+   "len": 7,
+   "sha256": "c4c341d2ab92dc29ba430a85df28d74c8fed6e2b8492dafb232c260a6a6738fd"
+  },
+  "methodology.kmeans_selection.not": "Silhouette en yüksek k=2 (0.242); k=3 için 0.188. k=3 silhouette ile değil, yorumlanabilirlik için sabit seçildi.",
+  "methodology.kmeans_selection.secilen_k": 3,
+  "methodology.kmeans_selection.silhouette": {
+   "len": 7,
+   "sha256": "91ca8e5f3985625fe3da8913cb05caffcae23a6d69fec6602ee1719227673ceb"
+  },
+  "methodology.pca_axes": {
+   "len": 3,
+   "sha256": "19b0a14b85b746f79ec369004e8d899be441114bbbdbeba1ba35eaa6c6aece9d"
+  }
+ },
+ "06_hedonic": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+  "_meta.generated_at": "2026-09-23T23:57:57",
+  "_meta.run_id": null,
+  "_meta.script": "06_hedonic.py",
+  "domain.hedonic.age_pct": -6.64,
+  "domain.hedonic.cc_litre_pct": 7.49,
+  "domain.hedonic.damage_pct": -11.6,
+  "domain.hedonic.hp100_pct": 19.86,
+  "domain.hedonic.km100k_pct": -15.11,
+  "domain.hedonic.not": "Dönem etkisi modelde yok (kullanıcı kararı): dönemler havuzlanarak kestirildi.",
+  "domain.hedonic.r2": 0.9312,
+  "domain.hedonic_reliability.birim.cc": "1 litre",
+  "domain.hedonic_reliability.birim.hp": "100 HP",
+  "domain.hedonic_reliability.bootstrap": {
+   "len": 10,
+   "sha256": "bd7cbe0b4e3871d863155a31abaa0cc5160984fbf7f211669a5f2d06f82e2f12"
+  },
+  "domain.hedonic_reliability.bootstrap_ayar.n_boot": 1000,
+  "domain.hedonic_reliability.bootstrap_ayar.n_istenen": 1000,
+  "domain.hedonic_reliability.bootstrap_ayar.n_jobs": 16,
+  "domain.hedonic_reliability.bootstrap_ayar.sure_sn": 89.8,
+  "domain.hedonic_reliability.genel_korelasyon": 0.73,
+  "domain.hedonic_reliability.merkez.km": 181000.0,
+  "domain.hedonic_reliability.merkez.yas": 11.0,
+  "domain.hedonic_reliability.model_etkili.katsayi_pct.agir_hasar": {
+   "len": 2,
+   "sha256": "4b48348f2e4305202a9dd1a1ea76321bbe369f2c247e43fd1a4e299bb268af2c"
+  },
+  "domain.hedonic_reliability.model_etkili.katsayi_pct.boyali": {
+   "len": 2,
+   "sha256": "04cdcedcef1cc7de3bb59e9ff538790f8388f2ae15cea62e87068a2dd517a162"
+  },
+  "domain.hedonic_reliability.model_etkili.katsayi_pct.cc_litre": {
+   "len": 2,
+   "sha256": "4d8cc0720d852e80173058271933bcbc805f28f98b94e7b6af6db4f6688e16e1"
+  },
+  "domain.hedonic_reliability.model_etkili.katsayi_pct.degisen": {
+   "len": 2,
+   "sha256": "6e147f489290d0a6acca928901809984ec2198490b5382d3af5100ff81eb820d"
+  },
+  "domain.hedonic_reliability.model_etkili.katsayi_pct.hp100": {
+   "len": 2,
+   "sha256": "735e409c1cbdcb273ed5a9150a8f8a2aae613e8f8d83f997aa37d34673f32b20"
+  },
+  "domain.hedonic_reliability.model_etkili.katsayi_pct.km100k": {
+   "len": 2,
+   "sha256": "c05a748d4b731fcfc2fe1c0704b91fd223ec57e5721c7a5be958412941bae296"
+  },
+  "domain.hedonic_reliability.model_etkili.katsayi_pct.yas": {
+   "len": 2,
+   "sha256": "e076b48c474e446fd28e0989f5597cf189216cf20539409bb9a3df095c94d95d"
+  },
+  "domain.hedonic_reliability.model_etkili.n_model": 735,
+  "domain.hedonic_reliability.model_etkili.not": "C(model) eklenmiş tek OLS (bootstrap yok); katsayi_pct = [model yok, model var], yüzde etki.",
+  "domain.hedonic_reliability.model_etkili.r2": 0.9648,
+  "domain.hedonic_reliability.model_r2": 0.9312,
+  "domain.hedonic_reliability.motor_etki.cc_litre_pct": 7.5,
+  "domain.hedonic_reliability.motor_etki.hp100_pct": 19.9,
+  "domain.hedonic_reliability.n": 29554,
+  "domain.hedonic_reliability.not": "Ham (log yok) cc+HP: birim başına yorum. Yaş ve km medyan araca ortalandı; doğrusal katsayılar o noktadaki marjinal etki. Güven aralıkları satır bootstrap'inden.",
+  "domain.hedonic_reliability.varsayim.homoskedastisite_p": 0.0,
+  "domain.hedonic_reliability.varsayim.normallik_p": 0.0,
+  "domain.hedonic_reliability.varsayim.not": "Breusch-Pagan ve Jarque-Bera ihlal (p<0.05). Bu yüzden çıkarım çıplak OLS p-değerine değil, satır bootstrap'inin %2.5–97.5 yüzdeliklerine dayanıyor.",
+  "domain.hedonic_reliability.vif": {
+   "len": 10,
+   "sha256": "7055c68b1862ef4accef436b9ec15a9e57443c7aa8bc6de28a562defc3fd10fe"
+  },
+  "domain.hedonic_reliability.vif_ham": {
+   "len": 10,
+   "sha256": "b3052b2e2d2e7bc90c045cfcac926801ee91b0d42194981c84a1d479270e8ea1"
+  },
+  "domain.hedonic_reliability.vif_kukla": {
+   "len": 2,
+   "sha256": "77a71b5365e8e943dc60b7650778d9707c3abfcd92af60c28e9463eaa808fd9a"
+  },
+  "domain.hedonic_reliability.yakit_korelasyon": {
+   "len": 4,
+   "sha256": "3d7932654b33a0c22c1ce20dbf88074d4b6d7a7c4502b62d576ebd52df0e71f4"
+  },
+  "error_drivers.hedonik_eksik.cc": 356,
+  "error_drivers.hedonik_eksik.hp": 426,
+  "error_drivers.hedonik_eksik.ikisi_birden": 348,
+  "error_drivers.hedonik_eksik.toplam": 434
+ },
+ "07_final_model": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+  "_meta.generated_at": "2026-09-24T00:02:27",
+  "_meta.run_id": "5ca6dedde5b2",
+  "_meta.script": "07_final_model.py",
+  "domain.final_results.ornek_tahmin.arac": "116i Comfort",
+  "domain.final_results.ornek_tahmin.catboost_native_tahmin": 712107.0,
+  "domain.final_results.ornek_tahmin.catboost_tahmin": 709186.0,
+  "domain.final_results.ornek_tahmin.fiyat_bandi": "ekonomik",
+  "domain.final_results.ornek_tahmin.gercek": 718000.0,
+  "domain.final_results.ornek_tahmin.km": 174000,
+  "domain.final_results.ornek_tahmin.lgb_sapma_pct": 0.5,
+  "domain.final_results.ornek_tahmin.lightgbm_tahmin": 714062.0,
+  "domain.final_results.ornek_tahmin.oof_artik_pct": 0.0,
+  "domain.final_results.ornek_tahmin.segment": "C",
+  "domain.final_results.ornek_tahmin.yas": 17,
+  "domain.final_results.ornek_tahminler": {
+   "len": 3,
+   "sha256": "1392a491a45150123284a2d180f35c0f3d8c002ff8718eba069e841ddf31331b"
+  },
+  "meta.repro.final_lgb_agac": 258
+ },
+ "07_lofo": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+  "_meta.generated_at": "2026-09-24T00:08:24",
+  "_meta.run_id": null,
+  "_meta.script": "07_lofo.py",
+  "methodology.lofo": {
+   "len": 22,
+   "sha256": "c8171b1476cfce80b9234005577fd2c8930ceb0ccaf3e1da0e2e74fc8424c224"
+  },
+  "methodology.lofo_agac.DAMAGE_COLS": {
+   "len": 5,
+   "sha256": "4d45ef89d6f5a14b08dd95a6bf9d27cb1bc0d15eb0c6f8a4be9769e04722096e"
+  },
+  "methodology.lofo_agac.ENGINE": {
+   "len": 5,
+   "sha256": "fa4c753ced42e6454352d0f4301b123e758ae8e9ba55e68383b3451bec55ef8a"
+  },
+  "methodology.lofo_agac.MODEL_SERIES": {
+   "len": 5,
+   "sha256": "00503f5bb9d871c3ea988b2311328a09befb3b427ea9fc88bc08b8f217fff6c3"
+  },
+  "methodology.lofo_agac.bumper_changed": {
+   "len": 5,
+   "sha256": "6102d61ad70d077dd1b7a1294aa1b0da561ffac03e2f22d0ec38e91c62915b94"
+  },
+  "methodology.lofo_agac.bumper_local": {
+   "len": 5,
+   "sha256": "405c14f9642d787b13cc32ca94a4be80d00fa565a1c696465ae039e20b1af80c"
+  },
+  "methodology.lofo_agac.bumper_painted": {
+   "len": 5,
+   "sha256": "65a942d943d3a6ad87493148cb9e0836bd98bdf60abaa4acecea8d703acaf93c"
+  },
+  "methodology.lofo_agac.door_changed": {
+   "len": 5,
+   "sha256": "a7a1c59f7967646344423599089869d11c4370f8231f8e12bbf78f5738061fec"
+  },
+  "methodology.lofo_agac.door_local": {
+   "len": 5,
+   "sha256": "b182ae2ef109d6126fb7eec422e1e8986f06ac016cea5deb5f8d232e5667fb96"
+  },
+  "methodology.lofo_agac.door_painted": {
+   "len": 5,
+   "sha256": "3e63e838b80d9d0b39e536e7d175ad77a3e3d5076dc0781b19caf3d0a59f1302"
+  },
+  "methodology.lofo_agac.engine_cc_val": {
+   "len": 5,
+   "sha256": "43c9f5dcf7380bd941e850c18319bf7974aee8bfe5f1559df01966a5fab144dc"
+  },
+  "methodology.lofo_agac.fender_changed": {
+   "len": 5,
+   "sha256": "169b0220d1d5370ddc81a7ccc5a802cb0a4b15562d7ea0eb2417a0e9c6178e73"
+  },
+  "methodology.lofo_agac.fender_local": {
+   "len": 5,
+   "sha256": "9674a74043c84a9b0644a4f4877045e00e72f82dd32b02d4bd1b0828b4bc63cd"
+  },
+  "methodology.lofo_agac.fender_painted": {
+   "len": 5,
+   "sha256": "743bd5ed1cad10d454c9071d5c7d42ed4e7ea2a27f7b8e9ac71754e67fb750e5"
+  },
+  "methodology.lofo_agac.gb_mileage": {
+   "len": 5,
+   "sha256": "f833085e6d962888ef8cbb709908ac735af40a13e8aaf1766ca325c59fbfe412"
+  },
+  "methodology.lofo_agac.hood_state": {
+   "len": 5,
+   "sha256": "4ae50a642f3fcfd7a1bfd7c73f778e53a8477b4fce84d0fd1e2e178ed4742ec6"
+  },
+  "methodology.lofo_agac.is_heavy_damaged": {
+   "len": 5,
+   "sha256": "7623920befe9fc9fc0f3d33f1aa45b2bc3c93f65756c10ea9ec73ae6d513ef85"
+  },
+  "methodology.lofo_agac.model": {
+   "len": 5,
+   "sha256": "bcc655b3c6d8d12bbf27cc9531d954bd7206a87d06426fa62e35b2334ca303ae"
+  },
+  "methodology.lofo_agac.power_hp_val": {
+   "len": 5,
+   "sha256": "519f347e73e1edfaa314f8a6649c93a5617bb0622df240cda216f83e8a41acf4"
+  },
+  "methodology.lofo_agac.roof_state": {
+   "len": 5,
+   "sha256": "d02bc8664ac01700f87017197ec25e4758351254196546f3d75f6bfa37b02c3b"
+  },
+  "methodology.lofo_agac.series": {
+   "len": 5,
+   "sha256": "1bd7bd99d26b56bd32196fe38f38af7147d11110de1d28bb74af70bf1c5f6280"
+  },
+  "methodology.lofo_agac.taban": {
+   "len": 5,
+   "sha256": "1ed8bf05064fa5df7d26f1888c663d98157250ef573a7f3324635a69c0ed5bc7"
+  },
+  "methodology.lofo_agac.trunk_state": {
+   "len": 5,
+   "sha256": "3967f287d6a3f38954b46baaca5227773d683027029a869609175f8b5bb0a299"
+  },
+  "methodology.lofo_agac.vehicle_age": {
+   "len": 5,
+   "sha256": "8eb7629440796d74782520af88a3736303001f0c6151201eab97ba8cdbcd6ea6"
+  }
+ },
+ "07_model_comparison": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+  "_meta.generated_at": "2026-09-24T00:01:41",
+  "_meta.run_id": "5ca6dedde5b2",
+  "_meta.script": "07_model_comparison.py",
+  "domain.dealer_coverage.comped_pct": 92.68,
+  "domain.dealer_coverage.cv_fallback_pct": 2.51,
+  "domain.dealer_coverage.groups": 2194,
+  "domain.dealer_coverage.not": "(model, gb_year) grup boyutları, ilanın kendisi dahil. comped = grubunda en az 5 ilan olanların oranı (yani en az 4 emsal); thin = 5'ten az; singleton = grupta tek ilan (emsalsiz). Taban bu ilanlarda tanımsız değil: fold içinde (model) medyanına, o da yoksa genel medyana iner.",
+  "domain.dealer_coverage.singleton_pct": 2.03,
+  "domain.dealer_coverage.thin_pct": 7.32,
+  "domain.final_results.egitim.hedef": "log1p(price)",
+  "domain.final_results.egitim.n_arac": 29988,
+  "domain.final_results.egitim.n_feature": 25,
+  "domain.final_results.model_karsilastirma.catboost_native.MAE": 112925.0,
+  "domain.final_results.model_karsilastirma.catboost_native.MAPE": 6.58,
+  "domain.final_results.model_karsilastirma.catboost_native.MedAE": 77660.0,
+  "domain.final_results.model_karsilastirma.catboost_native.R2": 0.9739,
+  "domain.final_results.model_karsilastirma.catboost_native.RMSE": 178312.0,
+  "domain.final_results.model_karsilastirma.catboost_tfidf_svd.MAE": 110085.0,
+  "domain.final_results.model_karsilastirma.catboost_tfidf_svd.MAPE": 6.44,
+  "domain.final_results.model_karsilastirma.catboost_tfidf_svd.MedAE": 74927.0,
+  "domain.final_results.model_karsilastirma.catboost_tfidf_svd.R2": 0.9745,
+  "domain.final_results.model_karsilastirma.catboost_tfidf_svd.RMSE": 176130.0,
+  "domain.final_results.model_karsilastirma.dealer.MAE": 191224.0,
+  "domain.final_results.model_karsilastirma.dealer.MAPE": 11.2,
+  "domain.final_results.model_karsilastirma.dealer.MedAE": 130000.0,
+  "domain.final_results.model_karsilastirma.dealer.R2": 0.9235,
+  "domain.final_results.model_karsilastirma.dealer.RMSE": 305050.0,
+  "domain.final_results.model_karsilastirma.kazanan": "catboost",
+  "domain.final_results.model_karsilastirma.lightgbm_tfidf_svd.MAE": 109776.0,
+  "domain.final_results.model_karsilastirma.lightgbm_tfidf_svd.MAPE": 6.49,
+  "domain.final_results.model_karsilastirma.lightgbm_tfidf_svd.MedAE": 75320.0,
+  "domain.final_results.model_karsilastirma.lightgbm_tfidf_svd.R2": 0.9745,
+  "domain.final_results.model_karsilastirma.lightgbm_tfidf_svd.RMSE": 176225.0,
+  "domain.final_results.model_karsilastirma.naive.MAE": 203621.0,
+  "domain.final_results.model_karsilastirma.naive.MAPE": 11.65,
+  "domain.final_results.model_karsilastirma.naive.MedAE": 142500.0,
+  "domain.final_results.model_karsilastirma.naive.R2": 0.9216,
+  "domain.final_results.model_karsilastirma.naive.RMSE": 308976.0,
+  "domain.final_results.model_karsilastirma.not": "İKİ medyan tabanı + ÜÇ model varyantı, hepsi aynı 5-fold OOF ile. Tabanlar: naive (seri+yıl medyanı = kaba arama), dealer (model+yıl medyanı — basamak-başına fallback için bkz. domain.model_yil_medyani). Modeller: LightGBM (TF-IDF+SVD), CatBoost (TF-IDF+SVD, LightGBM ile aynı girdi=adil), CatBoost (kendi native text motoru). kazanan yalnız MODEL varyantları arasında seçilir. Metrikler sızıntısız OOF; final modeller tüm veriyle eğitildi.",
+  "domain.final_results.not": "Metrikler 5-fold OOF (sızıntısız). Final modeller tüm veriyle eğitildi (production).",
+  "domain.model_compare.catboost.MAE": 110085.0,
+  "domain.model_compare.catboost.MAPE": 6.44,
+  "domain.model_compare.catboost.MedAE": 74927.0,
+  "domain.model_compare.catboost.R2": 0.9745,
+  "domain.model_compare.catboost.RMSE": 176130.0,
+  "domain.model_compare.catboost_native.MAE": 112925.0,
+  "domain.model_compare.catboost_native.MAPE": 6.58,
+  "domain.model_compare.catboost_native.MedAE": 77660.0,
+  "domain.model_compare.catboost_native.R2": 0.9739,
+  "domain.model_compare.catboost_native.RMSE": 178312.0,
+  "domain.model_compare.catboost_svd.MAE": 110085.0,
+  "domain.model_compare.catboost_svd.MAPE": 6.44,
+  "domain.model_compare.catboost_svd.MedAE": 74927.0,
+  "domain.model_compare.catboost_svd.R2": 0.9745,
+  "domain.model_compare.catboost_svd.RMSE": 176130.0,
+  "domain.model_compare.lightgbm.MAE": 109776.0,
+  "domain.model_compare.lightgbm.MAPE": 6.49,
+  "domain.model_compare.lightgbm.MedAE": 75320.0,
+  "domain.model_compare.lightgbm.R2": 0.9745,
+  "domain.model_compare.lightgbm.RMSE": 176225.0,
+  "domain.model_compare.not": "CatBoost iki şekilde: TF-IDF-SVD beslemeli (LightGBM ile aynı girdi, adil karşılaştırma) ve kendi native text motoru. Ana karşılaştırma TF-IDF-SVD üzerinden.",
+  "domain.model_yil_medyani.fallback_pct": 2.51,
+  "domain.model_yil_medyani.kapsama": {
+   "len": 3,
+   "sha256": "295db10f34240873a88a4f8b0aa71bc71a06f1e3f79d131f673550ef8687c809"
+  },
+  "domain.model_yil_medyani.merdiven": {
+   "len": 3,
+   "sha256": "b409a25bfd296c3b0e5a74bffa87f3fa963795066b63efc591489faa12fcaa15"
+  },
+  "domain.model_yil_medyani.metrik_kirilim": {
+   "len": 3,
+   "sha256": "2875bf8f8ed96a7d2ea226ced9466ddaaf0d7fc246ede9f2337eb0796de94823"
+  },
+  "domain.model_yil_medyani.model.MAE": 109776.0,
+  "domain.model_yil_medyani.model.MAPE": 6.49,
+  "domain.model_yil_medyani.model.MedAE": 75320.0,
+  "domain.model_yil_medyani.model.R2": 0.9745,
+  "domain.model_yil_medyani.model.RMSE": 176225.0,
+  "domain.model_yil_medyani.not": "Galerinin yaptığı iş: aynı model + aynı yıl, medyana bak. Fallback'lı OOF median tabanı — medyanlar HER fold'da yalnız train'de (sızıntısız, modelle aynı 5-fold). Test'te o (model, yıl) hücresi train'de yoksa merdiven iner: (model) tüm yıllar → global. taban = tüm satırların OOF metrikleri; metrik_kirilim = [basamak, n, %, MAPE, MAE, R2] (fallback basamaklarında hata belirgin artar — emsalsizde taban zaten zayıf). Model metrikleri kıyas için; aynı protokol → fark gerçek kazanç.",
+  "domain.model_yil_medyani.taban.MAE": 191224.0,
+  "domain.model_yil_medyani.taban.MAPE": 11.2,
+  "domain.model_yil_medyani.taban.MedAE": 130000.0,
+  "domain.model_yil_medyani.taban.R2": 0.9235,
+  "domain.model_yil_medyani.taban.RMSE": 305050.0,
+  "error_drivers.taban_esit_kosul.fark_tl": 72913.0,
+  "error_drivers.taban_esit_kosul.ilan": 29236,
+  "error_drivers.taban_esit_kosul.iyilesme_pct": 40.8,
+  "error_drivers.taban_esit_kosul.model_mae": 105984.0,
+  "error_drivers.taban_esit_kosul.not": "Emsali olan ilanlar = taban merdiveninin model+yıl basamağı (fold içi).",
+  "error_drivers.taban_esit_kosul.pct": 97.49,
+  "error_drivers.taban_esit_kosul.taban_mae": 178897.0,
+  "meta.repro.catboost_device": "CPU",
+  "meta.repro.cv_agac": {
+   "len": 5,
+   "sha256": "1ed8bf05064fa5df7d26f1888c663d98157250ef573a7f3324635a69c0ed5bc7"
+  },
+  "meta.repro.lgb_deterministic": true,
+  "meta.repro.n_jobs": 16,
+  "meta.repro.row_order": "ORDER BY ad_id",
+  "meta.repro.seed": 42
+ },
+ "07_text_flag": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+  "_meta.generated_at": "2026-09-24T00:08:29",
+  "_meta.run_id": "5ca6dedde5b2",
+  "_meta.script": "07_text_flag.py",
+  "error_drivers.metin_bayrak.big_pct": 4.9,
+  "error_drivers.metin_bayrak.diger_big_pct": 3.9,
+  "error_drivers.metin_bayrak.diger_medyan_hata_pct": 4.6,
+  "error_drivers.metin_bayrak.kontrollu.ci_hi": 1.37,
+  "error_drivers.metin_bayrak.kontrollu.ci_lo": 0.94,
+  "error_drivers.metin_bayrak.kontrollu.kontroller": "yas bandi, log km, fiyat ceyregi, performans ailesi, log emsal, marka",
+  "error_drivers.metin_bayrak.kontrollu.or": 1.14,
+  "error_drivers.metin_bayrak.kontrollu.p": 0.174,
+  "error_drivers.metin_bayrak.kontrollu.perf_icinde_pct": 43.6,
+  "error_drivers.metin_bayrak.medyan_hata_pct": 5.1,
+  "error_drivers.metin_bayrak.n": 3107,
+  "error_drivers.metin_bayrak.pct": 10.36
+ },
+ "08_conformal_coverage": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+  "_meta.generated_at": "2026-09-24T00:08:30",
+  "_meta.run_id": "5ca6dedde5b2",
+  "_meta.script": "08_conformal_coverage.py",
+  "domain.conformal.by_quantile": {
+   "len": 4,
+   "sha256": "df4e3afc4b9ad89439dd60e13aa6c092cefaf4e290d3b8901760f0b7c08ed79d"
+  },
+  "domain.conformal.coverage_hedef": 90,
+  "domain.conformal.not": "Q1 (ucuz) under-coverage: model ucuzlarda daha belirsiz (dürüst bulgu).",
+  "report.conformal_all": 89.99933306655996,
+  "report.conformal_by_pred": {
+   "len": 4,
+   "sha256": "fd6fea9f02f46f759cd2812876d3dd1a9797b2739496783765c259922d2f91c6"
+  },
+  "report.conformal_q": 0.1412297144167473,
+  "report.q_bounds": {
+   "len": 3,
+   "sha256": "966cb41c8198581cec33e08122c4924d33d00543e1f43dde46ff046a209304fb"
+  }
+ },
+ "08_large_errors": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+  "_meta.generated_at": "2026-09-24T00:08:38",
+  "_meta.run_id": "5ca6dedde5b2",
+  "_meta.script": "08_large_errors.py",
+  "error_drivers.by_age.age_18plus.big_pct": 12.04,
+  "error_drivers.by_age.age_18plus.n": 2649,
+  "error_drivers.by_age.age_under18.big_pct": 3.25,
+  "error_drivers.by_age.age_under18.n": 27339,
+  "error_drivers.by_model_year_n": {
+   "len": 5,
+   "sha256": "a27fdf11f6dae0192ad771c93a5874a5fac24b32839e81ff9ead5c3d3305d43c"
+  },
+  "error_drivers.by_segment_FS.F_or_S.big_pct": 19.14,
+  "error_drivers.by_segment_FS.F_or_S.n": 444,
+  "error_drivers.by_segment_FS.other.big_pct": 3.8,
+  "error_drivers.by_segment_FS.other.n": 29544,
+  "error_drivers.by_snapshot": {
+   "len": 4,
+   "sha256": "90053d4313780d156b0a8d5246ecac06aab8be86415ffa251588f96dd397117b"
+  },
+  "error_drivers.eski_d_grubu.diger_ort_sapma_tl": -5754.0,
+  "error_drivers.eski_d_grubu.mae_tl": 473295.0,
+  "error_drivers.eski_d_grubu.mape": 13.5,
+  "error_drivers.eski_d_grubu.n": 224,
+  "error_drivers.eski_d_grubu.ort_sapma_tl": -61625.0,
+  "error_drivers.eski_d_grubu.seriler": {
+   "len": 6,
+   "sha256": "ea780bdcc76ae7f9ee6aca6b0a27a6f9316247eed158b14d82f93efc2addeb9f"
+  },
+  "error_drivers.eski_d_grubu.tl_ilk50_icinde": 17,
+  "error_drivers.examples": {
+   "len": 3,
+   "sha256": "574b6705d67a9d7fec9fdde500db556fc7c3f4a0c5b07415772b1d51e00e81c9"
+  },
+  "error_drivers.kaybolan_canli.canli_medyan_artik": 1.38,
+  "error_drivers.kaybolan_canli.canli_n": 11526,
+  "error_drivers.kaybolan_canli.kaybolan_medyan_artik": -1.24,
+  "error_drivers.kaybolan_canli.kaybolan_n": 18462,
+  "error_drivers.kaybolan_canli.son_tarama": "2026-06-27",
+  "error_drivers.overall.big_pct": 4.03,
+  "error_drivers.overall.n": 29988,
+  "error_drivers.overall.n_big": 1208,
+  "error_drivers.overall.n_over": 768,
+  "error_drivers.overall.n_under": 440,
+  "error_drivers.per_model_buckets": {
+   "len": 5,
+   "sha256": "1625888f0ba6e2141de2674c3ebe50d4cb51ef01c4ee78f67092fa97df75bd69"
+  },
+  "error_drivers.per_model_error": {
+   "len": 745,
+   "sha256": "4f8aed661e88760bc22e51c955053533cc81c856533768507261dc45a4d76e4c"
+  },
+  "error_drivers.spec_outliers.buyuk_hata_pct": 40.0,
+  "error_drivers.spec_outliers.diger_buyuk_hata_pct": 4.0,
+  "error_drivers.spec_outliers.diger_medyan_hata_pct": 4.7,
+  "error_drivers.spec_outliers.en_kotu_6_emsal": {
+   "len": 6,
+   "sha256": "979e0c55dd37d9e329324845d138a929a1ecca9abb7924f4f9e0bde92fa1fe42"
+  },
+  "error_drivers.spec_outliers.en_kotu_6_icinde": 1,
+  "error_drivers.spec_outliers.esik": 1.5,
+  "error_drivers.spec_outliers.kor_nokta.ilan": 632,
+  "error_drivers.spec_outliers.kor_nokta.medyan_hata_pct": 8.3,
+  "error_drivers.spec_outliers.kor_nokta.model": 307,
+  "error_drivers.spec_outliers.kor_nokta.pct": 2.11,
+  "error_drivers.spec_outliers.medyan_hata_pct": 12.8,
+  "error_drivers.spec_outliers.min_grup": 5,
+  "error_drivers.spec_outliers.n": 15,
+  "error_drivers.spec_outliers.pct": 0.05,
+  "error_drivers.threshold_pct": 20.0,
+  "error_drivers.tl_olcekli.ape_10_esik": 72.7,
+  "error_drivers.tl_olcekli.ape_ilk10_dusuk": 0,
+  "error_drivers.tl_olcekli.dusuk_ape_max": 56.5,
+  "error_drivers.tl_olcekli.en_kotu": {
+   "len": 6,
+   "sha256": "b9cd3513c6b69e6283267690bd07e2fe8bc4c31aa7fb4c60d07fdbd951b8d377"
+  },
+  "error_drivers.tl_olcekli.ilk_n": 100,
+  "error_drivers.tl_olcekli.ilk_n_dusuk": 73,
+  "error_drivers.tl_olcekli.ilk_n_fazla": 27,
+  "error_drivers.tl_olcekli.ilk_n_metin": 23,
+  "error_drivers.tl_olcekli.ilk_n_perf": 23,
+  "error_drivers.tl_olcekli.ilk_n_q4": 91,
+  "error_drivers.tl_olcekli.perf_genel_pct": 0.52,
+  "error_drivers.tl_olcekli.perf_seriler": {
+   "len": 4,
+   "sha256": "179cac5db209ae585515dc85135798a8deca0bb2036c49123ea59b59ba96e2bc"
+  },
+  "error_drivers.yas_duyarlilik": {
+   "len": 22,
+   "sha256": "3d644a8951ab39b1a5b559f15fc8780db7245b615a65b47ca91620ce8f091806"
+  },
+  "error_drivers.yas_kesim": {
+   "len": 14,
+   "sha256": "2e48fea772996e9871fd8a950dfc8adabe9d316295cc70fa0f9927ed8bbfc8f4"
+  }
+ },
+ "08_residuals": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+  "_meta.generated_at": "2026-09-24T00:08:32",
+  "_meta.run_id": "5ca6dedde5b2",
+  "_meta.script": "08_residuals.py",
+  "domain.oof_best": {
+   "len": 5,
+   "sha256": "c5878462bdcdf5f4457f3cb1ce4868f96a2e2f08455d7acf73dc4bc2edab280d"
+  },
+  "domain.oof_outliers": {
+   "len": 10,
+   "sha256": "769c7be9f670c24c4307d8578fe76c70aca8dda1c0a42fd1ca2b552e612547dc"
+  },
+  "domain.pred_vs_true.ideal_line": {
+   "len": 2,
+   "sha256": "0fbb8c5925985b4343ccd54017700d9a9c214e1661d634a0f702270209c44a0c"
+  },
+  "domain.pred_vs_true.n": 29988,
+  "domain.pred_vs_true.not": "OOF tahmin (sızıntısız), TÜM noktalar. Frontend: yoğunluk/hexbin veya düşük-opacity ile render (30K nokta ham scatter'da okunmaz).",
+  "domain.pred_vs_true.points": {
+   "len": 29988,
+   "sha256": "ea58e6676ed58b7d959b7f29bab6dbd2321ca90538ba2300dee6f32fedbe8d09"
+  },
+  "domain.pred_vs_true.r2": 0.9745,
+  "domain.quantile_error": {
+   "len": 4,
+   "sha256": "5a6b077de72ba80c023e175a736e459d1ff74dc99f29b2c6a09a6a26ca5ed75f"
+  },
+  "domain.residual_scatter.mean_resid_pct": -0.47,
+  "domain.residual_scatter.n": 29988,
+  "domain.residual_scatter.not": "Artık% = (gerçek-tahmin)/gerçek, TÜM noktalar. Ortalama sıfıra yakın, ama medyan artık dönemlere göre %-3.27 ile %+1.38 arasında kayıyor (model zamanı görmüyor). Fiyata göre yanlılık tahmin edilen fiyata göre gruplanarak ölçülmeli; gerçek fiyata göre gruplamak ortalamaya dönüş üretir. Frontend: yoğunluk/hexbin render önerilir.",
+  "domain.residual_scatter.points": {
+   "len": 29988,
+   "sha256": "73578490d8a61b1a820e90141584bfced8c83d419f306ec1ff23f980ceafe547"
+  },
+  "domain.residual_scatter.std_resid_pct": 9.27,
+  "domain.residual_vs_n": {
+   "len": 438,
+   "sha256": "965e7d7f6b89cef714e85847e9008a9dcc25af6e9440af7342e8d2c520984c51"
+  },
+  "error_drivers.kalibrasyon.egim": 1.0033,
+  "error_drivers.kalibrasyon.kesisim": 86.0,
+  "error_drivers.lira_ceyrek": {
+   "len": 4,
+   "sha256": "57d945a1baadc2f135cc6d662ea12a3edbb3449cd671aee67fb89357cdc22c06"
+  },
+  "error_drivers.tahmin_ceyrek": {
+   "len": 4,
+   "sha256": "f1c08efa58cf30682ed9d3469c10dee3a989008d4e17d7a4a0a169d8e08e7323"
+  },
+  "report.err_abs_mean": 6.489838133038394,
+  "report.err_abs_median": 4.681734044452428,
+  "report.err_bands": {
+   "len": 4,
+   "sha256": "5873e2dff7954d61a80a2f9070e8315117e00739b0f0cb8b5242eff2e972a8f1"
+  },
+  "report.err_in10": 80.0186741363212,
+  "report.err_max": 56.450442487424205,
+  "report.err_median": -0.2739682712981092,
+  "report.err_min": -178.0807622473475,
+  "report.err_n": 29988,
+  "report.err_over20": 768,
+  "report.err_sym_over": 768,
+  "report.err_sym_under": 812,
+  "report.err_under20": 440,
+  "report.model_r2_log": 0.9699
+ },
+ "09_backtest": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+  "_meta.generated_at": "2026-09-24T00:09:19",
+  "_meta.run_id": null,
+  "_meta.script": "09_backtest.py",
+  "methodology.backtest.cumulative": {
+   "len": 6,
+   "sha256": "83b0721d5bc74b7e535b9d727d6eb9ee8e6e81c0e97016f1a07587a471a09676"
+  },
+  "methodology.backtest.insample": {
+   "len": 4,
+   "sha256": "5658a8065e63f6a908f413e7c37772651b898ebf0595d84f7cad3c91dedf3ff5"
+  },
+  "methodology.backtest.not": "single: tek taramada eğit, sonraki taramaların yalnız YENİ ad_id'lerinde test et (sızıntısız). cumulative: t'ye kadarki taramalarda eğit, aynı kural; ilk bloğu single ile aynı deneydir. insample: kümülatif birikimde düz 5-fold OOF, zaman boyutu yok. per_snapshot: her tarama izole, düz 5-fold OOF. Dört kol da ana modelden hafif: TF-IDF/SVD yok, erken durdurma yok (single/cumulative 800, insample/per_snapshot 500 ağaç).",
+  "methodology.backtest.per_snapshot": {
+   "len": 4,
+   "sha256": "21a4e89d5bbd3444fe8adef957687bd40850115774f50dcabbc6c7cb6dad5950"
+  },
+  "methodology.backtest.protokol.ayni_deney": "cumulative ilk blok (<= ilk tarama) single ilk blokla ayni",
+  "methodology.backtest.protokol.duz_kfold": {
+   "len": 2,
+   "sha256": "b3b9d739d449faff118fb799a07ebe369bd4c05e7365ad873acc47cb57ca354a"
+  },
+  "methodology.backtest.protokol.hafif_model": "tum kollar ana modelden hafif: TF-IDF/SVD yok (ad ham kategorik), erken durdurma yok; single/cumulative 800 agac, insample/per_snapshot 500 agac",
+  "methodology.backtest.protokol.sizintisiz": {
+   "len": 2,
+   "sha256": "157d3646b52e16d28f83ad1478017eaf6ac1a2e2555c20e385e7e76fd61c791d"
+  },
+  "methodology.backtest.single": {
+   "len": 6,
+   "sha256": "1bbefbedb625b64a8cd4b378c90f227e892c9da3cfa4d9135de9afe61bae89cf"
+  }
+ },
+ "09_drift": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+  "_meta.generated_at": "2026-09-24T00:08:40",
+  "_meta.run_id": null,
+  "_meta.script": "09_drift.py",
+  "domain.drift.all_pairs": {
+   "len": 6,
+   "sha256": "cc9cce56609519b8db1bff98c443885b62d03f7cd433eeb346df48198a64d672"
+  },
+  "domain.drift.hist.2026-01-18": {
+   "len": 39,
+   "sha256": "aa2dceab0bda234b062b70d9cecc1bd8130afbc95841405efdce41b50af35eca"
+  },
+  "domain.drift.hist.2026-01-27": {
+   "len": 39,
+   "sha256": "40139d1631b493d280fd93fc10fa01e7dbc9b8313ca01be9e372a41fc500ba48"
+  },
+  "domain.drift.hist.2026-03-21": {
+   "len": 39,
+   "sha256": "94380258c6b9664f8f2d35fa4cf5cb08ee3a7c1beca4d73f3691017a2e115b16"
+  },
+  "domain.drift.hist.2026-06-27": {
+   "len": 39,
+   "sha256": "b6df37a708ddaf4afdef66109e71d97bd6ad774ad85864a321832a104577e5ba"
+  },
+  "domain.drift.hist.edges": {
+   "len": 40,
+   "sha256": "0bb1281713350f5965b4ed437adb3b78f6fd93d32a309c2828c78193e99e75ff"
+  },
+  "domain.drift.kde_log.2026-01-18": {
+   "len": 120,
+   "sha256": "890df62e2290f1f6b5831abdb6bab2ab928bb7d94de110604b02cabe793cf6a0"
+  },
+  "domain.drift.kde_log.2026-01-27": {
+   "len": 120,
+   "sha256": "67ef7d2495e9d13c03944da9c253e083663fc7add4f3f70b50f8d0ffa5ee6a99"
+  },
+  "domain.drift.kde_log.2026-03-21": {
+   "len": 120,
+   "sha256": "4c7cf02df253dc7db234fa554f3fddd26b1c573ad750ebe45843cacfdaca9b0b"
+  },
+  "domain.drift.kde_log.2026-06-27": {
+   "len": 120,
+   "sha256": "0c9ee60e7ad7defcdacf13a3ff74140b3a13a4d789f72a7623ee47805cc1d94f"
+  },
+  "domain.drift.kde_log.x": {
+   "len": 120,
+   "sha256": "4763054e01b9fd560b58a14615dd64077c30a4d18a0590b77879ac3d0bfd8572"
+  },
+  "domain.drift.kde_raw.2026-01-18": {
+   "len": 120,
+   "sha256": "4b79b174214e68042dd352135ac3b9bdb797518af40395c3041f73ab4cca499a"
+  },
+  "domain.drift.kde_raw.2026-01-27": {
+   "len": 120,
+   "sha256": "59a37f832e325656b9ad54324d2df507d5ec9bf154a59f1e8f873c308fc5647e"
+  },
+  "domain.drift.kde_raw.2026-03-21": {
+   "len": 120,
+   "sha256": "22cbbb94659eaa39309586542172af84433acbac04080453cebd2d0c53cc45eb"
+  },
+  "domain.drift.kde_raw.2026-06-27": {
+   "len": 120,
+   "sha256": "e8ddc3ebe6f3ffd92b5637d12d7492096b2446823f52d30765aac972e26d0d3e"
+  },
+  "domain.drift.kde_raw.x": {
+   "len": 120,
+   "sha256": "aabc32ed42af1802c25deb7cba7a0c24f42039d85c3dfe22d89f9fdb76414b74"
+  },
+  "domain.drift.not": "KS=maks dağılım farkı, PSI<0.10 güvenli/>0.25 retrain, EMD=kayma mesafesi (₺). hist.edges = bin kenarları (39 bin, 40 kenar); hist[snapshot] = yükseklikler.",
+  "domain.drift.ortusme": {
+   "len": 6,
+   "sha256": "df338809385eafcaef0a534fa97121ee8aa5ee27aed678c45884ee0daca367e9"
+  },
+  "domain.drift.ortusme_not": "[cift, ortak ilan %, KS_ayrik, p_ayrik, PSI_ayrik, EMD_ayrik, n_a, n_b]. Ayrik = iki taramada da gorulen ilanlar cikarildiktan sonra.",
+  "domain.drift.table": {
+   "len": 3,
+   "sha256": "306279678bd83f0ee395f50744b77486e81acbb5d6ed5efbd4bc4b1390073ae8"
+  },
+  "error_drivers.donem_kaymasi.canli": {
+   "len": 3,
+   "sha256": "1f85423bb1120b9a7aa2e4b25d3aa69dcfb196a23733b4268a3db38154700b3a"
+  },
+  "error_drivers.donem_kaymasi.min_hucre_n": 3,
+  "report.drift_holm.n_holm": 2,
+  "report.drift_holm.n_sig": 5,
+  "report.drift_holm.n_tests": 6,
+  "report.drift_holm.pairs": {
+   "len": 2,
+   "sha256": "c5c1f4b3c0fc6105bcb72ddbd42777c89d824a10fa32259f510f7b6cdaeac60a"
+  }
+ },
+ "10_free_text": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+  "_meta.generated_at": "2026-09-24T00:09:20",
+  "_meta.run_id": null,
+  "_meta.script": "10_free_text.py",
+  "error_drivers.metin_kaynak.ablasyon_agac": 300,
+  "error_drivers.metin_kaynak.ablasyon_kategorik": {
+   "len": 6,
+   "sha256": "ab5d6cb2229eeced2a06f9f39719534b6a2ae085ab5933cf4c64880e6193ebb2"
+  },
+  "error_drivers.metin_kaynak.ablasyon_model_seri": false,
+  "error_drivers.metin_kaynak.ablasyon_sayisal": {
+   "len": 8,
+   "sha256": "265876fbe0114d836b95c93fd67b2115ced53b94c6b8e08e207e144c4ee54614"
+  },
+  "error_drivers.metin_kaynak.ilan": 29988,
+  "error_drivers.metin_kaynak.llm_kapsam_pct": 46.2,
+  "error_drivers.metin_kaynak.llm_metin": 13904,
+  "error_drivers.metin_kaynak.llm_modeldeki_ilan": 13867,
+  "report.text_ablation.ablation.delta_r2": 0.0015,
+  "report.text_ablation.ablation.r2_structured": 0.9645,
+  "report.text_ablation.ablation.r2_structured_plus_text": 0.966,
+  "report.text_ablation.kaynak": "_arsiv/text_analysis (2026-09-19'da arsivlenen metin analizi kosumu): ablasyon metrics/text_insights.json->delta_r2, model adi langextract/extgemini.py MODEL_NAME. Arsiv git disi oldugu icin degerler 2026-09-22'de bu dosyaya donduruldu; teknik rapor buradan okur.",
+  "report.text_ablation.llm.kutuphane": "LangExtract",
+  "report.text_ablation.llm.model": "gemini-3.1-flash-lite",
+  "report.text_ablation.llm.siniflar": {
+   "len": 3,
+   "sha256": "963c4764e6adff332bb686b76f83411c8c29c3c4c2c2185c434c1211da5485d8"
+  }
+ },
+ "shap/02_oof_shap": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+  "_meta.generated_at": "2026-09-24T00:10:13",
+  "_meta.run_id": "5ca6dedde5b2",
+  "_meta.script": "shap/02_oof_shap.py",
+  "oof_shap.gruplama_kurali": "kuresel = mean|sum phi| (grup ici isaretli toplam, sonra mutlak ortalama); kuresel_ayri = sum mean|phi| (her uye ayri, iptal yok). Tek uyeli gruplarda ayni.",
+  "oof_shap.gruplar": {
+   "len": 24,
+   "sha256": "fb2bf07af92d1fa5f0cd825d644348a71393ae059cdcf95a19c04e1a7e7bc7d3"
+  },
+  "oof_shap.kapi.esik_mape": 0.01,
+  "oof_shap.kapi.esik_max_tl": 1.0,
+  "oof_shap.kapi.is_parcacigi": 16,
+  "oof_shap.kapi.mape_yayimlanan": 6.49,
+  "oof_shap.kapi.mape_yeniden": 6.4898,
+  "oof_shap.kapi.max_fark_tl": 0.0,
+  "oof_shap.kapi.ortalama_fark_tl": 0.0,
+  "oof_shap.kuresel": {
+   "len": 24,
+   "sha256": "1a7aa6163e8c515d68cd4539e4d1b2ed2df6fd5a8301314fb407a4abcebedd8f"
+  },
+  "oof_shap.kuresel_ayri": {
+   "len": 24,
+   "sha256": "b94d7fa0833281b48505984c524135de4393e44e6367729cffbc534b51425943"
+  },
+  "oof_shap.n": 29988,
+  "oof_shap.not": "Her ilan, onu egitimde hic gormemis fold modeliyle aciklandi (5-fold, ureticinin kurulumunun aynisi). SHAP degerleri log1p(fiyat) uzayinda ve text_only_key ile 24 kaleme gruplandi."
+ },
+ "shap/03_what_sets_price": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+  "_meta.generated_at": "2026-09-24T04:20:38",
+  "_meta.run_id": "5ca6dedde5b2",
+  "_meta.script": "shap/03_what_sets_price.py",
+  "shap.cohorts.en.name": "Age (years)",
+  "shap.cohorts.en.split": {
+   "len": 2,
+   "sha256": "ba122d1c441cbf2f447ac9c0c35d4221fc3f62b410eded84c63a5414b536ae4f"
+  },
+  "shap.cohorts.en.v0": 0.3957670116521294,
+  "shap.cohorts.en.v1": 0.2299870002594688,
+  "shap.cohorts.tr.name": "Yaş (yıl)",
+  "shap.cohorts.tr.split": {
+   "len": 2,
+   "sha256": "b3671f5b8a6dad69ade239e70687c8d68c0fbf5f2ab5e2a72230ca7f21925b79"
+  },
+  "shap.cohorts.tr.v0": 0.3957670116521294,
+  "shap.cohorts.tr.v1": 0.2299870002594688,
+  "shap.dep_facts.age_abs": {
+   "len": 5,
+   "sha256": "9b37a6cb7c0bfca8e5c8e08f6e4bc913deb4d033b07489c6f0c0c0918bf0cab7"
+  },
+  "shap.dep_facts.age_gap_top": {
+   "len": 3,
+   "sha256": "8e6652be5667cdb5f83b38b2e9415d7229d30925cfe7cb1c18285ddb2f9ebd21"
+  },
+  "shap.dep_facts.age_old": -0.6356432814827508,
+  "shap.dep_facts.age_old_n": 2649,
+  "shap.dep_facts.age_price_ratio": 5.684931506849315,
+  "shap.dep_facts.age_ratio": 3.5947452763778025,
+  "shap.dep_facts.age_young": 0.6438298522085231,
+  "shap.dep_facts.age_young_n": 1383,
+  "shap.dep_facts.hp_bands": {
+   "len": 4,
+   "sha256": "9839f2d3740fbaef8f399929f9358424bcab95f173e9fe05801b0fd9e3cd3220"
+  },
+  "shap.dep_facts.hp_high": 0.35895856764006573,
+  "shap.dep_facts.hp_low": -0.16131827598120305,
+  "shap.dep_facts.hp_ratio": 1.682493372787762,
+  "shap.dep_facts.km_centers": {
+   "len": 4,
+   "sha256": "8a104f5d5b5997de60c57bd61751e4ee5358eebc744e2b07a115ba5b42e034c9"
+  },
+  "shap.dep_facts.km_flat": true,
+  "shap.dep_facts.km_n_last": 1723,
+  "shap.dep_facts.km_rates": {
+   "len": 3,
+   "sha256": "8ed9dccdb51b720f330796b13ecd29ab26868638e89660695ac43bd68898d52f"
+  },
+  "shap.dep_facts.km_son_min": true,
+  "shap.direction.gb_mileage": -0.9613258258036923,
+  "shap.direction.power_hp_val": 0.8944759603791989,
+  "shap.direction.vehicle_age": -0.9911873895358259,
+  "shap.figures": {
+   "len": 10,
+   "sha256": "eb2d1c81e1a47bed4d41f203a4f709b26148d43be97f92e617661977bdbdc5f7"
+  },
+  "shap.fold_sira": {
+   "len": 5,
+   "sha256": "cc0bc8b167295ab7e7a3599a5c157f7012dec5bf67dccd6be2d2ea6fd32b7d77"
+  },
+  "shap.km_age.n_old": 9000,
+  "shap.km_age.n_young": 2232,
+  "shap.km_age.old": -0.00576016277354033,
+  "shap.km_age.young": -0.03035346303574969,
+  "shap.lightgbm_tfidf_svd": {
+   "len": 11,
+   "sha256": "37f5ec8d072ce2c8ddceb1e5b657329ea362ee8356c723bdda54b7042d4632ee"
+  },
+  "shap.n": 29988,
+  "shap.n_svd": 170,
+  "shap.oof_ayri": {
+   "len": 11,
+   "sha256": "ed4ce2885869f42d5c98c565a93b69079514e34a6ec7057c74094943857b5bd1"
+  },
+  "shap.tipik.DAMAGE": {
+   "len": 2,
+   "sha256": "bf60527475d6e793e1ab02ca343b28ed9826b662ada4ad3025e900e68e685edf"
+  },
+  "shap.tipik.ENGINE": {
+   "len": 2,
+   "sha256": "e516437e554659e7164a34e258e8b3a3e25f8f22e15e307ae8970a362f923599"
+  },
+  "shap.tipik.MODEL_SERIES (text)": {
+   "len": 2,
+   "sha256": "7ce53bcacaad1026039982e04217ee730b31203f9248d214ab6e109bc8c6903c"
+  },
+  "shap.tipik.brand": {
+   "len": 2,
+   "sha256": "723e4588b460fc7633f9daf03781f5b68db7d6f63f81c559b3851ede1618f2a6"
+  },
+  "shap.tipik.gb_mileage": {
+   "len": 2,
+   "sha256": "fd213c94cbcc8fc56bb3383aee34e802a830e753c948f76ab785462f838aee16"
+  },
+  "shap.tipik.kb_body_type": {
+   "len": 2,
+   "sha256": "ff43bc0d03142494fd53477d9acf96fb62529db81ced15388c3bb4837da06ea6"
+  },
+  "shap.tipik.kb_drivetrain": {
+   "len": 2,
+   "sha256": "bcca2b25b73833f5ab1b236c5f41bbf07fff8c6d0b77db996b7e73fe639549ef"
+  },
+  "shap.tipik.kb_fuel": {
+   "len": 2,
+   "sha256": "41e57150bd59a6f609fe9361adbd1e3d938e3f0807e2f1c61145f6148a6a95d3"
+  },
+  "shap.tipik.kb_transmission": {
+   "len": 2,
+   "sha256": "2219c09ba5aa1303e9da885d0cf4cf4ac79d93ccf183df2e14a797f96f2f2599"
+  },
+  "shap.tipik.segment": {
+   "len": 2,
+   "sha256": "b2a8260f6f99052c6d6ef17dd3e39421200de774372b5e424bbf2e458aac0690"
+  },
+  "shap.tipik.vehicle_age": {
+   "len": 2,
+   "sha256": "3bf9bd9f9ddf903792ec03691da63d67614ec8e9dcbc7a06e0a3c8592506497a"
+  }
+ },
+ "shap/04_variants": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+  "_meta.generated_at": "2026-09-24T00:11:13",
+  "_meta.run_id": null,
+  "_meta.script": "shap/04_variants.py",
+  "domain.shap.catboost_native": {
+   "len": 12,
+   "sha256": "1e4766d2394e4c2261669632eaad9567f78a24b4ccea25a29478893797dfcfde"
+  },
+  "domain.shap.catboost_tfidf_svd": {
+   "len": 11,
+   "sha256": "b58f7826c73ac4551b47c3fe399242e72a70dd3b3d3384db489b53510077e188"
+  },
+  "domain.shap.lightgbm_tfidf_svd": {
+   "len": 11,
+   "sha256": "d24efe8a8369c8cef5c0de22a08fd309be098f42897c0fe4ce50764b8858ea74"
+  },
+  "domain.shap.n_kullanilan": 29988,
+  "domain.shap.not": "SVD boyutları (model_0..) → MODEL_SERIES gruplandı. ENGINE (hp+cc), DAMAGE (boya/değişen/hasar) gruplu. Native ham text (SVD yok).",
+  "domain.shap.png": {
+   "len": 6,
+   "sha256": "756d661866dbaf1c78a6483aebb267658a121ecb31909b19d394a94b654a1e52"
+  },
+  "domain.shap.yontem": "TÜM VERİ (örnekleme YOK). Grup SHAP = satır bazında üye SHAP toplamı (işaretli net), sonra ortalama-mutlak. LGB→shap.TreeExplainer, CatBoost→kendi ShapValues (text-güvenli, EXACT).",
+  "shap_final.add_err": 5.062616992290714e-13,
+  "shap_final.base_log": 14.299831654389688,
+  "shap_final.catboost_native": {
+   "len": 12,
+   "sha256": "1e4766d2394e4c2261669632eaad9567f78a24b4ccea25a29478893797dfcfde"
+  },
+  "shap_final.catboost_native_ayri": {
+   "len": 12,
+   "sha256": "cfe82e2da4614fea5d322c7fd3f2af20f0d855ab4d16301b18765a7aeb834bb1"
+  },
+  "shap_final.catboost_native_birlesik": {
+   "len": 11,
+   "sha256": "4522c3429f11542cd972343ec793b04a0ec058a1928f36349bfea7c46210a2b0"
+  },
+  "shap_final.catboost_tfidf_svd": {
+   "len": 11,
+   "sha256": "b58f7826c73ac4551b47c3fe399242e72a70dd3b3d3384db489b53510077e188"
+  },
+  "shap_final.catboost_tfidf_svd_ayri": {
+   "len": 11,
+   "sha256": "afa165fb2a86494b007525bf76a812c801a6ffb56b9a38efca5daaa56a291dc5"
+  },
+  "shap_final.final_model_tablo": {
+   "len": 11,
+   "sha256": "d24efe8a8369c8cef5c0de22a08fd309be098f42897c0fe4ce50764b8858ea74"
+  },
+  "shap_final.final_model_tablo_ayri": {
+   "len": 11,
+   "sha256": "162bf21b61c33ffe50b1cbce72c4544cf1eaabc99a84f0691f038269c7ca1848"
+  }
+ },
+ "shap/06_one_listing": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45277,
+  "_meta.db.sha256": "26ea42566dbd7c510c5b80b74a7968827713e87bba6fa320be2ba7584f3a4560",
+  "_meta.generated_at": "2026-09-24T04:20:41",
+  "_meta.run_id": "5ca6dedde5b2",
+  "_meta.script": "shap/06_one_listing.py",
+  "shap_case.figures": {
+   "len": 2,
+   "sha256": "99578b6c1f0e2de0adff31b71ace42eda92f056e76983d76db9d07dd30521310"
+  },
+  "shap_case.km_label.en": "330,000 km",
+  "shap_case.km_label.tr": "330.000 km",
+  "shap_case.n_items": 24,
+  "shap_case.n_other": 15,
+  "shap_case.n_rest": 21,
+  "shap_case.name": "118i Standart",
+  "shap_case.pred": 519679.7698413808,
+  "shap_case.price": 595000.0,
+  "shap_case.rest": -0.2681453240243005,
+  "shap_case.top": {
+   "len": 3,
+   "sha256": "ed6761c797117687504acf9689d526741e82b72694525ebd4bc2875c5fd439f7"
+  },
+  "shap_case.visible": {
+   "len": 9,
+   "sha256": "304883ef2f37ca5c7ee546049d6e2ea5dc776c96891889f71e880a420e153f79"
+  },
+  "shap_case.wf_max": 10,
+  "shap_case.year": 2007
+ }
+}

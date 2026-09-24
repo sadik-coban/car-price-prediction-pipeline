@@ -59,6 +59,10 @@ python builders/build_site_data.py
 python builders/build_technical_report.py
 python builders/build_business_report.py
 python builders/build_shap_report.py
+
+# 4) done? one verdict, must exit 0 (see "Verification gate" below)
+python tools/verify.py                        # fast gate (~10 s)
+python tools/verify.py --full                 # run_all.py first (~16 min), then the same gate
 ```
 
 > **Windows note:** the scripts print Turkish characters. If output is redirected to a file,
@@ -67,6 +71,25 @@ python builders/build_shap_report.py
 **If the data hasn't changed, regenerating the reports takes about a minute** — the heavy compute stays in
 the analysis scripts (heaviest: `07_lofo` ~6 min, `07_model_comparison` ~4 min, the `06_hedonic` bootstrap
 ~1.5 min, `shap/02` and `shap/04` ~1 min).
+
+### Verification gate
+
+`python tools/verify.py` is the one command that decides whether a change is done: exit 0 means done. It only
+selects which tests run and summarises them; every check is a pytest test under `tests/`:
+- `tests/db/`, `tests/scraper/`: the raw → DB arm and the collection settings;
+- `tests/metrics/`: does every `metrics/*.json` equal the baseline (`tests/baselines/`): key paths, types and
+  values. Keys known to move between runs are listed with their reason in `tests/baselines/exemptions.json`;
+- `tests/reports/`: the four builders are rerun into a temp folder; the six reports, every figure and
+  `site_data.json` must equal what is in the repository. A hand-edited report, or one not rebuilt after a
+  metrics change, fails here;
+- `tests/repo/`: bilingual docstrings, relative links in the documents, no code that reads another source
+  file as data.
+
+If an analysis change moves the numbers **on purpose**, the gate fails and shows the difference. Inspect it
+with `python tools/snapshot_metrics.py --diff`, accept it with
+`python tools/snapshot_metrics.py --accept "<reason>"`, then rebuild the reports. An accept without a reason
+is refused; every accept is logged in `tests/baselines/accept_log.jsonl`. Rules:
+[Reproducibility](docs/reproducibility.en.md).
 
 ## Documents
 
@@ -84,9 +107,10 @@ the analysis scripts (heaviest: `07_lofo` ~6 min, `07_model_comparison` ~4 min, 
 |---|---|
 | `scraper/` | listing collection → `data/raw/`; what is collected (brands, price ranges, search query) lives in `collection_config.json`, read by `collection.py` — the analysis (`01_dedup_leakage`) reads the same file. The scraping code (`main.py`, `getlistofcars.py`, `getdetails.py`) is not in the repository, only local; the repository tracks these two config files |
 | `db/` | `build_duckdb` (→ semi-raw `cars.duckdb`; safe build) + `lib/process_for_db` (raw JSONL → row parsers) + `lib/damage_mappings.json` (the damage diagram's 13 panel / 5 status labels; `analysis/01_unspecified_panels` reads it too) · `publish_data_to_s3` (S3 publishing; `--dry-run` only checks, no S3 connection) + `lib/s3_publish` (the S3 connection) |
-| `tests/` | pytest tests — `tests/db/`: the raw → DB arm (every format seen in the real data, the semi-raw rules, an end-to-end build, the safe build) and the S3 publishing arm (validation, versioning, upload order, manifest). Records are fake but in the real formats; everything runs in temp folders; no network, no `.env`, no `data/`. Install `pip install -r requirements-dev.txt`, run `python -m pytest tests -v`, coverage `python -m pytest tests --cov=db --cov-branch --cov-report=term-missing` |
+| `tests/` | pytest tests — `tests/db/`: the raw → DB arm (every format seen in the real data, the semi-raw rules, an end-to-end build, the safe build) and the S3 publishing arm (validation, versioning, upload order, manifest). Records are fake but in the real formats; everything runs in temp folders; no network, no `.env`, no `data/` · `tests/metrics/`, `tests/reports/`, `tests/repo/`: the verification gate (above); `tests/repo/test_hooks.py` tests the local Claude Code hooks and skips when they are absent · `tests/baselines/`: the metrics baseline, exemptions, accept log. Install `pip install -r requirements-dev.txt`, run `python tools/verify.py` (or `python -m pytest tests -v`), coverage `python -m pytest tests --cov=db --cov-branch --cov-report=term-missing` |
 | `analysis/` | **all computation**: one script per question, number = technical report section (`01_dedup_leakage` · `01_engine_rule` · `01_unspecified_panels` · `02_missingness` · `03_association` · `03_segment_quality` · `03_brand_ablation` · `04_target` · `05_segmentation` · `06_hedonic` · `07_model_comparison` · `07_final_model` (serving files) · `07_lofo` · `07_text_flag` · `08_conformal_coverage` · `08_residuals` · `08_large_errors` · `09_drift` · `09_backtest` · `10_free_text`) + `shap/` (the SHAP report's sections: `02_oof_shap` · `03_what_sets_price` · `04_variants` · `06_one_listing`) + `lib/` (shared code: `common.py` · `cv.py` · `segment_rule.py` · `text_flags.py` · `labels.py`) + `run_all.py` + `frozen/text_ablation.json` (ablation frozen from the archived text analysis) |
 | `builders/` | builders that **do no analysis** and read only `metrics/*.json`: `build_site_data.py` (→ `site_data.json`, same schema) · `build_technical_report.py` · `build_business_report.py` · `build_shap_report.py`; shared code under `report_lib/`: `metrics_view.py` (the single reader + consistency gate) · `report_common.py` (shared numbers, figures, formatters) · `column_labels.py` |
+| `tools/` | `verify.py` (definition of done: selects which tests run and summarises them; `--full` runs the chain first, `--json` prints a one-line summary) · `snapshot_metrics.py` (the metrics baseline: `--diff` shows the differences, `--accept "<reason>"` writes the new baseline) |
 | `metrics/` | one JSON per script (`metrics/<script>.json`, `metrics/shap/<script>.json`); sections `meta` · `domain` · `methodology` (the site tree) · `error_drivers` · `oof_shap` · `shap*` · `report` (numbers only the reports use), each with `_meta` |
 | `reports/` | `business.{tr,en}.md` · `technical.{tr,en}.md` · `shap.{tr,en}.md` — all generated, never hand-edited; which figure goes into which report is set by `BUSINESS_FIGS` / `TECHNICAL_FIGS` in `builders/report_lib/report_common.py` · `figures/` the report figures (`{tr,en}-NN-*.png`; the SHAP ones, `-sh-`, are drawn by `analysis/shap/`); the markdown files reference them as `figures/...` |
 | `docs/` | the long documents, tr + en ("Documents" below) |
@@ -107,4 +131,4 @@ tracked by git** (`.gitignore`); none of them were deleted:
 | root folder | what | git |
 |---|---|---|
 | `archive/` | the single archive root (five separate root folders until 2026-09-24): `obsolete/` (formerly `obselete/` — moved, not deleted, reasons in its own `README.md`; the method and decision log up to 2026-09-18 is in `archive/obsolete/docs/`, not to be confused with today's root `docs/`) · `analysis-history/` (formerly `_arsiv/`) · `backups/` (formerly `backup/`) · `experiments/` (experiments, large errors · domain analyses — if a finding sticks, its producer moves into the repository root) · `published-report/` (formerly `car-price-export/`: frozen copy of the published report — the reference for number audits). Index: `archive/README.md` | untracked |
-| `.claude/memory/` | written record of project decisions | untracked |
+| `.claude/` | local Claude Code setup: the verification hooks (`hooks/`, `settings.local.json`), the `methodology-reviewer` agent, skills | untracked |

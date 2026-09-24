@@ -12,6 +12,7 @@ TR: SHAP raporunu (reports/shap.{tr,en}.md) yalnız metrics/*.json'dan yazar —
     farklar, yayımlanmış sayıların karşılaştırması).
 Run / Koşum: python builders/build_shap_report.py
 """
+import os
 import pathlib
 import re
 import sys
@@ -21,7 +22,12 @@ import numpy as np
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent
 sys.path.insert(0, str(HERE))
-REPORTS_DIR = ROOT / "reports"
+# EN: the SHAP figures are drawn by analysis/shap/ and always read from reports/figures; the md goes to
+#     CARDATASYS_OUT/reports when set (tests), else reports/
+# TR: SHAP figürlerini analysis/shap/ çizer, her zaman reports/figures'tan okunur; md CARDATASYS_OUT
+#     verilmişse CARDATASYS_OUT/reports'a (testler), yoksa reports/'a yazılır
+SHAP_FIGDIR = ROOT / "reports" / "figures"
+REPORTS_DIR = pathlib.Path(os.environ.get("CARDATASYS_OUT") or ROOT) / "reports"
 sys.path.insert(0, str(ROOT / "analysis"))
 from report_lib import metrics_view as MV      # noqa: E402  the single metrics reader | tek metrik okuyucu
 from lib.labels import lb                      # noqa: E402  display names | görünen adlar
@@ -498,8 +504,9 @@ def main():
     if missing:
         raise SystemExit(f"metrics missing/stale | metrik eksik/bayat — run | koşun: python analysis/run_all.py · {missing}")
     for f in d["shap"]["figures"] + d["shap_case"]["figures"]:
-        if not (REPORTS_DIR / "figures" / f).exists():
+        if not (SHAP_FIGDIR / f).exists():
             raise SystemExit(f"figure missing | figür yok: reports/figures/{f} — run | koşun: python analysis/run_all.py --only shap")
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     for lang in ("tr", "en"):
         path = REPORTS_DIR / f"shap.{lang}.md"
         with open(path, "w", encoding="utf-8", newline="\n") as fh:
