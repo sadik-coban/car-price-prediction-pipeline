@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "01_unspecified_panels.py",
-  "generated_at": "2026-09-25T05:11:35+03:00",
+  "generated_at": "2026-09-25T15:42:06+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": null,
   "source": {
    "script": {
-    "analysis/01_unspecified_panels.py": "0cbff6b8b2a3f0b350415017ff540e8e604a428a8c2529a77290bd2fb2d57099"
+    "analysis/01_unspecified_panels.py": "838544bf96ca17ec1c6c5b20a52cdb72fb760371a1d3a1923e5a1fd80f72c69a"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -21,26 +21,26 @@
   }
  },
  "error_drivers": {
-  "belirtilmemis": {
-   "yapi": {
+  "unspecified": {
+   "structure": {
     "panel": 13,
-    "bayrak": 39,
-    "cevap_sayisi": 5,
-    "grup_panel": {
+    "flags": 39,
+    "n_answers": 5,
+    "grouped_panels": {
      "bumper": 2,
      "door": 4,
      "fender": 4
     },
-    "tek_panel": 3
+    "single_panels": 3
    },
-   "eslesen_ilan": 29988,
-   "ilan": 29988,
-   "cift_kayit_atlanan": 0,
-   "panel_sayisi": 389844,
-   "belirtilmemis_panel": 59651,
-   "belirtilmemis_pct": 15.3,
-   "hepsi_belirtilmemis": 1235,
-   "en_az_bir": 6236
+   "matched_listings": 29988,
+   "listings": 29988,
+   "duplicates_skipped": 0,
+   "n_panels": 389844,
+   "unspecified_panels": 59651,
+   "unspecified_pct": 15.3,
+   "all_unspecified": 1235,
+   "at_least_one": 6236
   }
  }
 }

@@ -202,39 +202,39 @@ def to_metrics(res):
     return {
         "meta": {"n_raw": rows["snapshot_rows"], "n_dedup": rows["listings"],
                  "snapshots": res["snapshots"], "brands": res["brands"]},
-        "methodology": {"icerik_duplike": {
-            "kati_tanim_fazla": dup["strict"], "kati_tanim_pct": round(dup["strict"] / n * 100, 2),
-            "gevsek_tanim_fazla": dup["loose"], "gevsek_tanim_pct": round(dup["loose"] / n * 100, 2),
-            "fiyatsiz_tanim_fazla": dup["no_price"], "fiyatsiz_tanim_pct": round(dup["no_price"] / n * 100, 2),
-            "fiyatsiz_yuvarlak_olmayan_km_fazla": dup["no_price_non_round_km"],
-            "km_yuvarlak_pct": round(dup["round_km_share"] * 100, 1),
-            "duplike_grup_sayisi": dup["strict_groups"], "kati_tanim_kolonlari": dup["strict_key"],
-            "en_cok_tekrar": [{"model": r["model"], "n_tekrar": r["repeats"], "fiyat": r["price"], "yil": r["year"]}
+        "methodology": {"content_duplicates": {
+            "strict_extra": dup["strict"], "strict_pct": round(dup["strict"] / n * 100, 2),
+            "loose_extra": dup["loose"], "loose_pct": round(dup["loose"] / n * 100, 2),
+            "no_price_extra": dup["no_price"], "no_price_pct": round(dup["no_price"] / n * 100, 2),
+            "no_price_non_round_km_extra": dup["no_price_non_round_km"],
+            "round_km_pct": round(dup["round_km_share"] * 100, 1),
+            "n_duplicate_groups": dup["strict_groups"], "strict_key_columns": dup["strict_key"],
+            "most_repeated": [{"model": r["model"], "repeats": r["repeats"], "price": r["price"], "year": r["year"]}
                               for r in dup["most_repeated"]],
-            "not": ("ad_id-dedup DIŞINDA içerik-bazlı duplike kontrolü: ad_id farklı ama tüm ayırt "
+            "note": ("ad_id-dedup DIŞINDA içerik-bazlı duplike kontrolü: ad_id farklı ama tüm ayırt "
                     "edici özellikler (fiyat, km, yaş, model, hasar, motor) aynı. Düşük oran veri "
                     "toplama temizliğini doğrular. Bir kısmı gerçek tekrar ilan, bir kısmı tesadüfi "
                     "çakışma (yaygın modellerde benzer özellikli farklı araçlar).")}},
         "error_drivers": {
-            "fiyat_degisimi": {"ilan": pc["listings"], "coklu": pc["seen_again"],
-                               "coklu_pct": round(100 * pc["seen_again"] / pc["listings"], 1),
-                               "degisen": pc["changed"], "degisen_pct": round(100 * pc["changed"] / pc["listings"], 1),
-                               "indirim": pc["cuts"], "zam": pc["rises"], "donup_ayni": pc["returned"]},
-            "plaka_kapsami": {
-                "dagilim": [{"plaka": p, "satir": r, "ilan": i} for p, r, i in pl["by_plate"]],
-                "egitime_giren_ilan": pl["tr_listings"], "elenen_ilan": pl["dropped_listings"],
-                "iki_etiketli_ilan": pl["listings_with_both"],
-                "not": ("Yabancı/mavi plakalı ilanlar veritabanına hiç yazılmadı (build_duckdb.py); "
+            "price_changes": {"listings": pc["listings"], "seen_again": pc["seen_again"],
+                              "seen_again_pct": round(100 * pc["seen_again"] / pc["listings"], 1),
+                              "changed": pc["changed"], "changed_pct": round(100 * pc["changed"] / pc["listings"], 1),
+                              "cuts": pc["cuts"], "rises": pc["rises"], "returned": pc["returned"]},
+            "plate_scope": {
+                "distribution": [{"plate": p, "rows": r, "listings": i} for p, r, i in pl["by_plate"]],
+                "in_training": pl["tr_listings"], "dropped_listings": pl["dropped_listings"],
+                "listings_with_both": pl["listings_with_both"],
+                "note": ("Yabancı/mavi plakalı ilanlar veritabanına hiç yazılmadı (build_duckdb.py); "
                         "burada elenenler plaka bilgisi BOŞ olan ilanlardır. Eğitim, doğrulama ve "
                         "backtest'in tamamı TR plakalı ilanlar üzerindedir.")},
-            "kapsam": {"markalar": fl["brands"], "fiyat_min": fl["price_min"], "fiyat_max": fl["price_max"],
-                       "max_km": fl["max_km"], "min_yil": fl["min_year"], "yakit_filtresi": fl["fuels"],
-                       "yol": fl["category"],
-                       "olculen": {"fiyat_max": fi["price_max"], "tavanda": fi["at_cap"],
-                                   "tavan_ust_yuzde1": fi["within_1pct_of_cap"], "km_max": fi["km_max"],
-                                   "yil_min": fi["year_min"], "min_yilda": fi["listings_in_min_year"],
-                                   "suv": fi["suv"], "elektrik": fi["electric"], "yakit": fi["by_fuel"]},
-                       "yas_tavani": fi["max_age"]}},
+            "scope": {"brands": fl["brands"], "price_min": fl["price_min"], "price_max": fl["price_max"],
+                      "max_km": fl["max_km"], "min_year": fl["min_year"], "fuel_filter": fl["fuels"],
+                      "category": fl["category"],
+                      "measured": {"price_max": fi["price_max"], "at_cap": fi["at_cap"],
+                                   "within_1pct_of_cap": fi["within_1pct_of_cap"], "km_max": fi["km_max"],
+                                   "year_min": fi["year_min"], "in_min_year": fi["listings_in_min_year"],
+                                   "suv": fi["suv"], "electric": fi["electric"], "fuel": fi["by_fuel"]},
+                      "max_age": fi["max_age"]}},
     }
 
 

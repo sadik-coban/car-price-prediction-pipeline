@@ -1,0 +1,55 @@
+{
+ "script": "analysis/01_dedup_leakage.py",
+ "question": {
+  "tr": "Tarama satırlarından tekil ilana nasıl gelindi, veri hangi sınırlarla toplandı ve fold'lar arasına ne sızabilir?",
+  "en": "How do snapshot rows become unique listings, which limits was the data collected with, and what could leak between folds?"
+ },
+ "data": {
+  "tr": "load_clean(all_snapshots=True) (45.159 TR plakalı tarama satırı) ve load_clean() (29.988 ilan); plaka için veritabanının ham satırları; toplama filtreleri scraper/collection_config.json'dan (salt okunur).",
+  "en": "load_clean(all_snapshots=True) (45,159 TR-plated snapshot rows) and load_clean() (29,988 listings); the database's raw rows for the plate; the collection filters from scraper/collection_config.json (read-only)."
+ },
+ "method": {
+  "tr": "Satırlar ad_id başına son kayda indirilir; aynı ilanın taramalar arasındaki fiyat değişimleri sayılır; plaka dağılımı ve eğitime giren ilanlar sayılır; toplama filtreleri koddan okunup verideki karşılıkları (tavan, en eski yıl, yakıt) ölçülür; ad_id'nin göremediği içerik tekrarları katı, gevşek ve fiyatsız tanımla sayılır.",
+  "en": "Rows are reduced to the latest record per ad_id; price changes of the same ad across snapshots are counted; the plate distribution and the listings that reach training are counted; the collection filters are read from the code and their footprint in the data (cap, oldest year, fuel) is measured; content duplicates that ad_id cannot see are counted under a strict, a loose and a no-price definition."
+ },
+ "split": "none",
+ "leakage": {
+  "duplicate_ad_id": {
+   "status": "present",
+   "note": {
+    "tr": "Bu betik ölçümün kendisi: farklı ad_id ile yeniden ilan edilen aynı araç katı tanımda %0,46, fiyatsız tanımda %4,26; modele etkisi ölçülmedi (07_model_comparison kartı).",
+    "en": "This script is the measurement: the same car re-listed under a new ad_id is 0.46% (strict) to 4.26% (without price); its effect on the model was not measured (07_model_comparison card)."
+   }
+  },
+  "target_in_features": {
+   "status": "n/a",
+   "note": null
+  },
+  "fit_on_full_data": {
+   "status": "n/a",
+   "note": null
+  },
+  "temporal": {
+   "status": "n/a",
+   "note": null
+  }
+ },
+ "evidence": {
+  "tests": [
+   "tests/analysis/test_01_dedup_leakage.py::test_rows_and_listings",
+   "tests/analysis/test_01_dedup_leakage.py::test_price_changes_add_up",
+   "tests/analysis/test_01_dedup_leakage.py::test_plates_match_training",
+   "tests/analysis/test_01_dedup_leakage.py::test_filters_fit_the_data",
+   "tests/analysis/test_01_dedup_leakage.py::test_content_duplicates_nest"
+  ],
+  "report_keys": [
+   "meta.n_raw",
+   "meta.n_dedup",
+   "error_drivers.price_changes",
+   "error_drivers.plate_scope.in_training",
+   "error_drivers.scope.measured",
+   "methodology.content_duplicates.strict_pct"
+  ]
+ },
+ "status": "complete"
+}

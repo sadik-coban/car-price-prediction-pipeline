@@ -47,11 +47,11 @@
    "tests/analysis/test_01_engine_rule.py::test_position_is_ordered"
   ],
   "report_keys": [
-   "error_drivers.hp_cc_kurali.engine_cc",
-   "error_drivers.hp_cc_kurali.power_hp",
-   "error_drivers.hp_cc_kurali.engine_cc.ciftler",
-   "error_drivers.hp_cc_kurali.power_hp.ciftler",
-   "error_drivers.hp_cc_kurali.engine_cc.ornek_kova"
+   "error_drivers.engine_rule.engine_cc",
+   "error_drivers.engine_rule.power_hp",
+   "error_drivers.engine_rule.engine_cc.pairs",
+   "error_drivers.engine_rule.power_hp.pairs",
+   "error_drivers.engine_rule.engine_cc.example_range"
   ]
  },
  "status": "complete"

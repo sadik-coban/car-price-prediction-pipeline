@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "01_gold_contract.py",
-  "generated_at": "2026-09-25T05:11:35+03:00",
+  "generated_at": "2026-09-25T15:42:07+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": null,
   "source": {
    "script": {
-    "analysis/01_gold_contract.py": "df4c6783b1259f8b9f8ff967a59cb6b906549034982d1fd8e7b01be12736d4dd"
+    "analysis/01_gold_contract.py": "4ad4e5e592657691d84fb4547848329759f411835511082469c2a612f982622d"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -21,39 +21,39 @@
   }
  },
  "error_drivers": {
-  "gold_sozlesme": {
-   "tablo_satir": 45277,
-   "yari_ham_kolon": 117,
-   "gold_kolon": 116,
-   "gruplar": [
+  "gold_contract": {
+   "table_rows": 45277,
+   "semi_raw_columns": 117,
+   "gold_columns": 116,
+   "groups": [
     {
-     "ad": "heavy_damage_first_owner",
-     "deger": false,
-     "kolon": 3,
-     "doldurulan_hucre": 59402,
-     "etkilenen_satir": 29733
+     "name": "heavy_damage_first_owner",
+     "value": false,
+     "n_columns": 3,
+     "filled_cells": 59402,
+     "affected_rows": 29733
     },
     {
-     "ad": "panel_flags",
-     "deger": 0,
-     "kolon": 39,
-     "doldurulan_hucre": 293988,
-     "etkilenen_satir": 10328
+     "name": "panel_flags",
+     "value": 0,
+     "n_columns": 39,
+     "filled_cells": 293988,
+     "affected_rows": 10328
     },
     {
-     "ad": "damage_counts",
-     "deger": 0,
-     "kolon": 3,
-     "doldurulan_hucre": 0,
-     "etkilenen_satir": 0
+     "name": "damage_counts",
+     "value": 0,
+     "n_columns": 3,
+     "filled_cells": 0,
+     "affected_rows": 0
     }
    ],
-   "toplam_hucre": 353390,
-   "alinmayan": [
+   "total_cells": 353390,
+   "dropped": [
     "kb_paint_change_summary"
    ],
-   "aciklama_bos_satir": 114,
-   "not": "Sayımlar bütün car_listings tablosunda (her taramanın her satırı; gold dosyası bu satırları tutar). Kurallar db/gold_rules.json'dan; gold'u db/build_gold_db.py kurar."
+   "empty_description_rows": 114,
+   "note": "Sayımlar bütün car_listings tablosunda (her taramanın her satırı; gold dosyası bu satırları tutar). Kurallar db/gold_rules.json'dan; gold'u db/build_gold_db.py kurar."
   }
  }
 }

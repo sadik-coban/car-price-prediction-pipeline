@@ -23,7 +23,7 @@ RULES = json.loads((ROOT / "db" / "gold_rules.json").read_text(encoding="utf-8")
 @pytest.fixture(scope="module")
 def gold():
     """EN: The published gold section. / TR: Yayımlanan gold bölümü."""
-    return json.loads(METRICS.read_text(encoding="utf-8"))["error_drivers"]["gold_sozlesme"]
+    return json.loads(METRICS.read_text(encoding="utf-8"))["error_drivers"]["gold_contract"]
 
 
 def test_groups_are_the_rule_file(gold):
@@ -31,10 +31,10 @@ def test_groups_are_the_rule_file(gold):
     EN: One group per fill rule, in the file's order, with its value and column count; the dropped column too.
     TR: Her doldurma kuralı için bir grup, dosyanın sırasıyla, değeri ve kolon sayısıyla; alınmayan kolon da.
     """
-    assert [(g["ad"], g["deger"], g["kolon"]) for g in gold["gruplar"]] == \
+    assert [(g["name"], g["value"], g["n_columns"]) for g in gold["groups"]] == \
         [(r["name"], r["value"], len(r["columns"])) for r in RULES["fill"]]
-    assert gold["alinmayan"] == [d["column"] for d in RULES["drop"]]
-    assert gold["gold_kolon"] == gold["yari_ham_kolon"] - len(RULES["drop"])
+    assert gold["dropped"] == [d["column"] for d in RULES["drop"]]
+    assert gold["gold_columns"] == gold["semi_raw_columns"] - len(RULES["drop"])
 
 
 def test_counts_add_up(gold):
@@ -44,12 +44,12 @@ def test_counts_add_up(gold):
     TR: Toplam grupların toplamı; bir grup en çok kolon × satır hücre doldurur, en çok her satırda, dokunduğu her
         satırda en az bir hücresi vardır; boş açıklamalar tabloya sığar.
     """
-    n = gold["tablo_satir"]
-    assert gold["toplam_hucre"] == sum(g["doldurulan_hucre"] for g in gold["gruplar"])
-    for g in gold["gruplar"]:
-        assert 0 <= g["etkilenen_satir"] <= n
-        assert g["etkilenen_satir"] <= g["doldurulan_hucre"] <= g["kolon"] * g["etkilenen_satir"], g["ad"]
-    assert 0 <= gold["aciklama_bos_satir"] <= n
+    n = gold["table_rows"]
+    assert gold["total_cells"] == sum(g["filled_cells"] for g in gold["groups"])
+    for g in gold["groups"]:
+        assert 0 <= g["affected_rows"] <= n
+        assert g["affected_rows"] <= g["filled_cells"] <= g["n_columns"] * g["affected_rows"], g["name"]
+    assert 0 <= gold["empty_description_rows"] <= n
 
 
 def test_panel_flags_fill_whole_panels(gold):
@@ -57,8 +57,8 @@ def test_panel_flags_fill_whole_panels(gold):
     EN: An unspecified panel leaves all three of its flags NULL, so the panel group fills a multiple of 3 cells.
     TR: Belirtilmemiş panelin üç bayrağı birden NULL; panel grubu 3'ün katı hücre doldurur.
     """
-    panels = next(g for g in gold["gruplar"] if g["ad"] == "panel_flags")
-    assert panels["doldurulan_hucre"] % 3 == 0
+    panels = next(g for g in gold["groups"] if g["name"] == "panel_flags")
+    assert panels["filled_cells"] % 3 == 0
 
 
 def test_in_run_order():

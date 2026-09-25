@@ -65,16 +65,16 @@ def gold_shape(db_columns, rules):
 # %% [3] Metrics assembly | Metrik derleme — naming and rounding only | yalnız adlandırma ve yuvarlama
 def to_metrics(res):
     """
-    EN: Published under error_drivers.gold_sozlesme, the report's key names.
-    TR: error_drivers.gold_sozlesme altında, raporun anahtar adlarıyla yayımlanır.
+    EN: Published under error_drivers.gold_contract, the report's key names.
+    TR: error_drivers.gold_contract altında, raporun anahtar adlarıyla yayımlanır.
     """
-    return {"error_drivers": {"gold_sozlesme": {
-        "tablo_satir": res["rows"], "yari_ham_kolon": res["shape"]["semi"], "gold_kolon": res["shape"]["gold"],
-        "gruplar": [{"ad": g["name"], "deger": g["value"], "kolon": g["columns"], "doldurulan_hucre": g["cells"],
-                     "etkilenen_satir": g["rows"]} for g in res["groups"]],
-        "toplam_hucre": sum(g["cells"] for g in res["groups"]),
-        "alinmayan": res["shape"]["dropped"], "aciklama_bos_satir": res["empty_descriptions"],
-        "not": ("Sayımlar bütün car_listings tablosunda (her taramanın her satırı; gold dosyası bu satırları tutar). "
+    return {"error_drivers": {"gold_contract": {
+        "table_rows": res["rows"], "semi_raw_columns": res["shape"]["semi"], "gold_columns": res["shape"]["gold"],
+        "groups": [{"name": g["name"], "value": g["value"], "n_columns": g["columns"], "filled_cells": g["cells"],
+                    "affected_rows": g["rows"]} for g in res["groups"]],
+        "total_cells": sum(g["cells"] for g in res["groups"]),
+        "dropped": res["shape"]["dropped"], "empty_description_rows": res["empty_descriptions"],
+        "note": ("Sayımlar bütün car_listings tablosunda (her taramanın her satırı; gold dosyası bu satırları tutar). "
                 "Kurallar db/gold_rules.json'dan; gold'u db/build_gold_db.py kurar.")}}}
 
 

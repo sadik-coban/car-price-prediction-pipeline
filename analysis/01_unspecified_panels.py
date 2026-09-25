@@ -92,8 +92,8 @@ def panel_structure(panel_cols, statuses):
         g = c.split("_")[0]
         if g in ("door", "fender", "bumper"):
             groups[g] = groups.get(g, 0) + 1
-    return {"panel": len(panel_cols), "bayrak": 3 * len(panel_cols), "cevap_sayisi": len(set(statuses.values())),
-            "grup_panel": groups, "tek_panel": len(panel_cols) - sum(groups.values())}
+    return {"panel": len(panel_cols), "flags": 3 * len(panel_cols), "n_answers": len(set(statuses.values())),
+            "grouped_panels": groups, "single_panels": len(panel_cols) - sum(groups.values())}
 
 
 def unspecified_per_listing(m, panel_cols):
@@ -107,18 +107,18 @@ def unspecified_per_listing(m, panel_cols):
 # %% [3] Metrics assembly | Metrik derleme — naming and rounding only | yalnız adlandırma ve yuvarlama
 def to_metrics(res):
     """
-    EN: Published under error_drivers.belirtilmemis, with the reports' key names and rounding.
-    TR: error_drivers.belirtilmemis altında, raporların anahtar adları ve yuvarlamasıyla yayımlanır.
+    EN: Published under error_drivers.unspecified, with the reports' key names and rounding.
+    TR: error_drivers.unspecified altında, raporların anahtar adları ve yuvarlamasıyla yayımlanır.
     """
     st, n_unspec = res["statuses"], res["n_unspec"]
     known = int(st.notna().sum().sum())
     unspec = int((st == "unspecified").sum().sum())
-    return {"error_drivers": {"belirtilmemis": {
-        "yapi": res["structure"], "eslesen_ilan": res["matched"], "ilan": res["n_listings"],
-        "cift_kayit_atlanan": res["dropped"], "panel_sayisi": known, "belirtilmemis_panel": unspec,
-        "belirtilmemis_pct": round(100 * unspec / known, 1),
-        "hepsi_belirtilmemis": int((n_unspec == res["structure"]["panel"]).sum()),
-        "en_az_bir": int((n_unspec > 0).sum())}}}
+    return {"error_drivers": {"unspecified": {
+        "structure": res["structure"], "matched_listings": res["matched"], "listings": res["n_listings"],
+        "duplicates_skipped": res["dropped"], "n_panels": known, "unspecified_panels": unspec,
+        "unspecified_pct": round(100 * unspec / known, 1),
+        "all_unspecified": int((n_unspec == res["structure"]["panel"]).sum()),
+        "at_least_one": int((n_unspec > 0).sum())}}}
 
 
 # %% [4] Load | Yükle — the only cells that read files | dosya okuyan tek hücreler
@@ -141,7 +141,7 @@ m = match_to_listings(listings, h, panel_cols)
 n_unspec = unspecified_per_listing(m, panel_cols)
 res = {"structure": panel_structure(panel_cols, statuses), "matched": len(m), "n_listings": len(listings),
        "dropped": dropped, "statuses": m[panel_cols], "n_unspec": n_unspec}
-print({"eslesen": len(m), "en_az_bir": int((n_unspec > 0).sum()), "hepsi": int((n_unspec == len(panel_cols)).sum())})
+print({"matched": len(m), "at_least_one": int((n_unspec > 0).sum()), "all": int((n_unspec == len(panel_cols)).sum())})
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
 print("written | yazıldı:", save_metrics("01_unspecified_panels", to_metrics(res)))

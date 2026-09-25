@@ -31,20 +31,20 @@ def section_data(c):
     v, d, dom, met, meta, hr, lang = c.v, c.d, c.dom, c.met, c.meta, c.hr, c.lang
     L, A, T, figs = c.L, c.A, c.T, c.figs
     # B5 (2026-09-23): "veri degil, tarama artigi" fazla iddiaydi — tekrarlarin bir kismi fiyat degisikligi
-    # tasiyor. Sayilar error_drivers.fiyat_degisimi'nden.
-    _fd = v["ed"]["fiyat_degisimi"]
-    _don_tr = (f"; {num(_fd['donup_ayni'], lang)} ilan eski fiyatına döndü" if _fd["donup_ayni"] else "")
-    _don_en = (f"; {num(_fd['donup_ayni'], lang)} went back to their earlier price" if _fd["donup_ayni"] else "")
+    # tasiyor. Sayilar error_drivers.price_changes'ten.
+    _pc = v["ed"]["price_changes"]
+    _ret_tr = (f"; {num(_pc['returned'], lang)} ilan eski fiyatına döndü" if _pc["returned"] else "")
+    _ret_en = (f"; {num(_pc['returned'], lang)} went back to their earlier price" if _pc["returned"] else "")
     A(L(f"**TR plakalı {num(v['n_raw'], lang)} tarama kaydı → {num(v['n_dedup'], lang)} ilan.** Aradaki "
         f"{num(v['n_dup_rows'], lang)} satır aynı ilanın sonraki taramalarda yeniden görülmesi; `ad_id` başına "
         f"en son kayıt alındı. Tekrarlar bilgi taşıyor ama model bunu kullanmıyor: birden çok taramada "
-        f"görülen {num(_fd['coklu'], lang)} ilandan {num(_fd['degisen'], lang)} tanesinin fiyatı değişmiş "
-        f"({num(_fd['indirim'], lang)} indirim, {num(_fd['zam'], lang)} zam{_don_tr}).",
+        f"görülen {num(_pc['seen_again'], lang)} ilandan {num(_pc['changed'], lang)} tanesinin fiyatı değişmiş "
+        f"({num(_pc['cuts'], lang)} indirim, {num(_pc['rises'], lang)} zam{_ret_tr}).",
         f"**{num(v['n_raw'], lang)} TR-plated snapshot rows → {num(v['n_dedup'], lang)} listings.** The "
         f"{num(v['n_dup_rows'], lang)} other rows are the same ad seen again in later snapshots; the latest "
         f"record per `ad_id` is kept. The repeats carry information the model does not use: of the "
-        f"{num(_fd['coklu'], lang)} listings seen in more than one snapshot, {num(_fd['degisen'], lang)} "
-        f"changed price ({num(_fd['indirim'], lang)} cuts, {num(_fd['zam'], lang)} rises{_don_en})."))
+        f"{num(_pc['seen_again'], lang)} listings seen in more than one snapshot, {num(_pc['changed'], lang)} "
+        f"changed price ({num(_pc['cuts'], lang)} cuts, {num(_pc['rises'], lang)} rises{_ret_en})."))
     A("")
     A(L(f"Medyan ilan fiyatı {tl(v['median'])}"
         + (f", {tlm(v['p10'])}–{tlm(v['p90'])} arası (P10–P90)." if v["p10"] else "."),
@@ -53,54 +53,54 @@ def section_data(c):
     A("")
     # Kapsam cumlesi sayi tasimaz ama iddiasi VERIYLE kapili: modele giren ilanlarin tamami TR plakali
     # olmali. Kapi tutmazsa cumle sessizce yanlislasacagina uretec durur.
-    _ps = v["ed"]["plaka_kapsami"]
-    if _ps:
-        assert _ps["egitime_giren_ilan"] == v["n_dedup"], (
-            f"kapsam cumlesi veriyle uyusmuyor: TR plakali {_ps['egitime_giren_ilan']} != "
-            f"modele giren {v['n_dedup']} (plaka dagilimi: {_ps['dagilim']})")
+    _plates = v["ed"]["plate_scope"]
+    if _plates:
+        assert _plates["in_training"] == v["n_dedup"], (
+            f"kapsam cumlesi veriyle uyusmuyor: TR plakali {_plates['in_training']} != "
+            f"modele giren {v['n_dedup']} (plaka dagilimi: {_plates['distribution']})")
         # 2026-09-23: vergi gerekcesi plakasi BOS ilanlara da uygulaniyordu; iki gerekce ayrildi.
         A(L(f"**Kapsam: yalnız TR plakalı araçlar.** Yabancı/mavi plakalı ilanlar veritabanına hiç alınmadı: "
             f"vergilendirme rejimleri farklı, modeli ve analizi yanıltır. Plaka bilgisi boş olan "
-            f"{num(_ps['elenen_ilan'], lang)} ilan da, hangi rejime girdiği bilinmediği için dışarıda bırakıldı.",
+            f"{num(_plates['dropped_listings'], lang)} ilan da, hangi rejime girdiği bilinmediği için dışarıda bırakıldı.",
             f"**Scope: Turkish-plated vehicles only.** Foreign/blue-plate listings never entered the database: "
             f"their tax regime differs and would mislead the model and the analysis. The "
-            f"{num(_ps['elenen_ilan'], lang)} listings with an empty plate field were left out too, since their "
+            f"{num(_plates['dropped_listings'], lang)} listings with an empty plate field were left out too, since their "
             f"regime is unknown."))
         A("")
     # B4 (2026-09-23): toplama filtreleri raporda hic yazmiyordu. Filtre degerleri SCRAPER KODUNDAN
-    # okunur, karsiliklari veride sayilir (error_drivers.kapsam); ikisi de elle yazilmaz.
-    _kp = v["ed"]["kapsam"]
-    _ol = _kp["olculen"]
+    # okunur, karsiliklari veride sayilir (error_drivers.scope); ikisi de elle yazilmaz.
+    _scope = v["ed"]["scope"]
+    _measured = _scope["measured"]
     _BRAND_NAMES = {"bmw": "BMW", "audi": "Audi"}
-    _yk_en = ", ".join(FUEL_EN.get(f_, f_) for f_ in _kp["yakit_filtresi"])
-    A(L(f"**Kapsam: toplama filtreleri.** Veri {' ve '.join(_BRAND_NAMES.get(b_, b_) for b_ in _kp['markalar'])} "
-        f"ilanlarından, sitenin `/{_kp['yol']}/` kategorisinden şu filtrelerle toplandı: fiyat "
-        f"{tl(_kp['fiyat_min'])}–{tl(_kp['fiyat_max'])}, en fazla {num(_kp['max_km'], lang)} km, "
-        f"{_kp['min_yil']} ve sonrası model yılı, yakıt {', '.join(_kp['yakit_filtresi'])}. Üç sonucu var:",
+    _fuels_en = ", ".join(FUEL_EN.get(f_, f_) for f_ in _scope["fuel_filter"])
+    A(L(f"**Kapsam: toplama filtreleri.** Veri {' ve '.join(_BRAND_NAMES.get(b_, b_) for b_ in _scope['brands'])} "
+        f"ilanlarından, sitenin `/{_scope['category']}/` kategorisinden şu filtrelerle toplandı: fiyat "
+        f"{tl(_scope['price_min'])}–{tl(_scope['price_max'])}, en fazla {num(_scope['max_km'], lang)} km, "
+        f"{_scope['min_year']} ve sonrası model yılı, yakıt {', '.join(_scope['fuel_filter'])}. Üç sonucu var:",
         f"**Scope: collection filters.** The data was collected from "
-        f"{' and '.join(_BRAND_NAMES.get(b_, b_) for b_ in _kp['markalar'])} listings in the site's "
-        f"`/{_kp['yol']}/` category with these filters: price {tl(_kp['fiyat_min'])}–{tl(_kp['fiyat_max'])}, "
-        f"at most {num(_kp['max_km'], lang)} km, model year {_kp['min_yil']} or later, fuel {_yk_en}. "
+        f"{' and '.join(_BRAND_NAMES.get(b_, b_) for b_ in _scope['brands'])} listings in the site's "
+        f"`/{_scope['category']}/` category with these filters: price {tl(_scope['price_min'])}–{tl(_scope['price_max'])}, "
+        f"at most {num(_scope['max_km'], lang)} km, model year {_scope['min_year']} or later, fuel {_fuels_en}. "
         f"Three consequences:"))
     A("")
-    A(L(f"- **Fiyat sağdan kesik.** En pahalı ilan tam tavanda ({tl(_ol['fiyat_max'])}); tavanda "
-        f"{num(_ol['tavanda'], lang)} ilan var, üstünde hiç yok. Tavanın üstündeki araçlar veride değil; "
+    A(L(f"- **Fiyat sağdan kesik.** En pahalı ilan tam tavanda ({tl(_measured['price_max'])}); tavanda "
+        f"{num(_measured['at_cap'], lang)} ilan var, üstünde hiç yok. Tavanın üstündeki araçlar veride değil; "
         f"en pahalı uçtaki tahminler bu sınırla birlikte okunmalı.\n"
-        f"- **Yaş en fazla {_kp['yas_tavani']}.** {_kp['min_yil']} model yılında {num(_ol['min_yilda'], lang)} "
+        f"- **Yaş en fazla {_scope['max_age']}.** {_scope['min_year']} model yılında {num(_measured['in_min_year'], lang)} "
         f"ilan var; daha eski araçlar toplanmadı, yani en yaşlı kova toplama sınırına dayanıyor.\n"
-        f"- **Gövde ve yakıt.** `/{_kp['yol']}/` dışındaki kategoriler toplanmadı: veride "
-        f"{num(_ol['suv'], lang)} SUV var. Yakıt filtresi elektrikliyi dışarıda bırakıyor: "
-        f"{num(_ol['elektrik'], lang)} elektrikli ilan.",
+        f"- **Gövde ve yakıt.** `/{_scope['category']}/` dışındaki kategoriler toplanmadı: veride "
+        f"{num(_measured['suv'], lang)} SUV var. Yakıt filtresi elektrikliyi dışarıda bırakıyor: "
+        f"{num(_measured['electric'], lang)} elektrikli ilan.",
         f"- **Price is right-truncated.** The most expensive listing sits exactly at the cap "
-        f"({tl(_ol['fiyat_max'])}); {num(_ol['tavanda'], lang)} listings are at the cap and none above it. "
+        f"({tl(_measured['price_max'])}); {num(_measured['at_cap'], lang)} listings are at the cap and none above it. "
         f"Cars above the cap are not in the data; predictions at the expensive end should be read with "
         f"that limit in mind.\n"
-        f"- **Age is at most {_kp['yas_tavani']}.** Model year {_kp['min_yil']} holds "
-        f"{num(_ol['min_yilda'], lang)} listings; older cars were not collected, so the oldest bucket "
+        f"- **Age is at most {_scope['max_age']}.** Model year {_scope['min_year']} holds "
+        f"{num(_measured['in_min_year'], lang)} listings; older cars were not collected, so the oldest bucket "
         f"runs into the collection limit.\n"
-        f"- **Body and fuel.** Categories outside `/{_kp['yol']}/` were not collected: the data holds "
-        f"{num(_ol['suv'], lang)} SUVs. The fuel filter leaves electric cars out: "
-        f"{num(_ol['elektrik'], lang)} electric listings."))
+        f"- **Body and fuel.** Categories outside `/{_scope['category']}/` were not collected: the data holds "
+        f"{num(_measured['suv'], lang)} SUVs. The fuel filter leaves electric cars out: "
+        f"{num(_measured['electric'], lang)} electric listings."))
     A("")
 
     A(L("### Ölçek", "### Scale"))
@@ -123,45 +123,45 @@ def section_data(c):
     A("")
     # 2026-09-23: panel/bayrak/oznitelik sayilari ELLE yaziliydi; esleme sabitlerinden (error_drivers) ve
     # feature_kept'ten okunur. Metin katkisi "cikmadi" yerine olculen ΔR².
-    _y = v["ed"]["belirtilmemis"]["yapi"]
-    _gp = _y["grup_panel"]
-    _n_hoz = sum(1 for k_ in met["feature_kept"]
+    _struct = v["ed"]["unspecified"]["structure"]
+    _grouped = _struct["grouped_panels"]
+    _n_damage_features = sum(1 for k_ in met["feature_kept"]
                  if k_.startswith(("roof_", "hood_", "trunk_", "door_", "fender_", "bumper_")))
-    assert _y["tek_panel"] == 3, f"tek panel sayisi degisti ({_y['tek_panel']}): metin tavan/kaput/bagaj diyor"
+    assert _struct["single_panels"] == 3, f"tek panel sayisi degisti ({_struct['single_panels']}): metin tavan/kaput/bagaj diyor"
     _dr2 = d["report"]["text_ablation"]["ablation"]["delta_r2"]
     A(L("1. **Yapısal** — yaş · km · motor gücü/hacmi · kasa · yakıt · vites · çekiş · segment.\n"
-        f"2. **Hasar / ekspertiz** — {_y['panel']} kaporta paneli × {{değişen, boyalı, lokal boya}} + ağır hasar "
-        f"kaydı. Bu {_y['bayrak']} ham bayrak modele {_n_hoz} öznitelik olarak giriyor: tavan · kaput · bagaj tek "
+        f"2. **Hasar / ekspertiz** — {_struct['panel']} kaporta paneli × {{değişen, boyalı, lokal boya}} + ağır hasar "
+        f"kaydı. Bu {_struct['flags']} ham bayrak modele {_n_damage_features} öznitelik olarak giriyor: tavan · kaput · bagaj tek "
         "panel olduğu için **durum** (orijinal/lokal/boyalı/değişen), kapı · çamurluk · tampon ise "
-        f"grup içi **sayı** (kapı 0–{_gp['door']}, çamurluk 0–{_gp['fender']}, tampon 0–{_gp['bumper']}).\n"
+        f"grup içi **sayı** (kapı 0–{_grouped['door']}, çamurluk 0–{_grouped['fender']}, tampon 0–{_grouped['bumper']}).\n"
         f"3. **Serbest metin** — satıcı açıklaması; modelde **kullanılmıyor**. Ölçüldü: R²'ye katkısı "
         f"{_dr2:.4f}; ayrıntısı §{section_no('text')}'da.",
         "1. **Structural** — age · km · engine power/size · body · fuel · transmission · drivetrain · segment.\n"
-        f"2. **Damage / inspection** — {_y['panel']} body panels × {{changed, painted, local paint}} + the "
-        f"heavy-damage record. Those {_y['bayrak']} raw flags reach the model as {_n_hoz} features: roof · hood · "
+        f"2. **Damage / inspection** — {_struct['panel']} body panels × {{changed, painted, local paint}} + the "
+        f"heavy-damage record. Those {_struct['flags']} raw flags reach the model as {_n_damage_features} features: roof · hood · "
         "trunk are single panels, so they carry a **state** (original/local/painted/changed), while door · "
-        f"fender · bumper carry a within-group **count** (doors 0–{_gp['door']}, fenders 0–{_gp['fender']}, "
-        f"bumpers 0–{_gp['bumper']}).\n"
+        f"fender · bumper carry a within-group **count** (doors 0–{_grouped['door']}, fenders 0–{_grouped['fender']}, "
+        f"bumpers 0–{_grouped['bumper']}).\n"
         f"3. **Free text** — the seller's description; **not used** by the model. It was measured: it adds "
         f"{_dr2:.4f} to R²; the detail is in §{section_no('text')}."))
     A("")
     # B7 (2026-09-23): "Belirtilmemis" panel durumu orijinal sayiliyor — bilincli karar (kullanici), ama
-    # raporda yazmiyordu. Sayilar error_drivers.belirtilmemis'ten (ham JSONL, gold bayraklarla kapili).
+    # raporda yazmiyordu. Sayilar error_drivers.unspecified'dan (ham JSONL, gold bayraklarla kapili).
     # 2026-09-25 (kullanici): model+yil medyanina oranla fiyat karsilastirmasi ve "Bedeli" cumlesi kaldirildi.
-    _bl = v["ed"]["belirtilmemis"]
-    assert _y["cevap_sayisi"] == 5, "panel cevap sayisi degisti — asagidaki bes adli liste bayat"
-    A(L(f"**\"Belirtilmemiş\" panel orijinal sayıldı.** Site her panel için {number_word(_y['cevap_sayisi'], lang)} "
+    _unspec = v["ed"]["unspecified"]
+    assert _struct["n_answers"] == 5, "panel cevap sayisi degisti — asagidaki bes adli liste bayat"
+    A(L(f"**\"Belirtilmemiş\" panel orijinal sayıldı.** Site her panel için {number_word(_struct['n_answers'], lang)} "
         f"cevaptan birini veriyor: "
         f"orijinal, belirtilmemiş, boyalı, lokal boyalı, değişmiş. Modele giren ilanlarda "
-        f"{num(_bl['belirtilmemis_panel'], lang)} panel ({P(_bl['belirtilmemis_pct'], lang)}) belirtilmemiş; "
-        f"{num(_bl['hepsi_belirtilmemis'], lang)} ilanda {_y['panel']} panelin hiçbiri belirtilmemiş. Bu cevap bilinçli bir "
+        f"{num(_unspec['unspecified_panels'], lang)} panel ({P(_unspec['unspecified_pct'], lang)}) belirtilmemiş; "
+        f"{num(_unspec['all_unspecified'], lang)} ilanda {_struct['panel']} panelin hiçbiri belirtilmemiş. Bu cevap bilinçli bir "
         f"kararla orijinal gibi kodlandı; gerekçe, satıcının hasarı yazmayı unutmuş olabileceği ama hasar "
         f"olmamasının daha olası sayılması.",
         f"**\"Unspecified\" panels were counted as original.** The site gives one of "
-        f"{number_word(_y['cevap_sayisi'], 'en')} answers per "
+        f"{number_word(_struct['n_answers'], 'en')} answers per "
         f"panel: original, unspecified, painted, locally painted, changed. Across the listings in the model "
-        f"{num(_bl['belirtilmemis_panel'], lang)} panels ({P(_bl['belirtilmemis_pct'], lang)}) are "
-        f"unspecified; on {num(_bl['hepsi_belirtilmemis'], lang)} listings all {_y['panel']} are. That answer was coded as "
+        f"{num(_unspec['unspecified_panels'], lang)} panels ({P(_unspec['unspecified_pct'], lang)}) are "
+        f"unspecified; on {num(_unspec['all_unspecified'], lang)} listings all {_struct['panel']} are. That answer was coded as "
         f"original by a deliberate decision, on the reasoning that the seller may have forgotten to list damage "
         f"but no damage is the likelier case."))
     A("")
@@ -179,87 +179,87 @@ def section_data(c):
 
     # 2026-09-24 (kullanici: "gold dbye gecen taraflari da rapora yazmam gerekiyor"): API'ye giden gold dosyasi
     # yari ham DB'den neyle ayrisiyor. Sayilar 01_gold_contract'tan; kurallar db/gold_rules.json'dan.
-    _gs = v["ed"]["gold_sozlesme"]
-    _gad = {"heavy_damage_first_owner": ("ağır hasar kaydı (2 kolon) ve ilk sahip",
+    _gold = v["ed"]["gold_contract"]
+    _gold_names = {"heavy_damage_first_owner": ("ağır hasar kaydı (2 kolon) ve ilk sahip",
                                          "heavy-damage record (2 columns) and first owner"),
-            "panel_flags": (f"panel bayrakları ({_y['panel']} panel × değişen / boyalı / lokal)",
-                            f"panel flags ({_y['panel']} panels × changed / painted / local)"),
+            "panel_flags": (f"panel bayrakları ({_struct['panel']} panel × değişen / boyalı / lokal)",
+                            f"panel flags ({_struct['panel']} panels × changed / painted / local)"),
             "damage_counts": ("hasar sayaçları", "damage counters")}
-    assert _gs["alinmayan"] == ["kb_paint_change_summary"], f"metin tek alinmayan kolonu anlatiyor: {_gs['alinmayan']}"
+    assert _gold["dropped"] == ["kb_paint_change_summary"], f"metin tek alinmayan kolonu anlatiyor: {_gold['dropped']}"
     A(L("### API'ye giden veri (gold)", "### The data the API gets (gold)"))
     A("")
     A(L(f"Analiz yarı ham veritabanını okuyor: sayfanın söylemediği bilgi boş kalıyor, nasıl okunacağına analiz "
         f"karar veriyor. Canlı fiyat API'si ise bilinmeyenin \"hayır\" ya da 0 olduğu eski sözleşmeyi bekliyor. Bu "
-        f"yüzden API'ye ayrı bir dosya gidiyor: aynı {num(_gs['tablo_satir'], lang)} satır (her taramanın her "
+        f"yüzden API'ye ayrı bir dosya gidiyor: aynı {num(_gold['table_rows'], lang)} satır (her taramanın her "
         f"ilanı), aynı sıra ve kimlikler; yalnız aşağıdaki boşluklar dolduruluyor ve bir kolon çıkarılıyor. "
         f"Doldurma kuralı analizin kuralıyla aynı: belirtilmemiş panel orijinal, belirtilmemiş ağır hasar kaydı "
         f"ağır hasarsız sayılıyor.",
         f"The analysis reads the semi-raw database: what the page does not say stays empty, and the analysis "
         f"decides how to read it. The live price API expects the old contract, where an unknown reads as \"no\" "
-        f"or 0. So the API gets a separate file: the same {num(_gs['tablo_satir'], lang)} rows (every listing of "
+        f"or 0. So the API gets a separate file: the same {num(_gold['table_rows'], lang)} rows (every listing of "
         f"every snapshot), the same order and ids; only the gaps below are filled and one column is left out. "
         f"The filling rule is the analysis' rule: an unspecified panel counts as original, an unspecified "
         f"heavy-damage record as not heavily damaged."))
     A("")
     T([L("grup", "group"), L("kolon", "columns"), L("yazılan değer", "value written"),
        L("doldurulan hücre", "cells filled"), L("etkilenen satır", "rows affected")],
-      [[(_gad[g["ad"]][0] if lang == "tr" else _gad[g["ad"]][1]), g["kolon"],
-        (L("hayır", "no") if g["deger"] is False else str(g["deger"])),
-        num(g["doldurulan_hucre"], lang), num(g["etkilenen_satir"], lang)] for g in _gs["gruplar"]]
-      + [[L("**toplam**", "**total**"), sum(g["kolon"] for g in _gs["gruplar"]), "", num(_gs["toplam_hucre"], lang), ""]],
+      [[(_gold_names[g["name"]][0] if lang == "tr" else _gold_names[g["name"]][1]), g["n_columns"],
+        (L("hayır", "no") if g["value"] is False else str(g["value"])),
+        num(g["filled_cells"], lang), num(g["affected_rows"], lang)] for g in _gold["groups"]]
+      + [[L("**toplam**", "**total**"), sum(g["n_columns"] for g in _gold["groups"]), "", num(_gold["total_cells"], lang), ""]],
       "lrlrr")
     A(L(f"API'ye gitmeyen tek kolon `kb_paint_change_summary`: sayfanın ham \"Boya-değişen\" satırı, hasar "
         f"bayraklarının kaba özeti. Açıklama sayfa başlığı olmadan `description_text` olarak gidiyor; yalnız "
-        f"başlıktan ibaret {num(_gs['aciklama_bos_satir'], lang)} satırda boş. Sonuç {_gs['gold_kolon']} kolon + "
-        f"kimlik (yarı ham veritabanında {_gs['yari_ham_kolon']}); öteki her hücre yarı ham veritabanındakiyle "
+        f"başlıktan ibaret {num(_gold['empty_description_rows'], lang)} satırda boş. Sonuç {_gold['gold_columns']} kolon + "
+        f"kimlik (yarı ham veritabanında {_gold['semi_raw_columns']}); öteki her hücre yarı ham veritabanındakiyle "
         f"aynı. Buradaki sayımlar gold dosyasının tuttuğu bütün tarama satırları üzerinden; belirtilmemiş payları "
         f"(§{section_no('missing')}) ise modele giren tekil ilanlar üzerinden.",
         f"The one column the API does not get is `kb_paint_change_summary`: the page's raw \"Boya-değişen\" line, a "
         f"coarse summary of the damage flags. The description goes as `description_text` without the page "
-        f"heading; it is empty on the {num(_gs['aciklama_bos_satir'], lang)} rows that held only the heading. The "
-        f"result is {_gs['gold_kolon']} columns + id ({_gs['yari_ham_kolon']} in the semi-raw database); every other "
+        f"heading; it is empty on the {num(_gold['empty_description_rows'], lang)} rows that held only the heading. The "
+        f"result is {_gold['gold_columns']} columns + id ({_gold['semi_raw_columns']} in the semi-raw database); every other "
         f"cell equals the semi-raw database. These counts are over every snapshot row the gold file holds; the "
         f"unspecified shares in §{section_no('missing')} are over the unique listings in the model."))
     A("")
 
     # T (2026-09-23): motor gucu/hacmi araliktan tek sayiya — kullanicinin kurali, veriyle olculdu. Sayilar
-    # error_drivers.hp_cc_kurali'dan; secilen adayin en iyi oldugu uretecte assert ediliyor.
-    _hk = v["ed"]["hp_cc_kurali"]
-    _cc, _hp = _hk["engine_cc"], _hk["power_hp"]
-    _ad = {"alt": L("alt sınır", "lower bound"), "orta": L("orta nokta", "midpoint"), "ust": L("üst sınır", "upper bound")}
+    # error_drivers.engine_rule'dan; secilen adayin en iyi oldugu uretecte assert ediliyor.
+    _er = v["ed"]["engine_rule"]
+    _cc, _hp = _er["engine_cc"], _er["power_hp"]
+    _cand_label = {"lower": L("alt sınır", "lower bound"), "mid": L("orta nokta", "midpoint"), "upper": L("üst sınır", "upper bound")}
     A(L("### Motor gücü ve hacmi: aralıktan tek sayıya", "### Engine power and size: from a range to one number"))
     A("")
-    _okc, _okh = _cc["ornek_kova"], _hp["ornek_kova"]
+    _ex_cc, _ex_hp = _cc["example_range"], _hp["example_range"]
     A(L(f"Site motor hacmini ve gücünü ilanların bir kısmında kesin değer, bir kısmında **aralık** olarak veriyor: "
-        f"modele giren ilanlardan {num(_cc['aralikli'], lang)} tanesinde hacim, {num(_hp['aralikli'], lang)} "
-        f"tanesinde güç aralıklı (en sık aralıklar {_okc['alt']}–{_okc['ust']} cc ve "
-        f"{_okh['alt']}–{_okh['ust']} hp). Model tek sayı kullanıyor. Kural: **hacim = aralığın üst sınırı, "
+        f"modele giren ilanlardan {num(_cc['ranged'], lang)} tanesinde hacim, {num(_hp['ranged'], lang)} "
+        f"tanesinde güç aralıklı (en sık aralıklar {_ex_cc['low']}–{_ex_cc['up']} cc ve "
+        f"{_ex_hp['low']}–{_ex_hp['up']} hp). Model tek sayı kullanıyor. Kural: **hacim = aralığın üst sınırı, "
         f"güç = alt ve üst sınırın ortalaması** (açık uçlu aralıkta bilinen sınır). Kural veriyle sınandı: aralıklı "
         f"ilanın üç adayı, aynı modelin kesin değerli ilanlarının medyanıyla karşılaştırıldı — hacimde "
-        f"{num(_cc['referansli'], lang)}, güçte {num(_hp['referansli'], lang)} ilan (kesin değerli ilanı olan "
+        f"{num(_cc['with_reference'], lang)}, güçte {num(_hp['with_reference'], lang)} ilan (kesin değerli ilanı olan "
         f"modellerde).",
         f"On some listings the site gives engine size and power as an exact value, on others as a **range**: "
-        f"among the listings in the model, {num(_cc['aralikli'], lang)} have engine size and "
-        f"{num(_hp['aralikli'], lang)} have power as a range (the most common are {_okc['alt']}–"
-        f"{_okc['ust']} cc and {_okh['alt']}–{_okh['ust']} hp). The model uses one number. The rule: "
+        f"among the listings in the model, {num(_cc['ranged'], lang)} have engine size and "
+        f"{num(_hp['ranged'], lang)} have power as a range (the most common are {_ex_cc['low']}–"
+        f"{_ex_cc['up']} cc and {_ex_hp['low']}–{_ex_hp['up']} hp). The model uses one number. The rule: "
         f"**size = the range's upper bound, power = the mean of the lower and upper bounds** (the known bound "
         f"for an open-ended range). The rule was checked against the data: each range listing's three candidates "
         f"were compared with the median of the same model's exact-value listings — "
-        f"{num(_cc['referansli'], lang)} listings for size, {num(_hp['referansli'], lang)} for power (models "
+        f"{num(_cc['with_reference'], lang)} listings for size, {num(_hp['with_reference'], lang)} for power (models "
         f"that have at least one exact listing)."))
     A("")
     figs(30)
 
-    def _hk_h(h_, k):
+    def _cand_gap(h_, k):
         """
         EN: Median gap of one candidate with its unit, bold if it is the chosen one.
         TR: Bir adayın birimli medyan farkı; seçilen adaysa kalın.
         """
-        m_ = f"{h_['adaylar'][k]['medyan']:g} {h_['birim']}"
-        return f"**{m_}**" if k == h_["secilen"] else m_
-    # 2026-09-25 (kullanici: "medyani neye gore aldin anlamadim"): yontem tek bir ornekle, sayilar ornek_kova'dan.
-    _lo, _up, _ref = _okc["alt"], _okc["ust"], _okc["en_sik_kesin"]
-    assert _lo < _ref <= _up, ("ornek kovanin kesin degeri araligin disinda", _okc)
+        m_ = f"{h_['candidates'][k]['median']:g} {h_['unit']}"
+        return f"**{m_}**" if k == h_["chosen"] else m_
+    # 2026-09-25 (kullanici: "medyani neye gore aldin anlamadim"): yontem tek bir ornekle, sayilar example_range'den.
+    _lo, _up, _ref = _ex_cc["low"], _ex_cc["up"], _ex_cc["most_common_exact"]
+    assert _lo < _ref <= _up, ("ornek kovanin kesin degeri araligin disinda", _ex_cc)
     _mid = (_lo + _up) / 2
     _d1 = lambda x: f"{x:.1f}"  # noqa: E731 — the report writes decimals with a dot in tr too (95.5 cc, %97.5)
     A(L(f"Örnek: {_lo}–{_up} cc aralığı verilen bir ilanın aynı modeli, hacmi tek sayı verilen ilanlarında en çok "
@@ -274,76 +274,76 @@ def section_data(c):
     A("")
     T([L("aday", "candidate"), L("hacim: medyan mutlak fark", "size: median absolute gap"),
        L("güç: medyan mutlak fark", "power: median absolute gap")],
-      [[_ad[k], _hk_h(_cc, k), _hk_h(_hp, k)] for k in ("alt", "orta", "ust")], "lrr")
+      [[_cand_label[k], _cand_gap(_cc, k), _cand_gap(_hp, k)] for k in ("lower", "mid", "upper")], "lrr")
     # Aciklama cumleleri kovadaki KONUMA ve KOVA BAZINDA kazanana kapili: veri degisirse cumle kendini
     # gunceller. Inceleme (2026-09-23): "guc kovanin ortasinda" yanlisti — kazanan kovadan kovaya degisiyor.
-    _kc, _kh = _cc["konum_medyan"], _hp["konum_medyan"]
-    _cc_ust = _kc >= .75 and _cc["konum_ceyrek"][0] >= .5
+    _pos_cc, _pos_hp = _cc["position_median"], _hp["position_median"]
+    _cc_at_top = _pos_cc >= .75 and _cc["position_quartiles"][0] >= .5
     # Son inceleme (2026-09-23): "hicbir ucun sistematik olmadigi" yanlisti — kazanan GUC DUZEYINI izliyor.
     # Ardisik ayni kazananli kovalar birlestirilip sirayla yazilir; beraberlik ayri gosterilir.
-    _kz = {h_["birim"]: [r_[3] for r_ in h_["kova_kazanan"]] for h_ in (_cc, _hp)}
-    _cc_hepsi = bool(_kz["cc"]) and all(k == "ust" for k in _kz["cc"])
+    _winners = {h_["unit"]: [r_[3] for r_ in h_["range_winners"]] for h_ in (_cc, _hp)}
+    _cc_all_upper = bool(_winners["cc"]) and all(k == "upper" for k in _winners["cc"])
     _runs = []
-    for lo_, up_, _nn, kz_, _mm in _hp["kova_kazanan"]:
-        if _runs and _runs[-1][2] == kz_ and _runs[-1][1] + 1 == lo_:
+    for lo_, up_, _nn, w_, _mm in _hp["range_winners"]:
+        if _runs and _runs[-1][2] == w_ and _runs[-1][1] + 1 == lo_:
             _runs[-1][1] = up_
         else:
-            _runs.append([lo_, up_, kz_])
-    _hp_karisik = len({r_[2] for r_ in _runs}) > 1
+            _runs.append([lo_, up_, w_])
+    _hp_mixed = len({r_[2] for r_ in _runs}) > 1
 
-    def _kz_ad(k):
+    def _winner_name(k):
         """
         EN: Name of a per-range winner; ties are written as 'A and B tied'.
         TR: Aralık başına kazananın adı; beraberlik 'A ile B berabere' diye yazılır.
         """
-        p_ = [_ad[x_] for x_ in k.split("+")]
+        p_ = [_cand_label[x_] for x_ in k.split("+")]
         return p_[0] if len(p_) == 1 else L(" ile ".join(p_) + " berabere", " and ".join(p_) + " tied")
-    _hp_seri = "; ".join(f"{lo_}–{up_} hp {_kz_ad(k_)}" for lo_, up_, k_ in _runs)
-    _q1h, _q3h = _hp["konum_ceyrek"]
-    _nkc, _nkh = len(_kz["cc"]), len(_kz["hp"])
-    A(L((f"Hacimde kesin değer aralığın üst sınırına çok yakın (aralık içindeki medyan konumu {P(100 * _kc, lang)}, "
-         f"alt çeyrek {P(100 * _cc['konum_ceyrek'][0], lang)}; en sık aralığı paylaşan modellerin en sık kesin "
-         f"değeri {_okc['en_sik_kesin']} cc), bu yüzden üst sınır neredeyse tam isabet ediyor"
-         + (f"; en az 100 ilanlı aralıkların hepsinde ({_nkc}/{_nkc}) en yakın aday üst sınır. " if _cc_hepsi else ". ")
-         if _cc_ust else
-         f"Hacimde kesin değerin aralık içindeki medyan konumu {P(100 * _kc, lang)}. ")
-        + (f"Güçte en yakın aday güç düzeyine göre değişiyor (en az 100 ilanlı aralıklar): {_hp_seri}. Kesin "
+    _hp_runs_text = "; ".join(f"{lo_}–{up_} hp {_winner_name(k_)}" for lo_, up_, k_ in _runs)
+    _q1h, _q3h = _hp["position_quartiles"]
+    _n_cc_ranges, _n_hp_ranges = len(_winners["cc"]), len(_winners["hp"])
+    A(L((f"Hacimde kesin değer aralığın üst sınırına çok yakın (aralık içindeki medyan konumu {P(100 * _pos_cc, lang)}, "
+         f"alt çeyrek {P(100 * _cc['position_quartiles'][0], lang)}; en sık aralığı paylaşan modellerin en sık kesin "
+         f"değeri {_ex_cc['most_common_exact']} cc), bu yüzden üst sınır neredeyse tam isabet ediyor"
+         + (f"; en az 100 ilanlı aralıkların hepsinde ({_n_cc_ranges}/{_n_cc_ranges}) en yakın aday üst sınır. " if _cc_all_upper else ". ")
+         if _cc_at_top else
+         f"Hacimde kesin değerin aralık içindeki medyan konumu {P(100 * _pos_cc, lang)}. ")
+        + (f"Güçte en yakın aday güç düzeyine göre değişiyor (en az 100 ilanlı aralıklar): {_hp_runs_text}. Kesin "
            f"değerin aralık içindeki konumu da bu yüzden dağınık (çeyrekler {P(100 * _q1h, lang)}–"
            f"{P(100 * _q3h, lang)}). Tek bir kural olarak orta nokta, bütün aralıklı ilanlarda medyan farkı en küçük "
-           f"aday. " if _hp_karisik else
-           f"Güçte en az 100 ilanlı {_nkh} aralığın hepsinde en yakın aday aynı. ")
-        + f"Aynı modelin kesin değer medyanı aralığın içine düşüyor: hacimde {P(_cc['icinde_pct'], lang)}, güçte "
-          f"{P(_hp['icinde_pct'], lang)} ilanda"
+           f"aday. " if _hp_mixed else
+           f"Güçte en az 100 ilanlı {_n_hp_ranges} aralığın hepsinde en yakın aday aynı. ")
+        + f"Aynı modelin kesin değer medyanı aralığın içine düşüyor: hacimde {P(_cc['inside_pct'], lang)}, güçte "
+          f"{P(_hp['inside_pct'], lang)} ilanda"
         + (f"; güçte dışarıda kalanlarda birden çok kesin güç değeri olan modellerin payı "
-           f"{P(_hp['kova_disi_coklu_pct'], lang)} — aynı model adı farklı motor seçenekleri taşıyor, yani bu "
+           f"{P(_hp['outside_multi_value_pct'], lang)} — aynı model adı farklı motor seçenekleri taşıyor, yani bu "
            f"oran sitenin aralığının değil referansın kabalığını gösteriyor. "
-           if (_hp["kova_disi_coklu_pct"] or 0) > 50 else ". ")
+           if (_hp["outside_multi_value_pct"] or 0) > 50 else ". ")
         + "Kural veriyle çelişirse (seçilen aday en küçük medyan farkı vermezse) üreteç durur.",
         (f"For size the exact value sits right at the top of the range (median position within the range "
-         f"{P(100 * _kc, lang)}, lower quartile {P(100 * _cc['konum_ceyrek'][0], lang)}; the most common exact "
-         f"value among the models in the most common range is {_okc['en_sik_kesin']} cc), so the upper bound is "
+         f"{P(100 * _pos_cc, lang)}, lower quartile {P(100 * _cc['position_quartiles'][0], lang)}; the most common exact "
+         f"value among the models in the most common range is {_ex_cc['most_common_exact']} cc), so the upper bound is "
          f"almost a direct hit"
-         + (f"; in every range with at least 100 listings ({_nkc}/{_nkc}) the upper bound is the closest "
-            f"candidate. " if _cc_hepsi else ". ")
-         if _cc_ust else
-         f"For size the exact value's median position within the range is {P(100 * _kc, lang)}. ")
+         + (f"; in every range with at least 100 listings ({_n_cc_ranges}/{_n_cc_ranges}) the upper bound is the closest "
+            f"candidate. " if _cc_all_upper else ". ")
+         if _cc_at_top else
+         f"For size the exact value's median position within the range is {P(100 * _pos_cc, lang)}. ")
         + (f"For power the closest candidate changes with the power level (ranges with at least 100 "
-           f"listings): {_hp_seri}. So the exact value's position within the range is spread out (quartiles "
+           f"listings): {_hp_runs_text}. So the exact value's position within the range is spread out (quartiles "
            f"{P(100 * _q1h, lang)}–{P(100 * _q3h, lang)}). As a single rule the midpoint has the smallest median "
-           f"gap over all range listings. " if _hp_karisik else
-           f"For power the closest candidate is the same in all {_nkh} ranges with at least 100 listings. ")
-        + f"The same model's median exact value falls inside the range for {P(_cc['icinde_pct'], lang)} of "
-          f"listings on size and {P(_hp['icinde_pct'], lang)} on power"
+           f"gap over all range listings. " if _hp_mixed else
+           f"For power the closest candidate is the same in all {_n_hp_ranges} ranges with at least 100 listings. ")
+        + f"The same model's median exact value falls inside the range for {P(_cc['inside_pct'], lang)} of "
+          f"listings on size and {P(_hp['inside_pct'], lang)} on power"
         + (f"; among the power listings outside it, models with more than one exact power value make up "
-           f"{P(_hp['kova_disi_coklu_pct'], lang)} — one model name covers several engine options, so this "
+           f"{P(_hp['outside_multi_value_pct'], lang)} — one model name covers several engine options, so this "
            f"share reflects a coarse reference, not wrong ranges on the site. "
-           if (_hp["kova_disi_coklu_pct"] or 0) > 50 else ". ")
+           if (_hp["outside_multi_value_pct"] or 0) > 50 else ". ")
         + "If the rule stops matching the data (the chosen candidate no longer has the smallest median gap), "
           "the generator stops."))
     A("")
     # 2026-09-25: hacimde neden ust sinir — litre etiketi. Iliski bozulursa (en sik kesin deger ust sinirin 50 cc
     # altindan uzak) cumle yanlislasacagina uretec durur.
-    assert 0 <= _up - _ref < 50, ("litre etiketi cumlesi veriyle uyusmuyor", _okc)
+    assert 0 <= _up - _ref < 50, ("litre etiketi cumlesi veriyle uyusmuyor", _ex_cc)
     A(L(f"Sebep motorların litre etiketi: \"{_up / 1000:.1f}\" diye satılan bir motorun gerçek hacmi {_ref} cc gibi, "
         f"etiketin birkaç cc altında. Sitenin aralıkları da bu etiket değerlerinde bitiyor ({_lo}–{_up} cc), bu yüzden "
         f"gerçek hacim neredeyse her zaman aralığın üst sınırına çok yakın. Güçte böyle bir etiket yok; gerçek "
@@ -412,41 +412,41 @@ def section_data(c):
         f"out-of-fold: every listing is predicted exactly once, by a model that never saw it."))
     A("")
 
-    dup = met["icerik_duplike"]
+    dup = met["content_duplicates"]
     A(L("### İçerik bazlı tekrar", "### Content-based duplication"))
     A("")
     T([L("tanım", "definition"), L("fazla satır", "excess rows"), L("pay", "share")], [
         [L("katı — tüm ayırt edici alanlar aynı", "strict — every distinguishing field identical"),
-         num(dup["kati_tanim_fazla"], lang), P(dup["kati_tanim_pct"], lang, 2)],
-        [L("gevşek", "loose"), num(dup["gevsek_tanim_fazla"], lang), P(dup["gevsek_tanim_pct"], lang, 2)],
-        [L("fiyat hariç katı", "strict without price"), num(dup["fiyatsiz_tanim_fazla"], lang),
-         P(dup["fiyatsiz_tanim_pct"], lang, 2)],
+         num(dup["strict_extra"], lang), P(dup["strict_pct"], lang, 2)],
+        [L("gevşek", "loose"), num(dup["loose_extra"], lang), P(dup["loose_pct"], lang, 2)],
+        [L("fiyat hariç katı", "strict without price"), num(dup["no_price_extra"], lang),
+         P(dup["no_price_pct"], lang, 2)],
     ], "lrr")
     # 2026-09-23: "sizabilecek pay en fazla %0.70" diyordu; iki tanim da fiyat esitligi istiyor, fiyati
     # degistirilip yeniden yayimlanan ilani goremez. Fiyatsiz tanim da basilir, ust sinir iddiasi kalkar.
-    _kolon_ = ", ".join(f"`{c}`" for c in dup["kati_tanim_kolonlari"])
-    A(L(f"`ad_id`'nin göremediği risk: `ad_id` farklı ama ilan aynı. Katı tanım {num(dup['duplike_grup_sayisi'], lang)} "
-        f"tekrar grubu buluyor; kolonları: {_kolon_}. Bir kısmı gerçek tekrar ilan, bir kısmı yaygın modellerde "
+    _strict_cols = ", ".join(f"`{c}`" for c in dup["strict_key_columns"])
+    A(L(f"`ad_id`'nin göremediği risk: `ad_id` farklı ama ilan aynı. Katı tanım {num(dup['n_duplicate_groups'], lang)} "
+        f"tekrar grubu buluyor; kolonları: {_strict_cols}. Bir kısmı gerçek tekrar ilan, bir kısmı yaygın modellerde "
         f"tesadüfi çakışma. İlk iki tanım fiyat eşitliği istiyor, yani fiyatı değiştirilip yeniden yayımlanan ilanı "
-        f"göremez. Fiyatı dışarıda bırakan katı tanım {num(dup['fiyatsiz_tanim_fazla'], lang)} fazla satır "
-        f"({P(dup['fiyatsiz_tanim_pct'], lang, 2)}) buluyor; bunun ne kadarı fiyatı değiştirilmiş yeniden ilan, ne "
+        f"göremez. Fiyatı dışarıda bırakan katı tanım {num(dup['no_price_extra'], lang)} fazla satır "
+        f"({P(dup['no_price_pct'], lang, 2)}) buluyor; bunun ne kadarı fiyatı değiştirilmiş yeniden ilan, ne "
         f"kadarı yaygın bir modelde tesadüfi çakışma, veriden ayrılamıyor. Fold'lar arasına sızabilecek pay bu iki "
-        f"tanıma göre {P(dup['kati_tanim_pct'], lang, 2)} (katı) ile {P(dup['fiyatsiz_tanim_pct'], lang, 2)} (fiyat "
+        f"tanıma göre {P(dup['strict_pct'], lang, 2)} (katı) ile {P(dup['no_price_pct'], lang, 2)} (fiyat "
         f"hariç) arasında; kilometresi de değiştirilmiş bir yeniden ilanı ikisi de göremez.",
         f"The risk `ad_id` cannot see: different `ad_id`, same car. The strict definition finds "
-        f"{num(dup['duplike_grup_sayisi'], lang)} duplicate groups; its columns: {_kolon_}. Some are genuine "
+        f"{num(dup['n_duplicate_groups'], lang)} duplicate groups; its columns: {_strict_cols}. Some are genuine "
         f"re-posts, some coincidental matches on common models. The first two definitions require the same price, "
         f"so they cannot see a listing re-posted at a new price. The strict definition without price finds "
-        f"{num(dup['fiyatsiz_tanim_fazla'], lang)} excess rows ({P(dup['fiyatsiz_tanim_pct'], lang, 2)}); how many "
+        f"{num(dup['no_price_extra'], lang)} excess rows ({P(dup['no_price_pct'], lang, 2)}); how many "
         f"of those are re-posts at a new price and how many coincidental matches on common models cannot be told "
         f"apart from the data. By these two definitions the share that could leak across folds is between "
-        f"{P(dup['kati_tanim_pct'], lang, 2)} (strict) and {P(dup['fiyatsiz_tanim_pct'], lang, 2)} (without price); "
+        f"{P(dup['strict_pct'], lang, 2)} (strict) and {P(dup['no_price_pct'], lang, 2)} (without price); "
         f"neither can see a re-post whose mileage was changed too."))
     A("")
     A(L("En çok tekrar eden ilanlar:", "Most repeated listings:"))
     A("")
     T([L("model", "model"), L("yıl", "year"), L("fiyat", "price"), L("tekrar", "repeats")],
-      [[r["model"], r["yil"], tlx(r["fiyat"], lang), r["n_tekrar"]] for r in dup["en_cok_tekrar"]], "lrrr")
+      [[r["model"], r["year"], tlx(r["price"], lang), r["repeats"]] for r in dup["most_repeated"]], "lrrr")
 
 def section_missing(c):
     """
@@ -1324,21 +1324,21 @@ def section_calibration(c):
     _cap = [a_ for a_ in (5, 10, 15, 18, max(_yd)) if a_ in _yd]
     _ys = sorted(_yd)
     _j = max(zip(_ys, _ys[1:]), key=lambda t_: _yd[t_[1]] - _yd[t_[0]])
-    _kp = ed["kapsam"]
+    _scope = ed["scope"]
     A(L(f"**18 yaş verinin seçtiği bir eşik değil.** Büyük hata oranı yaşla artıyor: "
         + " · ".join(f"{a_} yaş {P(_yd[a_], lang, 2)}" for a_ in _cap)
         + f". En büyük bir yıllık sıçrama {_j[0]}→{_j[1]} yaş arasında ({P(_yd[_j[0]], lang, 2)} → "
         f"{P(_yd[_j[1]], lang, 2)}). Kesim {min(_yk)} ile {max(_yk)} arasında kaydırılınca yaşlı/genç oranı "
         f"{min(_yk.values()):.1f}–{max(_yk.values()):.1f} kat arasında kalıyor; 18'de {_yk[18]:.1f} "
-        f"kat. Ayrıca en yaşlı kova toplama sınırına dayanıyor: veri {_kp['min_yil']} model yılıyla başlıyor, yani 18 "
-        f"ve üstü kovada yalnız {_kp['yas_tavani'] - 18 + 1} model yılı var.",
+        f"kat. Ayrıca en yaşlı kova toplama sınırına dayanıyor: veri {_scope['min_year']} model yılıyla başlıyor, yani 18 "
+        f"ve üstü kovada yalnız {_scope['max_age'] - 18 + 1} model yılı var.",
         f"**Age 18 is not a threshold the data picked.** The large-error rate rises with age: "
         + " · ".join(f"age {a_} {P(_yd[a_], lang, 2)}" for a_ in _cap)
         + f". The largest one-year jump is between {_j[0]} and {_j[1]} ({P(_yd[_j[0]], lang, 2)} → "
         f"{P(_yd[_j[1]], lang, 2)}). Moving the cut between {min(_yk)} and {max(_yk)} keeps the old/young ratio between "
         f"{min(_yk.values()):.1f}× and {max(_yk.values()):.1f}×; at 18 it is {_yk[18]:.1f}×. "
-        f"The oldest bucket also runs into the collection limit: data starts at model year {_kp['min_yil']}, "
-        f"so the 18-and-over bucket holds only {_kp['yas_tavani'] - 18 + 1} model years."))
+        f"The oldest bucket also runs into the collection limit: data starts at model year {_scope['min_year']}, "
+        f"so the 18-and-over bucket holds only {_scope['max_age'] - 18 + 1} model years."))
     A("")
     A(L("İlişki; ilan ilan doğrulanmadı. Formda olmayan bilgi (hasar geçmişi, donanım, modifiye) olası katkı, "
         "burada ölçülmedi.",
@@ -1562,7 +1562,7 @@ def section_calibration(c):
         f"çeyrekte. Segmentini model adından alan seriler ({', '.join(_to['perf_seriler'])}) verinin "
         f"{P(_to['perf_genel_pct'], lang, 2)} kadarı ama ilk {_to['ilk_n']} içinde {num(_to['ilk_n_perf'], lang)} ilan"
         + (f" — verideki paylarının {_perf_kat:.0f} katı." if _perf_kat >= 2 else ".")
-        + f" Fiyat tavanı ({tl(v['ed']['kapsam']['fiyat_max'])}) bu uçta modelin "
+        + f" Fiyat tavanı ({tl(v['ed']['scope']['price_max'])}) bu uçta modelin "
         f"öğrendiği aralığı da kesiyor; en pahalı ilanlardaki düşük tahmin bu sınırla birlikte okunmalı.",
         f"In lira the list flips: in {_n6d} of the top six the model says **too little**. Of the top "
         f"{_to['ilk_n']} lira errors {num(_to['ilk_n_dusuk'], lang)} are under- and "
@@ -1572,7 +1572,7 @@ def section_calibration(c):
         f"are {P(_to['perf_genel_pct'], lang, 2)} of the data but {num(_to['ilk_n_perf'], lang)} of the top "
         f"{_to['ilk_n']}"
         + (f" — {_perf_kat:.0f}× their share of the data." if _perf_kat >= 2 else ".")
-        + f" The price cap ({tl(v['ed']['kapsam']['fiyat_max'])}) also truncates the range the "
+        + f" The price cap ({tl(v['ed']['scope']['price_max'])}) also truncates the range the "
         f"model learns at this end; under-prediction on the most expensive listings should be read with that "
         f"limit in mind."))
     A("")

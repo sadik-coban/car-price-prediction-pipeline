@@ -18,7 +18,7 @@ import pandas as pd
 
 from lib.common import ROOT, load_clean, save_metrics
 
-CHOSEN = {"engine_cc": "ust", "power_hp": "orta"}     # the owner's rule | kullanıcının kuralı
+CHOSEN = {"engine_cc": "upper", "power_hp": "mid"}     # the owner's rule | kullanıcının kuralı
 UNITS = {"engine_cc": "cc", "power_hp": "hp"}
 MIN_BUCKET_N = 100
 
@@ -58,13 +58,13 @@ def bucket_frame(listings, p):
 
 def candidate_gaps(bucketed, p):
     """
-    EN: |candidate − reference| for the three candidates. Returns: DataFrame with columns alt/orta/ust.
-    TR: Üç aday için |aday − referans|. Döndürür: alt/orta/ust kolonlu DataFrame.
+    EN: |candidate − reference| for the three candidates. Returns: DataFrame with columns lower/mid/upper.
+    TR: Üç aday için |aday − referans|. Döndürür: lower/mid/upper kolonlu DataFrame.
     """
     lo, up = bucketed[f"{p}_low"], bucketed[f"{p}_up"]
-    return pd.DataFrame({"alt": (lo - bucketed["ref"]).abs(),
-                         "orta": ((lo + up) / 2 - bucketed["ref"]).abs(),
-                         "ust": (up - bucketed["ref"]).abs()})
+    return pd.DataFrame({"lower": (lo - bucketed["ref"]).abs(),
+                         "mid": ((lo + up) / 2 - bucketed["ref"]).abs(),
+                         "upper": (up - bucketed["ref"]).abs()})
 
 
 def summarize_gaps(gaps):
@@ -72,8 +72,8 @@ def summarize_gaps(gaps):
     EN: Median, mean and 5/25/50/75/95 percentiles of each candidate's gap (raw, unrounded).
     TR: Her adayın farkının medyanı, ortalaması ve 5/25/50/75/95 yüzdelikleri (ham, yuvarlanmamış).
     """
-    return {k: {"medyan": float(np.median(gaps[k])), "ortalama": float(gaps[k].mean()),
-                "yuzdelik": [float(q) for q in np.percentile(gaps[k], [5, 25, 50, 75, 95])]} for k in gaps}
+    return {k: {"median": float(np.median(gaps[k])), "mean": float(gaps[k].mean()),
+                "percentiles": [float(q) for q in np.percentile(gaps[k], [5, 25, 50, 75, 95])]} for k in gaps}
 
 
 def assert_chosen_is_best(summary, chosen, p):
@@ -81,7 +81,7 @@ def assert_chosen_is_best(summary, chosen, p):
     EN: Stops if the chosen candidate does not have the smallest median gap (the rule contradicts the data).
     TR: Seçilen aday en küçük medyan farkı vermiyorsa durur (kural veriyle çelişiyor).
     """
-    medians = {k: round(v["medyan"], 1) for k, v in summary.items()}
+    medians = {k: round(v["median"], 1) for k, v in summary.items()}
     assert all(medians[chosen] < medians[k] for k in medians if k != chosen), \
         f"{p}: chosen candidate '{chosen}' is not the best: {medians}"
 
@@ -89,15 +89,15 @@ def assert_chosen_is_best(summary, chosen, p):
 def bucket_winners(bucketed, gaps, p, min_n):
     """
     EN: For every bucket with at least min_n listings, the candidate with the smallest median gap
-        (ties joined with '+', e.g. 'alt+orta'). Returns: [[low, up, n, winner, {candidate: median}], ...].
-    TR: En az min_n ilanlı her kovada medyan farkı en küçük aday (beraberlik '+' ile, ör. 'alt+orta').
+        (ties joined with '+', e.g. 'lower+mid'). Returns: [[low, up, n, winner, {candidate: median}], ...].
+    TR: En az min_n ilanlı her kovada medyan farkı en küçük aday (beraberlik '+' ile, ör. 'lower+mid').
         Döndürür: [[alt, üst, n, kazanan, {aday: medyan}], ...].
     """
     g = gaps.assign(lo=bucketed[f"{p}_low"].values, up=bucketed[f"{p}_up"].values)
     out = []
     for (lo, up), grp in g.groupby(["lo", "up"]):
         if len(grp) >= min_n:
-            med = {k: float(grp[k].median()) for k in ("alt", "orta", "ust")}
+            med = {k: float(grp[k].median()) for k in ("lower", "mid", "upper")}
             best = min(med.values())
             out.append([int(lo), int(up), int(len(grp)), "+".join(k for k in med if med[k] == best), med])
     return out
@@ -123,8 +123,8 @@ def most_common_bucket(bucketed, exact, p):
     lo, up = counts.index[0]
     models = set(bucketed.loc[(bucketed[f"{p}_low"] == lo) & (bucketed[f"{p}_up"] == up), "model"])
     values = exact.loc[exact["model"].isin(models), f"{p}_up"].value_counts()
-    return {"alt": int(lo), "ust": int(up), "n": int(counts.iloc[0]),
-            "en_sik_kesin": int(values.index[0]), "en_sik_kesin_n": int(values.iloc[0])}
+    return {"low": int(lo), "up": int(up), "n": int(counts.iloc[0]),
+            "most_common_exact": int(values.index[0]), "most_common_exact_n": int(values.iloc[0])}
 
 
 def bound_pairs(listings, p):
@@ -175,28 +175,29 @@ def measure(listings, p, chosen):
 # %% [3] Metrics assembly | Metrik derleme — naming and rounding only | yalnız adlandırma ve yuvarlama
 def to_metrics(res):
     """
-    EN: Published under error_drivers.hp_cc_kurali, with the reports' key names and rounding.
-    TR: error_drivers.hp_cc_kurali altında, raporların anahtar adları ve yuvarlamasıyla yayımlanır.
+    EN: Published under error_drivers.engine_rule, with the reports' key names and rounding.
+    TR: error_drivers.engine_rule altında, raporların anahtar adları ve yuvarlamasıyla yayımlanır.
     """
-    out = {"tanim": ("referans = ayni modelin kesin (kovasiz) degerli ilanlarinin medyani; fark = |aday − "
+    out = {"definition": ("referans = ayni modelin kesin (kovasiz) degerli ilanlarinin medyani; fark = |aday − "
                      "referans|; yalniz iki siniri da bilinen kovalar ve referansi olan modeller; "
                      "yuzdelikler 5/25/50/75/95; konum = (referans − alt) / (ust − alt); ciftler = [alt, ust, "
                      "aralik mi, ilan], iki siniri da olan ilanlar (kesin degerde alt = ust)")}
     for p, m in res.items():
-        out[p] = {"birim": UNITS[p], "secilen": m["chosen"], "ilan": m["listings"], "kesin": m["exact"],
-                  "aralikli": m["bucketed"], "acik_uclu": m["open_ended"], "degersiz": m["no_value"],
-                  "referansli": m["with_reference"], "referans_model": m["reference_models"],
-                  "icinde_pct": round(100 * m["inside_share"], 1),
-                  "konum_medyan": round(m["position_median"], 3),
-                  "konum_ceyrek": [round(q, 3) for q in m["position_quartiles"]],
-                  "adaylar": {k: {"medyan": round(v["medyan"], 1), "ortalama": round(v["ortalama"], 1),
-                                  "yuzdelik": [round(q, 1) for q in v["yuzdelik"]]} for k, v in m["candidates"].items()},
-                  "kova_kazanan": [[lo, up, n, w, {k: round(v, 1) for k, v in med.items()}]
-                                   for lo, up, n, w, med in m["bucket_winners"]],
-                  "kova_disi_coklu_pct": (round(100 * m["outside_multi_value_share"], 1)
-                                          if m["outside_multi_value_share"] is not None else None),
-                  "ornek_kova": m["most_common_bucket"], "ciftler": m["pairs"]}
-    return {"error_drivers": {"hp_cc_kurali": out}}
+        out[p] = {"unit": UNITS[p], "chosen": m["chosen"], "listings": m["listings"], "exact": m["exact"],
+                  "ranged": m["bucketed"], "open_ended": m["open_ended"], "no_value": m["no_value"],
+                  "with_reference": m["with_reference"], "reference_models": m["reference_models"],
+                  "inside_pct": round(100 * m["inside_share"], 1),
+                  "position_median": round(m["position_median"], 3),
+                  "position_quartiles": [round(q, 3) for q in m["position_quartiles"]],
+                  "candidates": {k: {"median": round(v["median"], 1), "mean": round(v["mean"], 1),
+                                     "percentiles": [round(q, 1) for q in v["percentiles"]]}
+                                 for k, v in m["candidates"].items()},
+                  "range_winners": [[lo, up, n, w, {k: round(v, 1) for k, v in med.items()}]
+                                    for lo, up, n, w, med in m["bucket_winners"]],
+                  "outside_multi_value_pct": (round(100 * m["outside_multi_value_share"], 1)
+                                              if m["outside_multi_value_share"] is not None else None),
+                  "example_range": m["most_common_bucket"], "pairs": m["pairs"]}
+    return {"error_drivers": {"engine_rule": out}}
 
 
 # %% [4] Load | Yükle — the only cells that read files | dosya okuyan tek hücreler
@@ -207,7 +208,7 @@ common_src = (ROOT / "analysis" / "lib" / "common.py").read_text(encoding="utf-8
 assert_rule_in_code(common_src)
 res = {p: measure(listings, p, CHOSEN[p]) for p in ("engine_cc", "power_hp")}
 for p, m in res.items():
-    print(p, {k: round(v["medyan"], 1) for k, v in m["candidates"].items()})
+    print(p, {k: round(v["median"], 1) for k, v in m["candidates"].items()})
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
 print("written | yazıldı:", save_metrics("01_engine_rule", to_metrics(res)))

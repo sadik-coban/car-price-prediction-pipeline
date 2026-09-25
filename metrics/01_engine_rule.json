@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "01_engine_rule.py",
-  "generated_at": "2026-09-25T05:11:30+03:00",
+  "generated_at": "2026-09-25T15:42:00+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": null,
   "source": {
    "script": {
-    "analysis/01_engine_rule.py": "03225da04585bdb1c132d10ff9b7314c6da8f79b235fa1dd4e50f64bd282825c"
+    "analysis/01_engine_rule.py": "89a954320e3ef965d779d0d6401fb341a01e10119bed8b14d33f95cc88ac4502"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -21,29 +21,29 @@
   }
  },
  "error_drivers": {
-  "hp_cc_kurali": {
-   "tanim": "referans = ayni modelin kesin (kovasiz) degerli ilanlarinin medyani; fark = |aday − referans|; yalniz iki siniri da bilinen kovalar ve referansi olan modeller; yuzdelikler 5/25/50/75/95; konum = (referans − alt) / (ust − alt); ciftler = [alt, ust, aralik mi, ilan], iki siniri da olan ilanlar (kesin degerde alt = ust)",
+  "engine_rule": {
+   "definition": "referans = ayni modelin kesin (kovasiz) degerli ilanlarinin medyani; fark = |aday − referans|; yalniz iki siniri da bilinen kovalar ve referansi olan modeller; yuzdelikler 5/25/50/75/95; konum = (referans − alt) / (ust − alt); ciftler = [alt, ust, aralik mi, ilan], iki siniri da olan ilanlar (kesin degerde alt = ust)",
    "engine_cc": {
-    "birim": "cc",
-    "secilen": "ust",
-    "ilan": 29988,
-    "kesin": 21767,
-    "aralikli": 7865,
-    "acik_uclu": 38,
-    "degersiz": 356,
-    "referansli": 7176,
-    "referans_model": 339,
-    "icinde_pct": 97.9,
-    "konum_medyan": 0.975,
-    "konum_ceyrek": [
+    "unit": "cc",
+    "chosen": "upper",
+    "listings": 29988,
+    "exact": 21767,
+    "ranged": 7865,
+    "open_ended": 38,
+    "no_value": 356,
+    "with_reference": 7176,
+    "reference_models": 339,
+    "inside_pct": 97.9,
+    "position_median": 0.975,
+    "position_quartiles": [
      0.839,
      0.99
     ],
-    "adaylar": {
-     "alt": {
-      "medyan": 194.0,
-      "ortalama": 191.9,
-      "yuzdelik": [
+    "candidates": {
+     "lower": {
+      "median": 194.0,
+      "mean": 191.9,
+      "percentiles": [
        97.0,
        167.0,
        194.0,
@@ -51,10 +51,10 @@
        197.0
       ]
      },
-     "orta": {
-      "medyan": 95.5,
-      "ortalama": 91.4,
-      "yuzdelik": [
+     "mid": {
+      "median": 95.5,
+      "mean": 91.4,
+      "percentiles": [
        2.5,
        67.5,
        95.5,
@@ -62,10 +62,10 @@
        104.5
       ]
      },
-     "ust": {
-      "medyan": 5.0,
-      "ortalama": 28.4,
-      "yuzdelik": [
+     "upper": {
+      "median": 5.0,
+      "mean": 28.4,
+      "percentiles": [
        2.0,
        2.0,
        5.0,
@@ -74,72 +74,72 @@
       ]
      }
     },
-    "kova_kazanan": [
+    "range_winners": [
      [
       1201,
       1400,
       123,
-      "ust",
+      "upper",
       {
-       "alt": 189.0,
-       "orta": 89.5,
-       "ust": 10.0
+       "lower": 189.0,
+       "mid": 89.5,
+       "upper": 10.0
       }
      ],
      [
       1401,
       1600,
       4015,
-      "ust",
+      "upper",
       {
-       "alt": 196.0,
-       "orta": 96.5,
-       "ust": 3.0
+       "lower": 196.0,
+       "mid": 96.5,
+       "upper": 3.0
       }
      ],
      [
       1601,
       1800,
       146,
-      "ust",
+      "upper",
       {
-       "alt": 197.0,
-       "orta": 97.5,
-       "ust": 2.0
+       "lower": 197.0,
+       "mid": 97.5,
+       "upper": 2.0
       }
      ],
      [
       1801,
       2000,
       2572,
-      "ust",
+      "upper",
       {
-       "alt": 167.0,
-       "orta": 67.5,
-       "ust": 32.0
+       "lower": 167.0,
+       "mid": 67.5,
+       "upper": 32.0
       }
      ],
      [
       2501,
       3000,
       248,
-      "ust",
+      "upper",
       {
-       "alt": 466.0,
-       "orta": 216.5,
-       "ust": 33.0
+       "lower": 466.0,
+       "mid": 216.5,
+       "upper": 33.0
       }
      ]
     ],
-    "kova_disi_coklu_pct": 26.4,
-    "ornek_kova": {
-     "alt": 1401,
-     "ust": 1600,
+    "outside_multi_value_pct": 26.4,
+    "example_range": {
+     "low": 1401,
+     "up": 1600,
      "n": 4015,
-     "en_sik_kesin": 1598,
-     "en_sik_kesin_n": 4279
+     "most_common_exact": 1598,
+     "most_common_exact_n": 4279
     },
-    "ciftler": [
+    "pairs": [
      [
       999,
       999,
@@ -503,26 +503,26 @@
     ]
    },
    "power_hp": {
-    "birim": "hp",
-    "secilen": "orta",
-    "ilan": 29988,
-    "kesin": 21765,
-    "aralikli": 7797,
-    "acik_uclu": 2,
-    "degersiz": 426,
-    "referansli": 7148,
-    "referans_model": 337,
-    "icinde_pct": 84.2,
-    "konum_medyan": 0.583,
-    "konum_ceyrek": [
+    "unit": "hp",
+    "chosen": "mid",
+    "listings": 29988,
+    "exact": 21765,
+    "ranged": 7797,
+    "open_ended": 2,
+    "no_value": 426,
+    "with_reference": 7148,
+    "reference_models": 337,
+    "inside_pct": 84.2,
+    "position_median": 0.583,
+    "position_quartiles": [
      0.292,
      0.792
     ],
-    "adaylar": {
-     "alt": {
-      "medyan": 17.0,
-      "ortalama": 15.5,
-      "yuzdelik": [
+    "candidates": {
+     "lower": {
+      "median": 17.0,
+      "mean": 15.5,
+      "percentiles": [
        1.0,
        8.0,
        17.0,
@@ -530,10 +530,10 @@
        33.0
       ]
      },
-     "orta": {
-      "medyan": 7.0,
-      "ortalama": 10.2,
-      "yuzdelik": [
+     "mid": {
+      "median": 7.0,
+      "mean": 10.2,
+      "percentiles": [
        2.0,
        4.0,
        7.0,
@@ -541,10 +541,10 @@
        38.0
       ]
      },
-     "ust": {
-      "medyan": 14.0,
-      "ortalama": 13.6,
-      "yuzdelik": [
+     "upper": {
+      "median": 14.0,
+      "mean": 13.6,
+      "percentiles": [
        0.0,
        5.0,
        14.0,
@@ -553,94 +553,94 @@
       ]
      }
     },
-    "kova_kazanan": [
+    "range_winners": [
      [
       101,
       125,
       1266,
-      "orta",
+      "mid",
       {
-       "alt": 9.0,
-       "orta": 3.0,
-       "ust": 15.0
+       "lower": 9.0,
+       "mid": 3.0,
+       "upper": 15.0
       }
      ],
      [
       126,
       150,
       1361,
-      "ust",
+      "upper",
       {
-       "alt": 24.0,
-       "orta": 12.0,
-       "ust": 0.0
+       "lower": 24.0,
+       "mid": 12.0,
+       "upper": 0.0
       }
      ],
      [
       151,
       175,
       2128,
-      "ust",
+      "upper",
       {
-       "alt": 19.0,
-       "orta": 7.0,
-       "ust": 5.0
+       "lower": 19.0,
+       "mid": 7.0,
+       "upper": 5.0
       }
      ],
      [
       176,
       200,
       1695,
-      "alt",
+      "lower",
       {
-       "alt": 8.0,
-       "orta": 11.0,
-       "ust": 23.0
+       "lower": 8.0,
+       "mid": 11.0,
+       "upper": 23.0
       }
      ],
      [
       201,
       225,
       256,
-      "alt",
+      "lower",
       {
-       "alt": 3.0,
-       "orta": 9.0,
-       "ust": 21.0
+       "lower": 3.0,
+       "mid": 9.0,
+       "upper": 21.0
       }
      ],
      [
       226,
       250,
       132,
-      "alt+orta",
+      "lower+mid",
       {
-       "alt": 7.0,
-       "orta": 7.0,
-       "ust": 17.0
+       "lower": 7.0,
+       "mid": 7.0,
+       "upper": 17.0
       }
      ],
      [
       251,
       275,
       171,
-      "alt",
+      "lower",
       {
-       "alt": 7.0,
-       "orta": 11.0,
-       "ust": 23.0
+       "lower": 7.0,
+       "mid": 11.0,
+       "upper": 23.0
       }
      ]
     ],
-    "kova_disi_coklu_pct": 90.3,
-    "ornek_kova": {
-     "alt": 151,
-     "ust": 175,
+    "outside_multi_value_pct": 90.3,
+    "example_range": {
+     "low": 151,
+     "up": 175,
      "n": 2128,
-     "en_sik_kesin": 170,
-     "en_sik_kesin_n": 4613
+     "most_common_exact": 170,
+     "most_common_exact_n": 4613
     },
-    "ciftler": [
+    "pairs": [
      [
       90,
       90,

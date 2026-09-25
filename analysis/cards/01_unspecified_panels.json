@@ -40,10 +40,10 @@
    "tests/analysis/test_01_unspecified_panels.py::test_share_matches_the_database"
   ],
   "report_keys": [
-   "error_drivers.belirtilmemis.belirtilmemis_panel",
-   "error_drivers.belirtilmemis.belirtilmemis_pct",
-   "error_drivers.belirtilmemis.hepsi_belirtilmemis",
-   "error_drivers.belirtilmemis.yapi"
+   "error_drivers.unspecified.unspecified_panels",
+   "error_drivers.unspecified.unspecified_pct",
+   "error_drivers.unspecified.all_unspecified",
+   "error_drivers.unspecified.structure"
   ]
  },
  "status": "complete"

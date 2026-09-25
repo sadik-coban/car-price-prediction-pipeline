@@ -39,8 +39,8 @@
    "tests/analysis/test_01_gold_contract.py::test_in_run_order"
   ],
   "report_keys": [
-   "error_drivers.gold_sozlesme.toplam_hucre",
-   "error_drivers.gold_sozlesme.gruplar"
+   "error_drivers.gold_contract.total_cells",
+   "error_drivers.gold_contract.groups"
   ]
  },
  "status": "complete"

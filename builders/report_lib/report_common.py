@@ -47,11 +47,11 @@ REQUIRED = [
     "methodology.backtest.per_snapshot", "methodology.backtest.insample", "methodology.backtest.protokol",
     "methodology.sistematik_missing.sistematik_gruplar", "methodology.sistematik_missing.not",
     "methodology.pca_axes", "meta.repro", "meta.brands", "column_labels"] + [f"error_drivers.{p_}" for p_ in [
-    "plaka_kapsami", "segment_kalite", "hedonik_eksik", "per_model_error", "per_model_buckets", "lira_ceyrek",
-    "tl_olcekli", "kapsam", "fiyat_degisimi", "belirtilmemis", "taban_esit_kosul", "metin_bayrak",
+    "plate_scope", "segment_kalite", "hedonik_eksik", "per_model_error", "per_model_buckets", "lira_ceyrek",
+    "tl_olcekli", "scope", "price_changes", "unspecified", "taban_esit_kosul", "metin_bayrak",
     "yas_duyarlilik", "yas_kesim", "eski_d_grubu", "spec_outliers.kor_nokta", "donem_kaymasi",
     "by_model_year_n", "by_segment_FS", "by_age", "by_snapshot", "ham_kolon", "examples",
-    "hp_cc_kurali.engine_cc", "hp_cc_kurali.power_hp", "belirtilmemis.yapi", "kaybolan_canli", "metin_kaynak"]] + [
+    "engine_rule.engine_cc", "engine_rule.power_hp", "unspecified.structure", "kaybolan_canli", "metin_kaynak"]] + [
     f"report.{p_}" for p_ in ["q_bounds", "model_r2_log", "err_bands", "conformal_q", "conformal_all",
                               "conformal_by_pred", "drift_holm", "text_ablation"]]
 
@@ -194,10 +194,10 @@ def derive(d):
         "brand_mae_delta": abs(ba["brand_seri_model"]["MAE"] - ba["seri_model"]["MAE"]),
         "brand_mape_delta": abs(ba["brand_seri_model"]["MAPE"] - ba["seri_model"]["MAPE"]),
         # veri saglami
-        "dup_strict_n": met["icerik_duplike"]["kati_tanim_fazla"],
-        "dup_strict_pct": met["icerik_duplike"]["kati_tanim_pct"],
-        "dup_loose_n": met["icerik_duplike"]["gevsek_tanim_fazla"],
-        "dup_loose_pct": met["icerik_duplike"]["gevsek_tanim_pct"],
+        "dup_strict_n": met["content_duplicates"]["strict_extra"],
+        "dup_strict_pct": met["content_duplicates"]["strict_pct"],
+        "dup_loose_n": met["content_duplicates"]["loose_extra"],
+        "dup_loose_pct": met["content_duplicates"]["loose_pct"],
         "n_missing_cols": len(met["sistematik_missing"]["column_missing_all"]),
         # kumeler
         "k": met["kmeans_selection"]["secilen_k"],
@@ -775,34 +775,34 @@ def build_figures(d, v, lang, only=None):
 
     # 29 motor gucu/hacmi: araliktan tek sayiya  [TEKNIK] — kullanicinin kurali (2026-09-23).
     if want(29):
-        # Kutu = ceyrekler, cizgi = medyan, biyik = %5–%95 (ham dizi JSON'da yok; error_drivers.hp_cc_kurali).
-        _hk = v["ed"]["hp_cc_kurali"]
+        # Kutu = ceyrekler, cizgi = medyan, biyik = %5–%95 (ham dizi JSON'da yok; error_drivers.engine_rule).
+        _er = v["ed"]["engine_rule"]
         t = L("Aralıktan tek sayıya: adayın aynı modelin kesin değerinden uzaklığı",
               "From a range to one number: each candidate's distance from the model's exact value")
         fig, axs = plt.subplots(1, 2, figsize=(8.4, 3.4))
-        _ad = {"alt": L("alt sınır", "lower bound"), "orta": L("orta nokta", "midpoint"),
-               "ust": L("üst sınır", "upper bound")}
+        _cand_label = {"lower": L("alt sınır", "lower bound"), "mid": L("orta nokta", "midpoint"),
+               "upper": L("üst sınır", "upper bound")}
         for ax, (p_, heading) in zip(axs, (("engine_cc", L("motor hacmi", "engine size")),
                                        ("power_hp", L("motor gücü", "engine power")))):
-            h_ = _hk[p_]
-            ks = list(h_["adaylar"])
+            h_ = _er[p_]
+            ks = list(h_["candidates"])
             st = []
             for k in ks:
-                q_ = h_["adaylar"][k]["yuzdelik"]
+                q_ = h_["candidates"][k]["percentiles"]
                 st.append({"whislo": q_[0], "q1": q_[1], "med": q_[2], "q3": q_[3], "whishi": q_[4],
-                           "fliers": [], "label": _ad[k] + (L("\n(seçilen)", "\n(chosen)") if k == h_["secilen"] else "")})
+                           "fliers": [], "label": _cand_label[k] + (L("\n(seçilen)", "\n(chosen)") if k == h_["chosen"] else "")})
             bp = ax.bxp(st, showfliers=False, patch_artist=True, widths=.55)
             for k, box, med in zip(ks, bp["boxes"], bp["medians"]):
-                box.set_facecolor(C1 if k == h_["secilen"] else "#d9d9d9")
+                box.set_facecolor(C1 if k == h_["chosen"] else "#d9d9d9")
                 box.set_edgecolor("#444"); med.set_color("#111")
             for i_, k in enumerate(ks, 1):
-                m_ = h_["adaylar"][k]["medyan"]
+                m_ = h_["candidates"][k]["median"]
                 ax.annotate(f"{m_:g}", (i_ + .3, m_), textcoords="offset points", xytext=(3, 0), va="center",
-                            fontsize=8, fontweight="bold" if k == h_["secilen"] else "normal")
-            ax.set_title(f"{heading} · " + L(f"referanslı {num(h_['referansli'], lang)} aralıklı ilan",
-                                           f"{num(h_['referansli'], lang)} range listings with a reference"),
+                            fontsize=8, fontweight="bold" if k == h_["chosen"] else "normal")
+            ax.set_title(f"{heading} · " + L(f"referanslı {num(h_['with_reference'], lang)} aralıklı ilan",
+                                           f"{num(h_['with_reference'], lang)} range listings with a reference"),
                          fontsize=9)
-            ax.set_ylabel(L(f"|aday − kesin değer| ({h_['birim']})", f"|candidate − exact value| ({h_['birim']})"))
+            ax.set_ylabel(L(f"|aday − kesin değer| ({h_['unit']})", f"|candidate − exact value| ({h_['unit']})"))
             ax.set_ylim(bottom=0)
             ax.grid(axis="y", color=GRID, lw=.7); ax.set_axisbelow(True)
         fig.suptitle(t)
@@ -817,13 +817,13 @@ def build_figures(d, v, lang, only=None):
     # 30 sitenin verdigi alt x ust sinir  [TEKNIK] — deneysel scatter'dan rapora (2026-09-25).
     if want(30):
         # Kesin deger kosegende (alt = ust), aralik kosegenin ustunde; nokta = (alt, ust) cifti, buyuklugu ilan sayisi.
-        _hk = v["ed"]["hp_cc_kurali"]
+        _er = v["ed"]["engine_rule"]
         t = L("Sitenin verdiği değerler: alt × üst sınır", "What the site gives: lower × upper bound")
         fig, axs = plt.subplots(1, 2, figsize=(8.4, 4.2))
         for ax, (p_, heading) in zip(axs, (("engine_cc", L("motor hacmi", "engine size")),
                                        ("power_hp", L("motor gücü", "engine power")))):
-            h_ = _hk[p_]
-            c_ = np.array([[lo_, up_, r_, n_] for lo_, up_, r_, n_ in h_["ciftler"]], dtype=float)
+            h_ = _er[p_]
+            c_ = np.array([[lo_, up_, r_, n_] for lo_, up_, r_, n_ in h_["pairs"]], dtype=float)
             nmax = c_[:, 3].max()
             for is_r, col_, label_ in ((0, C1, L("kesin değer", "exact value")), (1, C3, L("aralık", "range"))):
                 s_ = c_[c_[:, 2] == is_r]
@@ -834,18 +834,18 @@ def build_figures(d, v, lang, only=None):
             ax.plot(lim, lim, "--", color=C2, lw=.8, label="y = x")
             ax.set_xlim(lim); ax.set_ylim(lim); ax.set_aspect("equal")
             ax.set_title(heading, fontsize=9)
-            ax.set_xlabel(L(f"alt sınır ({h_['birim']})", f"lower bound ({h_['birim']})"))
-            ax.set_ylabel(L(f"üst sınır ({h_['birim']})", f"upper bound ({h_['birim']})"))
+            ax.set_xlabel(L(f"alt sınır ({h_['unit']})", f"lower bound ({h_['unit']})"))
+            ax.set_ylabel(L(f"üst sınır ({h_['unit']})", f"upper bound ({h_['unit']})"))
             ax.legend(loc="upper left", frameon=False, fontsize=7, markerscale=.5)
             ax.grid(color=GRID, lw=.7); ax.set_axisbelow(True)
         fig.suptitle(t)
-        _c, _h = _hk["engine_cc"], _hk["power_hp"]
+        _c, _h = _er["engine_cc"], _er["power_hp"]
         fig.text(.5, .005, L(f"nokta büyüklüğü = ilan sayısı · kesin değer köşegende (alt = üst) · çizilemeyen: açık "
-                             f"uçlu aralık {num(_c['acik_uclu'], lang)}/{num(_h['acik_uclu'], lang)}, değersiz "
-                             f"{num(_c['degersiz'], lang)}/{num(_h['degersiz'], lang)} ilan (hacim/güç)",
+                             f"uçlu aralık {num(_c['open_ended'], lang)}/{num(_h['open_ended'], lang)}, değersiz "
+                             f"{num(_c['no_value'], lang)}/{num(_h['no_value'], lang)} ilan (hacim/güç)",
                              f"point size = listings · exact values on the diagonal (lower = upper) · not drawn: "
-                             f"open-ended range {num(_c['acik_uclu'], lang)}/{num(_h['acik_uclu'], lang)}, no value "
-                             f"{num(_c['degersiz'], lang)}/{num(_h['degersiz'], lang)} listings (size/power)"),
+                             f"open-ended range {num(_c['open_ended'], lang)}/{num(_h['open_ended'], lang)}, no value "
+                             f"{num(_c['no_value'], lang)}/{num(_h['no_value'], lang)} listings (size/power)"),
                  ha="center", fontsize=7, color=C2)
         fig.tight_layout(rect=(0, .04, 1, 1))
         reg(30, _save(fig, f"{p}-30-engine-bounds"), t)
