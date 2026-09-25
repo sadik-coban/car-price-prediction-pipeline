@@ -102,6 +102,14 @@ data/raw ──build_duckdb──► data/cars.duckdb (semi-raw, analysis) ─�
   - `is_heavy_damaged`, `kb_is_heavy_damaged`, `gb_is_first_owner`: `NULL` → `false`;
   - the 39 panel flags and the 3 damage counters: `NULL` → `0` (a "Belirtilmemiş" panel counts as original, as in
     the analysis);
+  - **row rule (2026-09-26):** rows whose plate is `Mavi plakalı` are left out (38 rows, 22 listings). Reason: the
+    API's scope is Turkish-plated cars, and blue-plate cars are under a different tax regime. The semi-raw DB keeps
+    them, since it records what the site shows; the "TR only" decision is made in gold and in the analysis
+    (`load_clean`). Rows with an empty plate field go into gold (unknown ≠ foreign; the API's TR filter leaves them
+    out itself). `price_history` and `duplicate_ad_ids` are copied without these listings. A listing blue in one
+    snapshot and TR in another was never seen; if it happens, the gold build stops. Until 2026-09-26 blue plates
+    were not written to the semi-raw DB either. Gold's content stayed the same with this change (compared column by
+    column; only the `id` numbers shifted, and the API does not read `id`);
   - `kb_paint_change_summary` is left out;
   - the description as in the semi-raw DB: only the heading-free `description_text`, **no `description_clean`**
     (owner's decision 2026-09-24: keep the description as `description_text`; if it touches the API, the owner

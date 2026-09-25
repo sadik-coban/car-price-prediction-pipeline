@@ -98,6 +98,14 @@ data/raw ──build_duckdb──► data/cars.duckdb (yarı ham, analiz) ──
   - `is_heavy_damaged`, `kb_is_heavy_damaged`, `gb_is_first_owner`: `NULL` → `false`;
   - 39 panel bayrağı ve 3 hasar sayacı: `NULL` → `0` ("Belirtilmemiş" panel, analizdeki gibi orijinal sayılır);
   - `kb_paint_change_summary` alınmaz;
+  - **satır kuralı (2026-09-26):** plakası `Mavi plakalı` olan satırlar alınmaz (38 satır, 22 ilan). Gerekçe: API'nin
+    kapsamı TR plakalı araçlar; mavi plakalıların vergilendirme rejimi farklı. Yarı ham DB onları tutar, çünkü
+    sitenin gösterdiğini kaydeder; "yalnız TR" kararı gold'da ve analizde (`load_clean`) verilir. Plaka alanı boş
+    satırlar gold'a alınır (bilinmiyor ≠ yabancı; API'nin TR filtresi onları zaten eler). `price_history` ve
+    `duplicate_ad_ids` bu ilanlar olmadan kopyalanır. Bir ilanın bir taramada mavi, ötekinde TR olduğu hâl hiç
+    görülmedi; olursa gold kurulumu durur. 2026-09-26'ya kadar mavi plakalılar yarı ham DB'ye de yazılmıyordu. Gold'un
+    içeriği bu değişiklikle aynı kaldı (kolon kolon karşılaştırıldı; yalnız `id` numaraları kaydı, API `id`
+    okumuyor);
   - açıklama yarı ham DB'deki gibi: yalnız başlıksız `description_text`, **`description_clean` yok** (kullanıcı
     kararı 2026-09-24: "açıklama metni aynı kalsın, description_text olsun; API yapısına dokunuyorsa API'de fix
     atarım");
