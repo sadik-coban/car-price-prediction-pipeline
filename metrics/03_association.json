@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "03_association.py",
-  "generated_at": "2026-09-25T05:11:51+03:00",
+  "generated_at": "2026-09-25T15:55:14+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": null,
   "source": {
    "script": {
-    "analysis/03_association.py": "234548759ae55c2ba447257ef47af161fdd93651ab08b83c4f1f4873548fdf68"
+    "analysis/03_association.py": "2c5c3068978e5f9f55721c8276c3eb0117921285cc24e92b38be30fd0cc1e82b"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -1136,7 +1136,7 @@
      1.0
     ]
    ],
-   "yuksek_ciftler": [
+   "high_pairs": [
     [
      "vehicle_age",
      "gb_mileage",
@@ -1153,7 +1153,7 @@
      0.67
     ]
    ],
-   "not": "Sayısal feature korelasyonu (kategorik için Cramér/Theil ayrı). Pearson=lineer, Spearman=monotonik ilişki. |r|>0.5 çiftler dikkat çeker; çoklu-bağlantı VIF ile ayrıca kontrol edildi (değerler: hedonic_reliability.vif)."
+   "note": "Sayısal feature korelasyonu (kategorik için Cramér/Theil ayrı). Pearson=lineer, Spearman=monotonik ilişki. |r|>0.5 çiftler dikkat çeker; çoklu-bağlantı VIF ile ayrıca kontrol edildi (değerler: hedonic_reliability.vif)."
   }
  }
 }

@@ -20,18 +20,18 @@ def derive_segments(raw):
     """
     EN: The derived segment of every listing and the path that resolved it (map / model table / base class).
         Stops if any series/model cannot be resolved.
-        Returns: DataFrame with seri, turetilen (segment), yol (path), ham (raw gb_segment), kb_body_type.
+        Returns: DataFrame with series_key, derived (segment), path, raw_segment (raw gb_segment), kb_body_type.
     TR: Her ilanın türetilen segmenti ve onu çözen yol (harita / model tablosu / temel sınıf).
         Çözülemeyen seri/model kalırsa durur.
-        Döndürür: seri, turetilen (segment), yol, ham (ham gb_segment), kb_body_type kolonlu DataFrame.
+        Döndürür: series_key, derived (segment), path, raw_segment (ham gb_segment), kb_body_type kolonlu DataFrame.
     """
     d = raw[["series", "model", "gb_segment", "kb_body_type"]].copy()
-    d["seri"] = d["series"].fillna("missing").astype(str)
-    resolved = [SR.resolve(a, m) for a, m in zip(d["seri"], d["model"])]
-    d["turetilen"] = [r[0] for r in resolved]
-    d["yol"] = [r[1] for r in resolved]
-    assert d["turetilen"].notna().all(), "unresolved segment left"
-    d["ham"] = d["gb_segment"].str.replace(" Segment", "", regex=False)
+    d["series_key"] = d["series"].fillna("missing").astype(str)
+    resolved = [SR.resolve(a, m) for a, m in zip(d["series_key"], d["model"])]
+    d["derived"] = [r[0] for r in resolved]
+    d["path"] = [r[1] for r in resolved]
+    assert d["derived"].notna().all(), "unresolved segment left"
+    d["raw_segment"] = d["gb_segment"].str.replace(" Segment", "", regex=False)
     return d
 
 
@@ -42,25 +42,25 @@ def segment_quality(d):
     TR: G segmentinin içeriği, çözüm yolları, model adından çözülen aileler, birden çok segmente yayılan
         seriler ve ham segmentin türetilenle ne sıklıkla uyuşmadığı.
     """
-    g = d[d["ham"] == "G"]
-    known = d[d["ham"].notna()]
-    differ = known[known["ham"] != known["turetilen"]]
-    special = d[d["yol"] != "harita"]
-    per_series = d.groupby("seri")["turetilen"].nunique()
+    g = d[d["raw_segment"] == "G"]
+    known = d[d["raw_segment"].notna()]
+    differ = known[known["raw_segment"] != known["derived"]]
+    special = d[d["path"] != "harita"]
+    per_series = d.groupby("series_key")["derived"].nunique()
     return {"map_size": len(SR.SEGMENT_MAP),
             "g": {"n": int(len(g)), "mpv_n": int((g["kb_body_type"] == "MPV").sum()),
                   "body": [[str(k), int(v)] for k, v in g["kb_body_type"].fillna("(bos)").value_counts().items()],
-                  "series": [[str(k), int(v)] for k, v in g["seri"].value_counts().items()]},
-            "paths": {str(k): int(v) for k, v in d["yol"].value_counts().items()},
+                  "series": [[str(k), int(v)] for k, v in g["series_key"].value_counts().items()]},
+            "paths": {str(k): int(v) for k, v in d["path"].value_counts().items()},
             # EN: ties ordered by label so the order never depends on row order | TR: beraberlik etikete göre sıralı
             "from_model_name": [[str(s), int(len(x)),
-                                 [[str(k), int(v)] for k, v in sorted(x["turetilen"].value_counts().items(),
+                                 [[str(k), int(v)] for k, v in sorted(x["derived"].value_counts().items(),
                                                                       key=lambda kv: (-kv[1], str(kv[0])))]]
-                                for s, x in special.groupby("seri")],
+                                for s, x in special.groupby("series_key")],
             "multi_segment_series": sorted(str(s) for s, k in per_series.items() if k > 1),
             "raw_known": int(len(known)), "raw_differs": int(len(differ)),
             "cross": [[str(a), str(b), int(n)] for (a, b), n in
-                      differ.groupby(["ham", "turetilen"]).size().sort_values(ascending=False).items()]}
+                      differ.groupby(["raw_segment", "derived"]).size().sort_values(ascending=False).items()]}
 
 
 def series_segment_matrix(listings):
@@ -68,26 +68,26 @@ def series_segment_matrix(listings):
     EN: Median price and listing count per (series, segment). Returns: list of [series, segment, median, n].
     TR: (seri, segment) başına medyan fiyat ve ilan sayısı. Döndürür: [seri, segment, medyan, n] listesi.
     """
-    return (listings.groupby(["series", "segment"]).agg(medyan=("price", "median"), n=("price", "size"))
+    return (listings.groupby(["series", "segment"]).agg(median=("price", "median"), n=("price", "size"))
             .reset_index().values.tolist())
 
 
 # %% [3] Metrics assembly | Metrik derleme — naming and rounding only | yalnız adlandırma ve yuvarlama
 def to_metrics(res):
     """
-    EN: Published under error_drivers.segment_kalite (report) and domain.series_segment_matrix (site).
-    TR: error_drivers.segment_kalite (rapor) ve domain.series_segment_matrix (site) altında yayımlanır.
+    EN: Published under error_drivers.segment_quality (report) and domain.series_segment_matrix (site).
+    TR: error_drivers.segment_quality (rapor) ve domain.series_segment_matrix (site) altında yayımlanır.
     """
     q = res["quality"]
     return {
         "domain": {"series_segment_matrix": res["matrix"]},
-        "error_drivers": {"segment_kalite": {
-            "harita_n": q["map_size"],
-            "g_segmenti": {"n": q["g"]["n"], "mpv_n": q["g"]["mpv_n"], "kasa": q["g"]["body"], "seri": q["g"]["series"]},
-            "yol": q["paths"], "model_adindan": q["from_model_name"], "coklu_segment_seri": q["multi_segment_series"],
-            "uyusmazlik": {"ham_dolu": q["raw_known"], "farkli": q["raw_differs"],
-                           "pct": round(100 * q["raw_differs"] / q["raw_known"], 2), "capraz": q["cross"]},
-            "not": ("Segment seri + gerekirse model adindan turetiliyor; ham gb_segment kullanilmiyor. "
+        "error_drivers": {"segment_quality": {
+            "map_size": q["map_size"],
+            "g_segment": {"n": q["g"]["n"], "mpv_n": q["g"]["mpv_n"], "body": q["g"]["body"], "series": q["g"]["series"]},
+            "paths": q["paths"], "from_model_name": q["from_model_name"], "multi_segment_series": q["multi_segment_series"],
+            "mismatch": {"raw_known": q["raw_known"], "differs": q["raw_differs"],
+                         "pct": round(100 * q["raw_differs"] / q["raw_known"], 2), "cross": q["cross"]},
+            "note": ("Segment seri + gerekirse model adindan turetiliyor; ham gb_segment kullanilmiyor. "
                     "'G' gercek bir segment degil (govdesi MPV). Cozulemeyen seri/model kalirsa uretec durur.")}},
     }
 

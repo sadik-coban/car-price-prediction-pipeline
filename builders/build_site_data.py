@@ -39,8 +39,8 @@ SITE_KEYS = {
                "hedonic_reliability", "shap", "dealer_coverage", "model_yil_medyani", "brand_ablation", "final_results"],
     "methodology": ["feature_kept", "feature_drop", "cramers_matrix", "theils_matrix", "cramers_null", "theils_null",
                     "g_mpv", "assoc_model", "lofo", "lofo_agac", "kmeans_selection", "pca_axes", "column_missing",
-                    "impute_note", "backtest", "column_missing_all", "sistematik_missing", "kolon_hesabi",
-                    "kb_gb_ikiz", "content_duplicates"],
+                    "impute_note", "backtest", "column_missing_all", "systematic_missing", "column_accounting",
+                    "kb_gb_twins", "content_duplicates"],
 }
 
 

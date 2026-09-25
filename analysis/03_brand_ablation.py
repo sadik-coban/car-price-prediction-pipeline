@@ -19,9 +19,9 @@ import numpy as np
 from lib.common import FEATURES, load_clean, save_metrics
 from lib.cv import lgb_oof, make_folds, price_metrics, round_metrics
 
-ARMS = {"sadece_brand": [c for c in FEATURES if c not in ("model", "series", "segment")],
-        "seri_model": [c for c in FEATURES if c != "brand"],
-        "brand_seri_model": FEATURES}
+ARMS = {"brand_only": [c for c in FEATURES if c not in ("model", "series", "segment")],
+        "series_model": [c for c in FEATURES if c != "brand"],
+        "brand_series_model": FEATURES}
 
 
 # %% [2] Analysis functions | Analiz fonksiyonları — pure: no file I/O, they only return values
@@ -37,10 +37,10 @@ def plumbing_check(full, without_brand):
     """
     EN: How often brand splits in the headline CV models, and whether removing brand changed the OOF at all.
         Identical OOF is legitimate only if brand never splits; otherwise the run stops.
-        Returns: {"brand_split_cv", "oof_ayni", "max_fark_tl"}.
+        Returns: {"brand_split_cv", "oof_same", "max_gap_tl"}.
     TR: Marka manşet CV modellerinde kaç kez bölme yapıyor ve markayı çıkarmak OOF'u hiç değiştirdi mi.
         Birebir aynı OOF yalnız marka hiç bölme yapmıyorsa meşru; değilse koşum durur.
-        Döndürür: {"brand_split_cv", "oof_ayni", "max_fark_tl"}.
+        Döndürür: {"brand_split_cv", "oof_same", "max_gap_tl"}.
     """
     splits = int(sum(d.get("brand", 0) for d in full["splits"]))
     a, b = np.expm1(without_brand["pred_log"]), np.expm1(full["pred_log"])
@@ -48,7 +48,7 @@ def plumbing_check(full, without_brand):
     if same and splits > 0:
         raise SystemExit(f"BRAND ABLATION PLUMBING ERROR | MARKA ABLASYONU TESİSAT HATASI: brand splits {splits} "
                          f"times in the CV models but removing it leaves the OOF identical")
-    return {"brand_split_cv": splits, "oof_ayni": same, "max_fark_tl": float(np.abs(a - b).max())}
+    return {"brand_split_cv": splits, "oof_same": same, "max_gap_tl": float(np.abs(a - b).max())}
 
 
 # %% [3] Metrics assembly | Metrik derleme — naming and rounding only | yalnız adlandırma ve yuvarlama
@@ -60,9 +60,9 @@ def to_metrics(res):
     chk = res["check"]
     return {"domain": {"brand_ablation": {
         **{arm: round_metrics(m) for arm, m in res["metrics"].items()},
-        "dogrulama": {"brand_split_cv": chk["brand_split_cv"], "oof_ayni": chk["oof_ayni"],
-                      "max_fark_tl": round(chk["max_fark_tl"], 2)},
-        "not": ('TAM MODELDE kimlik ablasyonu: marka/seri/model kolonları değişir; "yalnız marka" kolu seri ve model '
+        "validation": {"brand_split_cv": chk["brand_split_cv"], "oof_same": chk["oof_same"],
+                       "max_gap_tl": round(chk["max_gap_tl"], 2)},
+        "note": ('TAM MODELDE kimlik ablasyonu: marka/seri/model kolonları değişir; "yalnız marka" kolu seri ve model '
                 'adından türetilen segmenti de çıkarır, diğer öznitelikler sabit. Manşetle aynı 5-fold OOF ve parametreler; '
                 'model/seri fold-içi TF-IDF+SVD ile girer, brand kategorik. brand+seri+model = manşet model. '
                 "dogrulama: marka CV fold modellerinde kaç bölme kazandı ve iki kolun OOF'u aynı mı.")}}}
@@ -77,7 +77,7 @@ price = listings["price"].values.astype(float)
 yl = np.log1p(price)
 arms = run_arms(X, yl, make_folds(len(X)), ARMS)
 res = {"metrics": {k: price_metrics(price, np.expm1(v["pred_log"])) for k, v in arms.items()},
-       "check": plumbing_check(arms["brand_seri_model"], arms["seri_model"])}
+       "check": plumbing_check(arms["brand_series_model"], arms["series_model"])}
 print({k: round(v["MAPE"], 2) for k, v in res["metrics"].items()}, res["check"])
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre

@@ -404,8 +404,8 @@ def shap_md(d, lang):
     A("")
     # Uc yontemin ayni yere ciktigi iddiasi (2026-09-23) artik uc olcume kapili.
     _ba = d["domain"]["brand_ablation"]
-    _abl = abs(_ba["brand_seri_model"]["MAE"] - _ba["seri_model"]["MAE"])
-    _uc = _brand_pct < 1 and _abl < 0.001 * _ba["seri_model"]["MAE"] and _u_bm >= 0.99
+    _abl = abs(_ba["brand_series_model"]["MAE"] - _ba["series_model"]["MAE"])
+    _uc = _brand_pct < 1 and _abl < 0.001 * _ba["series_model"]["MAE"] and _u_bm >= 0.99
     A(L(f"`brand`'in ortalama |SHAP|'i **{_brand:.4f}**, atfın {P(_brand_pct)} kadarı. Model adı markayı zaten "
         f"belirliyor (teknik rapor §3: U(marka | model) = {_u_bm:.2f}); seri+modelin üzerine marka eklemek "
         f"ortalama hatayı ₺{N(_abl)} değiştiriyor."

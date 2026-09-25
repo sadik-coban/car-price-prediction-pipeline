@@ -1,0 +1,48 @@
+{
+ "script": "analysis/03_association.py",
+ "question": {
+  "tr": "Kategorik ve sayısal öznitelikler birbirine ne kadar bağlı; hangi bağıntı gerçek, hangisi yüksek kardinalitenin yanlılığı?",
+  "en": "How strongly do the categorical and numeric features depend on each other; which dependence is real and which is high-cardinality bias?"
+ },
+ "data": {
+  "tr": "load_clean() (29.988 ilan): 11 kategorik ve 14 sayısal öznitelik.",
+  "en": "load_clean() (29,988 listings): 11 categorical and 14 numeric features."
+ },
+ "method": {
+  "tr": "Kategorikler için Cramér's V (simetrik) ve Theil's U (yönlü), P=5 permütasyonla gürültü tabanı; sayısallar için Pearson ve Spearman, |r|>0,5 çiftleri işaretlenir.",
+  "en": "Cramér's V (symmetric) and Theil's U (directional) for the categoricals, with a P=5 permutation noise floor; Pearson and Spearman for the numerics, pairs with |r|>0.5 flagged."
+ },
+ "split": "none",
+ "leakage": {
+  "duplicate_ad_id": {
+   "status": "n/a",
+   "note": null
+  },
+  "target_in_features": {
+   "status": "n/a",
+   "note": null
+  },
+  "fit_on_full_data": {
+   "status": "n/a",
+   "note": null
+  },
+  "temporal": {
+   "status": "n/a",
+   "note": null
+  }
+ },
+ "evidence": {
+  "tests": [
+   "tests/analysis/test_03_association.py::test_matrices_share_labels",
+   "tests/analysis/test_03_association.py::test_cramers_is_symmetric",
+   "tests/analysis/test_03_association.py::test_theils_is_a_share",
+   "tests/analysis/test_03_association.py::test_numeric_correlation"
+  ],
+  "report_keys": [
+   "methodology.theils_matrix",
+   "methodology.cramers_null",
+   "domain.numeric_correlation.high_pairs"
+  ]
+ },
+ "status": "complete"
+}

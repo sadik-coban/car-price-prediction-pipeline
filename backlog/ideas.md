@@ -9,3 +9,5 @@ turn. If it is worth it, it becomes its own plan (`python tools/new_plan.py new 
 Biçim · Format: `- YYYY-AA-GG · <plan id ya da -> · <fikir> · <neden ilginç>`
 
 <!-- fikirler aşağıya · ideas below -->
+- 2026-09-25 · - · 03_segment_quality'nin G segmenti kasa sayımında boş kasa `"(bos)"` diye yayımlanıyor (Türkçe veri etiketi); İngilizce `"(empty)"` ya da null olsun · ad değişikliği saf kalsın diye değer değiştirilmedi, metriği değiştirir
+- 2026-09-25 · - · Değerlerin içindeki düzyazı eski anahtar adlarını anıyor (01_engine_rule `definition`: "ciftler = [alt, ust, …]", 03_brand_ablation `note`: "dogrulama: …", 02_missingness `note`: "belirtilmemis'te") · saf ad değişikliği metin değerini değiştirmediği için eski adlar metinde kaldı

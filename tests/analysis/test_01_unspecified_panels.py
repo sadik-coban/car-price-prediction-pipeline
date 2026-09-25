@@ -55,7 +55,7 @@ def test_share_matches_the_database(bl, metrics):
     TR: Ham JSONL payı, veritabanının bayrak başına NULL paylarının ortalamasına eşit (aynı ilanlar, panel başına 3
         bayrak, tek payda).
     """
-    flags = [p for c, p in metrics("02_missingness")["methodology"]["sistematik_missing"]["belirtilmemis"]["kolonlar"]
+    flags = [p for c, p in metrics("02_missingness")["methodology"]["systematic_missing"]["unspecified"]["columns"]
              if c.endswith(("_degisen", "_boyali", "_lokal"))]
     assert len(flags) == bl["structure"]["flags"]
     assert sum(flags) / len(flags) == pytest.approx(bl["unspecified_pct"], abs=0.1)

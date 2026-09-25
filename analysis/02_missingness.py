@@ -48,7 +48,7 @@ DERIVED = ["engine_cc_low", "engine_cc_val", "engine_cc_is_range", "power_hp_val
 TWIN_REASON_BY_HAND = {"gb_body_type": ("kb daha genel: gb kasa tipini koltuk sayısıyla birleştiriyor",
                                         "kb is more general: gb merges body type with the seat count")}
 CLASSES = [("model", "modelde (doğrudan ya da türetilerek)", "in the model (directly or derived)"),
-           ("hedef", "hedef", "target"),
+           ("target", "hedef", "target"),
            ("C", "Kimlik / metin / zaman", "Identity / text / time"),
            ("F", "Türetilmiş tekrar", "Derived duplicate"),
            ("B", "kb/gb ikizi", "kb/gb twin"),
@@ -80,10 +80,11 @@ def unspecified_summary(raw, coded):
     pct = {c: round(float(raw[c].isna().mean() * 100), 1) for c in coded}
     panels = [c for c in coded if c.endswith(("_degisen", "_boyali", "_lokal"))]
     counts = [c for c in coded if c.startswith("count_")]
-    return {"kolon": len(coded), "agir_hasar_pct": pct["is_heavy_damaged"], "kb_agir_hasar_pct": pct["kb_is_heavy_damaged"],
-            "ilk_sahip_pct": pct["gb_is_first_owner"], "panel_bayrak": len(panels),
+    return {"n_columns": len(coded), "heavy_damage_pct": pct["is_heavy_damaged"],
+            "kb_heavy_damage_pct": pct["kb_is_heavy_damaged"], "first_owner_pct": pct["gb_is_first_owner"],
+            "panel_flags": len(panels),
             "panel_min_pct": min(pct[c] for c in panels), "panel_max_pct": max(pct[c] for c in panels),
-            "sayac_max_pct": max(pct[c] for c in counts), "kolonlar": [[c, pct[c]] for c in coded]}
+            "counter_max_pct": max(pct[c] for c in counts), "columns": [[c, pct[c]] for c in coded]}
 
 
 def is_missing(col):
@@ -111,11 +112,11 @@ def comissing_blocks(raw, rates, block_rate, max_dist):
     EN: Groups the heavily missing columns into blocks that go missing together. Distance between two
         columns = 1 − (both missing / either missing); average linkage cut at max_dist. Stops if a block's
         co-missing share falls below 90% (it would be published as "missing together").
-        Returns: [{"kolon_sayisi", "ort_eksik_pct", "birliktelik_pct", "ornek_kolonlar", "kolonlar"}, ...].
+        Returns: [{"n_columns", "mean_missing_pct", "co_missing_pct", "sample_columns", "columns"}, ...].
     TR: Çok eksik kolonları birlikte eksik olan bloklara ayırır. İki kolon arası uzaklık = 1 − (ikisi birden
         eksik / en az biri eksik); ortalama bağlantı, max_dist'te kesilir. Bir bloğun birlikte-eksik payı %90'ın
         altına düşerse durur ("birlikte eksik" diye yayımlanacağı için).
-        Döndürür: [{"kolon_sayisi", "ort_eksik_pct", "birliktelik_pct", "ornek_kolonlar", "kolonlar"}, ...].
+        Döndürür: [{"n_columns", "mean_missing_pct", "co_missing_pct", "sample_columns", "columns"}, ...].
     """
     cols = [c for c, r in rates if r > block_rate]
     if len(cols) < 2:
@@ -137,9 +138,9 @@ def comissing_blocks(raw, rates, block_rate, max_dist):
             both, either = sub.all(axis=1).mean(), sub.any(axis=1).mean()
             share = round(float(both / either * 100) if either > 0 else 0, 1)
             assert share >= 90, f"co-missing block is not missing together: {members} {share}%"
-            blocks.append({"kolon_sayisi": len(members),
-                           "ort_eksik_pct": round(float(np.mean([rate_of[c] for c in members])), 1),
-                           "birliktelik_pct": share, "ornek_kolonlar": members[:8], "kolonlar": members})
+            blocks.append({"n_columns": len(members),
+                           "mean_missing_pct": round(float(np.mean([rate_of[c] for c in members])), 1),
+                           "co_missing_pct": share, "sample_columns": members[:8], "columns": members})
     return blocks
 
 
@@ -173,11 +174,11 @@ def twin_pairs(raw, used):
     records, reasons = [], {}
     for kb, gb in pairs:
         same = float(((raw[kb].astype(str) == raw[gb].astype(str)) | (raw[kb].isna() & raw[gb].isna())).mean() * 100)
-        records.append({"kb": kb, "gb": gb, "kb_eksik_pct": round(float(is_missing(raw[kb]).mean() * 100), 1),
-                        "gb_eksik_pct": round(float(is_missing(raw[gb]).mean() * 100), 1),
-                        "kb_tekil": int(raw[kb].nunique()), "gb_tekil": int(raw[gb].nunique()),
-                        "ayni_pct": round(same, 1),
-                        "tutulan": kb if kb in used else (gb if gb in used else None)})
+        records.append({"kb": kb, "gb": gb, "kb_missing_pct": round(float(is_missing(raw[kb]).mean() * 100), 1),
+                        "gb_missing_pct": round(float(is_missing(raw[gb]).mean() * 100), 1),
+                        "kb_unique": int(raw[kb].nunique()), "gb_unique": int(raw[gb].nunique()),
+                        "same_pct": round(same, 1),
+                        "kept": kb if kb in used else (gb if gb in used else None)})
         dropped = gb if kb in used or gb not in used else kb
         empty = is_missing(raw[dropped]).mean() * 100
         if dropped in TWIN_REASON_BY_HAND:
@@ -201,8 +202,8 @@ def classify_columns(raw, used, twin_reasons, blocks):
         ikiz > yarı-sabit > %40+ eksik > katalog bloğu > gerekçe kayıtlı değil).
         Döndürür: {sınıf kodu: [kolonlar]}.
     """
-    catalogue = {c for b in blocks for c in b["kolonlar"]}
-    rules = {"model": lambda c: c in used, "hedef": lambda c: c == "price", "C": lambda c: c in IDENTITY,
+    catalogue = {c for b in blocks for c in b["columns"]}
+    rules = {"model": lambda c: c in used, "target": lambda c: c == "price", "C": lambda c: c in IDENTITY,
              "F": lambda c: c in DERIVED, "B": lambda c: c in twin_reasons,
              "A": lambda c: round(float(raw[c].value_counts(dropna=False, normalize=True).iloc[0]) * 100, 1) >= 99.0,
              "D": lambda c: is_missing(raw[c]).mean() > 0.40, "E": lambda c: c in catalogue, "G": lambda c: True}
@@ -241,23 +242,23 @@ def to_metrics(res):
                             "NaN olarak girer ve kütüphanenin kendi eksik-değer yönlendirmesi kullanılır. "
                             "Yalnız KMeans/PCA için genel medyanla dolduruldu. torque_nm %27.6 eksik olduğu için çıkarıldı."),
             "column_missing_all": res["rates"],
-            "sistematik_missing": {"column_missing_all": res["rates"], "sistematik_gruplar": res["blocks"],
-                                   "belirtilmemis": res["unspecified"],
-                                   "not": ("Katalog eşleştirmesi: standart modeller eşleşir, özel varyantlar eşleşmez → "
+            "systematic_missing": {"column_missing_all": res["rates"], "systematic_groups": res["blocks"],
+                                   "unspecified": res["unspecified"],
+                                   "note": ("Katalog eşleştirmesi: standart modeller eşleşir, özel varyantlar eşleşmez → "
                                            "tüm spec birden boş. Gruplar birlikte-eksik payıyla kuruldu: ikisi birden "
                                            "eksik / en az biri eksik ≥ %98. 'Belirtilmemiş' kolonları (gold kurallarının "
                                            "doldurduğu kolonlar) eksik listesine ve bloklara girmez; belirtilmemis'te.")},
             "feature_drop": [[code, names[code][0], len(by_class[code]), by_class[code], names[code][1]]
-                             for code, *_ in CLASSES if code not in ("model", "hedef") and by_class[code]],
-            "kolon_hesabi": {"ham": sum(len(v) for v in by_class.values()), "modelde": len(by_class["model"]),
-                             "hasar_bayragi": len(res["flags"]), "hedef": len(by_class["hedef"]),
-                             "atilan": sum(len(by_class[k]) for k in by_class if k not in ("model", "hedef")),
-                             "ikiz_gerekce": {c: list(v) for c, v in res["twin_reasons"].items()},
-                             "not": ("feature_drop = [grup, gerekçe (TR), kolon sayısı, kolonlar, gerekçe (EN)]; her "
+                             for code, *_ in CLASSES if code not in ("model", "target") and by_class[code]],
+            "column_accounting": {"raw": sum(len(v) for v in by_class.values()), "in_model": len(by_class["model"]),
+                                  "damage_flags": len(res["flags"]), "target": len(by_class["target"]),
+                                  "dropped": sum(len(by_class[k]) for k in by_class if k not in ("model", "target")),
+                                  "twin_reasons": {c: list(v) for c, v in res["twin_reasons"].items()},
+                                  "note": ("feature_drop = [grup, gerekçe (TR), kolon sayısı, kolonlar, gerekçe (EN)]; her "
                                      "ham kolon öncelik sırasıyla tek bir sınıfa atanır (modelde > hedef > C > F > B > "
                                      "A > D > E > G).")},
-            "kb_gb_ikiz": res["twins"]},
-        "error_drivers": {"ham_kolon": res["table_columns"]},
+            "kb_gb_twins": res["twins"]},
+        "error_drivers": {"raw_columns": res["table_columns"]},
     }
 
 
@@ -278,8 +279,8 @@ classes = classify_columns(raw, used, twin_reasons, blocks)
 res = {"rates": rates, "blocks": blocks, "unspecified": unspecified_summary(raw, coded),
        "flags": flags, "twins": twins, "twin_reasons": twin_reasons,
        "classes": classes, "feature_missing": feature_missing(listings, FEATURES),
-       "table_columns": {"tablo_kolon": len(db_columns), "ham_kolon": len([c for c in db_columns if c != "id"])}}
-print({k: len(v) for k, v in classes.items()}, "| blocks:", [b["kolon_sayisi"] for b in blocks])
+       "table_columns": {"table_columns": len(db_columns), "raw": len([c for c in db_columns if c != "id"])}}
+print({k: len(v) for k, v in classes.items()}, "| blocks:", [b["n_columns"] for b in blocks])
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
 print("written | yazıldı:", save_metrics("02_missingness", to_metrics(res)))

@@ -112,8 +112,8 @@ def to_metrics(res):
                             "model/series yüksek-kardinaliteli (Cramér's V üste-yanlı olabilir); Theil's U yönlü — "
                             "model markayı/segmenti ~belirler, tersi değil. Etiketler column_labels ile TR/EN.")},
         "domain": {"numeric_correlation": {
-            "labels": NUM, "pearson": nc["pearson"], "spearman": nc["spearman"], "yuksek_ciftler": nc["high_pairs"],
-            "not": ("Sayısal feature korelasyonu (kategorik için Cramér/Theil ayrı). "
+            "labels": NUM, "pearson": nc["pearson"], "spearman": nc["spearman"], "high_pairs": nc["high_pairs"],
+            "note": ("Sayısal feature korelasyonu (kategorik için Cramér/Theil ayrı). "
                     "Pearson=lineer, Spearman=monotonik ilişki. |r|>0.5 çiftler dikkat çeker; "
                     "çoklu-bağlantı VIF ile ayrıca kontrol edildi (değerler: hedonic_reliability.vif).")}},
     }

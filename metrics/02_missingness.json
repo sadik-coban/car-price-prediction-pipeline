@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "02_missingness.py",
-  "generated_at": "2026-09-25T05:11:38+03:00",
+  "generated_at": "2026-09-25T15:54:53+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": null,
   "source": {
    "script": {
-    "analysis/02_missingness.py": "d842f720a129327bccdf147585d09a91cd2d86e9772cc153e7a31bf9ba679e5a"
+    "analysis/02_missingness.py": "a13c50340d8b3015656266fab1f374e84e07b5169ab452ee81360b18ddca2774"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -284,7 +284,7 @@
     11.7
    ]
   ],
-  "sistematik_missing": {
+  "systematic_missing": {
    "column_missing_all": [
     [
      "tramer_fee",
@@ -415,12 +415,12 @@
      11.7
     ]
    ],
-   "sistematik_gruplar": [
+   "systematic_groups": [
     {
-     "kolon_sayisi": 16,
-     "ort_eksik_pct": 27.6,
-     "birliktelik_pct": 98.8,
-     "ornek_kolonlar": [
+     "n_columns": 16,
+     "mean_missing_pct": 27.6,
+     "co_missing_pct": 98.8,
+     "sample_columns": [
       "weight_kg",
       "kb_fuel_cons_avg",
       "kb_fuel_tank",
@@ -430,7 +430,7 @@
       "max_speed_kmh",
       "accel_0_100"
      ],
-     "kolonlar": [
+     "columns": [
       "weight_kg",
       "kb_fuel_cons_avg",
       "kb_fuel_tank",
@@ -450,55 +450,55 @@
      ]
     },
     {
-     "kolon_sayisi": 2,
-     "ort_eksik_pct": 31.4,
-     "birliktelik_pct": 100.0,
-     "ornek_kolonlar": [
+     "n_columns": 2,
+     "mean_missing_pct": 31.4,
+     "co_missing_pct": 100.0,
+     "sample_columns": [
       "city_fuel_cons",
       "highway_fuel_cons"
      ],
-     "kolonlar": [
+     "columns": [
       "city_fuel_cons",
       "highway_fuel_cons"
      ]
     },
     {
-     "kolon_sayisi": 2,
-     "ort_eksik_pct": 29.9,
-     "birliktelik_pct": 100.0,
-     "ornek_kolonlar": [
+     "n_columns": 2,
+     "mean_missing_pct": 29.9,
+     "co_missing_pct": 100.0,
+     "sample_columns": [
       "production_year_start",
       "production_year_end"
      ],
-     "kolonlar": [
+     "columns": [
       "production_year_start",
       "production_year_end"
      ]
     },
     {
-     "kolon_sayisi": 2,
-     "ort_eksik_pct": 29.3,
-     "birliktelik_pct": 100.0,
-     "ornek_kolonlar": [
+     "n_columns": 2,
+     "mean_missing_pct": 29.3,
+     "co_missing_pct": 100.0,
+     "sample_columns": [
       "rpm_max",
       "rpm_min"
      ],
-     "kolonlar": [
+     "columns": [
       "rpm_max",
       "rpm_min"
      ]
     }
    ],
-   "belirtilmemis": {
-    "kolon": 45,
-    "agir_hasar_pct": 68.2,
-    "kb_agir_hasar_pct": 68.2,
-    "ilk_sahip_pct": 0.0,
-    "panel_bayrak": 39,
+   "unspecified": {
+    "n_columns": 45,
+    "heavy_damage_pct": 68.2,
+    "kb_heavy_damage_pct": 68.2,
+    "first_owner_pct": 0.0,
+    "panel_flags": 39,
     "panel_min_pct": 12.2,
     "panel_max_pct": 19.1,
-    "sayac_max_pct": 0.0,
-    "kolonlar": [
+    "counter_max_pct": 0.0,
+    "columns": [
      [
       "is_heavy_damaged",
       68.2
@@ -681,7 +681,7 @@
      ]
     ]
    },
-   "not": "Katalog eşleştirmesi: standart modeller eşleşir, özel varyantlar eşleşmez → tüm spec birden boş. Gruplar birlikte-eksik payıyla kuruldu: ikisi birden eksik / en az biri eksik ≥ %98. 'Belirtilmemiş' kolonları (gold kurallarının doldurduğu kolonlar) eksik listesine ve bloklara girmez; belirtilmemis'te."
+   "note": "Katalog eşleştirmesi: standart modeller eşleşir, özel varyantlar eşleşmez → tüm spec birden boş. Gruplar birlikte-eksik payıyla kuruldu: ikisi birden eksik / en az biri eksik ≥ %98. 'Belirtilmemiş' kolonları (gold kurallarının doldurduğu kolonlar) eksik listesine ve bloklara girmez; belirtilmemis'te."
   },
   "feature_drop": [
    [
@@ -804,13 +804,13 @@
     "Not in the model, no recorded reason"
    ]
   ],
-  "kolon_hesabi": {
-   "ham": 117,
-   "modelde": 53,
-   "hasar_bayragi": 39,
-   "hedef": 1,
-   "atilan": 63,
-   "ikiz_gerekce": {
+  "column_accounting": {
+   "raw": 117,
+   "in_model": 53,
+   "damage_flags": 39,
+   "target": 1,
+   "dropped": 63,
+   "twin_reasons": {
     "kb_year": [
      "`gb_year` ile birebir aynı",
      "identical to `gb_year`"
@@ -856,125 +856,125 @@
      "identical to `is_heavy_damaged`"
     ]
    },
-   "not": "feature_drop = [grup, gerekçe (TR), kolon sayısı, kolonlar, gerekçe (EN)]; her ham kolon öncelik sırasıyla tek bir sınıfa atanır (modelde > hedef > C > F > B > A > D > E > G)."
+   "note": "feature_drop = [grup, gerekçe (TR), kolon sayısı, kolonlar, gerekçe (EN)]; her ham kolon öncelik sırasıyla tek bir sınıfa atanır (modelde > hedef > C > F > B > A > D > E > G)."
   },
-  "kb_gb_ikiz": [
+  "kb_gb_twins": [
    {
     "kb": "kb_year",
     "gb": "gb_year",
-    "kb_eksik_pct": 0.0,
-    "gb_eksik_pct": 0.0,
-    "kb_tekil": 22,
-    "gb_tekil": 22,
-    "ayni_pct": 100.0,
-    "tutulan": "gb_year"
+    "kb_missing_pct": 0.0,
+    "gb_missing_pct": 0.0,
+    "kb_unique": 22,
+    "gb_unique": 22,
+    "same_pct": 100.0,
+    "kept": "gb_year"
    },
    {
     "kb": "kb_mileage",
     "gb": "gb_mileage",
-    "kb_eksik_pct": 0.0,
-    "gb_eksik_pct": 0.0,
-    "kb_tekil": 3109,
-    "gb_tekil": 3109,
-    "ayni_pct": 100.0,
-    "tutulan": "gb_mileage"
+    "kb_missing_pct": 0.0,
+    "gb_missing_pct": 0.0,
+    "kb_unique": 3109,
+    "gb_unique": 3109,
+    "same_pct": 100.0,
+    "kept": "gb_mileage"
    },
    {
     "kb": "kb_transmission",
     "gb": "gb_transmission",
-    "kb_eksik_pct": 0.0,
-    "gb_eksik_pct": 0.0,
-    "kb_tekil": 3,
-    "gb_tekil": 3,
-    "ayni_pct": 100.0,
-    "tutulan": "kb_transmission"
+    "kb_missing_pct": 0.0,
+    "gb_missing_pct": 0.0,
+    "kb_unique": 3,
+    "gb_unique": 3,
+    "same_pct": 100.0,
+    "kept": "kb_transmission"
    },
    {
     "kb": "kb_fuel",
     "gb": "gb_fuel",
-    "kb_eksik_pct": 0.0,
-    "gb_eksik_pct": 0.0,
-    "kb_tekil": 4,
-    "gb_tekil": 4,
-    "ayni_pct": 100.0,
-    "tutulan": "kb_fuel"
+    "kb_missing_pct": 0.0,
+    "gb_missing_pct": 0.0,
+    "kb_unique": 4,
+    "gb_unique": 4,
+    "same_pct": 100.0,
+    "kept": "kb_fuel"
    },
    {
     "kb": "kb_body_type",
     "gb": "gb_body_type",
-    "kb_eksik_pct": 1.0,
-    "gb_eksik_pct": 0.7,
-    "kb_tekil": 9,
-    "gb_tekil": 23,
-    "ayni_pct": 77.5,
-    "tutulan": "kb_body_type"
+    "kb_missing_pct": 1.0,
+    "gb_missing_pct": 0.7,
+    "kb_unique": 9,
+    "gb_unique": 23,
+    "same_pct": 77.5,
+    "kept": "kb_body_type"
    },
    {
     "kb": "kb_color",
     "gb": "gb_color",
-    "kb_eksik_pct": 0.0,
-    "gb_eksik_pct": 0.0,
-    "kb_tekil": 24,
-    "gb_tekil": 24,
-    "ayni_pct": 100.0,
-    "tutulan": null
+    "kb_missing_pct": 0.0,
+    "gb_missing_pct": 0.0,
+    "kb_unique": 24,
+    "gb_unique": 24,
+    "same_pct": 100.0,
+    "kept": null
    },
    {
     "kb": "kb_drivetrain",
     "gb": "gb_drivetrain",
-    "kb_eksik_pct": 1.5,
-    "gb_eksik_pct": 74.0,
-    "kb_tekil": 4,
-    "gb_tekil": 4,
-    "ayni_pct": 27.5,
-    "tutulan": "kb_drivetrain"
+    "kb_missing_pct": 1.5,
+    "gb_missing_pct": 74.0,
+    "kb_unique": 4,
+    "gb_unique": 4,
+    "same_pct": 27.5,
+    "kept": "kb_drivetrain"
    },
    {
     "kb": "kb_condition",
     "gb": "gb_condition",
-    "kb_eksik_pct": 0.0,
-    "gb_eksik_pct": 0.0,
-    "kb_tekil": 2,
-    "gb_tekil": 2,
-    "ayni_pct": 100.0,
-    "tutulan": null
+    "kb_missing_pct": 0.0,
+    "gb_missing_pct": 0.0,
+    "kb_unique": 2,
+    "gb_unique": 2,
+    "same_pct": 100.0,
+    "kept": null
    },
    {
     "kb": "kb_trade_available",
     "gb": "gb_trade_available",
-    "kb_eksik_pct": 19.1,
-    "gb_eksik_pct": 19.1,
-    "kb_tekil": 2,
-    "gb_tekil": 2,
-    "ayni_pct": 100.0,
-    "tutulan": null
+    "kb_missing_pct": 19.1,
+    "gb_missing_pct": 19.1,
+    "kb_unique": 2,
+    "gb_unique": 2,
+    "same_pct": 100.0,
+    "kept": null
    },
    {
     "kb": "kb_seller_type",
     "gb": "gb_seller_type",
-    "kb_eksik_pct": 0.0,
-    "gb_eksik_pct": 0.0,
-    "kb_tekil": 3,
-    "gb_tekil": 3,
-    "ayni_pct": 100.0,
-    "tutulan": null
+    "kb_missing_pct": 0.0,
+    "gb_missing_pct": 0.0,
+    "kb_unique": 3,
+    "gb_unique": 3,
+    "same_pct": 100.0,
+    "kept": null
    },
    {
     "kb": "kb_is_heavy_damaged",
     "gb": "is_heavy_damaged",
-    "kb_eksik_pct": 68.2,
-    "gb_eksik_pct": 68.2,
-    "kb_tekil": 2,
-    "gb_tekil": 2,
-    "ayni_pct": 100.0,
-    "tutulan": "is_heavy_damaged"
+    "kb_missing_pct": 68.2,
+    "gb_missing_pct": 68.2,
+    "kb_unique": 2,
+    "gb_unique": 2,
+    "same_pct": 100.0,
+    "kept": "is_heavy_damaged"
    }
   ]
  },
  "error_drivers": {
-  "ham_kolon": {
-   "tablo_kolon": 118,
-   "ham_kolon": 117
+  "raw_columns": {
+   "table_columns": 118,
+   "raw": 117
   }
  }
 }

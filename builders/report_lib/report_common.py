@@ -39,18 +39,18 @@ RESID_VIEW = 40
 # TR: rapor metninin okuduğu her yol; eksik olan paragrafı sessizce düşürmek yerine derlemeyi durdurur
 REQUIRED = [
     "domain.drift.all_pairs", "domain.drift.ortusme", "domain.drift.not",
-    "domain.hedonic_reliability.merkez", "domain.brand_ablation.dogrulama",
-    "methodology.kolon_hesabi", "methodology.kb_gb_ikiz", "domain.hedonic_reliability.model_etkili",
+    "domain.hedonic_reliability.merkez", "domain.brand_ablation.validation",
+    "methodology.column_accounting", "methodology.kb_gb_twins", "domain.hedonic_reliability.model_etkili",
     "domain.segment_ladder", "domain.model_yil_medyani.merdiven", "domain.price_dist.p10", "domain.price_dist.p90",
     "domain.final_results.egitim.hedef", "domain.shap.lightgbm_tfidf_svd", "domain.kmeans",
     "methodology.cramers_null", "methodology.theils_null", "methodology.column_missing",
     "methodology.backtest.per_snapshot", "methodology.backtest.insample", "methodology.backtest.protokol",
-    "methodology.sistematik_missing.sistematik_gruplar", "methodology.sistematik_missing.not",
+    "methodology.systematic_missing.systematic_groups", "methodology.systematic_missing.note",
     "methodology.pca_axes", "meta.repro", "meta.brands", "column_labels"] + [f"error_drivers.{p_}" for p_ in [
-    "plate_scope", "segment_kalite", "hedonik_eksik", "per_model_error", "per_model_buckets", "lira_ceyrek",
+    "plate_scope", "segment_quality", "hedonik_eksik", "per_model_error", "per_model_buckets", "lira_ceyrek",
     "tl_olcekli", "scope", "price_changes", "unspecified", "taban_esit_kosul", "metin_bayrak",
     "yas_duyarlilik", "yas_kesim", "eski_d_grubu", "spec_outliers.kor_nokta", "donem_kaymasi",
-    "by_model_year_n", "by_segment_FS", "by_age", "by_snapshot", "ham_kolon", "examples",
+    "by_model_year_n", "by_segment_FS", "by_age", "by_snapshot", "raw_columns", "examples",
     "engine_rule.engine_cc", "engine_rule.power_hp", "unspecified.structure", "kaybolan_canli", "metin_kaynak"]] + [
     f"report.{p_}" for p_ in ["q_bounds", "model_r2_log", "err_bands", "conformal_q", "conformal_all",
                               "conformal_by_pred", "drift_holm", "text_ablation"]]
@@ -191,14 +191,14 @@ def derive(d):
         "n_boot": len(hr["bootstrap"]),
         "all_sig": all(not b["sifir_iceriyor"] for b in hr["bootstrap"]),
         # marka
-        "brand_mae_delta": abs(ba["brand_seri_model"]["MAE"] - ba["seri_model"]["MAE"]),
-        "brand_mape_delta": abs(ba["brand_seri_model"]["MAPE"] - ba["seri_model"]["MAPE"]),
+        "brand_mae_delta": abs(ba["brand_series_model"]["MAE"] - ba["series_model"]["MAE"]),
+        "brand_mape_delta": abs(ba["brand_series_model"]["MAPE"] - ba["series_model"]["MAPE"]),
         # veri saglami
         "dup_strict_n": met["content_duplicates"]["strict_extra"],
         "dup_strict_pct": met["content_duplicates"]["strict_pct"],
         "dup_loose_n": met["content_duplicates"]["loose_extra"],
         "dup_loose_pct": met["content_duplicates"]["loose_pct"],
-        "n_missing_cols": len(met["sistematik_missing"]["column_missing_all"]),
+        "n_missing_cols": len(met["systematic_missing"]["column_missing_all"]),
         # kumeler
         "k": met["kmeans_selection"]["secilen_k"],
         "clusters": dom["kmeans"],
@@ -582,14 +582,14 @@ def build_figures(d, v, lang, only=None):
 
     # 16 eksiklik orani  [TEKNIK]
     if want(16):
-        rows = met["sistematik_missing"]["column_missing_all"]
+        rows = met["systematic_missing"]["column_missing_all"]
         # 2026-09-23: baslik "ayni oran = birlikte eksik blok" diyordu; transmission_brand %74.1 ile gb_drivetrain %74.0
-        # ayni oranda ama yalniz %48 birlikte eksik. Renk artik GERCEK blok uyeligi (sistematik_gruplar[].kolonlar).
+        # ayni oranda ama yalniz %48 birlikte eksik. Renk artik GERCEK blok uyeligi (systematic_groups[].columns).
         # gb_drivetrain de "Cekis" diye yaziliyordu — modelin %1.5 eksik kb_drivetrain'iyle ayni ad; ayni adli
         # ikizi olan kolona sekme adi eklenir.
         _group_colors = ["#2563eb", "#7c3aed", "#0891b2", "#d97706", "#059669", "#db2777"]
         _member_color = {c_: _group_colors[gi % len(_group_colors)]
-                for gi, g in enumerate(met["sistematik_missing"]["sistematik_gruplar"]) for c_ in g["kolonlar"]}
+                for gi, g in enumerate(met["systematic_missing"]["systematic_groups"]) for c_ in g["columns"]}
         _lab = d["column_labels"]
 
         def _col16(k):

@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "03_brand_ablation.py",
-  "generated_at": "2026-09-25T05:12:35+03:00",
+  "generated_at": "2026-09-25T15:56:33+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": null,
   "source": {
    "script": {
-    "analysis/03_brand_ablation.py": "568fbf14fddb6a591b1b08943b409397700344d2610d718323793a924318f1bd"
+    "analysis/03_brand_ablation.py": "824ec914406498cc0cb4c95b6fe8716b43de8bfbfe7e52f6471bd001f44bac18"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -23,33 +23,33 @@
  },
  "domain": {
   "brand_ablation": {
-   "sadece_brand": {
+   "brand_only": {
     "MAE": 162812.0,
     "MedAE": 99426.0,
     "RMSE": 267224.0,
     "MAPE": 8.8,
     "R2": 0.9413
    },
-   "seri_model": {
+   "series_model": {
     "MAE": 109775.0,
     "MedAE": 75320.0,
     "RMSE": 176225.0,
     "MAPE": 6.49,
     "R2": 0.9745
    },
-   "brand_seri_model": {
+   "brand_series_model": {
     "MAE": 109776.0,
     "MedAE": 75320.0,
     "RMSE": 176225.0,
     "MAPE": 6.49,
     "R2": 0.9745
    },
-   "dogrulama": {
+   "validation": {
     "brand_split_cv": 26,
-    "oof_ayni": false,
-    "max_fark_tl": 7856.33
+    "oof_same": false,
+    "max_gap_tl": 7856.33
    },
-   "not": "TAM MODELDE kimlik ablasyonu: marka/seri/model kolonları değişir; \"yalnız marka\" kolu seri ve model adından türetilen segmenti de çıkarır, diğer öznitelikler sabit. Manşetle aynı 5-fold OOF ve parametreler; model/seri fold-içi TF-IDF+SVD ile girer, brand kategorik. brand+seri+model = manşet model. dogrulama: marka CV fold modellerinde kaç bölme kazandı ve iki kolun OOF'u aynı mı."
+   "note": "TAM MODELDE kimlik ablasyonu: marka/seri/model kolonları değişir; \"yalnız marka\" kolu seri ve model adından türetilen segmenti de çıkarır, diğer öznitelikler sabit. Manşetle aynı 5-fold OOF ve parametreler; model/seri fold-içi TF-IDF+SVD ile girer, brand kategorik. brand+seri+model = manşet model. dogrulama: marka CV fold modellerinde kaç bölme kazandı ve iki kolun OOF'u aynı mı."
   }
  }
 }

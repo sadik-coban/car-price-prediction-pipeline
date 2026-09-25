@@ -1,0 +1,49 @@
+{
+ "script": "analysis/03_segment_quality.py",
+ "question": {
+  "tr": "Segment beslemeden mi alınmalı, türetilmeli mi; türetilen segment nasıl çözülüyor ve beslemeyle ne kadar ayrışıyor?",
+  "en": "Should segment come from the feed or be derived; how is the derived segment resolved and how often does it disagree with the feed?"
+ },
+ "data": {
+  "tr": "load_clean(derived=False) ve load_clean() (29.988 ilan); segment kuralı analysis/lib/segment_rule.py.",
+  "en": "load_clean(derived=False) and load_clean() (29,988 listings); the segment rule in analysis/lib/segment_rule.py."
+ },
+ "method": {
+  "tr": "Her ilanın segmenti seri haritasından, model adı tablosundan ya da temel sınıftan çözülür (çözülemeyen kalırsa durur); G segmentinin içeriği, model adından çözülen aileler, birden çok segmente yayılan seriler ve ham segmentle uyuşmazlık sayılır; seri × segment medyan fiyat matrisi.",
+  "en": "Every listing's segment is resolved from the series map, the model-name table or the base class (stops if one is left unresolved); the G segment's make-up, families resolved from the model name, series spanning several segments and the disagreement with the raw segment are counted; a series × segment median price matrix."
+ },
+ "split": "none",
+ "leakage": {
+  "duplicate_ad_id": {
+   "status": "n/a",
+   "note": null
+  },
+  "target_in_features": {
+   "status": "n/a",
+   "note": null
+  },
+  "fit_on_full_data": {
+   "status": "n/a",
+   "note": null
+  },
+  "temporal": {
+   "status": "n/a",
+   "note": null
+  }
+ },
+ "evidence": {
+  "tests": [
+   "tests/analysis/test_03_segment_quality.py::test_paths_cover_listings",
+   "tests/analysis/test_03_segment_quality.py::test_mismatch_adds_up",
+   "tests/analysis/test_03_segment_quality.py::test_g_segment",
+   "tests/analysis/test_03_segment_quality.py::test_model_name_families"
+  ],
+  "report_keys": [
+   "error_drivers.segment_quality.paths",
+   "error_drivers.segment_quality.mismatch",
+   "error_drivers.segment_quality.g_segment",
+   "domain.series_segment_matrix"
+  ]
+ },
+ "status": "complete"
+}

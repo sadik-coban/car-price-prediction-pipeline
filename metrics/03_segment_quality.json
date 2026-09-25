@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "03_segment_quality.py",
-  "generated_at": "2026-09-25T05:11:52+03:00",
+  "generated_at": "2026-09-25T15:55:15+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": null,
   "source": {
    "script": {
-    "analysis/03_segment_quality.py": "1a44c7dbe455a56a75f76775b5bb0ff62a18af5921379c2e70d15eea2898abae"
+    "analysis/03_segment_quality.py": "3e498d8c4b66dac8828b9e3a78c876a0566d07a03cf361fcb40c38134aa3a8a4"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -193,12 +193,12 @@
   ]
  },
  "error_drivers": {
-  "segment_kalite": {
-   "harita_n": 32,
-   "g_segmenti": {
+  "segment_quality": {
+   "map_size": 32,
+   "g_segment": {
     "n": 215,
     "mpv_n": 214,
-    "kasa": [
+    "body": [
      [
       "MPV",
       214
@@ -208,19 +208,19 @@
       1
      ]
     ],
-    "seri": [
+    "series": [
      [
       "2 Serisi",
       215
      ]
     ]
    },
-   "yol": {
+   "paths": {
     "harita": 29832,
     "temel_sinif": 137,
     "model_tablosu": 19
    },
-   "model_adindan": [
+   "from_model_name": [
     [
      "M Serisi",
      82,
@@ -286,16 +286,16 @@
      ]
     ]
    ],
-   "coklu_segment_seri": [
+   "multi_segment_series": [
     "M Serisi",
     "RS",
     "S"
    ],
-   "uyusmazlik": {
-    "ham_dolu": 21723,
-    "farkli": 404,
+   "mismatch": {
+    "raw_known": 21723,
+    "differs": 404,
     "pct": 1.86,
-    "capraz": [
+    "cross": [
      [
       "G",
       "C",
@@ -323,7 +323,7 @@
      ]
     ]
    },
-   "not": "Segment seri + gerekirse model adindan turetiliyor; ham gb_segment kullanilmiyor. 'G' gercek bir segment degil (govdesi MPV). Cozulemeyen seri/model kalirsa uretec durur."
+   "note": "Segment seri + gerekirse model adindan turetiliyor; ham gb_segment kullanilmiyor. 'G' gercek bir segment degil (govdesi MPV). Cozulemeyen seri/model kalirsa uretec durur."
   }
  }
 }

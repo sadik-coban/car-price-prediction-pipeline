@@ -232,12 +232,62 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T05:11:38+03:00",
+  "_meta.generated_at": "2026-09-25T15:54:53+03:00",
   "_meta.run_id": null,
   "_meta.script": "02_missingness.py",
-  "error_drivers.ham_kolon.ham_kolon": 117,
-  "error_drivers.ham_kolon.tablo_kolon": 118,
+  "error_drivers.raw_columns.raw": 117,
+  "error_drivers.raw_columns.table_columns": 118,
   "meta.n_features": 25,
+  "methodology.column_accounting.damage_flags": 39,
+  "methodology.column_accounting.dropped": 63,
+  "methodology.column_accounting.in_model": 53,
+  "methodology.column_accounting.note": "feature_drop = [grup, gerekçe (TR), kolon sayısı, kolonlar, gerekçe (EN)]; her ham kolon öncelik sırasıyla tek bir sınıfa atanır (modelde > hedef > C > F > B > A > D > E > G).",
+  "methodology.column_accounting.raw": 117,
+  "methodology.column_accounting.target": 1,
+  "methodology.column_accounting.twin_reasons.gb_body_type": {
+   "len": 2,
+   "sha256": "7eacbcc6257bbc6ea4aab7434d74fbccc4531a0650ebd2cf89c5cc5f10ac0a4f"
+  },
+  "methodology.column_accounting.twin_reasons.gb_color": {
+   "len": 2,
+   "sha256": "a007d75897bb08ef32689eab4ebc5711e3b8b789110502a9d02689f3f97ebe4f"
+  },
+  "methodology.column_accounting.twin_reasons.gb_condition": {
+   "len": 2,
+   "sha256": "258eaed1887dbdf5608d77104a9ff857e721c706b46c922e5ec5aa1206ef6a74"
+  },
+  "methodology.column_accounting.twin_reasons.gb_drivetrain": {
+   "len": 2,
+   "sha256": "b3210cca0a48a66d210909612d7957a227b68af00309c2274d316cb7c135bf8d"
+  },
+  "methodology.column_accounting.twin_reasons.gb_fuel": {
+   "len": 2,
+   "sha256": "6f0fa76a2d9841bbf993e2bcdf5e995361f7f5aed70b6e7ffd30e2ec54b53f1f"
+  },
+  "methodology.column_accounting.twin_reasons.gb_seller_type": {
+   "len": 2,
+   "sha256": "f899ce1ac05fe4b4f3297c4bc466cbd4db8fe850c26b56def1c2a94a3a404b04"
+  },
+  "methodology.column_accounting.twin_reasons.gb_trade_available": {
+   "len": 2,
+   "sha256": "9a94e15809b1447fa5b67878b30d83316fdb68030f666d2d20a4074eceaff55b"
+  },
+  "methodology.column_accounting.twin_reasons.gb_transmission": {
+   "len": 2,
+   "sha256": "404476a769fef1c1678b4b4beca55ba4f954137bdf3c4fae1bb77c1f153ca7fd"
+  },
+  "methodology.column_accounting.twin_reasons.kb_is_heavy_damaged": {
+   "len": 2,
+   "sha256": "13e8dc7645769dc850e8a2cc16d39fadbb4643f8ff98486b6783c4df4bfa3cd8"
+  },
+  "methodology.column_accounting.twin_reasons.kb_mileage": {
+   "len": 2,
+   "sha256": "9ea2614b030542c2298f83cb8bd098d237d6c30896ce5116bc29c5653794b670"
+  },
+  "methodology.column_accounting.twin_reasons.kb_year": {
+   "len": 2,
+   "sha256": "69e4bbfa7b06738d2f04ded6ce0d8e7886c077bcbaa8368a5cb125703ec9ce04"
+  },
   "methodology.column_missing": {
    "len": 25,
    "sha256": "d86677d3c128583151be6ad2130c173ac54f56ab5b61ab60470ced90f4bbd93b"
@@ -255,95 +305,49 @@
    "sha256": "4d97e40501764779a66fe6c99d45010455b93b92f08cadbd825568154066203e"
   },
   "methodology.impute_note": "Sayısal özniteliklerde doldurma yapılmadı: eksik değerler LightGBM/CatBoost'a NaN olarak girer ve kütüphanenin kendi eksik-değer yönlendirmesi kullanılır. Yalnız KMeans/PCA için genel medyanla dolduruldu. torque_nm %27.6 eksik olduğu için çıkarıldı.",
-  "methodology.kb_gb_ikiz": {
+  "methodology.kb_gb_twins": {
    "len": 11,
-   "sha256": "3668818fdc1f1e749a72bff205ba46971dcbc4953313728d2d433feed5ce8ff4"
+   "sha256": "655545f43bb31f03e85e5a632e36a3df8a63587e030d65550408930138b5bbea"
   },
-  "methodology.kolon_hesabi.atilan": 63,
-  "methodology.kolon_hesabi.ham": 117,
-  "methodology.kolon_hesabi.hasar_bayragi": 39,
-  "methodology.kolon_hesabi.hedef": 1,
-  "methodology.kolon_hesabi.ikiz_gerekce.gb_body_type": {
-   "len": 2,
-   "sha256": "7eacbcc6257bbc6ea4aab7434d74fbccc4531a0650ebd2cf89c5cc5f10ac0a4f"
-  },
-  "methodology.kolon_hesabi.ikiz_gerekce.gb_color": {
-   "len": 2,
-   "sha256": "a007d75897bb08ef32689eab4ebc5711e3b8b789110502a9d02689f3f97ebe4f"
-  },
-  "methodology.kolon_hesabi.ikiz_gerekce.gb_condition": {
-   "len": 2,
-   "sha256": "258eaed1887dbdf5608d77104a9ff857e721c706b46c922e5ec5aa1206ef6a74"
-  },
-  "methodology.kolon_hesabi.ikiz_gerekce.gb_drivetrain": {
-   "len": 2,
-   "sha256": "b3210cca0a48a66d210909612d7957a227b68af00309c2274d316cb7c135bf8d"
-  },
-  "methodology.kolon_hesabi.ikiz_gerekce.gb_fuel": {
-   "len": 2,
-   "sha256": "6f0fa76a2d9841bbf993e2bcdf5e995361f7f5aed70b6e7ffd30e2ec54b53f1f"
-  },
-  "methodology.kolon_hesabi.ikiz_gerekce.gb_seller_type": {
-   "len": 2,
-   "sha256": "f899ce1ac05fe4b4f3297c4bc466cbd4db8fe850c26b56def1c2a94a3a404b04"
-  },
-  "methodology.kolon_hesabi.ikiz_gerekce.gb_trade_available": {
-   "len": 2,
-   "sha256": "9a94e15809b1447fa5b67878b30d83316fdb68030f666d2d20a4074eceaff55b"
-  },
-  "methodology.kolon_hesabi.ikiz_gerekce.gb_transmission": {
-   "len": 2,
-   "sha256": "404476a769fef1c1678b4b4beca55ba4f954137bdf3c4fae1bb77c1f153ca7fd"
-  },
-  "methodology.kolon_hesabi.ikiz_gerekce.kb_is_heavy_damaged": {
-   "len": 2,
-   "sha256": "13e8dc7645769dc850e8a2cc16d39fadbb4643f8ff98486b6783c4df4bfa3cd8"
-  },
-  "methodology.kolon_hesabi.ikiz_gerekce.kb_mileage": {
-   "len": 2,
-   "sha256": "9ea2614b030542c2298f83cb8bd098d237d6c30896ce5116bc29c5653794b670"
-  },
-  "methodology.kolon_hesabi.ikiz_gerekce.kb_year": {
-   "len": 2,
-   "sha256": "69e4bbfa7b06738d2f04ded6ce0d8e7886c077bcbaa8368a5cb125703ec9ce04"
-  },
-  "methodology.kolon_hesabi.modelde": 53,
-  "methodology.kolon_hesabi.not": "feature_drop = [grup, gerekçe (TR), kolon sayısı, kolonlar, gerekçe (EN)]; her ham kolon öncelik sırasıyla tek bir sınıfa atanır (modelde > hedef > C > F > B > A > D > E > G).",
-  "methodology.sistematik_missing.belirtilmemis.agir_hasar_pct": 68.2,
-  "methodology.sistematik_missing.belirtilmemis.ilk_sahip_pct": 0.0,
-  "methodology.sistematik_missing.belirtilmemis.kb_agir_hasar_pct": 68.2,
-  "methodology.sistematik_missing.belirtilmemis.kolon": 45,
-  "methodology.sistematik_missing.belirtilmemis.kolonlar": {
-   "len": 45,
-   "sha256": "86c30f72e93f5e4921462d86a46abd72fac8afc96561ad7cb4c12f555f57b46d"
-  },
-  "methodology.sistematik_missing.belirtilmemis.panel_bayrak": 39,
-  "methodology.sistematik_missing.belirtilmemis.panel_max_pct": 19.1,
-  "methodology.sistematik_missing.belirtilmemis.panel_min_pct": 12.2,
-  "methodology.sistematik_missing.belirtilmemis.sayac_max_pct": 0.0,
-  "methodology.sistematik_missing.column_missing_all": {
+  "methodology.systematic_missing.column_missing_all": {
    "len": 32,
    "sha256": "5d70ea639d4351b48431784106167bc9f4a92a39f429c0a31908def604faeaa3"
   },
-  "methodology.sistematik_missing.not": "Katalog eşleştirmesi: standart modeller eşleşir, özel varyantlar eşleşmez → tüm spec birden boş. Gruplar birlikte-eksik payıyla kuruldu: ikisi birden eksik / en az biri eksik ≥ %98. 'Belirtilmemiş' kolonları (gold kurallarının doldurduğu kolonlar) eksik listesine ve bloklara girmez; belirtilmemis'te.",
-  "methodology.sistematik_missing.sistematik_gruplar": {
+  "methodology.systematic_missing.note": "Katalog eşleştirmesi: standart modeller eşleşir, özel varyantlar eşleşmez → tüm spec birden boş. Gruplar birlikte-eksik payıyla kuruldu: ikisi birden eksik / en az biri eksik ≥ %98. 'Belirtilmemiş' kolonları (gold kurallarının doldurduğu kolonlar) eksik listesine ve bloklara girmez; belirtilmemis'te.",
+  "methodology.systematic_missing.systematic_groups": {
    "len": 4,
-   "sha256": "c9773abca75b27949633bd3523f05d07d0ff811afbb6058b00802181e9f90b06"
-  }
+   "sha256": "648b4f11bcef20952b671768affa71e948e32a48d38e0a0fd53d47fdaac6cf38"
+  },
+  "methodology.systematic_missing.unspecified.columns": {
+   "len": 45,
+   "sha256": "86c30f72e93f5e4921462d86a46abd72fac8afc96561ad7cb4c12f555f57b46d"
+  },
+  "methodology.systematic_missing.unspecified.counter_max_pct": 0.0,
+  "methodology.systematic_missing.unspecified.first_owner_pct": 0.0,
+  "methodology.systematic_missing.unspecified.heavy_damage_pct": 68.2,
+  "methodology.systematic_missing.unspecified.kb_heavy_damage_pct": 68.2,
+  "methodology.systematic_missing.unspecified.n_columns": 45,
+  "methodology.systematic_missing.unspecified.panel_flags": 39,
+  "methodology.systematic_missing.unspecified.panel_max_pct": 19.1,
+  "methodology.systematic_missing.unspecified.panel_min_pct": 12.2
  },
  "03_association": {
   "_meta.data_until": "2026-06-27",
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T05:11:51+03:00",
+  "_meta.generated_at": "2026-09-25T15:55:14+03:00",
   "_meta.run_id": null,
   "_meta.script": "03_association.py",
+  "domain.numeric_correlation.high_pairs": {
+   "len": 3,
+   "sha256": "285e430609c76b829e8dc5ef600260f349c165a53501b558d1c5bc773b94ad55"
+  },
   "domain.numeric_correlation.labels": {
    "len": 14,
    "sha256": "dbec2fd90bab90de11cefca2448b8353c285a8627e2936844bfdad5e2180f9c3"
   },
-  "domain.numeric_correlation.not": "Sayısal feature korelasyonu (kategorik için Cramér/Theil ayrı). Pearson=lineer, Spearman=monotonik ilişki. |r|>0.5 çiftler dikkat çeker; çoklu-bağlantı VIF ile ayrıca kontrol edildi (değerler: hedonic_reliability.vif).",
+  "domain.numeric_correlation.note": "Sayısal feature korelasyonu (kategorik için Cramér/Theil ayrı). Pearson=lineer, Spearman=monotonik ilişki. |r|>0.5 çiftler dikkat çeker; çoklu-bağlantı VIF ile ayrıca kontrol edildi (değerler: hedonic_reliability.vif).",
   "domain.numeric_correlation.pearson": {
    "len": 14,
    "sha256": "0f998c259785acb8d34437a291cc7ba9d31a3b200752c4b382a80cb990c8082f"
@@ -351,10 +355,6 @@
   "domain.numeric_correlation.spearman": {
    "len": 14,
    "sha256": "b7d9e3d76b1fcd3a5154e7856eb3b4844c35ef2d370bfca3f3a0f867f4b1ebfc"
-  },
-  "domain.numeric_correlation.yuksek_ciftler": {
-   "len": 3,
-   "sha256": "285e430609c76b829e8dc5ef600260f349c165a53501b558d1c5bc773b94ad55"
   },
   "methodology.assoc_model": "Kategorik ilişki Cramér's V (simetrik) + Theil's U (asimetrik) ile ölçüldü. model/series yüksek-kardinaliteli (Cramér's V üste-yanlı olabilir); Theil's U yönlü — model markayı/segmenti ~belirler, tersi değil. Etiketler column_labels ile TR/EN.",
   "methodology.cramers_matrix.labels": {
@@ -398,71 +398,71 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T05:12:35+03:00",
+  "_meta.generated_at": "2026-09-25T15:56:33+03:00",
   "_meta.run_id": null,
   "_meta.script": "03_brand_ablation.py",
-  "domain.brand_ablation.brand_seri_model.MAE": 109776.0,
-  "domain.brand_ablation.brand_seri_model.MAPE": 6.49,
-  "domain.brand_ablation.brand_seri_model.MedAE": 75320.0,
-  "domain.brand_ablation.brand_seri_model.R2": 0.9745,
-  "domain.brand_ablation.brand_seri_model.RMSE": 176225.0,
-  "domain.brand_ablation.dogrulama.brand_split_cv": 26,
-  "domain.brand_ablation.dogrulama.max_fark_tl": 7856.33,
-  "domain.brand_ablation.dogrulama.oof_ayni": false,
-  "domain.brand_ablation.not": "TAM MODELDE kimlik ablasyonu: marka/seri/model kolonları değişir; \"yalnız marka\" kolu seri ve model adından türetilen segmenti de çıkarır, diğer öznitelikler sabit. Manşetle aynı 5-fold OOF ve parametreler; model/seri fold-içi TF-IDF+SVD ile girer, brand kategorik. brand+seri+model = manşet model. dogrulama: marka CV fold modellerinde kaç bölme kazandı ve iki kolun OOF'u aynı mı.",
-  "domain.brand_ablation.sadece_brand.MAE": 162812.0,
-  "domain.brand_ablation.sadece_brand.MAPE": 8.8,
-  "domain.brand_ablation.sadece_brand.MedAE": 99426.0,
-  "domain.brand_ablation.sadece_brand.R2": 0.9413,
-  "domain.brand_ablation.sadece_brand.RMSE": 267224.0,
-  "domain.brand_ablation.seri_model.MAE": 109775.0,
-  "domain.brand_ablation.seri_model.MAPE": 6.49,
-  "domain.brand_ablation.seri_model.MedAE": 75320.0,
-  "domain.brand_ablation.seri_model.R2": 0.9745,
-  "domain.brand_ablation.seri_model.RMSE": 176225.0
+  "domain.brand_ablation.brand_only.MAE": 162812.0,
+  "domain.brand_ablation.brand_only.MAPE": 8.8,
+  "domain.brand_ablation.brand_only.MedAE": 99426.0,
+  "domain.brand_ablation.brand_only.R2": 0.9413,
+  "domain.brand_ablation.brand_only.RMSE": 267224.0,
+  "domain.brand_ablation.brand_series_model.MAE": 109776.0,
+  "domain.brand_ablation.brand_series_model.MAPE": 6.49,
+  "domain.brand_ablation.brand_series_model.MedAE": 75320.0,
+  "domain.brand_ablation.brand_series_model.R2": 0.9745,
+  "domain.brand_ablation.brand_series_model.RMSE": 176225.0,
+  "domain.brand_ablation.note": "TAM MODELDE kimlik ablasyonu: marka/seri/model kolonları değişir; \"yalnız marka\" kolu seri ve model adından türetilen segmenti de çıkarır, diğer öznitelikler sabit. Manşetle aynı 5-fold OOF ve parametreler; model/seri fold-içi TF-IDF+SVD ile girer, brand kategorik. brand+seri+model = manşet model. dogrulama: marka CV fold modellerinde kaç bölme kazandı ve iki kolun OOF'u aynı mı.",
+  "domain.brand_ablation.series_model.MAE": 109775.0,
+  "domain.brand_ablation.series_model.MAPE": 6.49,
+  "domain.brand_ablation.series_model.MedAE": 75320.0,
+  "domain.brand_ablation.series_model.R2": 0.9745,
+  "domain.brand_ablation.series_model.RMSE": 176225.0,
+  "domain.brand_ablation.validation.brand_split_cv": 26,
+  "domain.brand_ablation.validation.max_gap_tl": 7856.33,
+  "domain.brand_ablation.validation.oof_same": false
  },
  "03_segment_quality": {
   "_meta.data_until": "2026-06-27",
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T05:11:52+03:00",
+  "_meta.generated_at": "2026-09-25T15:55:15+03:00",
   "_meta.run_id": null,
   "_meta.script": "03_segment_quality.py",
   "domain.series_segment_matrix": {
    "len": 28,
    "sha256": "7926cbbf98ebb2b7c27d8ec770547d17e60a1295dcc13f087ffa5cbf1bfb3e4a"
   },
-  "error_drivers.segment_kalite.coklu_segment_seri": {
-   "len": 3,
-   "sha256": "3be570c5dc4ac064712ed1f0e4de1ffefdfe186d6ceab85338be49ff4e3a2d23"
-  },
-  "error_drivers.segment_kalite.g_segmenti.kasa": {
-   "len": 2,
-   "sha256": "c982a9d33b363ac532dc629fc27e2c39bd57579a46ceb63f43da6f0dd7f9e4b5"
-  },
-  "error_drivers.segment_kalite.g_segmenti.mpv_n": 214,
-  "error_drivers.segment_kalite.g_segmenti.n": 215,
-  "error_drivers.segment_kalite.g_segmenti.seri": {
-   "len": 1,
-   "sha256": "c0ee58067a6c10e90f71ea45214982874dac44b98cc5e976b37a900753b43b5b"
-  },
-  "error_drivers.segment_kalite.harita_n": 32,
-  "error_drivers.segment_kalite.model_adindan": {
+  "error_drivers.segment_quality.from_model_name": {
    "len": 4,
    "sha256": "2949f43b955309c66aff162b91f4a91a2433627f4ae3b930dbc529ffb7b651bf"
   },
-  "error_drivers.segment_kalite.not": "Segment seri + gerekirse model adindan turetiliyor; ham gb_segment kullanilmiyor. 'G' gercek bir segment degil (govdesi MPV). Cozulemeyen seri/model kalirsa uretec durur.",
-  "error_drivers.segment_kalite.uyusmazlik.capraz": {
+  "error_drivers.segment_quality.g_segment.body": {
+   "len": 2,
+   "sha256": "c982a9d33b363ac532dc629fc27e2c39bd57579a46ceb63f43da6f0dd7f9e4b5"
+  },
+  "error_drivers.segment_quality.g_segment.mpv_n": 214,
+  "error_drivers.segment_quality.g_segment.n": 215,
+  "error_drivers.segment_quality.g_segment.series": {
+   "len": 1,
+   "sha256": "c0ee58067a6c10e90f71ea45214982874dac44b98cc5e976b37a900753b43b5b"
+  },
+  "error_drivers.segment_quality.map_size": 32,
+  "error_drivers.segment_quality.mismatch.cross": {
    "len": 5,
    "sha256": "c1968f0ba23c13d570f8c93736b3871a7c241f48cfdadd27a10646f069e47e9b"
   },
-  "error_drivers.segment_kalite.uyusmazlik.farkli": 404,
-  "error_drivers.segment_kalite.uyusmazlik.ham_dolu": 21723,
-  "error_drivers.segment_kalite.uyusmazlik.pct": 1.86,
-  "error_drivers.segment_kalite.yol.harita": 29832,
-  "error_drivers.segment_kalite.yol.model_tablosu": 19,
-  "error_drivers.segment_kalite.yol.temel_sinif": 137
+  "error_drivers.segment_quality.mismatch.differs": 404,
+  "error_drivers.segment_quality.mismatch.pct": 1.86,
+  "error_drivers.segment_quality.mismatch.raw_known": 21723,
+  "error_drivers.segment_quality.multi_segment_series": {
+   "len": 3,
+   "sha256": "3be570c5dc4ac064712ed1f0e4de1ffefdfe186d6ceab85338be49ff4e3a2d23"
+  },
+  "error_drivers.segment_quality.note": "Segment seri + gerekirse model adindan turetiliyor; ham gb_segment kullanilmiyor. 'G' gercek bir segment degil (govdesi MPV). Cozulemeyen seri/model kalirsa uretec durur.",
+  "error_drivers.segment_quality.paths.harita": 29832,
+  "error_drivers.segment_quality.paths.model_tablosu": 19,
+  "error_drivers.segment_quality.paths.temel_sinif": 137
  },
  "04_target": {
   "_meta.data_until": "2026-06-27",

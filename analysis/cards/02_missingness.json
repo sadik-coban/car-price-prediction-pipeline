@@ -1,0 +1,58 @@
+{
+ "script": "analysis/02_missingness.py",
+ "question": {
+  "tr": "Hangi kolonlar eksik, hangileri birlikte eksik; her ham kolon modele neden girdi ya da neden atıldı?",
+  "en": "Which columns are missing, which go missing together, and why did each raw column enter the model or get dropped?"
+ },
+ "data": {
+  "tr": "load_clean(derived=False) (29.988 ilan, ham veritabanı kolonları) ve db/gold_rules.json (belirtilmemiş kolonları ayırmak için, salt okunur).",
+  "en": "load_clean(derived=False) (29,988 listings, the raw database columns) and db/gold_rules.json (to tell the unspecified columns apart, read-only)."
+ },
+ "method": {
+  "tr": "Kolon başına eksik payı; çok eksik kolonlar birlikte-eksik payıyla bloklara kümelenir (blok payı %90'ın altına düşerse durur); her ham kolon öncelik sırasıyla tek bir sınıfa atanır (modelde > hedef > kimlik > türetilmiş > ikiz > yarı-sabit > %40+ eksik > katalog bloğu > gerekçesiz); kb/gb ikizleri karşılaştırılır; belirtilmemiş (gold kurallı) kolonlar eksik listesinin dışında ayrı sayılır.",
+  "en": "Missing share per column; heavily missing columns are clustered into blocks by co-missing share (stops if a block falls below 90%); every raw column is assigned to exactly one class in priority order (in the model > target > identity > derived > twin > quasi-constant > 40%+ missing > catalogue block > no reason); kb/gb twins are compared; the unspecified (gold-rule) columns are counted apart from the missing list."
+ },
+ "split": "none",
+ "leakage": {
+  "duplicate_ad_id": {
+   "status": "n/a",
+   "note": null
+  },
+  "target_in_features": {
+   "status": "none",
+   "note": {
+    "tr": "Fiyat yalnız 'hedef' sınıfına atanıyor; hiçbir öznitelik fiyattan türemiyor.",
+    "en": "Price is assigned only to the 'target' class; no feature is derived from price."
+   }
+  },
+  "fit_on_full_data": {
+   "status": "none",
+   "note": {
+    "tr": "Hangi kolonun modele gireceği bütün veriden (eksiklik, sabitlik) seçiliyor, ama fiyat kullanılmadan; hedef bilgisi taşımaz.",
+    "en": "Which columns enter the model is chosen on all data (missingness, constancy) but without price, so it carries no target information."
+   }
+  },
+  "temporal": {
+   "status": "n/a",
+   "note": null
+  }
+ },
+ "evidence": {
+  "tests": [
+   "tests/analysis/test_02_missingness.py::test_column_accounting",
+   "tests/analysis/test_02_missingness.py::test_features",
+   "tests/analysis/test_02_missingness.py::test_missing_list",
+   "tests/analysis/test_02_missingness.py::test_blocks",
+   "tests/analysis/test_02_missingness.py::test_unspecified",
+   "tests/analysis/test_02_missingness.py::test_twins"
+  ],
+  "report_keys": [
+   "methodology.column_accounting",
+   "methodology.systematic_missing.systematic_groups",
+   "methodology.systematic_missing.unspecified",
+   "methodology.kb_gb_twins",
+   "error_drivers.raw_columns"
+  ]
+ },
+ "status": "complete"
+}

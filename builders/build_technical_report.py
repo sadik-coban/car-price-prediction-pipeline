@@ -113,7 +113,7 @@ def section_data(c):
          num(meta["n_raw"], lang)],
         [L("tekil ilan (`ad_id` dedup)", "unique listings (`ad_id` dedup)"), num(meta["n_dedup"], lang)],
         [L("tarama dönemi", "snapshots"), f"{len(snaps)} ({snaps[0]} – {snaps[-1]})"],
-        [L("ham kolon (besleme)", "raw columns (feed)"), v["ed"]["ham_kolon"]["ham_kolon"]],
+        [L("ham kolon (besleme)", "raw columns (feed)"), v["ed"]["raw_columns"]["raw"]],
         [L("modele giren öznitelik", "model features"), meta["n_features"]],
         ["BMW / Audi", f"{num(brands['bmw'], lang)} / {num(brands['audi'], lang)}"],
         [L("hedef", "target"), f"`{target}`"],
@@ -166,12 +166,12 @@ def section_data(c):
         f"but no damage is the likelier case."))
     A("")
     # 2026-09-24 (yari ham DB): agir hasar kaydi da "Belirtilmemis" olabiliyor ve ayni kuralla "yok" okunuyor;
-    # rapor bunu hic yazmiyordu. Oran 02_missingness.belirtilmemis'ten.
-    _ub = met["sistematik_missing"]["belirtilmemis"]
+    # rapor bunu hic yazmiyordu. Oran 02_missingness.unspecified'dan.
+    _missing_unspec = met["systematic_missing"]["unspecified"]
     A(L(f"**Ağır hasar kaydında da aynı kural.** Modele giren ilanlarda sayfanın ağır hasar bilgisi vermediği "
-        f"(\"Belirtilmemiş\" ya da alan yok) ilanların payı {P(_ub['agir_hasar_pct'], lang)}; bunlar ağır hasarsız sayıldı. "
+        f"(\"Belirtilmemiş\" ya da alan yok) ilanların payı {P(_missing_unspec['heavy_damage_pct'], lang)}; bunlar ağır hasarsız sayıldı. "
         f"Ağır hasarlı olup bunu belirtmeyen bir ilan modelde ağır hasarsız görünür.",
-        f"**The heavy-damage record follows the same rule.** On {P(_ub['agir_hasar_pct'], lang)} of the listings in "
+        f"**The heavy-damage record follows the same rule.** On {P(_missing_unspec['heavy_damage_pct'], lang)} of the listings in "
         f"the model the page gives no heavy-damage answer (\"Belirtilmemiş\" or no field); those listings count as "
         f"not heavily damaged. A heavily damaged car whose listing does not say so looks free of heavy damage to the "
         f"model."))
@@ -366,13 +366,13 @@ def section_data(c):
     A("")
     # 2026-09-23: tablo eskiden ELLE yaziliydi ("~15", "~10") ve veriyle uyusmuyordu. Artik build_site_data
     # her ham kolonu tek bir sinifa atiyor (kapi: tam bir sinif); sayilar oradan.
-    kh = met["kolon_hesabi"]
-    assert kh["modelde"] + kh["hedef"] + kh["atilan"] == kh["ham"] == v["ed"]["ham_kolon"]["ham_kolon"], kh
-    A(L(f"{kh['ham']} ham kolonun {kh['modelde']} tanesi modele doğrudan ya da türetilerek giriyor (bunların "
-        f"{kh['hasar_bayragi']} tanesi hasar bayrağı), biri hedef (fiyat), {kh['atilan']} tanesi atıldı. Her ham "
+    acct = met["column_accounting"]
+    assert acct["in_model"] + acct["target"] + acct["dropped"] == acct["raw"] == v["ed"]["raw_columns"]["raw"], acct
+    A(L(f"{acct['raw']} ham kolonun {acct['in_model']} tanesi modele doğrudan ya da türetilerek giriyor (bunların "
+        f"{acct['damage_flags']} tanesi hasar bayrağı), biri hedef (fiyat), {acct['dropped']} tanesi atıldı. Her ham "
         f"kolon aşağıdaki sınıflardan tam birine atanıyor; tablo koddan hesaplanıyor.",
-        f"Of the {kh['ham']} raw columns, {kh['modelde']} reach the model directly or derived ({kh['hasar_bayragi']} "
-        f"of them damage flags), one is the target (price) and {kh['atilan']} were dropped. Every raw column is "
+        f"Of the {acct['raw']} raw columns, {acct['in_model']} reach the model directly or derived ({acct['damage_flags']} "
+        f"of them damage flags), one is the target (price) and {acct['dropped']} were dropped. Every raw column is "
         f"assigned to exactly one class below; the table is computed from the code."))
     A("")
     T([L("grup", "group"), L("gerekçe", "reason"), L("kolon", "cols"), L("kolonlar", "columns")],
@@ -380,10 +380,10 @@ def section_data(c):
         ", ".join(f"`{c_}`" for c_ in cs[:6]) + (" …" if len(cs) > 6 else "")]
        for g, r_tr, n_, cs, r_en in met["feature_drop"]], "llrl")
     # Inceleme (2026-09-23): F sinifindaki engine_cc_val / power_hp_val modelin ayni adli oznitelikleriyle karisiyordu.
-    _ayni_ad = [c_ for r_ in met["feature_drop"] for c_ in r_[3] if c_ in met["feature_kept"]]
-    if _ayni_ad:
+    _same_name = [c_ for r_ in met["feature_drop"] for c_ in r_[3] if c_ in met["feature_kept"]]
+    if _same_name:
         # Son inceleme: guc icin yeniden turetilen deger DB kolonuyla ayni (ikisi de alt-ust ortalamasi), hacimde farkli.
-        assert set(_ayni_ad) == {"engine_cc_val", "power_hp_val"}, _ayni_ad
+        assert set(_same_name) == {"engine_cc_val", "power_hp_val"}, _same_name
         A(L("*`engine_cc_val`, `power_hp_val`: veritabanındaki kolonlar (aralığın orta noktası). Model ikisini de alt ve "
             "üst sınırlardan yeniden türetiyor (yukarıdaki motor kuralı): güçte alt–üst ortalaması, yani veritabanı "
             "kolonuyla aynı değer; hacimde üst sınır, yani aralıklı ilanlarda veritabanındakinden farklı.*",
@@ -392,7 +392,7 @@ def section_data(c):
             "value as the database column; for size the upper bound, i.e. different from the database on range "
             "listings.*"))
         A("")
-    torque = next((r[1] for r in met["sistematik_missing"]["column_missing_all"] if r[0] == "torque_nm"), None)
+    torque = next((r[1] for r in met["systematic_missing"]["column_missing_all"] if r[0] == "torque_nm"), None)
     # 2026-09-23: eskiden "seri > segment > marka medyan hiyerarsisiyle dolduruldu" yaziyordu ve bunu
     # ureticinin notunda uc kelime arayan bir assert "koruyordu". Kodda BOYLE BIR DOLDURMA YOK; assert
     # yalniz cumleyi sinayabiliyordu, kodu degil. Cumle gercege cevrildi, bos kapi kaldirildi.
@@ -455,30 +455,30 @@ def section_missing(c):
     """
     v, d, dom, met, meta, hr, lang = c.v, c.d, c.dom, c.met, c.meta, c.hr, c.lang
     L, A, T, figs = c.L, c.A, c.T, c.figs
-    sm = met["sistematik_missing"]
+    sm = met["systematic_missing"]
     # 2026-09-23: acilis 32 kolonun HEPSINI katalog cokusune bagliyordu; katalog kaynakli olan birlikte-eksik
     # bloklardaki kolonlar. Kalanlar kolon dokumundeki sinifiyla adlandirilir (hepsi atilmis olmali — kapi).
-    _grp = sm["sistematik_gruplar"]
-    _kat = [c_ for g in _grp for c_ in g["kolonlar"]]
-    _sinif = {c_: r_[0] for r_ in met["feature_drop"] for c_ in r_[3]}
-    _dis = [c_ for c_, _p in sm["column_missing_all"] if c_ not in _kat]
-    assert all(c_ in _sinif for c_ in _kat + _dis), "eksik kolonlardan biri atilan siniflarda degil (model girdisi mi?)"
-    _ad_s = {r_[0]: (r_[1] if lang == "tr" else r_[4]) for r_ in met["feature_drop"]}
-    _dis_s = {}
-    for c_ in _dis:
-        _dis_s.setdefault(_sinif[c_], []).append(c_)
-    _dis_t = " · ".join(f"{_ad_s[k_][:1].lower() + _ad_s[k_][1:]}: " + ", ".join(f"`{c_}`" for c_ in cs_)
-                        for k_, cs_ in _dis_s.items())
-    A(L(f"{v['n_missing_cols']} kolon %2'nin üzerinde eksik. {len(_kat)} tanesi birlikte düşen "
-        f"{number_word(len(_grp), lang)} blokta: bunlar \"eksik veri\" değil, katalog eşleşmesinin çöktüğü ilanlar — standart "
+    _blocks = sm["systematic_groups"]
+    _block_cols = [c_ for g in _blocks for c_ in g["columns"]]
+    _class_of = {c_: r_[0] for r_ in met["feature_drop"] for c_ in r_[3]}
+    _other_cols = [c_ for c_, _p in sm["column_missing_all"] if c_ not in _block_cols]
+    assert all(c_ in _class_of for c_ in _block_cols + _other_cols), "eksik kolonlardan biri atilan siniflarda degil (model girdisi mi?)"
+    _class_label = {r_[0]: (r_[1] if lang == "tr" else r_[4]) for r_ in met["feature_drop"]}
+    _other_by_class = {}
+    for c_ in _other_cols:
+        _other_by_class.setdefault(_class_of[c_], []).append(c_)
+    _other_text = " · ".join(f"{_class_label[k_][:1].lower() + _class_label[k_][1:]}: " + ", ".join(f"`{c_}`" for c_ in cs_)
+                        for k_, cs_ in _other_by_class.items())
+    A(L(f"{v['n_missing_cols']} kolon %2'nin üzerinde eksik. {len(_block_cols)} tanesi birlikte düşen "
+        f"{number_word(len(_blocks), lang)} blokta: bunlar \"eksik veri\" değil, katalog eşleşmesinin çöktüğü ilanlar — standart "
         f"modeller eşleşir, niş varyantlar eşleşmez, tüm özellik listesi birden boşalır. Sistematik olduğu için "
-        f"güvenilir imputasyon yok → bu kolonlar çıkarıldı. Kalan {len(_dis)} kolonun eksikliği başka kaynaktan; "
-        f"her biri kendi sınıfında atıldı (§{section_no('data')} tablosu) — {_dis_t}.",
-        f"{v['n_missing_cols']} columns are over 2% missing. {len(_kat)} of them sit in {number_word(len(_grp), 'en')} "
+        f"güvenilir imputasyon yok → bu kolonlar çıkarıldı. Kalan {len(_other_cols)} kolonun eksikliği başka kaynaktan; "
+        f"her biri kendi sınıfında atıldı (§{section_no('data')} tablosu) — {_other_text}.",
+        f"{v['n_missing_cols']} columns are over 2% missing. {len(_block_cols)} of them sit in {number_word(len(_blocks), 'en')} "
         f"blocks that drop **together**: this isn't \"missing data\", it's listings where catalog matching "
         f"collapsed — standard models match, niche variants don't, and all their specs go blank at once. Because "
-        f"it is systematic, reliable imputation is impossible → dropped. The other {len(_dis)} columns are missing "
-        f"for other reasons and each was dropped in its own class (§{section_no('data')} table) — {_dis_t}."))
+        f"it is systematic, reliable imputation is impossible → dropped. The other {len(_other_cols)} columns are missing "
+        f"for other reasons and each was dropped in its own class (§{section_no('data')} table) — {_other_text}."))
     A("")
     figs(16)
 
@@ -495,22 +495,22 @@ def section_missing(c):
         A("")
 
     # 2026-09-24 (yari ham DB, kullanici karari): "Belirtilmemis" NULL'lari eksik veri degil, modelin kodladigi
-    # bilinmeyen; eksik listesine ve bloklara girmez, burada ayrica yazilir. Sayilar 02_missingness.belirtilmemis.
-    _ub = sm["belirtilmemis"]
-    _ilk_tr = (f", ilk sahip bilgisinde {P(_ub['ilk_sahip_pct'], lang)}" if _ub["ilk_sahip_pct"] else "")
-    _ilk_en = (f"; the first-owner field is absent on {P(_ub['ilk_sahip_pct'], lang)}" if _ub["ilk_sahip_pct"] else "")
+    # bilinmeyen; eksik listesine ve bloklara girmez, burada ayrica yazilir. Sayilar 02_missingness.unspecified.
+    _missing_unspec = sm["unspecified"]
+    _owner_tr = (f", ilk sahip bilgisinde {P(_missing_unspec['first_owner_pct'], lang)}" if _missing_unspec["first_owner_pct"] else "")
+    _owner_en = (f"; the first-owner field is absent on {P(_missing_unspec['first_owner_pct'], lang)}" if _missing_unspec["first_owner_pct"] else "")
     A(L(f"**\"Belirtilmemiş\", eksik veri değil.** Veritabanı yarı ham: sayfanın söylemediği bilgi boş kalıyor. "
-        f"{_ub['kolon']} kolonda bu boşluk eksik veri değil, satıcının \"belirtilmemiş\" cevabı; bu kolonlar yukarıdaki "
-        f"listeye ve bloklara girmiyor. Belirtilmemiş payı ağır hasar kaydında {P(_ub['agir_hasar_pct'], lang)}, "
-        f"{_ub['panel_bayrak']} panel bayrağının her birinde {P(_ub['panel_min_pct'], lang)}–"
-        f"{P(_ub['panel_max_pct'], lang)}{_ilk_tr}. Model bu bilinmeyenleri bilinçli bir kararla \"yok\" okuyor: "
+        f"{_missing_unspec['n_columns']} kolonda bu boşluk eksik veri değil, satıcının \"belirtilmemiş\" cevabı; bu kolonlar yukarıdaki "
+        f"listeye ve bloklara girmiyor. Belirtilmemiş payı ağır hasar kaydında {P(_missing_unspec['heavy_damage_pct'], lang)}, "
+        f"{_missing_unspec['panel_flags']} panel bayrağının her birinde {P(_missing_unspec['panel_min_pct'], lang)}–"
+        f"{P(_missing_unspec['panel_max_pct'], lang)}{_owner_tr}. Model bu bilinmeyenleri bilinçli bir kararla \"yok\" okuyor: "
         f"belirtilmemiş panel orijinal, belirtilmemiş ağır hasar kaydı ağır hasarsız sayılıyor (§{section_no('data')}). "
         f"API'ye giden veride de aynı kural uygulanıyor.",
         f"**\"Unspecified\" is not missing data.** The database is semi-raw: what the page does not say stays empty. "
-        f"In {_ub['kolon']} columns that gap is not missing data but the seller's \"unspecified\" answer; these columns "
+        f"In {_missing_unspec['n_columns']} columns that gap is not missing data but the seller's \"unspecified\" answer; these columns "
         f"are kept out of the list and the blocks above. The heavy-damage record is unspecified on "
-        f"{P(_ub['agir_hasar_pct'], lang)} of the listings, and each of the {_ub['panel_bayrak']} panel flags on "
-        f"{P(_ub['panel_min_pct'], lang)}–{P(_ub['panel_max_pct'], lang)}{_ilk_en}. The model reads these unknowns as "
+        f"{P(_missing_unspec['heavy_damage_pct'], lang)} of the listings, and each of the {_missing_unspec['panel_flags']} panel flags on "
+        f"{P(_missing_unspec['panel_min_pct'], lang)}–{P(_missing_unspec['panel_max_pct'], lang)}{_owner_en}. The model reads these unknowns as "
         f"\"no\" by a deliberate decision: an unspecified panel counts as original, an unspecified heavy-damage record "
         f"as not heavily damaged (§{section_no('data')}). The data sent to the API applies the same rule."))
     A("")
@@ -519,9 +519,9 @@ def section_missing(c):
     A("")
     T([L("kolon", "cols"), L("ort. eksik", "avg missing"), L("birlikte eksik", "missing together"),
        L("örnek kolonlar", "example columns")],
-      [[g["kolon_sayisi"], P(g["ort_eksik_pct"], lang), P(g["birliktelik_pct"], lang),
-        ", ".join(f"`{c}`" for c in g["ornek_kolonlar"][:4]) + (" …" if len(g["ornek_kolonlar"]) > 4 else "")]
-       for g in sm["sistematik_gruplar"]], "rrrl")
+      [[g["n_columns"], P(g["mean_missing_pct"], lang), P(g["co_missing_pct"], lang),
+        ", ".join(f"`{c}`" for c in g["sample_columns"][:4]) + (" …" if len(g["sample_columns"]) > 4 else "")]
+       for g in sm["systematic_groups"]], "rrrl")
     A(L("*Birlikte eksik: blok kolonlarının hepsinin eksik olduğu ilanların, en az birinin eksik olduğu "
         "ilanlara oranı.*",
         "*Missing together: listings where every column of the block is missing, as a share of listings where "
@@ -544,37 +544,37 @@ def section_missing(c):
     T([L("alan", "field"), L("Genel Bakış (gb) boş", "Overview (gb) empty"), L("KısaBilgi (kb) ikizi", "QuickInfo (kb) twin")],
       rows, "lrl")
     # 2026-09-23: "verisi daha dolu olan tarafi (kb) sectik" yanlisti — 10 ciftin 8'i birebir ayni; kasa tipinde
-    # kb DAHA GENEL oldugu icin secildi (kullanici karari; gb koltuk sayisiyla birlesik). Sayilar kb_gb_ikiz'den.
-    ik = [r_ for r_ in met["kb_gb_ikiz"] if r_["gb"].startswith("gb_")]
-    _ayni = sum(1 for r_ in ik if r_["ayni_pct"] >= 99.9)
-    _kasa = next(r_ for r_ in ik if r_["kb"] == "kb_body_type")
-    _cek = next(r_ for r_ in ik if r_["kb"] == "kb_drivetrain")
-    assert _kasa["tutulan"] == "kb_body_type" and _cek["tutulan"] == "kb_drivetrain", (_kasa, _cek)
-    _yok = [k_ for k_, _p in gb_rows if not ("kb_" + k_[3:] in kb_missing or "kb_" + k_[3:] in d["column_labels"])]
-    _hic = [r_["kb"][3:] for r_ in ik if r_["tutulan"] is None]          # iki tarafi da modelde olmayan ciftler
-    _ekik = [r_ for r_ in met["kb_gb_ikiz"] if not r_["gb"].startswith("gb_")]
+    # kb DAHA GENEL oldugu icin secildi (kullanici karari; gb koltuk sayisiyla birlesik). Sayilar kb_gb_twins'ten.
+    twins = [r_ for r_ in met["kb_gb_twins"] if r_["gb"].startswith("gb_")]
+    _n_same = sum(1 for r_ in twins if r_["same_pct"] >= 99.9)
+    _body_twin = next(r_ for r_ in twins if r_["kb"] == "kb_body_type")
+    _drive_twin = next(r_ for r_ in twins if r_["kb"] == "kb_drivetrain")
+    assert _body_twin["kept"] == "kb_body_type" and _drive_twin["kept"] == "kb_drivetrain", (_body_twin, _drive_twin)
+    _no_twin = [k_ for k_, _p in gb_rows if not ("kb_" + k_[3:] in kb_missing or "kb_" + k_[3:] in d["column_labels"])]
+    _neither = [r_["kb"][3:] for r_ in twins if r_["kept"] is None]          # iki tarafi da modelde olmayan ciftler
+    _extra_twins = [r_ for r_ in met["kb_gb_twins"] if not r_["gb"].startswith("gb_")]
     A(L(f"**kb/gb.** İlan sayfasında aynı bilgi iki sekmede yer alabiliyor: `kb` kısa bilgi, `gb` genel bakış. "
-        f"{len(ik)} çiftin {_ayni} tanesinde iki sekme birebir aynı. {len(ik) - len(_hic)} çiftte bir taraf "
-        f"modelde, öteki atıldı; {len(_hic)} çiftte ({', '.join(f'`{x_}`' for x_ in _hic)}) hiçbir taraf modelde "
+        f"{len(twins)} çiftin {_n_same} tanesinde iki sekme birebir aynı. {len(twins) - len(_neither)} çiftte bir taraf "
+        f"modelde, öteki atıldı; {len(_neither)} çiftte ({', '.join(f'`{x_}`' for x_ in _neither)}) hiçbir taraf modelde "
         f"değil."
         + "".join(f" §{section_no('data')} tablosundaki ikiz sınıfında bir kolon daha var: `{r_['kb']}`, `{r_['gb']}` "
-                  f"ile birebir aynı." for r_ in _ekik if r_["ayni_pct"] >= 99.9)
-        + f" Çekişte `gb` ilanların {P(_cek['gb_eksik_pct'], lang)} kadarında boş, `kb` "
-        f"{P(_cek['kb_eksik_pct'], lang)}. **Kasa tipinde `kb`, daha genel olduğu için seçildi:** "
-        f"{_kasa['kb_tekil']} kategori; `gb` aynı bilgiyi koltuk sayısıyla birleştirip {_kasa['gb_tekil']} değere "
-        f"bölüyor. Karşılığı olmayan ve %40'tan fazlası boş {len(_yok)} alan "
-        f"({', '.join(col(d, k_, lang) for k_ in _yok)}) ise elendi.",
+                  f"ile birebir aynı." for r_ in _extra_twins if r_["same_pct"] >= 99.9)
+        + f" Çekişte `gb` ilanların {P(_drive_twin['gb_missing_pct'], lang)} kadarında boş, `kb` "
+        f"{P(_drive_twin['kb_missing_pct'], lang)}. **Kasa tipinde `kb`, daha genel olduğu için seçildi:** "
+        f"{_body_twin['kb_unique']} kategori; `gb` aynı bilgiyi koltuk sayısıyla birleştirip {_body_twin['gb_unique']} değere "
+        f"bölüyor. Karşılığı olmayan ve %40'tan fazlası boş {len(_no_twin)} alan "
+        f"({', '.join(col(d, k_, lang) for k_ in _no_twin)}) ise elendi.",
         f"**kb/gb.** The same field can appear in two tabs of a listing page: `kb` is quick info, `gb` the "
-        f"overview. In {_ayni} of the {len(ik)} pairs the two tabs are identical. In {len(ik) - len(_hic)} pairs "
-        f"one side is in the model and the other was dropped; in {len(_hic)} pairs "
-        f"({', '.join(f'`{x_}`' for x_ in _hic)}) neither side is in the model."
+        f"overview. In {_n_same} of the {len(twins)} pairs the two tabs are identical. In {len(twins) - len(_neither)} pairs "
+        f"one side is in the model and the other was dropped; in {len(_neither)} pairs "
+        f"({', '.join(f'`{x_}`' for x_ in _neither)}) neither side is in the model."
         + "".join(f" The twin class in the §{section_no('data')} table holds one more column: `{r_['kb']}`, identical to "
-                  f"`{r_['gb']}`." for r_ in _ekik if r_["ayni_pct"] >= 99.9)
+                  f"`{r_['gb']}`." for r_ in _extra_twins if r_["same_pct"] >= 99.9)
         + f" For drivetrain `gb` is empty on "
-        f"{P(_cek['gb_eksik_pct'], lang)} of listings, `kb` on {P(_cek['kb_eksik_pct'], lang)}. **For body type "
-        f"`kb` was chosen because it is more general:** {_kasa['kb_tekil']} categories, while `gb` merges the same "
-        f"information with the seat count into {_kasa['gb_tekil']} values. The {len(_yok)} fields with no "
-        f"counterpart and over 40% empty ({', '.join(col(d, k_, lang) for k_ in _yok)}) were dropped."))
+        f"{P(_drive_twin['gb_missing_pct'], lang)} of listings, `kb` on {P(_drive_twin['kb_missing_pct'], lang)}. **For body type "
+        f"`kb` was chosen because it is more general:** {_body_twin['kb_unique']} categories, while `gb` merges the same "
+        f"information with the seat count into {_body_twin['gb_unique']} values. The {len(_no_twin)} fields with no "
+        f"counterpart and over 40% empty ({', '.join(col(d, k_, lang) for k_ in _no_twin)}) were dropped."))
     A("")
 
 def section_redundancy(c):
@@ -591,17 +591,17 @@ def section_redundancy(c):
     _tm_ = met["theils_matrix"]
     _lb_, _M_ = _tm_["labels"], _tm_["matrix"]
     _Um = {x_: _M_[i_][_lb_.index("model")] for i_, x_ in enumerate(_lb_) if x_ != "model"}
-    _tam = [x_ for x_, u_ in _Um.items() if u_ >= .99]
-    _alt = min((x_ for x_ in _Um if x_ not in _tam), key=_Um.get)
-    assert "series" in _tam, "model seriyi belirlemiyor — 'kabalastirilmis hali' cumlesi bayat"
+    _pinned = [x_ for x_, u_ in _Um.items() if u_ >= .99]
+    _lowest = min((x_ for x_ in _Um if x_ not in _pinned), key=_Um.get)
+    assert "series" in _pinned, "model seriyi belirlemiyor — 'kabalastirilmis hali' cumlesi bayat"
     A(L("Cramér's V ilişkinin gücünü (simetrik), Theil's U yönünü (asimetrik) verir. Asimetri bulgunun "
-        f"kendisi: `model` {', '.join(f'`{x_}`' for x_ in _tam)} değerini neredeyse tam belirliyor (U ≥ 0.99) ama "
+        f"kendisi: `model` {', '.join(f'`{x_}`' for x_ in _pinned)} değerini neredeyse tam belirliyor (U ≥ 0.99) ama "
         f"tersi değil — yani `seri`, `model`in kabalaştırılmış hâli, bağımsız bilgi değil. Öteki kolonlarda U "
-        f"daha düşük; en düşüğü {col(d, _alt, lang)} ({_Um[_alt]:.2f}).",
+        f"daha düşük; en düşüğü {col(d, _lowest, lang)} ({_Um[_lowest]:.2f}).",
         "Cramér's V gives association strength (symmetric); Theil's U its direction (asymmetric). The "
-        f"asymmetry is the finding: `model` almost fully determines {', '.join(f'`{x_}`' for x_ in _tam)} "
+        f"asymmetry is the finding: `model` almost fully determines {', '.join(f'`{x_}`' for x_ in _pinned)} "
         f"(U ≥ 0.99) but not vice-versa — `series` is a coarsened view of `model`, not independent information. "
-        f"For the other columns U is lower; the lowest is {col(d, _alt, lang)} ({_Um[_alt]:.2f})."))
+        f"For the other columns U is lower; the lowest is {col(d, _lowest, lang)} ({_Um[_lowest]:.2f})."))
     A("")
     # 2026-09-23: "745" elle yaziliydi; ve U, Cramer'in yanliliginin CARESI diye sunuluyordu — degil.
     # Permutasyon temeli site_data'dan: saf gurultuyle `model` karsisinda alinan deger.
@@ -661,95 +661,95 @@ def section_redundancy(c):
         f"separately."))
     A("")
     figs(20, 21)
-    _sk = v["ed"]["segment_kalite"]
-    if _sk:
-        _g, _uy, _yol = _sk["g_segmenti"], _sk["uyusmazlik"], _sk["yol"]
-        _md = _sk["model_adindan"]
-        _n_md = sum(r[1] for r in _md)
-        _ser = ", ".join(f"`{r[0]}`" for r in _md)
+    _seg_q = v["ed"]["segment_quality"]
+    if _seg_q:
+        _g_seg, _mismatch, _paths = _seg_q["g_segment"], _seg_q["mismatch"], _seg_q["paths"]
+        _from_name = _seg_q["from_model_name"]
+        _n_from_name = sum(r[1] for r in _from_name)
+        _families = ", ".join(f"`{r[0]}`" for r in _from_name)
         _ug = U('segment', 'series')
-        _gdisi = next((r for r in _uy["capraz"] if r[0] != "G"), None)
+        _non_g = next((r for r in _mismatch["cross"] if r[0] != "G"), None)
         A(L("### Segment beslemeden gelmiyor, türetiliyor", "### Segment is derived, not fed"))
         A("")
         A(L(f"Ham `gb_segment` kullanılmıyor ve gerekçesi yalnız eksiklik değil: beslemenin \"G\" "
-            f"segmenti gerçek bir segment değil. O etiketi taşıyan {num(_g['n'], lang)} ilandan "
-            f"{num(_g['mpv_n'], lang)} tanesinin gövdesi MPV ve hepsi tek seriden geliyor — bozuk kaynak. "
+            f"segmenti gerçek bir segment değil. O etiketi taşıyan {num(_g_seg['n'], lang)} ilandan "
+            f"{num(_g_seg['mpv_n'], lang)} tanesinin gövdesi MPV ve hepsi tek seriden geliyor — bozuk kaynak. "
             f"Segment bu yüzden türetiliyor; MPV bilgisi kasa tipinde duruyor.",
             f"The raw `gb_segment` is not used, and missingness is not the only reason: the feed's "
-            f"\"G\" segment is not a real segment. Of the {num(_g['n'], lang)} listings carrying that "
-            f"label, {num(_g['mpv_n'], lang)} have an MPV body and all come from one series — a corrupt "
+            f"\"G\" segment is not a real segment. Of the {num(_g_seg['n'], lang)} listings carrying that "
+            f"label, {num(_g_seg['mpv_n'], lang)} have an MPV body and all come from one series — a corrupt "
             f"source. Segment is therefore derived, with the MPV signal kept in body type."))
         A("")
-        A(L(f"İlanların {num(_yol['harita'], lang)} tanesi segmentini doğrudan serisinden alıyor. "
-            f"Bazı ailelerde ({_ser}) segment seriden değil model adından çözülüyor — örneğin "
-            f"M3 → 3 Serisi, S3 → A3 — toplam {num(_n_md, lang)} ilan. Bu yüzden segment yalnız serinin "
+        A(L(f"İlanların {num(_paths['harita'], lang)} tanesi segmentini doğrudan serisinden alıyor. "
+            f"Bazı ailelerde ({_families}) segment seriden değil model adından çözülüyor — örneğin "
+            f"M3 → 3 Serisi, S3 → A3 — toplam {num(_n_from_name, lang)} ilan. Bu yüzden segment yalnız serinin "
             f"değil (seri, model) çiftinin fonksiyonu: U(segment | seri) = {_ug:.3f}, tam 1 değil. "
             f"Çözülemeyen seri ya da model kalırsa üreteç durur; sessiz bir varsayılan segment yok.",
-            f"{num(_yol['harita'], lang)} listings take their segment straight from the series. "
-            f"In some families ({_ser}) the segment is resolved from the model name, not the series — e.g. "
-            f"M3 → 3 Series, S3 → A3 — {num(_n_md, lang)} listings in all. So segment is a function of "
+            f"{num(_paths['harita'], lang)} listings take their segment straight from the series. "
+            f"In some families ({_families}) the segment is resolved from the model name, not the series — e.g. "
+            f"M3 → 3 Series, S3 → A3 — {num(_n_from_name, lang)} listings in all. So segment is a function of "
             f"(series, model), not series alone: U(segment | series) = {_ug:.3f}, not exactly 1. If any "
             f"series or model cannot be resolved the generator stops; there is no silent default segment."))
         A("")
-        A(L(f"Türetilen etiket, ham segmenti dolu {num(_uy['ham_dolu'], lang)} ilanın "
-            f"{num(_uy['farkli'], lang)} tanesinde ({P(_uy['pct'], lang)}) beslemeden ayrılıyor; "
-            f"{num(_g['n'], lang)} tanesi bilinçli G düzeltmesi"
-            + (f", en büyük ikinci kaynak beslemenin {_gdisi[0]} dediği {num(_gdisi[2], lang)} ilanın "
-               f"burada {_gdisi[1]} olması." if _gdisi else "."),
-            f"The derived label differs from the feed on {num(_uy['farkli'], lang)} of the "
-            f"{num(_uy['ham_dolu'], lang)} listings that have a raw segment ({P(_uy['pct'], lang)}); "
-            f"{num(_g['n'], lang)} of those are the deliberate G fix"
-            + (f", and the next largest source is {num(_gdisi[2], lang)} listings the feed calls "
-               f"{_gdisi[0]} and the derivation calls {_gdisi[1]}." if _gdisi else ".")))
+        A(L(f"Türetilen etiket, ham segmenti dolu {num(_mismatch['raw_known'], lang)} ilanın "
+            f"{num(_mismatch['differs'], lang)} tanesinde ({P(_mismatch['pct'], lang)}) beslemeden ayrılıyor; "
+            f"{num(_g_seg['n'], lang)} tanesi bilinçli G düzeltmesi"
+            + (f", en büyük ikinci kaynak beslemenin {_non_g[0]} dediği {num(_non_g[2], lang)} ilanın "
+               f"burada {_non_g[1]} olması." if _non_g else "."),
+            f"The derived label differs from the feed on {num(_mismatch['differs'], lang)} of the "
+            f"{num(_mismatch['raw_known'], lang)} listings that have a raw segment ({P(_mismatch['pct'], lang)}); "
+            f"{num(_g_seg['n'], lang)} of those are the deliberate G fix"
+            + (f", and the next largest source is {num(_non_g[2], lang)} listings the feed calls "
+               f"{_non_g[0]} and the derivation calls {_non_g[1]}." if _non_g else ".")))
         A("")
 
     A(L("### Yüksek korelasyon çiftleri (|r| > 0.5)", "### High-correlation pairs (|r| > 0.5)"))
     A("")
     T([L("öznitelik A", "feature A"), L("öznitelik B", "feature B"), "Pearson r"],
-      [[col(d, a, lang), col(d, b, lang), f"{r:.3f}"] for a, b, r in dom["numeric_correlation"]["yuksek_ciftler"]],
+      [[col(d, a, lang), col(d, b, lang), f"{r:.3f}"] for a, b, r in dom["numeric_correlation"]["high_pairs"]],
       "llr")
 
     ba = dom["brand_ablation"]
     A(L("### Marka ablasyonu", "### Brand ablation"))
     A("")
     T([L("kimlik kolonları", "identity columns"), "MAPE", "MAE", "R²"], [
-        [L("yalnız marka", "brand only"), P(ba["sadece_brand"]["MAPE"], lang, 2), tl(ba["sadece_brand"]["MAE"]),
-         f"{ba['sadece_brand']['R2']:.4f}"],
-        [L("seri + model", "series + model"), P(ba["seri_model"]["MAPE"], lang, 2), tl(ba["seri_model"]["MAE"]),
-         f"{ba['seri_model']['R2']:.4f}"],
+        [L("yalnız marka", "brand only"), P(ba["brand_only"]["MAPE"], lang, 2), tl(ba["brand_only"]["MAE"]),
+         f"{ba['brand_only']['R2']:.4f}"],
+        [L("seri + model", "series + model"), P(ba["series_model"]["MAPE"], lang, 2), tl(ba["series_model"]["MAE"]),
+         f"{ba['series_model']['R2']:.4f}"],
         [L("marka + seri + model (rapordaki model)", "brand + series + model (the report's model)"),
-         P(ba["brand_seri_model"]["MAPE"], lang, 2), tl(ba["brand_seri_model"]["MAE"]),
-         f"{ba['brand_seri_model']['R2']:.4f}"],
+         P(ba["brand_series_model"]["MAPE"], lang, 2), tl(ba["brand_series_model"]["MAE"]),
+         f"{ba['brand_series_model']['R2']:.4f}"],
     ], "lrrr")
-    _gap = ba["sadece_brand"]["MAE"] - ba["seri_model"]["MAE"]
+    _gap = ba["brand_only"]["MAE"] - ba["series_model"]["MAE"]
     # 2026-09-23: iki kol lira lira ayniydi. Uretec artik bunu dogruluyor: marka CV fold modellerinde
     # hic bolme kazanmiyorsa aynilik MESRU; kazanip da aynilik varsa uretec durur (tesisat hatasi).
-    _dg = ba["dogrulama"]
-    _bs = _dg["brand_split_cv"]
-    _tanim = U("brand", "series") >= 0.9995
+    _check = ba["validation"]
+    _brand_splits = _check["brand_split_cv"]
+    _by_definition = U("brand", "series") >= 0.9995
     A(L(f"Tam modelde yalnız kimlik kolonları değişiyor, diğer öznitelikler sabit; aynı 5-fold OOF. \"Yalnız "
         f"marka\" kolu segmenti de dışarıda bırakıyor, çünkü segment seriden türetiliyor. Seri+model yerine yalnız "
         f"marka verilince MAE {tl(_gap)} kötüleşiyor. Seri+modelin üzerine marka eklemek MAE'yi "
         f"{tl(v['brand_mae_delta'])} değiştiriyor (MAPE farkı {v['brand_mape_delta']:.2f} puan)"
-        + (f" — manşet modelin 5 fold'unda marka toplam {num(_bs, lang)} kez bölme kazanıyor, yani model onu "
-           f"kullanmıyor" if _bs == 0 else
-           (f" — manşet modelin 5 fold'unda marka {num(_bs, lang)} bölmede kullanılıyor ama hatayı "
-            f"değiştirmiyor" if _bs is not None else ""))
+        + (f" — manşet modelin 5 fold'unda marka toplam {num(_brand_splits, lang)} kez bölme kazanıyor, yani model onu "
+           f"kullanmıyor" if _brand_splits == 0 else
+           (f" — manşet modelin 5 fold'unda marka {num(_brand_splits, lang)} bölmede kullanılıyor ama hatayı "
+            f"değiştirmiyor" if _brand_splits is not None else ""))
         + ". "
         + (f"Bu bir ölçümden çok verinin tanımı: bu korpusta her seri tek bir markaya ait "
-           f"(U(marka | seri) = {U('brand', 'series'):.2f}), marka seriden okunabiliyor." if _tanim else
+           f"(U(marka | seri) = {U('brand', 'series'):.2f}), marka seriden okunabiliyor." if _by_definition else
            f"Yukarıdaki U(marka | model) = {U('brand', 'model'):.2f} aynı şeyin bağıntı tarafı."),
         f"Only the identity columns change in the full model, everything else fixed; same 5-fold OOF. The "
         f"\"brand only\" arm also drops segment, because segment is derived from series. Giving brand alone "
         f"instead of series+model worsens MAE by {tl(_gap)}. Adding brand on top of series+model changes MAE by "
         f"{tl(v['brand_mae_delta'])} (MAPE delta {v['brand_mape_delta']:.2f} pts)"
-        + (f" — across the headline model's 5 folds brand wins {num(_bs, lang)} splits, so the model does not "
-           f"use it" if _bs == 0 else
-           (f" — across the headline model's 5 folds brand is used in {num(_bs, lang)} splits but does not "
-            f"change the error" if _bs is not None else ""))
+        + (f" — across the headline model's 5 folds brand wins {num(_brand_splits, lang)} splits, so the model does not "
+           f"use it" if _brand_splits == 0 else
+           (f" — across the headline model's 5 folds brand is used in {num(_brand_splits, lang)} splits but does not "
+            f"change the error" if _brand_splits is not None else ""))
         + ". "
         + (f"This is the data's definition more than a measurement: every series here belongs to one brand "
-           f"(U(brand | series) = {U('brand', 'series'):.2f}), so brand can be read off the series." if _tanim else
+           f"(U(brand | series) = {U('brand', 'series'):.2f}), so brand can be read off the series." if _by_definition else
            f"U(brand | model) = {U('brand', 'model'):.2f} above is the dependence side of the same fact.")))
     A("")
 
