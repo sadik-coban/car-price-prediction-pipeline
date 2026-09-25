@@ -84,3 +84,60 @@ def test_page_refuses_without_loopback():
         st_config.set_option("server.address", old)
     assert at.error and "127.0.0.1" in at.error[0].value
     assert not at.title
+
+
+@pytest.fixture
+def explorer(loopback, tool_data, monkeypatch):
+    """EN: The explorer page on the made-up data folder. / TR: Uydurma veri klasöründe veri gezgini sayfası."""
+    monkeypatch.setenv("CARDATASYS_TOOL_DATA", str(tool_data))
+    return AppTest.from_file(str(TOOL / "views/explorer.py"), default_timeout=TIMEOUT).run()
+
+
+def rows_metric(at):
+    """EN: The "Satır" KPI as int. / TR: "Satır" KPI'ı, int."""
+    return int(next(m for m in at.metric if m.label == "Satır").value.replace(".", ""))
+
+
+def test_explorer_raw_combined_conditions(explorer):
+    """
+    EN: Raw: blue plate → 1 record; AND model year 2019–2019 → 0; the ad text search finds "MA PLAKALIDIR".
+    TR: Ham: mavi plaka → 1 kayıt; VE model yılı 2019–2019 → 0; ilan metni araması "MA PLAKALIDIR"ı bulur.
+    """
+    at = explorer
+    assert not at.exception and rows_metric(at) == 5
+    at.button(key="short_raw_Mavi plakalı").click().run()
+    assert rows_metric(at) == 1
+    at.selectbox(key="pick_raw").set_value("KısaBilgi - Yıl (sayı)").run()
+    at.button[[b.label for b in at.button].index("Koşul ekle")].click().run()
+    at.number_input(key="val_1_between_lo").set_value(2019).run()
+    at.number_input(key="val_1_between_hi").set_value(2019).run()
+    assert not at.exception and rows_metric(at) == 0
+    at.checkbox(key="on_0").uncheck().run()
+    assert rows_metric(at) == 1
+    at.button(key="del_1").click().run()
+    at.button(key="del_0").click().run()
+    at.selectbox(key="pick_raw").set_value("Aciklama_HTML").run()
+    at.button[[b.label for b in at.button].index("Koşul ekle")].click().run()
+    at.text_input(key="val_2_contains").input("ma plakalı").run()
+    assert not at.exception and rows_metric(at) == 1
+
+
+def test_explorer_silver_gold(explorer):
+    """
+    EN: Silver: the analysis set has 2 rows; all rows + empty plate → 1, and gold gives the same; heavy damage
+        unknown → 2 in silver, 0 in gold.
+    TR: Silver: analiz kümesi 2 satır; bütün satırlar + boş plaka → 1, gold da aynı; ağır hasar bilinmiyor → silver'da
+        2, gold'da 0.
+    """
+    at = explorer
+    at.sidebar.radio(key="source").set_value("silver").run()
+    assert not at.exception and rows_metric(at) == 2
+    at.sidebar.radio(key="mode_db").set_value("all").run()
+    assert rows_metric(at) == 4
+    at.button(key="short_db_Plaka boş").click().run()
+    assert rows_metric(at) == 1 and next(m for m in at.metric if m.label.startswith("Aynı koşullar")).value == "1"
+    at.button(key="del_0").click().run()
+    at.button(key="short_db_Ağır hasar bilinmiyor").click().run()
+    assert rows_metric(at) == 2
+    at.sidebar.radio(key="source").set_value("gold").run()
+    assert not at.exception and rows_metric(at) == 0
