@@ -176,3 +176,17 @@ def test_explorer_silver_gold(explorer):
     assert rows_metric(at) == 2
     at.sidebar.radio(key="source").set_value("gold").run()
     assert not at.exception and rows_metric(at) == 0
+
+
+def test_explorer_rows_without_numbers(explorer):
+    """
+    EN: Raw rows with an empty ad_id (failed pages: no price, year or km) show without an exception, KPIs as "—".
+    TR: ad_id'si boş ham satırlar (başarısız sayfalar: fiyat, yıl, km yok) istisnasız görünür, KPI'lar "—".
+    """
+    at = explorer
+    at.selectbox(key="pick_raw").set_value("ad_id").run()
+    at.button[[b.label for b in at.button].index("Koşul ekle")].click().run()
+    at.selectbox(key="op_0").set_value("is_null").run()
+    assert not at.exception, [e.value for e in at.exception]
+    assert rows_metric(at) == 1
+    assert next(m for m in at.metric if m.label == "Medyan fiyat").value == "—"

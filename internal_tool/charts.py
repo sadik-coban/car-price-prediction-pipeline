@@ -61,21 +61,31 @@ def city(location):
     return location.split(",")[-1].strip() if isinstance(location, str) and location.strip() else UNKNOWN
 
 
+def median(values):
+    """
+    EN: The median of a column as float, None when it has no number (a nullable column's median is then NA).
+    TR: Bir kolonun medyanı float olarak; hiç sayı yoksa None (nullable kolonun medyanı o zaman NA olur).
+    """
+    m = pd.to_numeric(values, errors="coerce").median()
+    return None if pd.isna(m) else float(m)
+
+
 def kpis(df, source):
     """
-    EN: rows, distinct ads, median price / km / age (age = snapshot year − model year) of the rows.
-    TR: Satırların satır sayısı, tekil ilanı, medyan fiyatı / km'si / yaşı (yaş = tarama yılı − model yılı).
+    EN: rows, distinct ads, median price / km / age (age = snapshot year − model year) of the rows; None where the
+        rows have no number.
+    TR: Satırların satır sayısı, tekil ilanı, medyan fiyatı / km'si / yaşı (yaş = tarama yılı − model yılı); satırlarda
+        sayı yoksa None.
     """
     f = fields_for(source)
     out = {"rows": len(df), "ads": int(df["ad_id"].nunique()) if "ad_id" in df.columns else None}
     for key in ("price", "km"):
-        out[key] = float(pd.to_numeric(df[f[key]], errors="coerce").median()) if _has(df, f[key]) else None
+        out[key] = median(df[f[key]]) if _has(df, f[key]) else None
     if _has(df, f["year"], f["snapshot"]):
-        age = snapshot_year(df[f["snapshot"]]) - pd.to_numeric(df[f["year"]], errors="coerce")
-        out["age"] = float(age.median())
+        out["age"] = median(snapshot_year(df[f["snapshot"]]) - pd.to_numeric(df[f["year"]], errors="coerce"))
     else:
         out["age"] = None
-    return {k: (None if isinstance(v, float) and pd.isna(v) else v) for k, v in out.items()}
+    return out
 
 
 def price_histogram(df, source):

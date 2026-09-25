@@ -52,3 +52,19 @@ def test_damage_matrix(tool_data):
     raw = CH.damage_matrix(S.load("raw", tool_data)[0], "raw")
     assert {k: v for k, v in raw.loc["Motor Kaputu"].items() if v} == {"Boyalı": 2, "Orjinal": 1, "Belirtilmemiş": 1,
                                                                        CH.UNKNOWN: 1}
+
+
+def test_rows_without_numbers(tool_data):
+    """
+    EN: Rows whose price, year and km are all empty (failed pages without an ad id): the KPIs are None and every
+        figure builds (a nullable column's median is NA, which must not reach float()).
+    TR: Fiyatı, yılı ve km'si tamamen boş satırlar (ilan kimliği olmayan başarısız sayfalar): KPI'lar None olur ve
+        her figür kurulur (nullable kolonun medyanı NA'dır; float()'a ulaşmamalı).
+    """
+    raw, _ = S.load("raw", tool_data)
+    rows = raw[raw["ad_id"].isna().to_numpy(dtype=bool)]
+    assert len(rows) == 1
+    k = CH.kpis(rows, "raw")
+    assert k["rows"] == 1 and k["price"] is None and k["km"] is None and k["age"] is None
+    for fn in CH.FIGURES:
+        assert isinstance(fn(rows, "raw"), go.Figure), fn.__name__
