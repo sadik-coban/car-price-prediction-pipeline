@@ -25,7 +25,7 @@ def test_every_pair_once(drift):
     """EN: k snapshots → C(k, 2) pairs in each pair table. / TR: k tarama → her çift tablosunda C(k, 2) çift."""
     d = drift["domain"]["drift"]
     k = len(d["table"]) + 1                                   # the first snapshot is the reference | ilk tarama referans
-    assert len(d["all_pairs"]) == len(d["ortusme"]) == drift["report"]["drift_holm"]["n_tests"] == comb(k, 2)
+    assert len(d["all_pairs"]) == len(d["overlap"]) == drift["report"]["drift_holm"]["n_tests"] == comb(k, 2)
     assert len({r[0] for r in d["all_pairs"]}) == comb(k, 2)
 
 
@@ -40,7 +40,7 @@ def test_holm_follows_from_p_values(drift):
     EN: n_sig = pairs with p < α; Holm step-down on the same p-values gives n_holm and the pairs.
     TR: n_sig = p < α olan çiftler; aynı p-değerlerinde Holm adım adım n_holm'u ve çiftleri verir.
     """
-    rows = drift["domain"]["drift"]["ortusme"]
+    rows = drift["domain"]["drift"]["overlap"]
     ps = sorted((r[3], r[0]) for r in rows)
     n_holm = 0
     for i, (p, _pair) in enumerate(ps):
@@ -55,4 +55,4 @@ def test_holm_follows_from_p_values(drift):
 
 def test_overlap_shares_in_range(drift):
     """EN: The overlap share of a pair is a percentage. / TR: Bir çiftin örtüşme payı bir yüzde."""
-    assert all(0 <= r[1] <= 100 for r in drift["domain"]["drift"]["ortusme"])
+    assert all(0 <= r[1] <= 100 for r in drift["domain"]["drift"]["overlap"])

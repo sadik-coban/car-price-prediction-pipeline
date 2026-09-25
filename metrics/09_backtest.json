@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "09_backtest.py",
-  "generated_at": "2026-09-25T05:25:12+03:00",
+  "generated_at": "2026-09-25T16:43:30+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": null,
   "source": {
    "script": {
-    "analysis/09_backtest.py": "4b8248d2ddbc9d1ab4d6b735fcf586b6153b80e41a38493d10e784ff79c2889c"
+    "analysis/09_backtest.py": "88cdc34a3e3a110a0c8dfd65cc4862e374e3e7face44427de91b49b9af50ecbd"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -143,19 +143,19 @@
      11526
     ]
    ],
-   "protokol": {
-    "sizintisiz": [
+   "protocol": {
+    "leak_free": [
      "single",
      "cumulative"
     ],
-    "duz_kfold": [
+    "plain_kfold": [
      "insample",
      "per_snapshot"
     ],
-    "ayni_deney": "cumulative ilk blok (<= ilk tarama) single ilk blokla ayni",
-    "hafif_model": "tum kollar ana modelden hafif: TF-IDF/SVD yok (ad ham kategorik), erken durdurma yok; single/cumulative 800 agac, insample/per_snapshot 500 agac"
+    "same_experiment": "cumulative ilk blok (<= ilk tarama) single ilk blokla ayni",
+    "light_model": "tum kollar ana modelden hafif: TF-IDF/SVD yok (ad ham kategorik), erken durdurma yok; single/cumulative 800 agac, insample/per_snapshot 500 agac"
    },
-   "not": "single: tek taramada eğit, sonraki taramaların yalnız YENİ ad_id'lerinde test et (sızıntısız). cumulative: t'ye kadarki taramalarda eğit, aynı kural; ilk bloğu single ile aynı deneydir. insample: kümülatif birikimde düz 5-fold OOF, zaman boyutu yok. per_snapshot: her tarama izole, düz 5-fold OOF. Dört kol da ana modelden hafif: TF-IDF/SVD yok, erken durdurma yok (single/cumulative 800, insample/per_snapshot 500 ağaç)."
+   "note": "single: tek taramada eğit, sonraki taramaların yalnız YENİ ad_id'lerinde test et (sızıntısız). cumulative: t'ye kadarki taramalarda eğit, aynı kural; ilk bloğu single ile aynı deneydir. insample: kümülatif birikimde düz 5-fold OOF, zaman boyutu yok. per_snapshot: her tarama izole, düz 5-fold OOF. Dört kol da ana modelden hafif: TF-IDF/SVD yok, erken durdurma yok (single/cumulative 800, insample/per_snapshot 500 ağaç)."
   }
  }
 }

@@ -1,0 +1,51 @@
+{
+ "script": "analysis/10_free_text.py",
+ "question": {
+  "tr": "Satıcının serbest metni fiyat tahminine bir şey katıyor mu, ve metinden yapılandırılmış bilgi çıkarma denemesi neyi kapsadı?",
+  "en": "Does the seller's free text add anything to the price prediction, and what did the attempt to extract structured facts from the text cover?"
+ },
+ "data": {
+  "tr": "load_clean() (29.988 ilan); data/langextract/extraction_results.jsonl (çıkarım sonuçları, salt okunur); analysis/frozen/text_ablation.json (dondurulmuş ablasyon ve LLM kurulumu, korumalı).",
+  "en": "load_clean() (29,988 listings); data/langextract/extraction_results.jsonl (extraction results, read-only); analysis/frozen/text_ablation.json (the frozen ablation and LLM setup, protected)."
+ },
+ "method": {
+  "tr": "Çıkarım kapsamı sayılır (metin, modeldeki ilan, pay); metinli ve metinsiz ablasyonun R² farkı ve kurulumu dondurulmuş kanıttan okunur, alan adları ve LLM sınıfları burada İngilizceye çevrilir (bilinmeyen alan ya da sınıf durdurur). Yeni model eğitilmez.",
+  "en": "The extraction coverage is counted (texts, listings in the model, share); the R² gap and setup of the ablation with and without text are read from the frozen evidence, its field names and LLM classes translated to English here (an unknown field or class stops). No model is trained."
+ },
+ "split": "none",
+ "leakage": {
+  "duplicate_ad_id": {
+   "status": "n/a",
+   "note": null
+  },
+  "target_in_features": {
+   "status": "n/a",
+   "note": null
+  },
+  "fit_on_full_data": {
+   "status": "unknown",
+   "note": {
+    "tr": "Dondurulmuş ablasyon 2026-09-19'da arşivlenen bir koşumdan; bölme protokolü bu depoda yeniden üretilemiyor.",
+    "en": "The frozen ablation comes from a run archived on 2026-09-19; its split protocol cannot be reproduced in this repository."
+   }
+  },
+  "temporal": {
+   "status": "n/a",
+   "note": null
+  }
+ },
+ "evidence": {
+  "tests": [
+   "tests/analysis/test_10_free_text.py::test_coverage",
+   "tests/analysis/test_10_free_text.py::test_ablation_delta",
+   "tests/analysis/test_10_free_text.py::test_identity_flag_matches_features",
+   "tests/analysis/test_10_free_text.py::test_llm_classes"
+  ],
+  "report_keys": [
+   "error_drivers.text_source.llm_coverage_pct",
+   "report.text_ablation.ablation.delta_r2",
+   "report.text_ablation.llm.classes"
+  ]
+ },
+ "status": "complete"
+}

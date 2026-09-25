@@ -125,19 +125,19 @@ def holm(overlap, alpha=0.05):
 # %% [3] Metrics assembly | Metrik derleme — naming and rounding only | yalnız adlandırma ve yuvarlama
 def to_metrics(res):
     """
-    EN: Published in the site tree (domain.drift), the report inputs (error_drivers.donem_kaymasi) and
+    EN: Published in the site tree (domain.drift), the report inputs (error_drivers.period_shift) and
         report.drift_holm.
-    TR: Site ağacında (domain.drift), rapor girdilerinde (error_drivers.donem_kaymasi) ve report.drift_holm'da
+    TR: Site ağacında (domain.drift), rapor girdilerinde (error_drivers.period_shift) ve report.drift_holm'da
         yayımlanır.
     """
     return {"domain": {"drift": {
-                "table": res["table"], "all_pairs": res["pairs"], "kde_raw": res["kde_raw"], "ortusme": res["overlap"],
-                "ortusme_not": ("[cift, ortak ilan %, KS_ayrik, p_ayrik, PSI_ayrik, EMD_ayrik, n_a, n_b]. "
+                "table": res["table"], "all_pairs": res["pairs"], "kde_raw": res["kde_raw"], "overlap": res["overlap"],
+                "overlap_note": ("[cift, ortak ilan %, KS_ayrik, p_ayrik, PSI_ayrik, EMD_ayrik, n_a, n_b]. "
                                 "Ayrik = iki taramada da gorulen ilanlar cikarildiktan sonra."),
                 "kde_log": res["kde_log"], "hist": res["hist"],
-                "not": ("KS=maks dağılım farkı, PSI<0.10 güvenli/>0.25 retrain, EMD=kayma mesafesi (₺). "
+                "note": ("KS=maks dağılım farkı, PSI<0.10 güvenli/>0.25 retrain, EMD=kayma mesafesi (₺). "
                         "hist.edges = bin kenarları (39 bin, 40 kenar); hist[snapshot] = yükseklikler.")}},
-            "error_drivers": {"donem_kaymasi": {"min_hucre_n": MIN_CELL, "canli": res["shift"]}},
+            "error_drivers": {"period_shift": {"min_cell_n": MIN_CELL, "live": res["shift"]}},
             "report": {"drift_holm": res["holm"]}}
 
 

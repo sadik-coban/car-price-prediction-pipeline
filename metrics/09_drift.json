@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "09_drift.py",
-  "generated_at": "2026-09-25T05:24:33+03:00",
+  "generated_at": "2026-09-25T16:41:45+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": null,
   "source": {
    "script": {
-    "analysis/09_drift.py": "de3265623e2f2ab68dfd68b31eb7821bf376fba561022985edacb591abe0ff1e"
+    "analysis/09_drift.py": "f0ec936b760e82efcef2daf8182f4f91793b9967c3b72567ca757f3ab4526af2"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -701,7 +701,7 @@
      8.66882145876445e-09
     ]
    },
-   "ortusme": [
+   "overlap": [
     [
      "01-18→01-27",
      76.1,
@@ -763,7 +763,7 @@
      9099
     ]
    ],
-   "ortusme_not": "[cift, ortak ilan %, KS_ayrik, p_ayrik, PSI_ayrik, EMD_ayrik, n_a, n_b]. Ayrik = iki taramada da gorulen ilanlar cikarildiktan sonra.",
+   "overlap_note": "[cift, ortak ilan %, KS_ayrik, p_ayrik, PSI_ayrik, EMD_ayrik, n_a, n_b]. Ayrik = iki taramada da gorulen ilanlar cikarildiktan sonra.",
    "kde_log": {
     "x": [
      12.75130259456002,
@@ -1584,13 +1584,13 @@
      6500000.0
     ]
    },
-   "not": "KS=maks dağılım farkı, PSI<0.10 güvenli/>0.25 retrain, EMD=kayma mesafesi (₺). hist.edges = bin kenarları (39 bin, 40 kenar); hist[snapshot] = yükseklikler."
+   "note": "KS=maks dağılım farkı, PSI<0.10 güvenli/>0.25 retrain, EMD=kayma mesafesi (₺). hist.edges = bin kenarları (39 bin, 40 kenar); hist[snapshot] = yükseklikler."
   }
  },
  "error_drivers": {
-  "donem_kaymasi": {
-   "min_hucre_n": 3,
-   "canli": [
+  "period_shift": {
+   "min_cell_n": 3,
+   "live": [
     [
      "01-27",
      0.0,

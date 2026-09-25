@@ -1269,9 +1269,9 @@ def section_calibration(c):
     _gone_cheaper = _live["gone_median_resid"] < 0 < _live["live_median_resid"]
     # Inceleme (2026-09-23): farkin bir kismi donem (model zamani gormuyor). Hayatta kalma kaniti: piyasanin yerinde
     # saydigi ilk iki tarama arasinda da medyan artik kayiyor.
-    _dk = v["ed"]["donem_kaymasi"]["canli"]
+    _shift_live = v["ed"]["period_shift"]["live"]
     _bs = [r_["median_resid_pct"] for r_ in ed["by_snapshot"]]
-    _sk = _gone_cheaper and abs(_dk[0][1]) < 0.5 and _bs[1] - _bs[0] > 1
+    _sk = _gone_cheaper and abs(_shift_live[0][1]) < 0.5 and _bs[1] - _bs[0] > 1
     A(L("### Büyük hatalar nereden geliyor", "### Where the large errors come from"))
     A("")
     A(L(f"Hatası ±%{ed['threshold_pct']:g} sınırını aşan {num(ov['n_big'], lang)} ilan ({num(ov['n_over'], lang)} fazla, "
@@ -1294,11 +1294,11 @@ def section_calibration(c):
         f"3. **Zaman ve hayatta kalma.** Medyan artık ilanın son görüldüğü taramaya göre değişiyor: "
         f"{sn0['snapshot']} {P(sn0['median_resid_pct'], lang, 2, sign=True)} → {sn1['snapshot']} "
         f"{P(sn1['median_resid_pct'], lang, 2, sign=True)}. Bunun bir kısmı dönem: model zamanı görmüyor ve piyasa bu "
-        f"aralıkta {P(_dk[-1][1], lang, 2, sign=True)} kaydı (§{section_no('time')}). Bir kısmı hayatta kalma: son taramada "
+        f"aralıkta {P(_shift_live[-1][1], lang, 2, sign=True)} kaydı (§{section_no('time')}). Bir kısmı hayatta kalma: son taramada "
         f"hâlâ yayında olan {num(_live['live_n'], lang)} ilanın medyan artığı "
         f"{P(_live['live_median_resid'], lang, 2, sign=True)}, daha önce kalkan {num(_live['gone_n'], lang)} ilanınki "
         f"{P(_live['gone_median_resid'], lang, 2, sign=True)}"
-        + (f"; piyasanın yerinde saydığı ilk iki tarama arasında ({P(_dk[0][1], lang, 2, sign=True)}) bile medyan artık "
+        + (f"; piyasanın yerinde saydığı ilk iki tarama arasında ({P(_shift_live[0][1], lang, 2, sign=True)}) bile medyan artık "
            f"{P(_bs[0], lang, 2, sign=True)} → {P(_bs[1], lang, 2, sign=True)} geçiyor — erken kalkan ilanlar modelin "
            f"söylediğinden ucuza fiyatlanmıştı." if _sk else "."),
         f"1. **No comparable.** With no other listing of the same model and year the large-error rate is "
@@ -1310,11 +1310,11 @@ def section_calibration(c):
         f"3. **Time and survival.** The median residual changes with the snapshot a listing was last seen in: "
         f"{sn0['snapshot']} {P(sn0['median_resid_pct'], lang, 2, sign=True)} → {sn1['snapshot']} "
         f"{P(sn1['median_resid_pct'], lang, 2, sign=True)}. Part of this is the period: the model is time-blind "
-        f"and the market moved {P(_dk[-1][1], lang, 2, sign=True)} over the span (§{section_no('time')}). Part is "
+        f"and the market moved {P(_shift_live[-1][1], lang, 2, sign=True)} over the span (§{section_no('time')}). Part is "
         f"survival: the {num(_live['live_n'], lang)} listings still live in the last snapshot have a median residual "
         f"of {P(_live['live_median_resid'], lang, 2, sign=True)}, the {num(_live['gone_n'], lang)} that left earlier "
         f"{P(_live['gone_median_resid'], lang, 2, sign=True)}"
-        + (f"; even between the first two snapshots, with the market flat ({P(_dk[0][1], lang, 2, sign=True)}), the "
+        + (f"; even between the first two snapshots, with the market flat ({P(_shift_live[0][1], lang, 2, sign=True)}), the "
            f"median residual moves {P(_bs[0], lang, 2, sign=True)} → {P(_bs[1], lang, 2, sign=True)} — listings that "
            f"left early had been priced below the model's figure." if _sk else ".")))
     A("")
@@ -1591,28 +1591,28 @@ def section_time(c):
     # 2026-09-23: acilis "iki kanit ayni karari veriyor ... SEKIL sabit" diyordu; sekil olculmuyordu ve
     # backtest hatasi ufukla BUYUYOR. Iki olcu ne diyorsa o yazilir.
     _s0 = [r for r in bt["single"] if r[0] == bt["single"][0][0]]
-    _ufuk = _s0[-1][2] > _s0[0][2]
-    _kucuk = v["psi_max"] < v["psi_safe"]
+    _horizon = _s0[-1][2] > _s0[0][2]
+    _small = v["psi_max"] < v["psi_safe"]
     A(L(f"İki ölçü var. **Dağılım kayması:** "
         + (f"dönemler arası fiyat dağılımı az kayıyor (en yüksek PSI {v['psi_max']:.3f}, \"kayma yok\" eşiği "
-           f"{v['psi_safe']:.2f}). " if _kucuk else f"dağılım eşiğin üstünde kayıyor (en yüksek PSI {v['psi_max']:.3f}). ")
+           f"{v['psi_safe']:.2f}). " if _small else f"dağılım eşiğin üstünde kayıyor (en yüksek PSI {v['psi_max']:.3f}). ")
         + f"**Zamansal backtest:** eski dönemde eğitip sonraki dönemin yalnızca yeni ilanlarında test edince hata "
-        + (f"ufuk uzadıkça büyüyor ({P(_s0[0][2], lang, 2)} → {P(_s0[-1][2], lang, 2)}). " if _ufuk else
+        + (f"ufuk uzadıkça büyüyor ({P(_s0[0][2], lang, 2)} → {P(_s0[-1][2], lang, 2)}). " if _horizon else
            f"ufukla büyümüyor ({P(_s0[0][2], lang, 2)} → {P(_s0[-1][2], lang, 2)}). ")
         + f"Aynı model ve yılın ilanlarında piyasa seviyesi "
-        f"{P(v['ed']['donem_kaymasi']['canli'][-1][1], lang, 1, sign=True)} kaydı ve model zamanı görmüyor → "
+        f"{P(v['ed']['period_shift']['live'][-1][1], lang, 1, sign=True)} kaydı ve model zamanı görmüyor → "
         f"yeniden eğitim takvime değil **ölçülen kaymaya** "
         f"bağlanmalı (bölümün sonu).",
         f"Two measurements. **Distribution drift:** "
         + (f"the price distribution moves little between snapshots (highest PSI {v['psi_max']:.3f}, \"no drift\" "
-           f"threshold {v['psi_safe']:.2f}). " if _kucuk else
+           f"threshold {v['psi_safe']:.2f}). " if _small else
            f"the distribution drifts above the threshold (highest PSI {v['psi_max']:.3f}). ")
         + f"**Temporal backtest:** trained on an earlier snapshot and tested only on a later snapshot's new "
         f"listings, the error "
-        + (f"grows with the horizon ({P(_s0[0][2], lang, 2)} → {P(_s0[-1][2], lang, 2)}). " if _ufuk else
+        + (f"grows with the horizon ({P(_s0[0][2], lang, 2)} → {P(_s0[-1][2], lang, 2)}). " if _horizon else
            f"does not grow with the horizon ({P(_s0[0][2], lang, 2)} → {P(_s0[-1][2], lang, 2)}). ")
         + f"Within the same model and year the market level moved "
-        f"{P(v['ed']['donem_kaymasi']['canli'][-1][1], lang, 1, sign=True)} and the model is time-blind → "
+        f"{P(v['ed']['period_shift']['live'][-1][1], lang, 1, sign=True)} and the model is time-blind → "
         f"retraining should follow **measured drift**, not the "
         f"calendar (end of this section)."))
     A("")
@@ -1621,8 +1621,8 @@ def section_time(c):
     A(L("### Dönem etkisi", "### Period effect"))
     A("")
     base_snap = snaps[0][5:]
-    _dk = v["ed"]["donem_kaymasi"]
-    _canli = {r[0]: r for r in _dk["canli"]}
+    _shift = v["ed"]["period_shift"]
+    _live_by = {r[0]: r for r in _shift["live"]}
     _emd = {p.split("→")[1]: e for p, _ks, _pp, _ps, e in dom["drift"]["all_pairs"]
             if p.split("→")[0] == base_snap}
     # 2026-09-23: donem etkisi hedonik modelden cikarildi (kullanici karari) -> hedonik sutun, dedup
@@ -1633,7 +1633,7 @@ def section_time(c):
       [[f"{base_snap} ({L(chr(116)+chr(97)+chr(98)+chr(97)+chr(110), chr(98)+chr(97)+chr(115)+chr(101))})",
         P(0.0, lang, 2), "—"]]
       + [[r_[0], P(r_[1], lang, 2, sign=True) + f" ({r_[2]})", tlx(_emd[r_[0]], lang) if r_[0] in _emd else "—"]
-         for r_ in _dk["canli"]],
+         for r_ in _shift["live"]],
       "lrr")
     A(L("İki sütun iki ayrı soruya cevap veriyor. **Canlı piyasa**: aynı model ve yılın ilanlarında medyan "
         "fiyat ne kadar değişti (parantez içinde karşılaştırılan hücre sayısı) — ilan bileşiminden arınmış, "
@@ -1667,25 +1667,25 @@ def section_time(c):
         "set holds only `ad_id`s never seen in training (leak-free), so cumulative n is at most the single n."
         + (" From the same training snapshot, error grows as the test horizon lengthens." if _grows else "")))
     # 2026-09-23: kumulatif sutunun ilk blogu (<= ilk tarama) tek donemle AYNI deneydir; veriden sinanir.
-    # 2026-09-23: "800 / 500 agac" elle yaziliydi; protokol metninden (JSON) okunur.
-    _hm = bt["protokol"]["hafif_model"]
-    _ag_bt = re.search(r"single/cumulative (\d+) agac", _hm)
-    _ag_ins = re.search(r"insample/per_snapshot (\d+) agac", _hm)
-    assert _ag_bt and _ag_ins, f"backtest protokolunde agac sayisi okunamadi: {_hm}"
-    _ilk = [(s_[1], s_[2], s_[3]) for s_ in bt["single"] if s_[0] == bt["single"][0][0]]
-    _ayni = len(_ilk) > 0 and _ilk == [(c_[1], c_[2], c_[3]) for c_ in bt["cumulative"][:len(_ilk)]]
+    # 2026-09-23: "800 / 500 agac" elle yaziliydi; protocol metninden (JSON) okunur.
+    _light_note = bt["protocol"]["light_model"]
+    _trees_bt = re.search(r"single/cumulative (\d+) agac", _light_note)
+    _trees_ins = re.search(r"insample/per_snapshot (\d+) agac", _light_note)
+    assert _trees_bt and _trees_ins, f"backtest protokolunde agac sayisi okunamadi: {_light_note}"
+    _first = [(s_[1], s_[2], s_[3]) for s_ in bt["single"] if s_[0] == bt["single"][0][0]]
+    _same_first = len(_first) > 0 and _first == [(c_[1], c_[2], c_[3]) for c_ in bt["cumulative"][:len(_first)]]
     A("")
     A(L("Bu tablonun iki kolu da ana modelden hafif bir kurulumla ölçülür: model ve seri adı TF-IDF/SVD'den "
-        f"geçmeden ham kategorik girer, {_ag_bt.group(1)} ağaç, erken durdurma yok. Mutlak düzey manşet MAPE ile değil, "
+        f"geçmeden ham kategorik girer, {_trees_bt.group(1)} ağaç, erken durdurma yok. Mutlak düzey manşet MAPE ile değil, "
         "satırlar birbiriyle karşılaştırılmalı."
-        + (f" Kümülatif kolun ilk {number_word(len(_ilk), lang)} satırı tek dönem koluyla aynı deneydir (ilk taramaya "
-           f"kadar birikim tek bir taramadır); bağımsız ikinci bir ölçüm sayılmamalı." if _ayni else ""),
+        + (f" Kümülatif kolun ilk {number_word(len(_first), lang)} satırı tek dönem koluyla aynı deneydir (ilk taramaya "
+           f"kadar birikim tek bir taramadır); bağımsız ikinci bir ölçüm sayılmamalı." if _same_first else ""),
         "Both arms of this table use a lighter setup than the main model: model and series names enter as raw "
-        f"categoricals without TF-IDF/SVD, {_ag_bt.group(1)} trees, no early stopping. Compare rows with each other, not the "
+        f"categoricals without TF-IDF/SVD, {_trees_bt.group(1)} trees, no early stopping. Compare rows with each other, not the "
         "absolute level with the headline MAPE."
-        + (f" The first {number_word(len(_ilk), 'en')} rows of the cumulative arm are the same experiment as the single "
+        + (f" The first {number_word(len(_first), 'en')} rows of the cumulative arm are the same experiment as the single "
            f"arm (accumulating up to the first snapshot is one snapshot); they are not a second, independent "
-           f"measurement." if _ayni else "")))
+           f"measurement." if _same_first else "")))
     A("")
 
     A(L("### Dönem başına OOF", "### Per-snapshot OOF"))
@@ -1696,18 +1696,18 @@ def section_time(c):
     T([L("dönem (bağımsız)", "snapshot (standalone)"), "MAPE", "n",
        L("kümülatif", "cumulative"), "MAPE", "n"], rows, "lrrlrr")
     # 2026-09-23: bu iki sutun ana modelden farkli bir protokol; eskiden "sizintisiz" diye geciyordu.
-    _son_ins, _son_n = bt["insample"][-1][1], bt["insample"][-1][2]
-    _ayni_kume = _son_n == v["n_dedup"]
+    _last_ins, _last_n = bt["insample"][-1][1], bt["insample"][-1][2]
+    _same_set = _last_n == v["n_dedup"]
     A(L(f"Bu tablo zamansal değil: her satır düz 5-fold OOF, yalnız yeni ilan kuralı yok. Kurulum yine hafif "
-        f"(TF-IDF/SVD yok, {_ag_ins.group(1)} ağaç, erken durdurma yok). Son kümülatif satır "
-        + ("manşet modelle aynı ilanları kapsıyor ve " if _ayni_kume else f"{num(_son_n, lang)} ilanda ")
-        + f"{P(_son_ins, lang, 2)} veriyor, manşet MAPE {P(v['model_mape'], lang, 2)}; kurulumlar "
+        f"(TF-IDF/SVD yok, {_trees_ins.group(1)} ağaç, erken durdurma yok). Son kümülatif satır "
+        + ("manşet modelle aynı ilanları kapsıyor ve " if _same_set else f"{num(_last_n, lang)} ilanda ")
+        + f"{P(_last_ins, lang, 2)} veriyor, manşet MAPE {P(v['model_mape'], lang, 2)}; kurulumlar "
         f"birden fazla noktada ayrıldığı için fark tek bir değişikliğe atfedilemez.",
         f"This table is not temporal: every row is plain 5-fold OOF with no new-listings-only rule. The setup is "
-        f"again lighter (no TF-IDF/SVD, {_ag_ins.group(1)} trees, no early stopping). The last cumulative row "
-        + ("covers the same listings as the headline model and " if _ayni_kume else
-           f"covers {num(_son_n, 'en')} listings and ")
-        + f"gives {P(_son_ins, lang, 2)} against a headline MAPE of "
+        f"again lighter (no TF-IDF/SVD, {_trees_ins.group(1)} trees, no early stopping). The last cumulative row "
+        + ("covers the same listings as the headline model and " if _same_set else
+           f"covers {num(_last_n, 'en')} listings and ")
+        + f"gives {P(_last_ins, lang, 2)} against a headline MAPE of "
         f"{P(v['model_mape'], lang, 2)}; the setups differ in more than one place, so the gap cannot be "
         f"attributed to a single change."))
     A("")
@@ -1720,20 +1720,20 @@ def section_time(c):
       [[pr, f"{ks:.4f}", fp(p_), f"{psi:.4f}", tlx(emd, lang)] for pr, ks, p_, psi, emd in pairs], "lrrrr")
     # Dort olcunun ne isе yaradigi + tablonun okunusu. Esikler ureticinin notundan (regex), sayilarin
     # tamami all_pairs / per_snapshot / medyan fiyattan; hicbiri elle yazilmadi.
-    th = re.search(r"PSI<([\d.]+).*?>([\d.]+)", dr["not"])
+    th = re.search(r"PSI<([\d.]+).*?>([\d.]+)", dr["note"])
     assert th, "drift notunda PSI esikleri bulunamadi | PSI thresholds missing from the drift note"
     _safe, _retrain = float(th.group(1)), float(th.group(2))
     psi_max = max(r[3] for r in pairs)
     ks_max = max(r[1] for r in pairs)
     # 2026-09-23: taramalar ayni ilanlari tasiyor, ks_2samp bagimsizlik varsayiyor. Anlamlilik sayisi
     # artik ORTAK ILANLAR CIKARILMIS (ayrik) alt kumeden; ortusme orani ayrica yayimlaniyor.
-    _ort = dr["ortusme"]
+    _overlap = dr["overlap"]
     # EN: significance of the disjoint pairs and the Holm correction come from 09_drift
     # TR: ayrık çiftlerin anlamlılığı ve Holm düzeltmesi 09_drift'ten
     _hm_ = d["report"]["drift_holm"]
     n_sig, n_tests, n_holm = _hm_["n_sig"], _hm_["n_tests"], _hm_["n_holm"]
     _holm_c = ", ".join(_hm_["pairs"])   # Holm'la kalan ciftler
-    _ort_max = max(_ort, key=lambda r: r[1]) if _ort else None
+    _overlap_max = max(_overlap, key=lambda r: r[1]) if _overlap else None
     _pern = [r[2] for r in bt["per_snapshot"]]
     _navg = round(sum(_pern) / len(_pern) / 1000)                 # donem basina ~kac bin ilan
     _snap = {sp[5:]: date.fromisoformat(sp) for sp in meta["snapshots"]}
@@ -1772,18 +1772,18 @@ def section_time(c):
            "distribution into the other's. The only measure in lira, so the most directly readable one.")],
     ], "ll")
     _m0, _m1 = (_snap[_long[0].split("→")[i]].month for i in (0, 1))   # en uzak ciftin iki ucu
-    _emd_s = [r_[5] for r_ in sorted(_ort, key=lambda r_: _gap(r_[0]))]
-    _emd_duz = all(a_ <= b_ for a_, b_ in zip(_emd_s, _emd_s[1:]))
-    _ort_kisa = min(_ort, key=lambda r_: _gap(r_[0]))
-    if _ort:
+    _emd_s = [r_[5] for r_ in sorted(_overlap, key=lambda r_: _gap(r_[0]))]
+    _emd_rising = all(a_ <= b_ for a_, b_ in zip(_emd_s, _emd_s[1:]))
+    _overlap_short = min(_overlap, key=lambda r_: _gap(r_[0]))
+    if _overlap:
         A(L(f"**Taramalar bağımsız örneklem değil.** Aynı ilan birkaç taramada birden görülüyor: ilk taramadaki "
-            f"ilanların {P(_ort_max[1], lang)} kadarı ({_ort_max[0]}) ikinci taramada da var. KS iki örneklemin "
+            f"ilanların {P(_overlap_max[1], lang)} kadarı ({_overlap_max[0]}) ikinci taramada da var. KS iki örneklemin "
             f"bağımsız olduğunu varsayar, bu yüzden yukarıdaki p-değerleri geçerli değil. Aşağıda her çift için "
             f"iki taramada da görülen ilanlar çıkarılıp KS yeniden hesaplandı. Bu ayrık karşılaştırma "
             f"bağımsızlığı sağlar ama başka bir şeyi ölçer: ilk taramadan sonra kalkan ilanlarla sonradan gelen "
             f"ilanları.",
             f"**The snapshots are not independent samples.** The same listing shows up in several of them: up to "
-            f"{P(_ort_max[1], lang)} of the first snapshot's listings ({_ort_max[0]}) are still there in the second. "
+            f"{P(_overlap_max[1], lang)} of the first snapshot's listings ({_overlap_max[0]}) are still there in the second. "
             f"KS assumes two independent samples, so the p-values above are not valid. Below, the listings seen in "
             f"both snapshots are removed from each pair and KS is recomputed. That disjoint comparison restores "
             f"independence but measures something else: listings that left after the first snapshot against "
@@ -1792,8 +1792,8 @@ def section_time(c):
         T([L("dönem çifti", "snapshot pair"), L("ortak ilan (ilk taramanın payı)", "shared (share of first)"),
            L("KS (ayrık)", "KS (disjoint)"), L("KS p (ayrık)", "KS p (disjoint)"),
            L("EMD (ayrık, ₺)", "EMD (disjoint, ₺)")],
-          [[r[0], P(r[1], lang), f"{r[2]:.4f}", fp(r[3]), tlx(r[5], lang)] for r in _ort], "lrrrr")
-    _ayr_tr, _ayr_en = (" (ayrık)", " (disjoint)") if _ort else ("", "")
+          [[r[0], P(r[1], lang), f"{r[2]:.4f}", fp(r[3]), tlx(r[5], lang)] for r in _overlap], "lrrrr")
+    _disjoint_tr, _disjoint_en = (" (ayrık)", " (disjoint)") if _overlap else ("", "")
     A(L(f"**Kayma tablosunun söylediği.** {number_word(n_sig, lang, cap=True)} çiftte ayrık KS p 0.05'in altında "
         f"({number_word(n_tests, lang)} test için Holm düzeltmesiyle {number_word(n_holm, lang)}"
         + (f": {_holm_c}) — bu çiftlerde taramalar arasında kalkan ilanlarla sonradan gelen ilanların fiyat "
@@ -1804,10 +1804,10 @@ def section_time(c):
         + f"EMD bunu liraya çeviriyor (tam taramalar, ortak ilanlar dahil): {number_word(_gap(_short[0]), lang)} günde "
         f"~₺{_emd_k(_short)} bin, {number_word(round(_gap(_long[0]) / 30), lang)} ayda ~₺{_emd_k(_long)} bin — medyan ilan "
         f"fiyatının ({tlm(v['median'])}) yaklaşık %{_long_pct:.0f} kadarı."
-        + (f" En yakın iki taramada ilkindeki ilanların {P(_ort_kisa[1], lang)} kadarı ikincisinde de var, bu "
+        + (f" En yakın iki taramada ilkindeki ilanların {P(_overlap_short[1], lang)} kadarı ikincisinde de var, bu "
            f"yüzden aralarındaki "
-           f"mesafe küçük çıkıyor." if _ort_kisa[1] > 50 else "")
-        + (" Ayrık alt kümelerde EMD aralıkla düzenli büyümüyor." if not _emd_duz else
+           f"mesafe küçük çıkıyor." if _overlap_short[1] > 50 else "")
+        + (" Ayrık alt kümelerde EMD aralıkla düzenli büyümüyor." if not _emd_rising else
            " Ayrık alt kümelerde de EMD aralıkla büyüyor."),
         f"**What the drift table says.** {number_word(n_sig, lang, cap=True)} pairs have a disjoint KS p below 0.05 "
         f"({number_word(n_holm, lang)} after a Holm correction for {number_word(n_tests, 'en')} tests"
@@ -1821,10 +1821,10 @@ def section_time(c):
         + f"EMD puts it in lira (full snapshots, shared listings included): ~₺{_emd_k(_short)}k over "
         f"{number_word(_gap(_short[0]), lang)} days, ~₺{_emd_k(_long)}k over {number_word(round(_gap(_long[0]) / 30), lang)} months "
         f"— about {_long_pct:.0f}% of the median asking price ({tlm(v['median'])})."
-        + (f" Of the listings in the first of the two closest snapshots, {P(_ort_kisa[1], lang)} are still in "
+        + (f" Of the listings in the first of the two closest snapshots, {P(_overlap_short[1], lang)} are still in "
            f"the second, so their distance comes "
-           f"out small." if _ort_kisa[1] > 50 else "")
-        + (" On the disjoint subsets EMD does not grow steadily with the gap." if not _emd_duz else
+           f"out small." if _overlap_short[1] > 50 else "")
+        + (" On the disjoint subsets EMD does not grow steadily with the gap." if not _emd_rising else
            " On the disjoint subsets EMD grows with the gap as well.")))
     A("")
     figs(13, 14)
@@ -1887,40 +1887,41 @@ def section_text(c):
     ta = d["report"]["text_ablation"]
     ab, llm = ta["ablation"], ta["llm"]
     # 2026-09-23: kapsam, ablasyon kurulumu ve bayrak sayisi elle/eksik yaziliydi — error_drivers'tan.
-    _mk = v["ed"]["metin_kaynak"]
+    _src = v["ed"]["text_source"]
     _flag = v["ed"]["text_flag"]
-    _kalan = ab["delta_r2"] / (1 - ab["r2_structured"]) * 100
-    _SIN = {"tr": {"bakim": "bakım"}, "en": {"hasar": "damage", "bakim": "maintenance", "modifiye": "modification"}}
-    _sin = ", ".join(_SIN[lang].get(k_, k_) for k_ in llm["siniflar"])
+    _remaining = ab["delta_r2"] / (1 - ab["r2_structured"]) * 100
+    _class_label = {"damage": ("hasar", "damage"), "maintenance": ("bakım", "maintenance"),
+                    "modification": ("modifiye", "modification")}
+    _classes = ", ".join(id_label(_class_label, k_, lang) for k_ in llm["classes"])
     A(L(f"Satıcı açıklaması modele **girmiyor**. Bu bir ihmal değil, ölçüm sonucu: yapısal model "
         f"R² **{ab['r2_structured']:.4f}**, üstüne metin öznitelikleri eklenince "
         f"**{ab['r2_structured_plus_text']:.4f}** — ΔR² **{ab['delta_r2']:.4f}**: yapısal modelin "
-        f"açıklayamadığı log varyansın {P(_kalan, lang)} kadarı.\n\n"
+        f"açıklayamadığı log varyansın {P(_remaining, lang)} kadarı.\n\n"
         f"Bu iki sayı ayrı bir koşumdan geliyor ve kurulumu bu raporunkinden farklı: taban modelde "
-        + ("model ve seri adı yok, " if not _mk["ablasyon_model_seri"] else "")
-        + f"{_mk['ablasyon_agac']} ağaç, {len(_mk['ablasyon_kategorik'])} kategorik ve "
-        f"{len(_mk['ablasyon_sayisal'])} sayısal öznitelik; o yüzden taban R², §{section_no('model')}'deki "
+        + ("model ve seri adı yok, " if not _src["ablation_model_series"] else "")
+        + f"{_src['ablation_trees']} ağaç, {len(_src['ablation_categorical'])} kategorik ve "
+        f"{len(_src['ablation_numeric'])} sayısal öznitelik; o yüzden taban R², §{section_no('model')}'deki "
         f"{v['model_r2']} ile karşılaştırılmamalı. "
         f"Anlamlı olan mutlak seviye değil, **iki kol arasındaki fark**.",
         f"The seller's description does **not** enter the model. That is a measurement, not an "
         f"oversight: the structural model scores R² **{ab['r2_structured']:.4f}** and adding text "
         f"features gives **{ab['r2_structured_plus_text']:.4f}** — ΔR² **{ab['delta_r2']:.4f}**: "
-        f"{P(_kalan, lang)} of the log variance the structural model leaves unexplained.\n\n"
+        f"{P(_remaining, lang)} of the log variance the structural model leaves unexplained.\n\n"
         f"These two numbers come from a separate run set up differently from this report: the baseline "
-        + ("has no model or series name, " if not _mk["ablasyon_model_seri"] else "")
-        + f"{_mk['ablasyon_agac']} trees, {len(_mk['ablasyon_kategorik'])} categorical and "
-        f"{len(_mk['ablasyon_sayisal'])} numeric features; so the baseline R² should not be read against the "
+        + ("has no model or series name, " if not _src["ablation_model_series"] else "")
+        + f"{_src['ablation_trees']} trees, {len(_src['ablation_categorical'])} categorical and "
+        f"{len(_src['ablation_numeric'])} numeric features; so the baseline R² should not be read against the "
         f"{v['model_r2']} in "
         f"§{section_no('model')}. What matters is the **gap between the two arms**, not the level."))
     A("")
-    A(L(f"Metinden yapılandırılmış bilgi çıkarmak ayrıca denendi: **{llm['kutuphane']}** "
-        f"kütüphanesi ve **{llm['model']}** ile {num(_mk['llm_metin'], lang)} ilan metnindeki {_sin} ifadeleri "
-        f"parça ve durum niteliğiyle çıkarıldı; bu metinlerin {num(_mk['llm_modeldeki_ilan'], lang)} tanesi "
-        f"modeldeki ilanlara denk geliyor (ilanların {P(_mk['llm_kapsam_pct'], lang)} kadarı).",
-        f"Pulling structured facts out of the text was tried separately: **{llm['kutuphane']}** "
-        f"with **{llm['model']}** extracted {_sin} phrases from {num(_mk['llm_metin'], lang)} ad texts, each "
-        f"with a part and a state attribute; {num(_mk['llm_modeldeki_ilan'], lang)} of those texts belong to "
-        f"listings in the model ({P(_mk['llm_kapsam_pct'], lang)} of the model's listings)."))
+    A(L(f"Metinden yapılandırılmış bilgi çıkarmak ayrıca denendi: **{llm['library']}** "
+        f"kütüphanesi ve **{llm['model']}** ile {num(_src['llm_texts'], lang)} ilan metnindeki {_classes} ifadeleri "
+        f"parça ve durum niteliğiyle çıkarıldı; bu metinlerin {num(_src['llm_listings_in_model'], lang)} tanesi "
+        f"modeldeki ilanlara denk geliyor (ilanların {P(_src['llm_coverage_pct'], lang)} kadarı).",
+        f"Pulling structured facts out of the text was tried separately: **{llm['library']}** "
+        f"with **{llm['model']}** extracted {_classes} phrases from {num(_src['llm_texts'], lang)} ad texts, each "
+        f"with a part and a state attribute; {num(_src['llm_listings_in_model'], lang)} of those texts belong to "
+        f"listings in the model ({P(_src['llm_coverage_pct'], lang)} of the model's listings)."))
     A("")
     A(L("Bu çıkarımların kendisi ne modele ne rapora girdi, çünkü **doğrulukları ölçülemedi**. Tek dolaylı "
         f"bağ: §{section_no('model')}'deki metin bayrağının ve §{section_no('calibration')}'deki örnek gerekçelerinin "

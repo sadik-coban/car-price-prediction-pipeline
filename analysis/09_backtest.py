@@ -135,11 +135,11 @@ def to_metrics(res):
     """
     return {"methodology": {"backtest": {
         **res,
-        "protokol": {"sizintisiz": ["single", "cumulative"], "duz_kfold": ["insample", "per_snapshot"],
-                     "ayni_deney": "cumulative ilk blok (<= ilk tarama) single ilk blokla ayni",
-                     "hafif_model": ("tum kollar ana modelden hafif: TF-IDF/SVD yok (ad ham kategorik), erken durdurma yok; "
+        "protocol": {"leak_free": ["single", "cumulative"], "plain_kfold": ["insample", "per_snapshot"],
+                     "same_experiment": "cumulative ilk blok (<= ilk tarama) single ilk blokla ayni",
+                     "light_model": ("tum kollar ana modelden hafif: TF-IDF/SVD yok (ad ham kategorik), erken durdurma yok; "
                                      "single/cumulative 800 agac, insample/per_snapshot 500 agac")},
-        "not": ("single: tek taramada eğit, sonraki taramaların yalnız YENİ ad_id'lerinde test et (sızıntısız). "
+        "note": ("single: tek taramada eğit, sonraki taramaların yalnız YENİ ad_id'lerinde test et (sızıntısız). "
                 "cumulative: t'ye kadarki taramalarda eğit, aynı kural; ilk bloğu single ile aynı deneydir. "
                 "insample: kümülatif birikimde düz 5-fold OOF, zaman boyutu yok. per_snapshot: her tarama "
                 "izole, düz 5-fold OOF. Dört kol da ana modelden hafif: TF-IDF/SVD yok, erken durdurma yok "

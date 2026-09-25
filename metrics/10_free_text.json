@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "10_free_text.py",
-  "generated_at": "2026-09-25T05:25:13+03:00",
+  "generated_at": "2026-09-25T16:43:31+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": null,
   "source": {
    "script": {
-    "analysis/10_free_text.py": "6a84fdada75323f9bb0970d21b1941a235d8a3e7ee1a6de67174bca26f9dd04c"
+    "analysis/10_free_text.py": "e5235dff01c60741120bb4c29b7fa108827064f68ca37a15c519c25d3951b244"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -21,13 +21,13 @@
   }
  },
  "error_drivers": {
-  "metin_kaynak": {
-   "llm_metin": 13904,
-   "llm_modeldeki_ilan": 13867,
-   "ilan": 29988,
-   "llm_kapsam_pct": 46.2,
-   "ablasyon_agac": 300,
-   "ablasyon_kategorik": [
+  "text_source": {
+   "llm_texts": 13904,
+   "llm_listings_in_model": 13867,
+   "listings": 29988,
+   "llm_coverage_pct": 46.2,
+   "ablation_trees": 300,
+   "ablation_categorical": [
     "brand",
     "kb_body_type",
     "kb_drivetrain",
@@ -35,7 +35,7 @@
     "kb_transmission",
     "kb_fuel"
    ],
-   "ablasyon_sayisal": [
+   "ablation_numeric": [
     "vehicle_age",
     "gb_mileage",
     "power_hp_val",
@@ -45,7 +45,7 @@
     "count_local_painted",
     "is_heavy_damaged"
    ],
-   "ablasyon_model_seri": false
+   "ablation_model_series": false
   }
  },
  "report": {
@@ -56,15 +56,15 @@
     "delta_r2": 0.0015
    },
    "llm": {
-    "kutuphane": "LangExtract",
+    "library": "LangExtract",
     "model": "gemini-3.1-flash-lite",
-    "siniflar": [
-     "hasar",
-     "bakim",
-     "modifiye"
+    "classes": [
+     "damage",
+     "maintenance",
+     "modification"
     ]
    },
-   "kaynak": "_arsiv/text_analysis (2026-09-19'da arsivlenen metin analizi kosumu): ablasyon metrics/text_insights.json->delta_r2, model adi langextract/extgemini.py MODEL_NAME. Arsiv git disi oldugu icin degerler 2026-09-22'de bu dosyaya donduruldu; teknik rapor buradan okur."
+   "source": "_arsiv/text_analysis (2026-09-19'da arsivlenen metin analizi kosumu): ablasyon metrics/text_insights.json->delta_r2, model adi langextract/extgemini.py MODEL_NAME. Arsiv git disi oldugu icin degerler 2026-09-22'de bu dosyaya donduruldu; teknik rapor buradan okur."
   }
  }
 }

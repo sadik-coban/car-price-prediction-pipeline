@@ -20,6 +20,8 @@ from lib.common import ROOT, load_clean, save_metrics
 
 EXTRACTION_FILE = ROOT / "data" / "langextract" / "extraction_results.jsonl"
 FROZEN_FILE = ROOT / "analysis" / "frozen" / "text_ablation.json"
+# EN: the frozen file's (Turkish) LLM class names -> the ids published | TR: dondurulmuş dosyanın LLM sınıf adları
+LLM_CLASSES = {"hasar": "damage", "bakim": "maintenance", "modifiye": "modification"}
 
 
 # %% [2] Analysis functions | Analiz fonksiyonları — pure: no file I/O, they only return values
@@ -37,18 +39,25 @@ def extraction_coverage(document_ids, listing_ids):
 # %% [3] Metrics assembly | Metrik derleme — naming and rounding only | yalnız adlandırma ve yuvarlama
 def to_metrics(res):
     """
-    EN: Published in the report inputs (error_drivers.metin_kaynak) and report.text_ablation.
-    TR: Rapor girdilerinde (error_drivers.metin_kaynak) ve report.text_ablation'da yayımlanır.
+    EN: Published in the report inputs (error_drivers.text_source) and report.text_ablation. The frozen evidence
+        keeps its original (Turkish) field names; they are translated here, and an unknown field or class stops.
+    TR: Rapor girdilerinde (error_drivers.text_source) ve report.text_ablation'da yayımlanır. Dondurulmuş kanıt
+        özgün (Türkçe) alan adlarını korur; burada çevrilir, bilinmeyen alan ya da sınıf durdurur.
     """
     cov, fz = res["coverage"], res["frozen"]
-    setup = fz["setup"]
-    return {"error_drivers": {"metin_kaynak": {
-                "llm_metin": cov["texts"], "llm_modeldeki_ilan": cov["in_model"], "ilan": cov["listings"],
-                "llm_kapsam_pct": round(100 * cov["in_model"] / cov["listings"], 1),
-                "ablasyon_agac": setup["n_estimators"], "ablasyon_kategorik": setup["categorical"],
-                "ablasyon_sayisal": setup["numeric"],
-                "ablasyon_model_seri": any(c in ("model", "series") for c in setup["categorical"] + setup["numeric"])}},
-            "report": {"text_ablation": {"ablation": fz["ablation"], "llm": fz["llm"], "kaynak": fz["kaynak"]}}}
+    setup, llm = fz["setup"], fz["llm"]
+    assert set(llm) == {"kutuphane", "model", "siniflar"}, f"frozen llm fields changed: {sorted(llm)}"
+    return {"error_drivers": {"text_source": {
+                "llm_texts": cov["texts"], "llm_listings_in_model": cov["in_model"], "listings": cov["listings"],
+                "llm_coverage_pct": round(100 * cov["in_model"] / cov["listings"], 1),
+                "ablation_trees": setup["n_estimators"], "ablation_categorical": setup["categorical"],
+                "ablation_numeric": setup["numeric"],
+                "ablation_model_series": any(c in ("model", "series") for c in setup["categorical"] + setup["numeric"])}},
+            "report": {"text_ablation": {
+                "ablation": fz["ablation"],
+                "llm": {"library": llm["kutuphane"], "model": llm["model"],
+                        "classes": [LLM_CLASSES[c] for c in llm["siniflar"]]},
+                "source": fz["kaynak"]}}}
 
 
 # %% [4] Load | Yükle — the only cells that read files | dosya okuyan tek hücreler

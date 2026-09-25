@@ -231,7 +231,7 @@ def fmt_business(v, F, lang):
         + (f"Bugün kayma küçük (en yüksek PSI {v['psi_max']:.3f}, eşik {v['psi_safe']:.2f}); " if v["psi_max"] < v["psi_safe"]
            else f"Kayma eşiği aşıyor (en yüksek PSI {v['psi_max']:.3f}); ")
         + f"ama piyasa seviyesi {v['n_snapshots']} dönemde "
-        f"{P(v['ed']['donem_kaymasi']['canli'][-1][1], lang, 1, sign=True)} kaydı ve model zamanı görmüyor.\n"
+        f"{P(v['ed']['period_shift']['live'][-1][1], lang, 1, sign=True)} kaydı ve model zamanı görmüyor.\n"
         f"- **Fiyat rejimini değiştiren gelişmeleri takip et** (vergi/ÖTV düzenlemesi, teşvik, ani "
         f"piyasa hareketi gibi) — eğitim planı bunlara göre yapılmalı." + _bir_tr,
         f"- Widen the range on cheap cars — don't trust a point estimate.\n"
@@ -247,7 +247,7 @@ def fmt_business(v, F, lang):
         + (f"Drift is small today (highest PSI {v['psi_max']:.3f}, threshold {v['psi_safe']:.2f}), but the "
            if v["psi_max"] < v["psi_safe"] else f"Drift is above the threshold (highest PSI {v['psi_max']:.3f}) and the ")
         +
-        f"market level moved {P(v['ed']['donem_kaymasi']['canli'][-1][1], lang, 1, sign=True)}"
+        f"market level moved {P(v['ed']['period_shift']['live'][-1][1], lang, 1, sign=True)}"
         f" over {number_word(v['n_snapshots'], 'en')} snapshots and the model is time-blind.\n"
         f"- **Watch for events that reset the pricing regime** (a tax or excise change, an incentive, "
         f"a sudden market move) — plan retraining around them." + _bir_en))

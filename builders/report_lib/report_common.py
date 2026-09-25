@@ -38,20 +38,20 @@ RESID_VIEW = 40
 # EN: every path the report text reads; a missing one stops the build instead of silently dropping a paragraph
 # TR: rapor metninin okuduğu her yol; eksik olan paragrafı sessizce düşürmek yerine derlemeyi durdurur
 REQUIRED = [
-    "domain.drift.all_pairs", "domain.drift.ortusme", "domain.drift.not",
+    "domain.drift.all_pairs", "domain.drift.overlap", "domain.drift.note",
     "domain.hedonic_reliability.center", "domain.brand_ablation.validation",
     "methodology.column_accounting", "methodology.kb_gb_twins", "domain.hedonic_reliability.with_model",
     "domain.segment_ladder", "domain.model_year_median.ladder", "domain.price_dist.p10", "domain.price_dist.p90",
     "domain.final_results.training.target", "domain.shap.lightgbm_tfidf_svd", "domain.kmeans",
     "methodology.cramers_null", "methodology.theils_null", "methodology.column_missing",
-    "methodology.backtest.per_snapshot", "methodology.backtest.insample", "methodology.backtest.protokol",
+    "methodology.backtest.per_snapshot", "methodology.backtest.insample", "methodology.backtest.protocol",
     "methodology.systematic_missing.systematic_groups", "methodology.systematic_missing.note",
     "methodology.pca_axes", "meta.repro", "meta.brands", "column_labels"] + [f"error_drivers.{p_}" for p_ in [
     "plate_scope", "segment_quality", "hedonic_dropped", "per_model_error", "per_model_buckets", "lira_quartile",
     "lira_scaled", "scope", "price_changes", "unspecified", "baseline_equal_terms", "text_flag",
-    "age_sensitivity", "age_cuts", "old_d_group", "spec_outliers.blind_spot", "donem_kaymasi",
+    "age_sensitivity", "age_cuts", "old_d_group", "spec_outliers.blind_spot", "period_shift",
     "by_model_year_n", "by_segment_FS", "by_age", "by_snapshot", "raw_columns", "examples",
-    "engine_rule.engine_cc", "engine_rule.power_hp", "unspecified.structure", "live_vs_gone", "metin_kaynak"]] + [
+    "engine_rule.engine_cc", "engine_rule.power_hp", "unspecified.structure", "live_vs_gone", "text_source"]] + [
     f"report.{p_}" for p_ in ["q_bounds", "model_r2_log", "err_bands", "conformal_q", "conformal_all",
                               "conformal_by_pred", "drift_holm", "text_ablation"]]
 
@@ -210,7 +210,7 @@ def derive(d):
     v["cov_q4"] = dom["conformal"]["by_quantile"][-1][1]
     # PSI ozeti — karar notunun "bugun kayma kucuk" cumlesi buna kapili. Esik ureticinin notundan;
     # not bicimi degisirse sessizce varsayilana dusmez, durur.
-    _th = re.search(r"PSI<([\d.]+).*?>([\d.]+)", dom["drift"]["not"])
+    _th = re.search(r"PSI<([\d.]+).*?>([\d.]+)", dom["drift"]["note"])
     assert _th, "drift notunda PSI esikleri bulunamadi"
     v["psi_max"] = max(r[3] for r in dom["drift"]["all_pairs"])
     v["psi_safe"], v["psi_retrain"] = float(_th.group(1)), float(_th.group(2))

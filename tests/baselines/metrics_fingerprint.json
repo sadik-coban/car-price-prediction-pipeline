@@ -1092,7 +1092,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T05:25:12+03:00",
+  "_meta.generated_at": "2026-09-25T16:43:30+03:00",
   "_meta.run_id": null,
   "_meta.script": "09_backtest.py",
   "methodology.backtest.cumulative": {
@@ -1103,21 +1103,21 @@
    "len": 4,
    "sha256": "5658a8065e63f6a908f413e7c37772651b898ebf0595d84f7cad3c91dedf3ff5"
   },
-  "methodology.backtest.not": "single: tek taramada eğit, sonraki taramaların yalnız YENİ ad_id'lerinde test et (sızıntısız). cumulative: t'ye kadarki taramalarda eğit, aynı kural; ilk bloğu single ile aynı deneydir. insample: kümülatif birikimde düz 5-fold OOF, zaman boyutu yok. per_snapshot: her tarama izole, düz 5-fold OOF. Dört kol da ana modelden hafif: TF-IDF/SVD yok, erken durdurma yok (single/cumulative 800, insample/per_snapshot 500 ağaç).",
+  "methodology.backtest.note": "single: tek taramada eğit, sonraki taramaların yalnız YENİ ad_id'lerinde test et (sızıntısız). cumulative: t'ye kadarki taramalarda eğit, aynı kural; ilk bloğu single ile aynı deneydir. insample: kümülatif birikimde düz 5-fold OOF, zaman boyutu yok. per_snapshot: her tarama izole, düz 5-fold OOF. Dört kol da ana modelden hafif: TF-IDF/SVD yok, erken durdurma yok (single/cumulative 800, insample/per_snapshot 500 ağaç).",
   "methodology.backtest.per_snapshot": {
    "len": 4,
    "sha256": "21a4e89d5bbd3444fe8adef957687bd40850115774f50dcabbc6c7cb6dad5950"
   },
-  "methodology.backtest.protokol.ayni_deney": "cumulative ilk blok (<= ilk tarama) single ilk blokla ayni",
-  "methodology.backtest.protokol.duz_kfold": {
-   "len": 2,
-   "sha256": "b3b9d739d449faff118fb799a07ebe369bd4c05e7365ad873acc47cb57ca354a"
-  },
-  "methodology.backtest.protokol.hafif_model": "tum kollar ana modelden hafif: TF-IDF/SVD yok (ad ham kategorik), erken durdurma yok; single/cumulative 800 agac, insample/per_snapshot 500 agac",
-  "methodology.backtest.protokol.sizintisiz": {
+  "methodology.backtest.protocol.leak_free": {
    "len": 2,
    "sha256": "157d3646b52e16d28f83ad1478017eaf6ac1a2e2555c20e385e7e76fd61c791d"
   },
+  "methodology.backtest.protocol.light_model": "tum kollar ana modelden hafif: TF-IDF/SVD yok (ad ham kategorik), erken durdurma yok; single/cumulative 800 agac, insample/per_snapshot 500 agac",
+  "methodology.backtest.protocol.plain_kfold": {
+   "len": 2,
+   "sha256": "b3b9d739d449faff118fb799a07ebe369bd4c05e7365ad873acc47cb57ca354a"
+  },
+  "methodology.backtest.protocol.same_experiment": "cumulative ilk blok (<= ilk tarama) single ilk blokla ayni",
   "methodology.backtest.single": {
    "len": 6,
    "sha256": "1bbefbedb625b64a8cd4b378c90f227e892c9da3cfa4d9135de9afe61bae89cf"
@@ -1128,7 +1128,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T05:24:33+03:00",
+  "_meta.generated_at": "2026-09-25T16:41:45+03:00",
   "_meta.run_id": null,
   "_meta.script": "09_drift.py",
   "domain.drift.all_pairs": {
@@ -1195,21 +1195,21 @@
    "len": 120,
    "sha256": "aabc32ed42af1802c25deb7cba7a0c24f42039d85c3dfe22d89f9fdb76414b74"
   },
-  "domain.drift.not": "KS=maks dağılım farkı, PSI<0.10 güvenli/>0.25 retrain, EMD=kayma mesafesi (₺). hist.edges = bin kenarları (39 bin, 40 kenar); hist[snapshot] = yükseklikler.",
-  "domain.drift.ortusme": {
+  "domain.drift.note": "KS=maks dağılım farkı, PSI<0.10 güvenli/>0.25 retrain, EMD=kayma mesafesi (₺). hist.edges = bin kenarları (39 bin, 40 kenar); hist[snapshot] = yükseklikler.",
+  "domain.drift.overlap": {
    "len": 6,
    "sha256": "df338809385eafcaef0a534fa97121ee8aa5ee27aed678c45884ee0daca367e9"
   },
-  "domain.drift.ortusme_not": "[cift, ortak ilan %, KS_ayrik, p_ayrik, PSI_ayrik, EMD_ayrik, n_a, n_b]. Ayrik = iki taramada da gorulen ilanlar cikarildiktan sonra.",
+  "domain.drift.overlap_note": "[cift, ortak ilan %, KS_ayrik, p_ayrik, PSI_ayrik, EMD_ayrik, n_a, n_b]. Ayrik = iki taramada da gorulen ilanlar cikarildiktan sonra.",
   "domain.drift.table": {
    "len": 3,
    "sha256": "306279678bd83f0ee395f50744b77486e81acbb5d6ed5efbd4bc4b1390073ae8"
   },
-  "error_drivers.donem_kaymasi.canli": {
+  "error_drivers.period_shift.live": {
    "len": 3,
    "sha256": "1f85423bb1120b9a7aa2e4b25d3aa69dcfb196a23733b4268a3db38154700b3a"
   },
-  "error_drivers.donem_kaymasi.min_hucre_n": 3,
+  "error_drivers.period_shift.min_cell_n": 3,
   "report.drift_holm.n_holm": 2,
   "report.drift_holm.n_sig": 5,
   "report.drift_holm.n_tests": 6,
@@ -1223,33 +1223,33 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T05:25:13+03:00",
+  "_meta.generated_at": "2026-09-25T16:43:31+03:00",
   "_meta.run_id": null,
   "_meta.script": "10_free_text.py",
-  "error_drivers.metin_kaynak.ablasyon_agac": 300,
-  "error_drivers.metin_kaynak.ablasyon_kategorik": {
+  "error_drivers.text_source.ablation_categorical": {
    "len": 6,
    "sha256": "ab5d6cb2229eeced2a06f9f39719534b6a2ae085ab5933cf4c64880e6193ebb2"
   },
-  "error_drivers.metin_kaynak.ablasyon_model_seri": false,
-  "error_drivers.metin_kaynak.ablasyon_sayisal": {
+  "error_drivers.text_source.ablation_model_series": false,
+  "error_drivers.text_source.ablation_numeric": {
    "len": 8,
    "sha256": "265876fbe0114d836b95c93fd67b2115ced53b94c6b8e08e207e144c4ee54614"
   },
-  "error_drivers.metin_kaynak.ilan": 29988,
-  "error_drivers.metin_kaynak.llm_kapsam_pct": 46.2,
-  "error_drivers.metin_kaynak.llm_metin": 13904,
-  "error_drivers.metin_kaynak.llm_modeldeki_ilan": 13867,
+  "error_drivers.text_source.ablation_trees": 300,
+  "error_drivers.text_source.listings": 29988,
+  "error_drivers.text_source.llm_coverage_pct": 46.2,
+  "error_drivers.text_source.llm_listings_in_model": 13867,
+  "error_drivers.text_source.llm_texts": 13904,
   "report.text_ablation.ablation.delta_r2": 0.0015,
   "report.text_ablation.ablation.r2_structured": 0.9645,
   "report.text_ablation.ablation.r2_structured_plus_text": 0.966,
-  "report.text_ablation.kaynak": "_arsiv/text_analysis (2026-09-19'da arsivlenen metin analizi kosumu): ablasyon metrics/text_insights.json->delta_r2, model adi langextract/extgemini.py MODEL_NAME. Arsiv git disi oldugu icin degerler 2026-09-22'de bu dosyaya donduruldu; teknik rapor buradan okur.",
-  "report.text_ablation.llm.kutuphane": "LangExtract",
-  "report.text_ablation.llm.model": "gemini-3.1-flash-lite",
-  "report.text_ablation.llm.siniflar": {
+  "report.text_ablation.llm.classes": {
    "len": 3,
-   "sha256": "963c4764e6adff332bb686b76f83411c8c29c3c4c2c2185c434c1211da5485d8"
-  }
+   "sha256": "a0349a39a26977191bba0321d312cef1c55ecb7eaf7270b25cf20880c9dfbb87"
+  },
+  "report.text_ablation.llm.library": "LangExtract",
+  "report.text_ablation.llm.model": "gemini-3.1-flash-lite",
+  "report.text_ablation.source": "_arsiv/text_analysis (2026-09-19'da arsivlenen metin analizi kosumu): ablasyon metrics/text_insights.json->delta_r2, model adi langextract/extgemini.py MODEL_NAME. Arsiv git disi oldugu icin degerler 2026-09-22'de bu dosyaya donduruldu; teknik rapor buradan okur."
  },
  "shap/02_oof_shap": {
   "_meta.data_until": "2026-06-27",
