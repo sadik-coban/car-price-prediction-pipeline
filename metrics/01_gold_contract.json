@@ -1,17 +1,17 @@
 {
  "_meta": {
   "script": "01_gold_contract.py",
-  "generated_at": "2026-09-25T22:30:52+03:00",
+  "generated_at": "2026-09-26T00:34:36+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
-   "sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-   "rows": 45277
+   "sha256": "ebf8cea3c520c50f26cad748932acaee15d53444c3bb0490e1561dc77116d15e",
+   "rows": 45315
   },
   "run_id": null,
   "source": {
    "script": {
-    "analysis/01_gold_contract.py": "4ad4e5e592657691d84fb4547848329759f411835511082469c2a612f982622d"
+    "analysis/01_gold_contract.py": "cdc670643a205debd6724418185571f99cd4befaca5c4c4ea58ec8320931762a"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -23,6 +23,17 @@
  "error_drivers": {
   "gold_contract": {
    "table_rows": 45277,
+   "semi_raw_rows": 45315,
+   "dropped_rows": [
+    {
+     "column": "gb_plate_origin",
+     "values": [
+      "Mavi plakalı"
+     ],
+     "rows": 38,
+     "listings": 22
+    }
+   ],
    "semi_raw_columns": 117,
    "gold_columns": 116,
    "groups": [
@@ -53,7 +64,7 @@
     "kb_paint_change_summary"
    ],
    "empty_description_rows": 114,
-   "note": "Sayımlar bütün car_listings tablosunda (her taramanın her satırı; gold dosyası bu satırları tutar). Kurallar db/gold_rules.json'dan; gold'u db/build_gold_db.py kurar."
+   "note": "Sayımlar gold'un aldığı car_listings satırlarında (satır kuralının düşürdükleri dışında her taramanın her satırı). Kurallar db/gold_rules.json'dan; gold'u db/build_gold_db.py kurar."
   }
  }
 }

@@ -75,16 +75,18 @@ def price_changes(all_rows):
 
 def plate_scope(plate_rows):
     """
-    EN: Which plates reach the model. Foreign/blue plates never enter the database; here the split of
-        what is in it: rows and listings per plate label, and listings with no TR row at all (dropped).
+    EN: Which plates reach the model. The semi-raw DB keeps every plate the site showed (TR, blue, empty); the
+        model takes TR plates only. Rows and listings per plate label, the listings with no TR row at all (left
+        out), split by their label. A left-out listing with two different labels was never seen: it stops.
         plate_rows: every row with price > 0, columns ad_id and gb_plate_origin.
         Returns: {"by_plate": [[label, rows, listings], ...], "tr_listings", "dropped_listings",
-                  "listings_with_both"}.
-    TR: Modele hangi plakalar giriyor. Yabancı/mavi plakalar veritabanına hiç girmez; burada içindekinin
-        dökümü: plaka etiketi başına satır ve ilan, hiç TR satırı olmayan (elenen) ilanlar.
+                  "listings_with_both", "dropped_by_plate": [[label, listings], ...]}.
+    TR: Modele hangi plakalar giriyor. Yarı ham DB sitenin gösterdiği her plakayı tutar (TR, mavi, boş); model
+        yalnız TR plakayı alır. Plaka etiketi başına satır ve ilan, hiç TR satırı olmayan (dışarıda kalan) ilanlar,
+        etiketlerine göre. İki farklı etiketi olan dışarıda kalmış ilan hiç görülmedi: durur.
         plate_rows: fiyatı > 0 bütün satırlar, kolonlar ad_id ve gb_plate_origin.
         Döndürür: {"by_plate": [[etiket, satır, ilan], ...], "tr_listings", "dropped_listings",
-                   "listings_with_both"}.
+                   "listings_with_both", "dropped_by_plate": [[etiket, ilan], ...]}.
     """
     label = plate_rows["gb_plate_origin"].fillna("(bilinmiyor)")
     by = (plate_rows.assign(label=label).groupby("label")
@@ -93,10 +95,16 @@ def plate_scope(plate_rows):
     is_tr = plate_rows["gb_plate_origin"] == TR_PLATE
     per_ad = pd.DataFrame({"tr": is_tr, "other": ~is_tr, "ad_id": plate_rows["ad_id"]}).groupby("ad_id").max()
     tr_row = by.loc[TR_PLATE] if TR_PLATE in by.index else None
+    left_out = per_ad.index[~per_ad["tr"]]
+    labels = pd.DataFrame({"ad_id": plate_rows["ad_id"], "label": label})
+    labels = labels[labels["ad_id"].isin(left_out)].groupby("ad_id")["label"].agg(set)
+    assert (labels.map(len) == 1).all(), "a left-out listing with two plate labels | iki plaka etiketli ilan"
+    dropped_by = labels.map(lambda s: next(iter(s))).value_counts()
     return {"by_plate": [[str(i), int(r.rows), int(r.listings)] for i, r in by.iterrows()],
             "tr_listings": int(tr_row["listings"]) if tr_row is not None else 0,
             "dropped_listings": int((~per_ad["tr"]).sum()),
-            "listings_with_both": int((per_ad["tr"] & per_ad["other"]).sum())}
+            "listings_with_both": int((per_ad["tr"] & per_ad["other"]).sum()),
+            "dropped_by_plate": [[str(k), int(v)] for k, v in dropped_by.items()]}
 
 
 def read_collection_filters(config_text):
@@ -224,9 +232,11 @@ def to_metrics(res):
                 "distribution": [{"plate": p, "rows": r, "listings": i} for p, r, i in pl["by_plate"]],
                 "in_training": pl["tr_listings"], "dropped_listings": pl["dropped_listings"],
                 "listings_with_both": pl["listings_with_both"],
-                "note": ("Yabancı/mavi plakalı ilanlar veritabanına hiç yazılmadı (build_duckdb.py); "
-                        "burada elenenler plaka bilgisi BOŞ olan ilanlardır. Eğitim, doğrulama ve "
-                        "backtest'in tamamı TR plakalı ilanlar üzerindedir.")},
+                "dropped_by_plate": [{"plate": p, "listings": n} for p, n in pl["dropped_by_plate"]],
+                "note": ("Yarı ham veritabanı sitenin gösterdiği her plakayı tutar (mavi plakalılar ve plaka "
+                        "bilgisi boş olanlar dahil); gold mavi plakalıları almaz (db/gold_rules.json). Hiç TR "
+                        "satırı olmayan ilanlar eğitime girmez. Eğitim, doğrulama ve backtest'in tamamı TR "
+                        "plakalı ilanlar üzerindedir.")},
             "scope": {"brands": fl["brands"], "price_min": fl["price_min"], "price_max": fl["price_max"],
                       "max_km": fl["max_km"], "min_year": fl["min_year"], "fuel_filter": fl["fuels"],
                       "category": fl["category"],

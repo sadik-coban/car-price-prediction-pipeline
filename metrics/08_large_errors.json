@@ -1,14 +1,14 @@
 {
  "_meta": {
   "script": "08_large_errors.py",
-  "generated_at": "2026-09-25T22:43:58+03:00",
+  "generated_at": "2026-09-26T00:57:37+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
-   "sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-   "rows": 45277
+   "sha256": "ebf8cea3c520c50f26cad748932acaee15d53444c3bb0490e1561dc77116d15e",
+   "rows": 45315
   },
-  "run_id": "aa436e0cfd32",
+  "run_id": "1dfe3eed250e",
   "source": {
    "script": {
     "analysis/08_large_errors.py": "3b6c954f6068f4e3149ba64ca4cbf02f8b9771df15042d4d7f6962a6deac1735"

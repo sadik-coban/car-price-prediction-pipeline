@@ -45,16 +45,18 @@ def test_price_changes_add_up(doc):
 
 def test_plates_match_training(doc):
     """
-    EN: The TR plate row holds every snapshot row and every listing, and that is the training set; the dropped
-        listings are the unknown-plate ones never seen with a TR plate.
-    TR: TR plaka satırı her tarama satırını ve her ilanı tutar, eğitim kümesi de odur; atılanlar hiç TR plakayla
-        görülmemiş bilinmeyen plakalı ilanlardır.
+    EN: The TR plate row holds every snapshot row and every listing, and that is the training set; the left-out
+        listings are the ones never seen with a TR plate (blue plates and empty plate fields), split by label.
+    TR: TR plaka satırı her tarama satırını ve her ilanı tutar, eğitim kümesi de odur; dışarıda kalanlar hiç TR
+        plakayla görülmemiş ilanlardır (mavi plakalar ve boş plaka alanları), etikete göre.
     """
     ps, meta = doc["error_drivers"]["plate_scope"], doc["meta"]
     tr = next(r for r in ps["distribution"] if r["plate"] == "(TR) Türkiye")
     assert tr["rows"] == meta["n_raw"] and tr["listings"] == ps["in_training"] == meta["n_dedup"]
     other = sum(r["listings"] for r in ps["distribution"] if r is not tr)
     assert ps["dropped_listings"] == other - ps["listings_with_both"] >= 0
+    assert sum(r["listings"] for r in ps["dropped_by_plate"]) == ps["dropped_listings"]
+    assert {r["plate"] for r in ps["dropped_by_plate"]} <= {r["plate"] for r in ps["distribution"]} - {"(TR) Türkiye"}
 
 
 def test_filters_fit_the_data(doc):

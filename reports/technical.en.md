@@ -8,7 +8,7 @@ This report answers two questions: what sets a used-car price, and how accuratel
 
 Median asking price ₺1.55M, ranging ₺0.85M–₺3.43M (P10–P90).
 
-**Scope: Turkish-plated vehicles only.** Foreign/blue-plate listings never entered the database: their tax regime differs and would mislead the model and the analysis. The 54 listings with an empty plate field were left out too, since their regime is unknown.
+**Scope: Turkish-plated vehicles only.** 22 blue-plate listings (cars of foreign residents) stay in the semi-raw database but were not taken into gold or the model: their tax regime differs and would mislead the model and the analysis. The 54 listings with an empty plate field were not taken into the model either, since their regime is unknown.
 
 **Scope: collection filters.** The data was collected from Audi and BMW listings in the site's `/otomobil/` category with these filters: price ₺300K–₺6.50M, at most 700,000 km, model year 2005 or later, fuel Petrol, Diesel, Hybrid, LPG. Three consequences:
 
@@ -40,7 +40,7 @@ Median asking price ₺1.55M, ranging ₺0.85M–₺3.43M (P10–P90).
 
 ### The data the API gets (gold)
 
-The analysis reads the semi-raw database: what the page does not say stays empty, and the analysis decides how to read it. The live price API expects the old contract, where an unknown reads as "no" or 0. So the API gets a separate file: the same 45,277 rows (every listing of every snapshot), the same order and ids; only the gaps below are filled and one column is left out. The filling rule is the analysis' rule: an unspecified panel counts as original, an unspecified heavy-damage record as not heavily damaged.
+The analysis reads the semi-raw database: what the page does not say stays empty, and the analysis decides how to read it. The live price API expects the old contract, where an unknown reads as "no" or 0. So the API gets a separate file: of the semi-raw database's 45,315 rows, the 38 blue-plate rows (22 listings) are left out; the other 45,277 rows go in the same order with the same ids, only the gaps below are filled and one column is left out. The filling rule is the analysis' rule: an unspecified panel counts as original, an unspecified heavy-damage record as not heavily damaged.
 
 | group | columns | value written | cells filled | rows affected |
 |---|---:|---|---:|---:|

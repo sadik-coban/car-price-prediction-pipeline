@@ -47,6 +47,7 @@
    "meta.n_dedup",
    "error_drivers.price_changes",
    "error_drivers.plate_scope.in_training",
+   "error_drivers.plate_scope.dropped_by_plate",
    "error_drivers.scope.measured",
    "methodology.content_duplicates.strict_pct"
   ]

@@ -9,8 +9,8 @@
   "en": "The whole semi-raw car_listings table (every row of every snapshot) + db/gold_rules.json."
  },
  "method": {
-  "tr": "Kural başına doldurulan NULL hücre ve etkilenen satır sayımı, alınmayan kolon, boş açıklama sayısı. Model yok.",
-  "en": "Per rule: NULL cells filled and rows affected, the column not taken, empty descriptions. No model."
+  "tr": "Satır kuralının düşürdüğü satır ve ilan sayısı (mavi plaka); gold'un aldığı satırlarda kural başına doldurulan NULL hücre ve etkilenen satır sayımı, alınmayan kolon, boş açıklama sayısı. Model yok.",
+  "en": "The rows and listings the row rule drops (blue plates); on the rows gold takes, per rule: NULL cells filled and rows affected, the column not taken, empty descriptions. No model."
  },
  "split": "none",
  "leakage": {
@@ -35,12 +35,14 @@
   "tests": [
    "tests/analysis/test_01_gold_contract.py::test_groups_are_the_rule_file",
    "tests/analysis/test_01_gold_contract.py::test_counts_add_up",
+   "tests/analysis/test_01_gold_contract.py::test_row_rule",
    "tests/analysis/test_01_gold_contract.py::test_panel_flags_fill_whole_panels",
    "tests/analysis/test_01_gold_contract.py::test_in_run_order"
   ],
   "report_keys": [
    "error_drivers.gold_contract.total_cells",
-   "error_drivers.gold_contract.groups"
+   "error_drivers.gold_contract.groups",
+   "error_drivers.gold_contract.dropped_rows"
   ]
  },
  "status": "complete"

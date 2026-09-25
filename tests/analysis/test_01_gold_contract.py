@@ -52,6 +52,19 @@ def test_counts_add_up(gold):
     assert 0 <= gold["empty_description_rows"] <= n
 
 
+def test_row_rule(gold):
+    """
+    EN: The row rules are the rule file's; the semi-raw rows are gold's rows plus the dropped ones; a dropped
+        listing has at least one dropped row.
+    TR: Satır kuralları kural dosyasınınki; yarı ham satırlar gold'un satırları artı düşenler; düşen her ilanın en
+        az bir düşen satırı var.
+    """
+    assert [(r["column"], r["values"]) for r in gold["dropped_rows"]] == \
+        [(r["column"], r["values"]) for r in RULES.get("drop_rows", [])]
+    assert gold["semi_raw_rows"] == gold["table_rows"] + sum(r["rows"] for r in gold["dropped_rows"])
+    assert all(0 < r["listings"] <= r["rows"] for r in gold["dropped_rows"])
+
+
 def test_panel_flags_fill_whole_panels(gold):
     """
     EN: An unspecified panel leaves all three of its flags NULL, so the panel group fills a multiple of 3 cells.

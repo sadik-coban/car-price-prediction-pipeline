@@ -8,7 +8,7 @@ Bu rapor iki soruya yanıt arar: İkinci el araç fiyatını ne belirler ve mode
 
 Medyan ilan fiyatı ₺1.55M, ₺0.85M–₺3.43M arası (P10–P90).
 
-**Kapsam: yalnız TR plakalı araçlar.** Yabancı/mavi plakalı ilanlar veritabanına hiç alınmadı: vergilendirme rejimleri farklı, modeli ve analizi yanıltır. Plaka bilgisi boş olan 54 ilan da, hangi rejime girdiği bilinmediği için dışarıda bırakıldı.
+**Kapsam: yalnız TR plakalı araçlar.** 22 mavi plakalı ilan (Türkiye'de oturan yabancıların aracı) yarı ham veritabanında duruyor ama gold'a ve modele alınmadı: vergilendirme rejimleri farklı, modeli ve analizi yanıltır. Plaka bilgisi boş olan 54 ilan da, hangi rejime girdiği bilinmediği için modele alınmadı.
 
 **Kapsam: toplama filtreleri.** Veri Audi ve BMW ilanlarından, sitenin `/otomobil/` kategorisinden şu filtrelerle toplandı: fiyat ₺300K–₺6.50M, en fazla 700.000 km, 2005 ve sonrası model yılı, yakıt Benzin, Dizel, Hibrit, LPG. Üç sonucu var:
 
@@ -40,7 +40,7 @@ Medyan ilan fiyatı ₺1.55M, ₺0.85M–₺3.43M arası (P10–P90).
 
 ### API'ye giden veri (gold)
 
-Analiz yarı ham veritabanını okuyor: sayfanın söylemediği bilgi boş kalıyor, nasıl okunacağına analiz karar veriyor. Canlı fiyat API'si ise bilinmeyenin "hayır" ya da 0 olduğu eski sözleşmeyi bekliyor. Bu yüzden API'ye ayrı bir dosya gidiyor: aynı 45.277 satır (her taramanın her ilanı), aynı sıra ve kimlikler; yalnız aşağıdaki boşluklar dolduruluyor ve bir kolon çıkarılıyor. Doldurma kuralı analizin kuralıyla aynı: belirtilmemiş panel orijinal, belirtilmemiş ağır hasar kaydı ağır hasarsız sayılıyor.
+Analiz yarı ham veritabanını okuyor: sayfanın söylemediği bilgi boş kalıyor, nasıl okunacağına analiz karar veriyor. Canlı fiyat API'si ise bilinmeyenin "hayır" ya da 0 olduğu eski sözleşmeyi bekliyor. Bu yüzden API'ye ayrı bir dosya gidiyor: yarı ham veritabanının 45.315 satırından mavi plakalı 38 satır (22 ilan) çıkarılıyor; kalan 45.277 satır aynı sırada ve aynı kimliklerle gidiyor, yalnız aşağıdaki boşluklar dolduruluyor ve bir kolon çıkarılıyor. Doldurma kuralı analizin kuralıyla aynı: belirtilmemiş panel orijinal, belirtilmemiş ağır hasar kaydı ağır hasarsız sayılıyor.
 
 | grup | kolon | yazılan değer | doldurulan hücre | etkilenen satır |
 |---|---:|---|---:|---:|
