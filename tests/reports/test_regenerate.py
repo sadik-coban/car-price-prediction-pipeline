@@ -4,17 +4,20 @@ EN: Reports are a pure function of the metrics. The four builders are run into a
     and their output must equal what is in the repository: the six markdown reports (line ends aside), every
     figure byte for byte, site_data.json and column_labels.json as JSON. A hand-edited report, a report not
     rebuilt after a metrics change, or an orphan figure fails here. The SHAP figures are drawn by
-    analysis/shap/, so they are checked against the list the SHAP metrics publish.
+    analysis/shap/, so they are checked against the list the SHAP metrics publish. The JSON files' own
+    _meta.generated_at (when the builder ran) is the only field left out, after checking it is a tz-aware stamp.
 TR: Raporlar metriklerin saf fonksiyonudur. Dört derleyici geçici bir klasöre (CARDATASYS_OUT) koşulur ve
     çıktıları depodakiyle aynı olmalı: altı markdown rapor (satır sonları hariç), her figür bayt bayt,
     site_data.json ve column_labels.json JSON olarak. Elle düzenlenmiş rapor, metrik değiştikten sonra yeniden
     üretilmemiş rapor ya da sahipsiz figür burada düşer. SHAP figürlerini analysis/shap/ çizdiği için onlar SHAP
-    metriklerinin yayımladığı listeye göre sınanır.
+    metriklerinin yayımladığı listeye göre sınanır. JSON dosyalarının kendi _meta.generated_at'ı (derleyicinin
+    koştuğu an) dışarıda bırakılan tek alan; önce saat dilimli bir damga olduğu sınanır.
 """
 import json
 import os
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -72,11 +75,21 @@ def test_figures(rebuilt):
                                             f"missing {sorted((set(built) | shap_figs) - repo)}")
 
 
+def without_stamp(path):
+    """
+    EN: A builder JSON without its _meta.generated_at, after checking that stamp is a tz-aware time.
+    TR: _meta.generated_at'ı çıkarılmış derleyici JSON'u; önce damganın saat dilimli bir zaman olduğu sınanır.
+    """
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    stamp = doc["_meta"].pop("generated_at")
+    assert datetime.fromisoformat(stamp).tzinfo is not None, (path, stamp)
+    return doc
+
+
 def test_site_data(rebuilt):
     """EN: site_data.json and column_labels.json equal their rebuild. / TR: İkisi de yeniden üretilenle aynı."""
     for rel in ("data/site_data.json", "data/serving/column_labels.json"):
         repo_file = ROOT / rel
         if not repo_file.exists():
             pytest.skip(f"{rel} not built in this clone | bu klonda yok (data/ git dışı)")
-        assert json.loads((rebuilt / rel).read_text(encoding="utf-8")) == \
-            json.loads(repo_file.read_text(encoding="utf-8")), f"{rel} differs | farklı\n{HINT}"
+        assert without_stamp(rebuilt / rel) == without_stamp(repo_file), f"{rel} differs | farklı\n{HINT}"

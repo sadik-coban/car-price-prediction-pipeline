@@ -17,6 +17,14 @@ checked against the old one's output (reference: `archive/backups/referans-2026-
 
 Every metrics file comes out the same from the same data, apart from `_meta.generated_at`.
 
+Every generated JSON says when it was written, in the same format: a top-level `_meta.generated_at`, local time
+with its UTC offset, to the second (e.g. `2026-09-25T04:03:29+03:00`). Covered: the metrics,
+`data/analysis/oof_info.json`, `data/site_data.json`, `data/serving/column_labels.json` and the S3 manifest. In
+builder outputs the stamp is the build's own time. `site_data.json` also keeps `meta.metrics_generated_at`: the
+newest metrics stamp. The regeneration tests leave only this field out of the comparison.
+`tests/metrics/test_generated_stamps.py` pins the format. `python tools/analysis_coverage.py` shows when each
+script last ran.
+
 Two patches make that true:
 - `ORDER BY ad_id` on the outer select of the dedup query — without it DuckDB does not guarantee row
   order, and because `KFold(shuffle=True, random_state=42)` shuffles *positions*, fold membership

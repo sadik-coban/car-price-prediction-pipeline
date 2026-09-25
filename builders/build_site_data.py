@@ -4,11 +4,13 @@ EN: Assembles data/site_data.json — the site's single data file — from metri
     meta / domain / methodology sections the analysis scripts publish are merged (builders/report_lib/metrics_view.py,
     which also checks that every file comes from the same database and model run), the static column labels
     are added, and the tree is written with the old schema. Also writes data/serving/column_labels.json.
-    meta gains generated_at / data_until / run_id so the site can show which run it is.
+    Both files carry _meta.generated_at = when this builder wrote them; meta gains metrics_generated_at (the
+    newest metrics stamp) / data_until / run_id so the site can show which run it is.
 TR: Sitenin tek veri dosyası data/site_data.json'u metrics/*.json'dan derler. Analiz yok: analiz betiklerinin
     yayımladığı meta / domain / methodology bölümleri birleştirilir (builders/report_lib/metrics_view.py; her dosyanın
     aynı veritabanı ve model koşumundan geldiğini de sınar), durağan kolon etiketleri eklenir ve ağaç eski
-    şemayla yazılır. Ayrıca data/serving/column_labels.json'u yazar. meta'ya generated_at / data_until / run_id
+    şemayla yazılır. Ayrıca data/serving/column_labels.json'u yazar. İki dosya da _meta.generated_at taşır: bu
+    derleyicinin onları yazdığı an. meta'ya metrics_generated_at (en yeni metrik damgası) / data_until / run_id
     eklenir; site hangi koşumu gösterdiğini söyleyebilir.
 Run / Koşum: python builders/build_site_data.py
 """
@@ -42,19 +44,31 @@ SITE_KEYS = {
 }
 
 
-def assemble(view):
+def assemble(view, generated_at):
     """
-    EN: The site tree from the merged metrics view: meta (+ run stamp), domain, methodology, column_labels.
-        Stops if a key the site reads is missing.
-    TR: Birleşik metrik görünümünden site ağacı: meta (+ koşum damgası), domain, methodology, column_labels.
-        Sitenin okuduğu bir anahtar eksikse durur.
+    EN: The site tree from the merged metrics view: _meta (generated_at = this build), meta (+ run stamp),
+        domain, methodology, column_labels. Stops if a key the site reads is missing.
+    TR: Birleşik metrik görünümünden site ağacı: _meta (generated_at = bu derleme), meta (+ koşum damgası),
+        domain, methodology, column_labels. Sitenin okuduğu bir anahtar eksikse durur.
     """
     missing = [f"{sec}.{k}" for sec, keys in SITE_KEYS.items() for k in keys if k not in view[sec]]
     if missing:
         raise SystemExit(f"site keys missing | site anahtarı eksik — run | koşun: python analysis/run_all.py · {missing}")
-    stamp = {k: view["_meta"][k] for k in ("generated_at", "data_until", "run_id")}
-    return {"meta": {**view["meta"], **stamp}, "domain": view["domain"], "methodology": view["methodology"],
-            "column_labels": COLUMN_LABELS}
+    stamp = {"metrics_generated_at": view["_meta"]["generated_at"],
+             **{k: view["_meta"][k] for k in ("data_until", "run_id")}}
+    return {"_meta": {"generated_at": generated_at}, "meta": {**view["meta"], **stamp}, "domain": view["domain"],
+            "methodology": view["methodology"], "column_labels": COLUMN_LABELS}
+
+
+def labels_file(generated_at):
+    """
+    EN: data/serving/column_labels.json: _meta (generated_at = this build) + the column labels. Stops if a column
+        is itself named _meta.
+    TR: data/serving/column_labels.json: _meta (generated_at = bu derleme) + kolon etiketleri. Bir kolonun adı
+        _meta ise durur.
+    """
+    assert "_meta" not in COLUMN_LABELS, "a column named _meta would clash with the stamp | _meta adlı kolon"
+    return {"_meta": {"generated_at": generated_at}, **COLUMN_LABELS}
 
 
 def main():
@@ -62,11 +76,12 @@ def main():
     EN: Loads the metrics view, assembles the site tree and writes site_data.json + column_labels.json.
     TR: Metrik görünümünü yükler, site ağacını derler, site_data.json + column_labels.json'u yazar.
     """
-    site = assemble(MV.load_view(ROOT))
+    now = MV.generated_stamp()
+    site = assemble(MV.load_view(ROOT), now)
     SITE_OUT.parent.mkdir(parents=True, exist_ok=True)
     LABELS_OUT.parent.mkdir(parents=True, exist_ok=True)
     SITE_OUT.write_text(json.dumps(site, ensure_ascii=False, indent=2), encoding="utf-8")
-    LABELS_OUT.write_text(json.dumps(COLUMN_LABELS, ensure_ascii=False, indent=2), encoding="utf-8")
+    LABELS_OUT.write_text(json.dumps(labels_file(now), ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"[✓] {SITE_OUT} ({SITE_OUT.stat().st_size / 1e6:.1f} MB) · "
           f"domain {len(site['domain'])} · methodology {len(site['methodology'])} · run {site['meta']['run_id']}")
 

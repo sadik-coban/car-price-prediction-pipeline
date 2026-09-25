@@ -19,9 +19,10 @@ TR: Derleyicilerin kullandığı tek okuyucu. Bütün metrics/**/*.json dosyalar
 """
 import json
 import math
+from datetime import datetime
 from pathlib import Path
 
-SECTIONS = ("meta", "domain", "methodology", "error_drivers", "oof_shap", "shap", "shap_final", "shap_case", "report")
+SECTIONS =("meta", "domain", "methodology", "error_drivers", "oof_shap", "shap", "shap_final", "shap_case", "report")
 
 
 def load_metrics(metrics_dir):
@@ -81,6 +82,25 @@ def deep_merge(dst, src, where, owners):
             owners[path] = owners["_current"]
 
 
+def generated_stamp():
+    """
+    EN: The "last generated" stamp a builder writes as _meta.generated_at: local time with its UTC offset, to the
+        second — the same format as analysis/lib/common.py (tests/metrics/test_generated_stamps.py).
+    TR: Bir derleyicinin _meta.generated_at olarak yazdığı "son üretim" damgası: UTC farkıyla yerel saat,
+        saniye hassasiyetinde — analysis/lib/common.py ile aynı biçim (tests/metrics/test_generated_stamps.py).
+    """
+    return datetime.now().astimezone().isoformat(timespec="seconds")
+
+
+def _stamp_time(stamp):
+    """
+    EN: A generated_at stamp as a comparable datetime; a stamp without an offset (older files) is local time.
+    TR: generated_at damgası, karşılaştırılabilir datetime olarak; farkı olmayan damga (eski dosyalar) yerel saattir.
+    """
+    t = datetime.fromisoformat(stamp)
+    return t if t.tzinfo else t.astimezone()
+
+
 def load_view(root):
     """
     EN: The merged view of all metrics under root/metrics, with _meta summarising the run (latest
@@ -100,7 +120,7 @@ def load_view(root):
             if sec in doc:
                 deep_merge(view[sec], doc[sec], sec, owners)
     metas = [d["_meta"] for d in docs.values()]
-    view["_meta"] = {"generated_at": max(m["generated_at"] for m in metas),
+    view["_meta"] = {"generated_at": max((m["generated_at"] for m in metas), key=_stamp_time),
                      "data_until": max(m["data_until"] for m in metas), "db": metas[0]["db"],
                      "run_id": next((m["run_id"] for m in metas if m.get("run_id")), None),
                      "scripts": sorted(docs)}

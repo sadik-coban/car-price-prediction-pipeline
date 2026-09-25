@@ -9,7 +9,8 @@ EN: The analysis coverage matrix: for every script in analysis/run_all.ORDER, fo
     A script on the legacy list (tests/analysis/legacy.json) is exempt from the card and test cells while its
     source still has the listed sha256; once it changes, it needs a card and a test. The test in
     tests/analysis/test_coverage.py fails on any empty cell. Test ids are checked with `pytest --collect-only`,
-    never by reading test source.
+    never by reading test source. The printed table also shows each script's generated_at (when it last wrote
+    its metrics), so after an edit you can see what ran when.
 TR: Analiz kapsam matrisi: analysis/run_all.ORDER'daki her betik için dört hücre —
       card      analysis/cards/<betik>.json tam (her alan, tr + en, dört sızıntı tipi, var olan kanıt: test
                 kimliklerini pytest topluyor, rapor anahtarları betiğin metriğinde);
@@ -18,7 +19,9 @@ TR: Analiz kapsam matrisi: analysis/run_all.ORDER'daki her betik için dört hü
       source    metrikleri bugünkü kod yazmış (_meta.source hash'leri dosyalarla aynı).
     Eski betik listesindeki (tests/analysis/legacy.json) bir betik, kaynağı listelenen sha256'yı taşıdıkça kart
     ve test hücrelerinden muaf; değişince kart ve test ister. tests/analysis/test_coverage.py tek boş hücrede
-    düşer. Test kimlikleri `pytest --collect-only` ile sınanır, test kaynağı hiç okunmaz.
+    düşer. Test kimlikleri `pytest --collect-only` ile sınanır, test kaynağı hiç okunmaz. Basılan tablo her
+    betiğin generated_at'ını da (metriğini en son yazdığı an) gösterir; bir düzenlemeden sonra neyin ne zaman
+    koştuğu görülür.
 Run / Koşum:
     python tools/analysis_coverage.py [--json]
 """
@@ -147,8 +150,10 @@ def stale_sources(metrics_doc):
 
 def matrix():
     """
-    EN: One row per ORDER script: {"script", "card", "test", "baseline", "source", "problems"}.
-    TR: ORDER'daki her betik için bir satır: {"script", "card", "test", "baseline", "source", "problems"}.
+    EN: One row per ORDER script: {"script", "card", "test", "baseline", "source", "generated_at", "problems"};
+        generated_at = when the script last wrote its metrics (_meta.generated_at), None without metrics.
+    TR: ORDER'daki her betik için bir satır: {"script", "card", "test", "baseline", "source", "generated_at",
+        "problems"}; generated_at = betiğin metriğini en son yazdığı an (_meta.generated_at), metrik yoksa None.
     """
     legacy = json.loads(LEGACY.read_text(encoding="utf-8"))["scripts"] if LEGACY.exists() else {}
     baseline = json.loads(BASELINE_SHAPE.read_text(encoding="utf-8"))
@@ -186,7 +191,7 @@ def matrix():
             problems.append(f"source {source}: rerun python analysis/{script}"
                             + (f" (changed: {', '.join(stale)})" if stale else ""))
         rows.append({"script": script, "card": card, "test": test, "baseline": base, "source": source,
-                     "problems": problems})
+                     "generated_at": (doc or {}).get("_meta", {}).get("generated_at"), "problems": problems})
     return rows
 
 
@@ -203,9 +208,10 @@ def main(argv=None):
     if args.json:
         print(json.dumps({"rows": rows, "not_in_order": extra}, ensure_ascii=False, indent=1))
     else:
-        print(f"{'script':34} {'card':8} {'test':8} {'baseline':9} source")
+        print(f"{'script':34} {'card':8} {'test':8} {'baseline':9} {'source':7} generated_at")
         for r in rows:
-            print(f"{r['script']:34} {r['card']:8} {r['test']:8} {r['baseline']:9} {r['source']}")
+            print(f"{r['script']:34} {r['card']:8} {r['test']:8} {r['baseline']:9} {r['source']:7} "
+                  f"{r['generated_at'] or '-'}")
         for r in rows:
             for m in r["problems"]:
                 print(f"  ✗ {r['script']}: {m}")

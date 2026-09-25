@@ -81,6 +81,18 @@ def load_clean(all_snapshots=False, derived=True):
     return _prepare(raw) if derived else raw
 
 
+def generated_stamp():
+    """
+    EN: The "last generated" stamp every generated JSON carries as _meta.generated_at: local time with its UTC
+        offset, to the second (e.g. 2026-09-25T04:03:29+03:00). Builders and db/ write the same format
+        (tests/metrics/test_generated_stamps.py).
+    TR: Üretilen her JSON'un _meta.generated_at olarak taşıdığı "son üretim" damgası: UTC farkıyla yerel saat,
+        saniye hassasiyetinde (ör. 2026-09-25T04:03:29+03:00). Derleyiciler ve db/ aynı biçimi yazar
+        (tests/metrics/test_generated_stamps.py).
+    """
+    return datetime.now().astimezone().isoformat(timespec="seconds")
+
+
 def save_metrics(name, values, run_id=None):
     """
     EN: Writes one script's results to metrics/<name>.json with a _meta block: script name, run time,
@@ -99,7 +111,7 @@ def save_metrics(name, values, run_id=None):
     path = METRICS_DIR / f"{name}.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     doc = {"_meta": {"script": f"{name}.py",
-                     "generated_at": datetime.now().isoformat(timespec="seconds"),
+                     "generated_at": generated_stamp(),
                      "data_until": _last_snapshot_date(),
                      "db": _db_fingerprint(),
                      "run_id": run_id,

@@ -29,7 +29,7 @@ Run / Koşum:
 import argparse
 import hashlib
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 import duckdb
@@ -104,22 +104,34 @@ def next_version(manifest):
     return 1
 
 
-def build_manifest(version, sha256, rows, built_at):
+def generated_stamp(now=None):
     """
-    EN: The manifest written next to the database (the fields the poll reads). built_at: ISO time string.
-    TR: Veritabanının yanına yazılan manifest (yoklamanın okuduğu alanlar). built_at: ISO zaman metni.
+    EN: The "last generated" stamp (_meta.generated_at) in the format every generated JSON uses: local time with
+        its UTC offset, to the second (tests/metrics/test_generated_stamps.py). now: a datetime (tests).
+    TR: Üretilen her JSON'un kullandığı biçimde "son üretim" damgası (_meta.generated_at): UTC farkıyla yerel
+        saat, saniye hassasiyetinde (tests/metrics/test_generated_stamps.py). now: bir datetime (testler).
     """
-    return {"version": version, "sha256": sha256, "built_at": built_at, "car_listings_rows": rows}
+    return (now or datetime.now()).astimezone().isoformat(timespec="seconds")
+
+
+def build_manifest(version, sha256, rows, generated_at):
+    """
+    EN: The manifest written next to the database (the fields the poll reads) with _meta.generated_at.
+        generated_at: the stamp of generated_stamp().
+    TR: Veritabanının yanına yazılan manifest (yoklamanın okuduğu alanlar), _meta.generated_at ile.
+        generated_at: generated_stamp() damgası.
+    """
+    return {"_meta": {"generated_at": generated_at}, "version": version, "sha256": sha256, "car_listings_rows": rows}
 
 
 def prepare(duckdb_path, version=None, now=None):
     """
     EN: Steps 1–2 without S3: validates the file, hashes it and builds the manifest. version=None leaves the
-        version open (it is decided from S3 in publish). now: the build time (UTC now by default).
-        Returns: {"path", "rows", "sha256", "built_at", "version", "size_mb"}.
+        version open (it is decided from S3 in publish). now: the build time (now by default).
+        Returns: {"path", "rows", "sha256", "generated_at", "version", "size_mb"}.
     TR: S3'süz 1–2. adımlar: dosyayı doğrular, hash'ler ve manifesti hazırlar. version=None sürümü açık bırakır
-        (publish'te S3'ten belirlenir). now: kurulum zamanı (varsayılan UTC şimdi).
-        Döndürür: {"path", "rows", "sha256", "built_at", "version", "size_mb"}.
+        (publish'te S3'ten belirlenir). now: kurulum zamanı (varsayılan şimdi).
+        Döndürür: {"path", "rows", "sha256", "generated_at", "version", "size_mb"}.
     """
     path = Path(duckdb_path)
     if not path.exists():
@@ -127,7 +139,7 @@ def prepare(duckdb_path, version=None, now=None):
                                 f"&& python db/build_gold_db.py")
     rows = validate_duckdb(path)
     return {"path": path, "rows": rows, "sha256": file_sha256(path),
-            "built_at": (now or datetime.now(timezone.utc)).isoformat(), "version": version,
+            "generated_at": generated_stamp(now), "version": version,
             "size_mb": round(path.stat().st_size / 1024 / 1024, 1)}
 
 
@@ -143,7 +155,7 @@ def publish(duckdb_path, store, version=None, now=None):
     p = prepare(duckdb_path, version, now)
     ver = p["version"] if p["version"] is not None else next_version(store.read_json(MANIFEST_KEY))
     store.upload_file(p["path"], DATA_KEY)
-    manifest = build_manifest(ver, p["sha256"], p["rows"], p["built_at"])
+    manifest = build_manifest(ver, p["sha256"], p["rows"], p["generated_at"])
     store.put_json(MANIFEST_KEY, manifest)
     return {"key": DATA_KEY, "manifest": manifest, "size_mb": p["size_mb"]}
 
@@ -166,7 +178,7 @@ def main(argv=None, connect=s3_publish.connect):
             ver = p["version"] if p["version"] is not None else "S3 manifest + 1 (not read in dry-run | okunmadı)"
             print("DRY RUN — nothing uploaded | hiçbir şey yüklenmedi")
             print(f"  file: {p['path']} ({p['size_mb']} MB) → would go to {DATA_KEY}")
-            print(f"  manifest: version={ver}  rows={p['rows']}  sha256={p['sha256']}  built_at={p['built_at']}")
+            print(f"  manifest: version={ver}  rows={p['rows']}  sha256={p['sha256']}  generated_at={p['generated_at']}")
             return 0
         store = connect()
         result = publish(args.duckdb, store, args.version)

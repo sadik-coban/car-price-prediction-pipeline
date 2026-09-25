@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "shap/04_variants.py",
-  "generated_at": "2026-09-24T19:01:25",
+  "generated_at": "2026-09-25T05:28:41+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -15,7 +15,7 @@
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
-    "analysis/lib/common.py": "be9c9808091cc07f65c96ea4751b6e256e0ca4f59570ee029cc7b0f27429e2e4",
+    "analysis/lib/common.py": "533eaad7a29580e93aeff01214fc024538dd6a6ab717e6b669e7e7b0a4399295",
     "analysis/lib/segment_rule.py": "2def025c05905657341f21133844b1a378be05202a67bc93b975e086448b60c1"
    }
   }
@@ -151,32 +151,27 @@
     [
      "vehicle_age",
      0.2112,
-     31.7
+     32.5
     ],
     [
      "gb_mileage",
      0.1468,
-     22.0
+     22.6
     ],
     [
      "ENGINE",
      0.1127,
-     16.9
+     17.4
     ],
     [
      "model",
-     0.109,
-     16.3
+     0.1092,
+     16.8
     ],
     [
      "DAMAGE",
-     0.0363,
-     5.4
-    ],
-    [
-     "kb_body_type",
-     0.0189,
-     2.8
+     0.0444,
+     6.8
     ],
     [
      "series",
@@ -184,29 +179,34 @@
      1.5
     ],
     [
-     "kb_transmission",
-     0.009,
-     1.3
+     "kb_body_type",
+     0.0079,
+     1.2
     ],
     [
      "brand",
-     0.0075,
-     1.1
+     0.0039,
+     0.6
     ],
     [
      "kb_drivetrain",
-     0.0031,
-     0.5
-    ],
-    [
-     "kb_fuel",
-     0.0022,
+     0.0019,
      0.3
     ],
     [
      "segment",
      0.0004,
      0.1
+    ],
+    [
+     "kb_transmission",
+     0.0004,
+     0.1
+    ],
+    [
+     "kb_fuel",
+     0.0001,
+     0.0
     ]
    ]
   }
@@ -446,32 +446,27 @@
    [
     "vehicle_age",
     0.2112,
-    31.7
+    32.5
    ],
    [
     "gb_mileage",
     0.1468,
-    22.0
+    22.6
    ],
    [
     "ENGINE",
     0.1127,
-    16.9
+    17.4
    ],
    [
     "model",
-    0.109,
-    16.3
+    0.1092,
+    16.8
    ],
    [
     "DAMAGE",
-    0.0363,
-    5.4
-   ],
-   [
-    "kb_body_type",
-    0.0189,
-    2.8
+    0.0444,
+    6.8
    ],
    [
     "series",
@@ -479,41 +474,46 @@
     1.5
    ],
    [
-    "kb_transmission",
-    0.009,
-    1.3
+    "kb_body_type",
+    0.0079,
+    1.2
    ],
    [
     "brand",
-    0.0075,
-    1.1
+    0.0039,
+    0.6
    ],
    [
     "kb_drivetrain",
-    0.0031,
-    0.5
-   ],
-   [
-    "kb_fuel",
-    0.0022,
+    0.0019,
     0.3
    ],
    [
     "segment",
     0.0004,
     0.1
+   ],
+   [
+    "kb_transmission",
+    0.0004,
+    0.1
+   ],
+   [
+    "kb_fuel",
+    0.0001,
+    0.0
    ]
   ],
   "catboost_native_ayri": [
    [
     "vehicle_age",
     0.2112,
-    30.5
+    30.4
    ],
    [
     "gb_mileage",
     0.1468,
-    21.2
+    21.1
    ],
    [
     "ENGINE",
@@ -522,18 +522,13 @@
    ],
    [
     "model",
-    0.109,
+    0.1092,
     15.7
    ],
    [
     "DAMAGE",
-    0.0586,
-    8.5
-   ],
-   [
-    "kb_body_type",
-    0.0189,
-    2.7
+    0.0862,
+    12.4
    ],
    [
     "series",
@@ -541,86 +536,91 @@
     1.4
    ],
    [
-    "kb_transmission",
-    0.009,
-    1.3
-   ],
-   [
-    "brand",
-    0.0075,
+    "kb_body_type",
+    0.0079,
     1.1
    ],
    [
-    "kb_drivetrain",
-    0.0031,
-    0.4
+    "brand",
+    0.0039,
+    0.6
    ],
    [
-    "kb_fuel",
-    0.0022,
+    "kb_drivetrain",
+    0.0019,
     0.3
    ],
    [
     "segment",
     0.0004,
     0.1
+   ],
+   [
+    "kb_transmission",
+    0.0004,
+    0.1
+   ],
+   [
+    "kb_fuel",
+    0.0001,
+    0.0
    ]
   ],
   "catboost_native_birlesik": [
    [
     "vehicle_age",
     0.2112,
-    32.1
+    33.0
    ],
    [
     "gb_mileage",
     0.1468,
-    22.3
+    22.9
    ],
    [
     "ENGINE",
     0.1127,
-    17.1
+    17.6
    ],
    [
     "MODEL_SERIES (text)",
-    0.1099,
-    16.7
+    0.1101,
+    17.2
    ],
    [
     "DAMAGE",
-    0.0363,
-    5.5
+    0.0444,
+    6.9
    ],
    [
     "kb_body_type",
-    0.0189,
-    2.9
-   ],
-   [
-    "kb_transmission",
-    0.009,
-    1.4
+    0.0079,
+    1.2
    ],
    [
     "brand",
-    0.0075,
-    1.1
+    0.0039,
+    0.6
    ],
    [
     "kb_drivetrain",
-    0.0031,
-    0.5
-   ],
-   [
-    "kb_fuel",
-    0.0022,
+    0.0019,
     0.3
    ],
    [
     "segment",
     0.0004,
     0.1
+   ],
+   [
+    "kb_transmission",
+    0.0004,
+    0.1
+   ],
+   [
+    "kb_fuel",
+    0.0001,
+    0.0
    ]
   ]
  }

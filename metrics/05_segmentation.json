@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "05_segmentation.py",
-  "generated_at": "2026-09-24T18:36:40",
+  "generated_at": "2026-09-25T05:12:39+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -15,7 +15,7 @@
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
-    "analysis/lib/common.py": "be9c9808091cc07f65c96ea4751b6e256e0ca4f59570ee029cc7b0f27429e2e4",
+    "analysis/lib/common.py": "533eaad7a29580e93aeff01214fc024538dd6a6ab717e6b669e7e7b0a4399295",
     "analysis/lib/segment_rule.py": "2def025c05905657341f21133844b1a378be05202a67bc93b975e086448b60c1"
    }
   }

@@ -104,7 +104,8 @@ def test_publish_manifest_content(make_duckdb):
     path = make_duckdb(rows=3)
     store = FakeStore(manifest={"version": 4})
     result = P.publish(path, store, now=NOW)
-    expected = {"version": 5, "sha256": P.file_sha256(path), "built_at": NOW.isoformat(), "car_listings_rows": 3}
+    expected = {"_meta": {"generated_at": NOW.astimezone().isoformat(timespec="seconds")}, "version": 5,
+                "sha256": P.file_sha256(path), "car_listings_rows": 3}
     assert store.written[P.MANIFEST_KEY] == expected and result["manifest"] == expected
     assert result["key"] == "data/cars.duckdb"
 

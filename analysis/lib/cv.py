@@ -24,7 +24,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import mean_absolute_error, mean_squared_error, median_absolute_error, r2_score
 from sklearn.model_selection import KFold
 
-from .common import ANALYSIS_DIR, CAT, FEATURES, NUM, _db_fingerprint
+from .common import ANALYSIS_DIR, CAT, FEATURES, NUM, _db_fingerprint, generated_stamp
 
 SEED = 42
 N_FOLDS = 5
@@ -192,11 +192,12 @@ def large_errors(resid):
 
 def save_oof(frame, info):
     """
-    EN: Writes the OOF artefact (data/analysis/oof.parquet + oof_info.json) with the database fingerprint.
-        run_id is derived from the predictions and the database, so an identical rerun gets the same id.
+    EN: Writes the OOF artefact (data/analysis/oof.parquet + oof_info.json) with the database fingerprint and
+        the _meta.generated_at stamp. run_id is derived from the predictions and the database, so an identical
+        rerun gets the same id.
         Returns: run_id.
-    TR: OOF artefaktını (data/analysis/oof.parquet + oof_info.json) veritabanı parmak iziyle yazar.
-        run_id tahminlerden ve veritabanından türetilir; aynı yeniden koşum aynı kimliği alır.
+    TR: OOF artefaktını (data/analysis/oof.parquet + oof_info.json) veritabanı parmak izi ve _meta.generated_at
+        damgasıyla yazar. run_id tahminlerden ve veritabanından türetilir; aynı yeniden koşum aynı kimliği alır.
         Döndürür: run_id.
     """
     db = _db_fingerprint()
@@ -205,8 +206,8 @@ def save_oof(frame, info):
     run_id = h.hexdigest()[:12]
     ANALYSIS_DIR.mkdir(parents=True, exist_ok=True)
     frame.to_parquet(OOF_FILE, index=False)
-    OOF_INFO.write_text(json.dumps({"run_id": run_id, "db": db, **info}, ensure_ascii=False, indent=1),
-                        encoding="utf-8")
+    OOF_INFO.write_text(json.dumps({"_meta": {"generated_at": generated_stamp()}, "run_id": run_id, "db": db, **info},
+                                   ensure_ascii=False, indent=1), encoding="utf-8")
     return run_id
 
 

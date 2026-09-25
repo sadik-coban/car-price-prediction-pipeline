@@ -16,6 +16,14 @@ sınandı (referans: `archive/backups/referans-2026-09-23/`):
 
 Her metrik dosyası `_meta.generated_at` dışında aynı veriyle aynı çıkar.
 
+Üretilen her JSON ne zaman yazıldığını aynı biçimde söyler: üst düzeyde `_meta.generated_at`, UTC farkıyla
+yerel saat, saniye hassasiyetinde (ör. `2026-09-25T04:03:29+03:00`). Kapsam: metrikler,
+`data/analysis/oof_info.json`, `data/site_data.json`, `data/serving/column_labels.json` ve S3 manifest'i. Derleyici
+çıktılarında damga derlemenin kendi zamanı. `site_data.json`'da ayrıca `meta.metrics_generated_at` var: en yeni
+metrik damgası. Yeniden üretim testleri karşılaştırmada yalnız bu alanı dışarıda bırakır. Biçimi
+`tests/metrics/test_generated_stamps.py` sabitler. Hangi betiğin en son ne zaman koştuğunu
+`python tools/analysis_coverage.py` gösterir.
+
 Bunu sağlayan iki yama:
 - dedup sorgusunun dış select'inde `ORDER BY ad_id` — yoksa DuckDB satır sırasını garanti etmez
   ve `KFold(shuffle=True, random_state=42)` pozisyonları karıştırdığı için fold üyeliği koşudan
