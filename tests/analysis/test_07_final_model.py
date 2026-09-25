@@ -22,15 +22,15 @@ def final(metrics):
 
 def test_tree_count_is_cv_median(final, metrics):
     """EN: final trees = int(median of the 5 fold tree counts). / TR: son ağaç = int(5 fold ağaç sayısının medyanı)."""
-    cv_trees = metrics("07_model_comparison")["meta"]["repro"]["cv_agac"]
-    assert final["meta"]["repro"]["final_lgb_agac"] == int(statistics.median(cv_trees))
+    cv_trees = metrics("07_model_comparison")["meta"]["repro"]["cv_trees"]
+    assert final["meta"]["repro"]["final_lgb_trees"] == int(statistics.median(cv_trees))
 
 
 def test_sample_deviation_matches_prediction(final):
     """EN: lgb_sapma_pct = |LightGBM − actual| / actual, 1 decimal. / TR: lgb_sapma_pct = |LightGBM − gerçek| / gerçek."""
-    for s in final["domain"]["final_results"]["ornek_tahminler"]:
-        assert s["lgb_sapma_pct"] == pytest.approx(abs(s["lightgbm_tahmin"] - s["gercek"]) / s["gercek"] * 100,
-                                                   abs=0.051), s["arac"]
+    for s in final["domain"]["final_results"]["example_predictions"]:
+        assert s["lgb_dev_pct"] == pytest.approx(abs(s["lightgbm_pred"] - s["actual"]) / s["actual"] * 100,
+                                                   abs=0.051), s["vehicle"]
 
 
 def test_samples_keep_the_oof_promise(final):
@@ -39,5 +39,5 @@ def test_samples_keep_the_oof_promise(final):
     TR: Her örnek fold dışında ±%5 içinde tahmin edilmiş ve manşet örnek onlardan biri.
     """
     res = final["domain"]["final_results"]
-    assert res["ornek_tahminler"] and all(abs(s["oof_artik_pct"]) <= MAX_ABS_RESID for s in res["ornek_tahminler"])
-    assert res["ornek_tahmin"] in res["ornek_tahminler"]
+    assert res["example_predictions"] and all(abs(s["oof_resid_pct"]) <= MAX_ABS_RESID for s in res["example_predictions"])
+    assert res["example_prediction"] in res["example_predictions"]

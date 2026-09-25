@@ -41,14 +41,14 @@ REQUIRED = [
     "domain.drift.all_pairs", "domain.drift.ortusme", "domain.drift.not",
     "domain.hedonic_reliability.center", "domain.brand_ablation.validation",
     "methodology.column_accounting", "methodology.kb_gb_twins", "domain.hedonic_reliability.with_model",
-    "domain.segment_ladder", "domain.model_yil_medyani.merdiven", "domain.price_dist.p10", "domain.price_dist.p90",
-    "domain.final_results.egitim.hedef", "domain.shap.lightgbm_tfidf_svd", "domain.kmeans",
+    "domain.segment_ladder", "domain.model_year_median.ladder", "domain.price_dist.p10", "domain.price_dist.p90",
+    "domain.final_results.training.target", "domain.shap.lightgbm_tfidf_svd", "domain.kmeans",
     "methodology.cramers_null", "methodology.theils_null", "methodology.column_missing",
     "methodology.backtest.per_snapshot", "methodology.backtest.insample", "methodology.backtest.protokol",
     "methodology.systematic_missing.systematic_groups", "methodology.systematic_missing.note",
     "methodology.pca_axes", "meta.repro", "meta.brands", "column_labels"] + [f"error_drivers.{p_}" for p_ in [
     "plate_scope", "segment_quality", "hedonic_dropped", "per_model_error", "per_model_buckets", "lira_ceyrek",
-    "tl_olcekli", "scope", "price_changes", "unspecified", "taban_esit_kosul", "metin_bayrak",
+    "tl_olcekli", "scope", "price_changes", "unspecified", "baseline_equal_terms", "metin_bayrak",
     "yas_duyarlilik", "yas_kesim", "eski_d_grubu", "spec_outliers.kor_nokta", "donem_kaymasi",
     "by_model_year_n", "by_segment_FS", "by_age", "by_snapshot", "raw_columns", "examples",
     "engine_rule.engine_cc", "engine_rule.power_hp", "unspecified.structure", "kaybolan_canli", "metin_kaynak"]] + [
@@ -148,12 +148,12 @@ def derive(d):
     """
     dom, met, meta, rep = d["domain"], d["methodology"], d["meta"], d["report"]
     lgb = dom["model_compare"]["lightgbm"]
-    myl = dom["model_yil_medyani"]
+    year_med = dom["model_year_median"]
     ba = dom["brand_ablation"]
     pd_ = dom["price_dist"]
     hr = dom["hedonic_reliability"]
 
-    model_mae, base_mae = lgb["MAE"], myl["taban"]["MAE"]
+    model_mae, base_mae = lgb["MAE"], year_med["baseline"]["MAE"]
     boot = {b["term"]: b for b in hr["bootstrap"]}
     # EN: the effects by English term id; an unknown display term stops (no silent None)
     # TR: etkiler İngilizce terim kimliğiyle; bilinmeyen görünen terim durdurur (sessiz None yok)
@@ -171,10 +171,10 @@ def derive(d):
         "skew_raw": pd_["skew_raw"], "skew_log": pd_["skew_log"],
         # model vs taban
         "model_mae": model_mae, "model_mape": lgb["MAPE"], "model_r2": lgb["R2"],
-        "base_mae": base_mae, "base_mape": myl["taban"]["MAPE"],
+        "base_mae": base_mae, "base_mape": year_med["baseline"]["MAPE"],
         "better_pct": (base_mae - model_mae) / base_mae * 100,
         "gap_tl": base_mae - model_mae,
-        "ladder": myl["kapsama"], "tiers": myl["metrik_kirilim"],
+        "ladder": year_med["coverage"], "tiers": year_med["metric_breakdown"],
         # kalibrasyon
         "oof_r2": dom["pred_vs_true"]["r2"],
         "resid_mean": dom["residual_scatter"]["mean_resid_pct"],
@@ -913,15 +913,16 @@ VIF_TERM = {"age": ("yaş", "age"), "I(age ** 2)": ("yaş²", "age²"), "km10": 
             "dmg": ("ağır hasar", "heavy damage"),
             "painted": ("boyalı", "painted"), "changed": ("değişen", "changed"),
             "hp100": ("+100 HP", "+100 HP"), "cc_L": ("motor (L)", "engine (L)")}
-# Ureticinin ham etiketi TR'de oldugu gibi basilir; tek istisna asagida (Ingilizce sizmis etiket).
-TIER_EN = {"model+yıl": "model + year", "model": "model", "global": "global"}
-BAND_EN = {"ekonomik": "economy", "orta": "mid", "premium": "premium"}
+# EN: ids the metrics publish -> (TR, EN) display; id_label stops on an unknown id
+# TR: metriklerin yayımladığı kimlikler -> (TR, EN) görünen ad; id_label bilinmeyen kimlikte durur
+TIER_LABEL = {"model_year": ("model+yıl", "model + year"), "model": ("model", "model"), "global": ("global", "global")}
+BAND_LABEL = {"economy": ("ekonomik", "economy"), "mid": ("orta", "mid"), "premium": ("premium", "premium")}
 FUEL_EN = {"Benzin": "Petrol", "Dizel": "Diesel", "LPG & Benzin": "LPG & Petrol", "Hibrit": "Hybrid"}
 CLUSTER_EN = {"Yaşlı & yüksek-km ekonomik": "Older, high-km economy", "Genç & temiz premium": "Newer, clean premium",
               "Hasarlı": "Damaged", "Orta segment": "Mid segment"}
 LADDER_EN = {"(model, yıl) medyanı": "(model, year) median", "(model) medyanı — tüm yıllar": "(model) median — all years",
              "global medyan": "global median"}
-# final_results.model_karsilastirma anahtari -> (kazanan kodu, gorunen ad)
+# final_results.model_comparison anahtari -> (kazanan kodu, gorunen ad)
 # Etiketlerde "model/seri adi" var cunku TF-IDF+SVD SERBEST METNE degil, yalniz model/series ad
 # dizgilerine uygulaniyor (kullanici duzeltmesi 2026-09-20 — okur bunu ilan metni saniyordu).
 VARIANTS = [("lightgbm_tfidf_svd", "lightgbm", "LightGBM (model/seri adı TF-IDF+SVD)"),
@@ -968,6 +969,14 @@ def number_word(n, lang, cap=False):
     if cap and w[:1].isalpha():
         w = ("İ" + w[1:]) if w[:1] == "i" else w[:1].upper() + w[1:]
     return w
+
+
+def id_label(m, key, lang):
+    """
+    EN: The display label of an id the metrics publish, from an {id: (tr, en)} map; an unknown id stops.
+    TR: Metriklerin yayımladığı bir kimliğin görünen adı, {kimlik: (tr, en)} sözlüğünden; bilinmeyen kimlik durdurur.
+    """
+    return m[key][0 if lang == "tr" else 1]
 
 
 def tx(m, key, lang):

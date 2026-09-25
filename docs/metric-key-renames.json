@@ -1,7 +1,7 @@
 {
  "_about": {
-  "en": "The one reviewed map from the old (Turkish) metric key names to English snake_case, approved on 2026-09-25. Paths are written in OLD names: '.' separates segments, '*' is any key, '[]' any list element, '[i]' position i of a row. keys: bare key -> new name, wherever it occurs; overrides: path pattern -> new name (wins over keys); keep: keys that stay; data_valued: subtrees whose keys are data (dates, fuels, brands, column names) and never change; values: enum-like values the code compares, per path; site_only: renames that exist only in data/site_data.json; groups: which metrics files each group owns and whether it is done; lib: names produced by analysis/lib/segment_rule.py, applied only with the LIB group. tools/metric_renames.py applies, proves and exports it (site-map for the portfolio).",
-  "tr": "Eski (Türkçe) metrik anahtarı adlarından İngilizce snake_case adlara incelenmiş tek eşleme; 2026-09-25'te onaylandı. Yollar ESKİ adlarla yazılır: '.' bölüt ayırır, '*' her anahtar, '[]' her liste öğesi, '[i]' satırın i. konumu. keys: çıplak anahtar -> yeni ad, geçtiği her yerde; overrides: yol kalıbı -> yeni ad (keys'ten önce gelir); keep: kalan anahtarlar; data_valued: anahtarları veri olan alt ağaçlar (tarih, yakıt, marka, kolon adı), hiç değişmez; values: kodun karşılaştırdığı değerler, yol başına; site_only: yalnız data/site_data.json'da olan ad değişiklikleri; groups: her grubun sahip olduğu metrik dosyaları ve bitip bitmediği; lib: analysis/lib/segment_rule.py'nin ürettiği adlar, yalnız LIB grubuyla uygulanır. tools/metric_renames.py uygular, kanıtlar ve dışa verir (portföy için site-map)."
+  "en": "The one reviewed map from the old (Turkish) metric key names to English snake_case, approved on 2026-09-25. Paths are written in OLD names: '.' separates segments, '*' is any key, '[]' any list element, '[i]' position i of a row. keys: bare key -> new name, wherever it occurs; overrides: path pattern -> new name (wins over keys); keep: keys that stay; data_valued: subtrees whose keys are data (dates, fuels, brands, column names) and never change; values: enum-like values the code compares, per path; prose: path -> {old text: new text} for prose values that quote a renamed dotted path; site_only: renames that exist only in data/site_data.json; groups: which metrics files each group owns and whether it is done; lib: names produced by analysis/lib/segment_rule.py, applied only with the LIB group. tools/metric_renames.py applies, proves and exports it (site-map for the portfolio).",
+  "tr": "Eski (Türkçe) metrik anahtarı adlarından İngilizce snake_case adlara incelenmiş tek eşleme; 2026-09-25'te onaylandı. Yollar ESKİ adlarla yazılır: '.' bölüt ayırır, '*' her anahtar, '[]' her liste öğesi, '[i]' satırın i. konumu. keys: çıplak anahtar -> yeni ad, geçtiği her yerde; overrides: yol kalıbı -> yeni ad (keys'ten önce gelir); keep: kalan anahtarlar; data_valued: anahtarları veri olan alt ağaçlar (tarih, yakıt, marka, kolon adı), hiç değişmez; values: kodun karşılaştırdığı değerler, yol başına; prose: yol -> {eski metin: yeni metin}, yeniden adlandırılmış noktalı yolu anan düzyazı değerler için; site_only: yalnız data/site_data.json'da olan ad değişiklikleri; groups: her grubun sahip olduğu metrik dosyaları ve bitip bitmediği; lib: analysis/lib/segment_rule.py'nin ürettiği adlar, yalnız LIB grubuyla uygulanır. tools/metric_renames.py uygular, kanıtlar ve dışa verir (portföy için site-map)."
  },
  "status": "approved",
  "approved_at": "2026-09-25",
@@ -368,6 +368,11 @@
    "temel_sinif": "base_class"
   }
  },
+ "prose": {
+  "domain.final_results.model_karsilastirma.not": {
+   "domain.model_yil_medyani": "domain.model_year_median"
+  }
+ },
  "site_only": {
   "meta.generated_at": "metrics_generated_at"
  },
@@ -398,7 +403,7 @@
     "07_model_comparison",
     "07_final_model"
    ],
-   "status": "todo"
+   "status": "done"
   },
   "G07b": {
    "prefixes": [

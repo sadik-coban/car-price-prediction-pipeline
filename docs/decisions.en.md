@@ -57,8 +57,8 @@ data; wherever it says "the model" it means LightGBM — the one that is determi
 
 **The served model uses the measured setting (2026-09-23).** The report's metrics come from fold models
 with early stopping; the final LightGBM used to be trained with a fixed 900 trees. Its tree count is now
-the median of the tree counts early stopping picked in CV (`meta.repro.final_lgb_agac`, per-fold values in
-`cv_agac`). `data/serving/serve/README.md` describes how to build the input exactly as in training;
+the median of the tree counts early stopping picked in CV (`meta.repro.final_lgb_trees`, per-fold values in
+`cv_trees`). `data/serving/serve/README.md` describes how to build the input exactly as in training;
 `encoders.pkl` carries the segment rule (including `PERF_RE`) and `CONFORMAL_Q` for the 90% interval. In
 LOFO the base and the drop models use the same tree limit; where each stopped is in
 `methodology.lofo_agac`.

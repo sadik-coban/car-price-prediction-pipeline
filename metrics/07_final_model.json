@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "07_final_model.py",
-  "generated_at": "2026-09-25T05:18:21+03:00",
+  "generated_at": "2026-09-25T16:22:24+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": "aa436e0cfd32",
   "source": {
    "script": {
-    "analysis/07_final_model.py": "4c16612b9964a5d6e80c76b5ce36fdd64dfcbb6ffa95a0524e5d01f7fe4a4ba3"
+    "analysis/07_final_model.py": "c43e6be80b4689df5d76f85db8a5dd8f0aafad563617f391184123e97f3e9b59"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -23,64 +23,64 @@
  },
  "meta": {
   "repro": {
-   "final_lgb_agac": 258
+   "final_lgb_trees": 258
   }
  },
  "domain": {
   "final_results": {
-   "ornek_tahminler": [
+   "example_predictions": [
     {
-     "arac": "116i Comfort",
+     "vehicle": "116i Comfort",
      "segment": "C",
-     "fiyat_bandi": "ekonomik",
-     "yas": 17,
+     "price_band": "economy",
+     "age": 17,
      "km": 174000,
-     "gercek": 718000.0,
-     "lightgbm_tahmin": 714062.0,
-     "catboost_tahmin": 709186.0,
-     "catboost_native_tahmin": 712107.0,
-     "lgb_sapma_pct": 0.5,
-     "oof_artik_pct": 0.0
+     "actual": 718000.0,
+     "lightgbm_pred": 714062.0,
+     "catboost_pred": 709186.0,
+     "catboost_native_pred": 712107.0,
+     "lgb_dev_pct": 0.5,
+     "oof_resid_pct": 0.0
     },
     {
-     "arac": "520d Premium",
+     "vehicle": "520d Premium",
      "segment": "E",
-     "fiyat_bandi": "orta",
-     "yas": 14,
+     "price_band": "mid",
+     "age": 14,
      "km": 300000,
-     "gercek": 1480000.0,
-     "lightgbm_tahmin": 1490900.0,
-     "catboost_tahmin": 1437492.0,
-     "catboost_native_tahmin": 1451109.0,
-     "lgb_sapma_pct": 0.7,
-     "oof_artik_pct": -0.0
+     "actual": 1480000.0,
+     "lightgbm_pred": 1490900.0,
+     "catboost_pred": 1437492.0,
+     "catboost_native_pred": 1451109.0,
+     "lgb_dev_pct": 0.7,
+     "oof_resid_pct": -0.0
     },
     {
-     "arac": "520i Luxury Line",
+     "vehicle": "520i Luxury Line",
      "segment": "E",
-     "fiyat_bandi": "premium",
-     "yas": 4,
+     "price_band": "premium",
+     "age": 4,
      "km": 96000,
-     "gercek": 3680000.0,
-     "lightgbm_tahmin": 3640718.0,
-     "catboost_tahmin": 3615892.0,
-     "catboost_native_tahmin": 3659807.0,
-     "lgb_sapma_pct": 1.1,
-     "oof_artik_pct": -0.0
+     "actual": 3680000.0,
+     "lightgbm_pred": 3640718.0,
+     "catboost_pred": 3615892.0,
+     "catboost_native_pred": 3659807.0,
+     "lgb_dev_pct": 1.1,
+     "oof_resid_pct": -0.0
     }
    ],
-   "ornek_tahmin": {
-    "arac": "116i Comfort",
+   "example_prediction": {
+    "vehicle": "116i Comfort",
     "segment": "C",
-    "fiyat_bandi": "ekonomik",
-    "yas": 17,
+    "price_band": "economy",
+    "age": 17,
     "km": 174000,
-    "gercek": 718000.0,
-    "lightgbm_tahmin": 714062.0,
-    "catboost_tahmin": 709186.0,
-    "catboost_native_tahmin": 712107.0,
-    "lgb_sapma_pct": 0.5,
-    "oof_artik_pct": 0.0
+    "actual": 718000.0,
+    "lightgbm_pred": 714062.0,
+    "catboost_pred": 709186.0,
+    "catboost_native_pred": 712107.0,
+    "lgb_dev_pct": 0.5,
+    "oof_resid_pct": 0.0
    }
   }
  }

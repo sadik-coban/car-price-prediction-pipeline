@@ -44,8 +44,8 @@
    "tests/analysis/test_07_final_model.py::test_samples_keep_the_oof_promise"
   ],
   "report_keys": [
-   "meta.repro.final_lgb_agac",
-   "domain.final_results.ornek_tahminler"
+   "meta.repro.final_lgb_trees",
+   "domain.final_results.example_predictions"
   ]
  },
  "status": "complete"

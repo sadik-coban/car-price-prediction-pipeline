@@ -15,9 +15,9 @@ from datetime import date
 
 import numpy as np
 
-from report_lib.report_common import (BAND_EN, FUEL_EN, HANDWRITTEN_EXAMPLE_NOTES, HED_TERM_EN, LADDER_EN,
-                           LOFO_FLAT_KEYS, LOFO_GROUPS, P, REPORTS_DIR, TECHNICAL_FIGS, TIER_EN, VARIANTS, VARIANTS_EN,
-                           VIF_TERM, _Ctx, build_figures, cluster_labels, col, derive, fp, fraction_words, load_report_view,
+from report_lib.report_common import (BAND_LABEL, FUEL_EN, HANDWRITTEN_EXAMPLE_NOTES, HED_TERM_EN, LADDER_EN,
+                           LOFO_FLAT_KEYS, LOFO_GROUPS, P, REPORTS_DIR, TECHNICAL_FIGS, TIER_LABEL, VARIANTS, VARIANTS_EN,
+                           VIF_TERM, _Ctx, build_figures, cluster_labels, col, derive, fp, fraction_words, id_label, load_report_view,
                            lofo_name, num, number_word, tl, tlm, tlx, tx, write_md)
 
 
@@ -107,7 +107,7 @@ def section_data(c):
     A("")
     snaps = meta["snapshots"]
     brands = meta["brands"]
-    target = dom["final_results"]["egitim"]["hedef"]
+    target = dom["final_results"]["training"]["target"]
     T([L("kalem", "item"), L("değer", "value")], [
         [L("TR plakalı tarama kaydı (tüm taramalar)", "TR-plated snapshot rows (all snapshots)"),
          num(meta["n_raw"], lang)],
@@ -1055,9 +1055,9 @@ def section_model(c):
     """
     v, d, dom, met, meta, hr, lang = c.v, c.d, c.dom, c.met, c.meta, c.hr, c.lang
     L, A, T, figs = c.L, c.A, c.T, c.figs
-    mk = dom["final_results"]["model_karsilastirma"]
+    mk = dom["final_results"]["model_comparison"]
     lg, cb = mk["lightgbm_tfidf_svd"], mk["catboost_tfidf_svd"]
-    win = mk["kazanan"]
+    win = mk["winner"]
     win_name = next((nm for _, code, nm in VARIANTS if code == win), str(win))
     win_name = tx(VARIANTS_EN, win_name, lang)
     MET = ["MAPE", "MAE", "MedAE", "RMSE", "R2"]
@@ -1090,7 +1090,7 @@ def section_model(c):
 
     A(L("### Model varyantları", "### Model variants"))
     A("")
-    base = dom["model_yil_medyani"]["taban"]
+    base = dom["model_year_median"]["baseline"]
     rows = [[nm + (" ★" if code == win else ""), P(mk[key]["MAPE"], lang, 2), f"{mk[key]['R2']:.4f}",
              tlx(mk[key]["MAE"], lang), tlx(mk[key]["MedAE"], lang), tlx(mk[key]["RMSE"], lang)]
             for key, code, nm in ((k, c, tx(VARIANTS_EN, n, lang)) for k, c, n in VARIANTS)]
@@ -1112,16 +1112,16 @@ def section_model(c):
         f"interval, brand ablation and sample predictions all come from LightGBM."))
     A("")
 
-    myl = dom["model_yil_medyani"]
+    year_med = dom["model_year_median"]
     A(L("### Taban basamak kırılımı", "### Baseline tier breakdown"))
     A("")
     T([L("basamak", "tier"), L("ilan", "listings"), L("pay", "share"), "MAPE", "MAE", "R²"],
-      [[tx(TIER_EN, t, lang), num(n, lang), P(s, lang, 2), P(mp, lang, 2), tl(mae), f"{r2:.4f}"]
-       for t, n, s, mp, mae, r2 in myl["metrik_kirilim"]], "lrrrrr")
-    A(L("Merdiven: " + " → ".join(myl.get("merdiven", [])) + ". Test'teki (model, yıl) hücresi eğitim fold'unda "
+      [[id_label(TIER_LABEL, t, lang), num(n, lang), P(s, lang, 2), P(mp, lang, 2), tl(mae), f"{r2:.4f}"]
+       for t, n, s, mp, mae, r2 in year_med["metric_breakdown"]], "lrrrrr")
+    A(L("Merdiven: " + " → ".join(year_med["ladder"]) + ". Test'teki (model, yıl) hücresi eğitim fold'unda "
         "yoksa taban bir alt basamağa iner; her inişte hata belirgin büyür — emsalsiz araçta taban zaten zayıf. "
         "Medyanlar her fold'da yalnız eğitim kısmından hesaplanır (sızıntısız, modelle aynı 5-fold).",
-        "Ladder: " + " → ".join(tx(LADDER_EN, s, lang) for s in myl.get("merdiven", [])) + ". If the test "
+        "Ladder: " + " → ".join(tx(LADDER_EN, s, lang) for s in year_med["ladder"]) + ". If the test "
         "(model, year) cell is absent from the training fold, the baseline steps down a rung; error grows sharply at "
         "each step — without a comparable the baseline is weak anyway. Medians are computed on the training part of "
         "each fold only (leak-free, same 5 folds as the model)."))
@@ -1170,9 +1170,9 @@ def section_model(c):
     T([L("bant", "band"), L("araç", "car"), L("yaş", "age"), "km", L("gerçek", "actual"), "LightGBM",
        L("sapma", "dev."), L("OOF artık", "OOF resid."),
        L("CatBoost (model/seri adı SVD)", "CatBoost (model/series name SVD)")],
-      [[tx(BAND_EN, o["fiyat_bandi"], lang), o["arac"], o["yas"], num(o["km"], lang), tlx(o["gercek"], lang),
-        tlx(o["lightgbm_tahmin"], lang), P(o["lgb_sapma_pct"], lang), P(o["oof_artik_pct"], lang),
-        tlx(o["catboost_tahmin"], lang)] for o in dom["final_results"]["ornek_tahminler"]], "llrrrrrrr")
+      [[id_label(BAND_LABEL, o["price_band"], lang), o["vehicle"], o["age"], num(o["km"], lang), tlx(o["actual"], lang),
+        tlx(o["lightgbm_pred"], lang), P(o["lgb_dev_pct"], lang), P(o["oof_resid_pct"], lang),
+        tlx(o["catboost_pred"], lang)] for o in dom["final_results"]["example_predictions"]], "llrrrrrrr")
     A(L("> **Bunlar tipik değil, en iyi durum örnekleri.** Her fiyat diliminde ağır hasarsız ve |OOF artık|'ı "
         "en küçük ilanı seçer. \"sapma\" tüm veriyle eğitilmiş final modelin tahminidir (ilanı eğitimde görmüştür); "
         "sızıntısız ölçü \"OOF artık\". Tipik hata için MAPE'ye bakın.",

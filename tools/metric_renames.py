@@ -68,11 +68,14 @@ def load_map(path=MAP_FILE):
 
 def compile_map(m):
     """
-    EN: Adds the compiled forms (_overrides, _values, _lib) to a rename map dict and returns it.
-    TR: Bir ad eşlemesi dict'ine derlenmiş biçimleri (_overrides, _values, _lib) ekler ve döndürür.
+    EN: Adds the compiled forms (_overrides, _values, _prose, _lib) to a rename map dict and returns it. "prose"
+        (optional): path -> {old text: new text} for prose values that quote a renamed dotted path.
+    TR: Bir ad eşlemesi dict'ine derlenmiş biçimleri (_overrides, _values, _prose, _lib) ekler ve döndürür. "prose"
+        (isteğe bağlı): yol -> {eski metin: yeni metin}; yeniden adlandırılmış bir noktalı yolu anan düzyazı değerler.
     """
     m["_overrides"] = [(pattern_re(p), n) for p, n in m["overrides"].items()]
     m["_values"] = [(pattern_re(p), v) for p, v in m["values"].items()]
+    m["_prose"] = [(pattern_re(p), v) for p, v in m.get("prose", {}).items()]
     m["_lib"] = set(m["lib"])
     return m
 
@@ -152,14 +155,20 @@ def translate(doc, m, ok, lib_done, path=""):
 
 def _value(v, path, indexed, m, ok, lib_done):
     """
-    EN: An enum value renamed if its path (or its row position) is a map "values" site and its owner is done.
-    TR: Yolu (ya da satırdaki konumu) eşlemenin "values" yerlerinden biriyse ve sahibi bittiyse çevrilmiş değer.
+    EN: An enum value renamed if its path (or its row position) is a map "values" site and its owner is done; a
+        prose value at a map "prose" site gets its quoted old paths replaced.
+    TR: Yolu (ya da satırdaki konumu) eşlemenin "values" yerlerinden biriyse ve sahibi bittiyse çevrilmiş değer;
+        "prose" yerindeki düzyazı değerde anılan eski yollar değiştirilir.
     """
     if not isinstance(v, str) or not ok(path):
         return v
     for rx, mapping in m["_values"]:
         if (rx.match(path) or rx.match(indexed)) and v in mapping and (v not in m["_lib"] or lib_done):
             return mapping[v]
+    for rx, subs in m["_prose"]:
+        if rx.match(path):
+            for old, new in subs.items():
+                v = v.replace(old, new)
     return v
 
 

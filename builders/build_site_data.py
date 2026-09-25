@@ -36,7 +36,7 @@ SITE_KEYS = {
                "km_price", "brand_compare", "series_segment_matrix", "age_km_note", "numeric_correlation", "kmeans",
                "pca_scatter", "pca_scatter_13", "model_compare", "conformal", "quantile_error", "oof_outliers",
                "oof_best", "residual_vs_n", "pred_vs_true", "residual_scatter", "drift", "hedonic",
-               "hedonic_reliability", "shap", "dealer_coverage", "model_yil_medyani", "brand_ablation", "final_results"],
+               "hedonic_reliability", "shap", "dealer_coverage", "model_year_median", "brand_ablation", "final_results"],
     "methodology": ["feature_kept", "feature_drop", "cramers_matrix", "theils_matrix", "cramers_null", "theils_null",
                     "g_mpv", "assoc_model", "lofo", "lofo_agac", "kmeans_selection", "pca_axes", "column_missing",
                     "impute_note", "backtest", "column_missing_all", "systematic_missing", "column_accounting",

@@ -52,7 +52,7 @@ LightGBM'dir — CPU'da deterministik olan o.
 
 **Servis edilen model ölçülen ayarda (2026-09-23).** Raporun metrikleri erken durdurmalı fold
 modellerinden gelir; son LightGBM eskiden sabit 900 ağaçla eğitiliyordu. Artık ağaç sayısı, CV'de erken
-durdurmanın seçtiği ağaç sayılarının medyanı (`meta.repro.final_lgb_agac`, fold değerleri `cv_agac`).
+durdurmanın seçtiği ağaç sayılarının medyanı (`meta.repro.final_lgb_trees`, fold değerleri `cv_trees`).
 `data/serving/serve/README.md` girdinin eğitimle birebir nasıl kurulacağını yazar; `encoders.pkl` segment
 kuralını (`PERF_RE` dahil) ve %90 aralık için `CONFORMAL_Q`'yu taşır. LOFO'da taban ve çıkarma modelleri
 aynı ağaç sınırıyla kurulur, durdukları tur `methodology.lofo_agac`'ta.

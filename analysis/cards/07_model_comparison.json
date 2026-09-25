@@ -54,8 +54,8 @@
   "report_keys": [
    "domain.model_compare.lightgbm.MAPE",
    "domain.model_compare.lightgbm.R2",
-   "error_drivers.taban_esit_kosul.iyilesme_pct",
-   "meta.repro.cv_agac"
+   "error_drivers.baseline_equal_terms.improvement_pct",
+   "meta.repro.cv_trees"
   ]
  },
  "status": "complete"

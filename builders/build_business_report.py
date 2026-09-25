@@ -8,8 +8,8 @@ TR: Karar notunu (reports/business.{tr,en}.md) ve figürlerini yalnız metrics/*
     figürler ve biçimleyiciler report_lib/report_common.py'de.
 Run / Koşum: python builders/build_business_report.py
 """
-from report_lib.report_common import (BUSINESS_FIGS, P, REPORTS_DIR, TIER_EN, build_figures, derive, load_report_view, num, number_word, tl,
-                           tlm, tx, write_md)
+from report_lib.report_common import (BUSINESS_FIGS, P, REPORTS_DIR, TIER_LABEL, build_figures, derive, id_label, load_report_view, num,
+                           number_word, tl, tlm, tx, write_md)
 
 
 def fmt_business(v, F, lang):
@@ -41,21 +41,21 @@ def fmt_business(v, F, lang):
     A("")
     # B3 (2026-09-23): etiket "ayni model, ayni yilin medyani" diyordu; sayi ise MERDIVENLI taban
     # (emsal yoksa modelin tum yillari, o da yoksa genel medyan). Etiket duzeltildi, es kosullu kiyas eklendi.
-    _te = v["ed"]["taban_esit_kosul"]
+    _equal_terms = v["ed"]["baseline_equal_terms"]
     A(L(f"**Emsal medyanı** — *aynı model ve yılın ortadaki fiyatı; o yıl için emsal yoksa modelin tüm "
         f"yıllarının, o da yoksa bütün piyasanın medyanı* — ortalama **{tl(v['base_mae'])}** "
         f"yanılıyor; model **{tl(v['model_mae'])}** — **%{v['better_pct']:.0f} daha iyi**, "
         f"araç başına **{tl(v['gap_tl'])}**. 100 araçlık bir stokta bu, yaklaşık "
         f"**₺{v['gap_tl'] * 100 / 1e6:.0f}M**'lik fiyatlama hatası farkı demek. Yalnız emsali olan "
-        f"ilanlarda ({P(_te['pct'], lang)}) karşılaştırınca taban {tl(_te['taban_mae'])}, model "
-        f"{tl(_te['model_mae'])}: araç başına {tl(_te['fark_tl'])}, %{_te['iyilesme_pct']:.0f}.",
+        f"ilanlarda ({P(_equal_terms['pct'], lang)}) karşılaştırınca taban {tl(_equal_terms['baseline_mae'])}, model "
+        f"{tl(_equal_terms['model_mae'])}: araç başına {tl(_equal_terms['gap_tl'])}, %{_equal_terms['improvement_pct']:.0f}.",
         f"**The comparable median** — *the middle price of the same model and year; with no comparable "
         f"that year, the model's all-year median, and failing that the whole market's* — misses by "
         f"**{tl(v['base_mae'])}** on average; the model by **{tl(v['model_mae'])}** — "
         f"**{v['better_pct']:.0f}% better**, **{tl(v['gap_tl'])}** per car. Across a 100-car stock "
         f"that is about **₺{v['gap_tl'] * 100 / 1e6:.0f}M** of pricing error. On the listings that do "
-        f"have a comparable ({P(_te['pct'], lang)}) the baseline misses by {tl(_te['taban_mae'])} and "
-        f"the model by {tl(_te['model_mae'])}: {tl(_te['fark_tl'])} per car, {_te['iyilesme_pct']:.0f}%."))
+        f"have a comparable ({P(_equal_terms['pct'], lang)}) the baseline misses by {tl(_equal_terms['baseline_mae'])} and "
+        f"the model by {tl(_equal_terms['model_mae'])}: {tl(_equal_terms['gap_tl'])} per car, {_equal_terms['improvement_pct']:.0f}%."))
     A("")
     # 2026-09-23: "kilometre, hasar, motor" elle yaziliydi; motor grubu cikarilinca hata yalniz ~₺500 artiyor
     # (bilgisi model adinda). Siralama ve tutarlar LOFO'dan (methodology.lofo, karesel ortalama hata artisi).
@@ -86,7 +86,7 @@ def fmt_business(v, F, lang):
         "| baseline tier | listings | share | mean error |"))
     A("|---|---:|---:|---:|")
     for (name, n, pct), row in zip(v["ladder"], tiers):
-        A(f"| {tx(TIER_EN, name, lang)} | {num(n, lang)} | {P(pct, lang, 2)} | {tl(row[4])} |")
+        A(f"| {id_label(TIER_LABEL, name, lang)} | {num(n, lang)} | {P(pct, lang, 2)} | {tl(row[4])} |")
     A("")
 
     # --- 2. Piyasa ne diyor

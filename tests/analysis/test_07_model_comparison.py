@@ -39,7 +39,7 @@ def test_error_measures_are_ordered(mc):
 
 def test_one_tree_count_per_fold(mc):
     """EN: Early stopping picked a positive tree count in each of the 5 folds. / TR: 5 fold'un her birinde pozitif ağaç sayısı."""
-    trees = mc["meta"]["repro"]["cv_agac"]
+    trees = mc["meta"]["repro"]["cv_trees"]
     assert len(trees) == N_FOLDS and all(t > 0 for t in trees)
 
 
@@ -58,6 +58,6 @@ def test_baseline_gap_is_consistent(mc):
     EN: gap = baseline MAE − model MAE, improvement % = gap / baseline MAE.
     TR: fark = taban MAE − model MAE, iyileşme % = fark / taban MAE.
     """
-    b = mc["error_drivers"]["taban_esit_kosul"]
-    assert b["fark_tl"] == pytest.approx(b["taban_mae"] - b["model_mae"], abs=1)
-    assert b["iyilesme_pct"] == pytest.approx(100 * b["fark_tl"] / b["taban_mae"], abs=0.05)
+    b = mc["error_drivers"]["baseline_equal_terms"]
+    assert b["gap_tl"] == pytest.approx(b["baseline_mae"] - b["model_mae"], abs=1)
+    assert b["improvement_pct"] == pytest.approx(100 * b["gap_tl"] / b["baseline_mae"], abs=0.05)

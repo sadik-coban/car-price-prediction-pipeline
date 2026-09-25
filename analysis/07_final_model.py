@@ -30,7 +30,7 @@ from lib.cv import (CB_PARAMS, LGB_PARAMS, N_JOBS, PRICE_CAP, SEED, TEXT_SVD, ca
 
 SERVING_DIR = ROOT / "data" / "serving"
 SERVE_DIR = SERVING_DIR / "serve"
-TIER_NAMES = ["ekonomik", "orta", "premium"]
+TIER_NAMES = ["economy", "mid", "premium"]
 MAX_ABS_RESID = 5                     # a sample must be predicted within ±5% OOF | örnek OOF'ta ±%5 içinde olmalı
 CONFORMAL_DEF = ("OOF log-hatalarinin %90 yuzdeligi; aralik = expm1(tahmin_log ± q), "
                  "alt uc 0, ust uc log1p(1.5e7) ile kirpilir")
@@ -184,16 +184,17 @@ Modeller native (.txt/.cbm) — sürüm-dayanıklı. TF-IDF/SVD'nin native forma
 # %% [3] Metrics assembly | Metrik derleme — naming and rounding only | yalnız adlandırma ve yuvarlama
 def to_metrics(res):
     """
-    EN: Published in the site tree: meta.repro.final_lgb_agac and domain.final_results sample predictions.
-    TR: Site ağacında yayımlanır: meta.repro.final_lgb_agac ve domain.final_results örnek tahminleri.
+    EN: Published in the site tree: meta.repro.final_lgb_trees and domain.final_results sample predictions.
+    TR: Site ağacında yayımlanır: meta.repro.final_lgb_trees ve domain.final_results örnek tahminleri.
     """
-    samples = [{"arac": s["model"], "segment": s["segment"], "fiyat_bandi": s["tier"], "yas": s["age"], "km": s["km"],
-                "gercek": round(s["actual"], 0), "lightgbm_tahmin": round(s["lgb"], 0),
-                "catboost_tahmin": round(s["cb"], 0), "catboost_native_tahmin": round(s["cb_native"], 0),
-                "lgb_sapma_pct": round(abs(s["lgb"] - s["actual"]) / s["actual"] * 100, 1),
-                "oof_artik_pct": round(s["oof_resid"], 1)} for s in res["samples"]]
-    return {"meta": {"repro": {"final_lgb_agac": res["trees"]}},
-            "domain": {"final_results": {"ornek_tahminler": samples, "ornek_tahmin": samples[0] if samples else None}}}
+    samples = [{"vehicle": s["model"], "segment": s["segment"], "price_band": s["tier"], "age": s["age"], "km": s["km"],
+                "actual": round(s["actual"], 0), "lightgbm_pred": round(s["lgb"], 0),
+                "catboost_pred": round(s["cb"], 0), "catboost_native_pred": round(s["cb_native"], 0),
+                "lgb_dev_pct": round(abs(s["lgb"] - s["actual"]) / s["actual"] * 100, 1),
+                "oof_resid_pct": round(s["oof_resid"], 1)} for s in res["samples"]]
+    return {"meta": {"repro": {"final_lgb_trees": res["trees"]}},
+            "domain": {"final_results": {"example_predictions": samples,
+                                         "example_prediction": samples[0] if samples else None}}}
 
 
 # %% [4] Load | Yükle — the only cells that read files | dosya okuyan tek hücreler

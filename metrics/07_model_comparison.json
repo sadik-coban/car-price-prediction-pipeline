@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "07_model_comparison.py",
-  "generated_at": "2026-09-25T05:17:37+03:00",
+  "generated_at": "2026-09-25T16:21:27+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": "aa436e0cfd32",
   "source": {
    "script": {
-    "analysis/07_model_comparison.py": "253548afe31b879ebc210e4acab9b3abad7ae440eac3022a6c79557fbdd4037e"
+    "analysis/07_model_comparison.py": "96f2722a03165c44c09c4062f8334ff5866e00c55b956a135a75a9301a3cd1f2"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -22,14 +22,14 @@
   }
  },
  "error_drivers": {
-  "taban_esit_kosul": {
-   "ilan": 29236,
+  "baseline_equal_terms": {
+   "listings": 29236,
    "pct": 97.49,
-   "taban_mae": 178897.0,
+   "baseline_mae": 178897.0,
    "model_mae": 105984.0,
-   "fark_tl": 72913.0,
-   "iyilesme_pct": 40.8,
-   "not": "Emsali olan ilanlar = taban merdiveninin model+yıl basamağı (fold içi)."
+   "gap_tl": 72913.0,
+   "improvement_pct": 40.8,
+   "note": "Emsali olan ilanlar = taban merdiveninin model+yıl basamağı (fold içi)."
   }
  },
  "meta": {
@@ -39,7 +39,7 @@
    "lgb_deterministic": true,
    "row_order": "ORDER BY ad_id",
    "n_jobs": 16,
-   "cv_agac": [
+   "cv_trees": [
     274,
     258,
     212,
@@ -78,7 +78,7 @@
     "MAPE": 6.58,
     "R2": 0.9739
    },
-   "not": "CatBoost iki şekilde: TF-IDF-SVD beslemeli (LightGBM ile aynı girdi, adil karşılaştırma) ve kendi native text motoru. Ana karşılaştırma TF-IDF-SVD üzerinden."
+   "note": "CatBoost iki şekilde: TF-IDF-SVD beslemeli (LightGBM ile aynı girdi, adil karşılaştırma) ve kendi native text motoru. Ana karşılaştırma TF-IDF-SVD üzerinden."
   },
   "dealer_coverage": {
    "singleton_pct": 2.03,
@@ -86,10 +86,10 @@
    "comped_pct": 92.68,
    "groups": 2194,
    "cv_fallback_pct": 2.51,
-   "not": "(model, gb_year) grup boyutları, ilanın kendisi dahil. comped = grubunda en az 5 ilan olanların oranı (yani en az 4 emsal); thin = 5'ten az; singleton = grupta tek ilan (emsalsiz). Taban bu ilanlarda tanımsız değil: fold içinde (model) medyanına, o da yoksa genel medyana iner."
+   "note": "(model, gb_year) grup boyutları, ilanın kendisi dahil. comped = grubunda en az 5 ilan olanların oranı (yani en az 4 emsal); thin = 5'ten az; singleton = grupta tek ilan (emsalsiz). Taban bu ilanlarda tanımsız değil: fold içinde (model) medyanına, o da yoksa genel medyana iner."
   },
-  "model_yil_medyani": {
-   "taban": {
+  "model_year_median": {
+   "baseline": {
     "MAE": 191224.0,
     "MedAE": 130000.0,
     "RMSE": 305050.0,
@@ -103,9 +103,9 @@
     "MAPE": 6.49,
     "R2": 0.9745
    },
-   "kapsama": [
+   "coverage": [
     [
-     "model+yıl",
+     "model_year",
      29236,
      97.49
     ],
@@ -120,9 +120,9 @@
      0.52
     ]
    ],
-   "metrik_kirilim": [
+   "metric_breakdown": [
     [
-     "model+yıl",
+     "model_year",
      29236,
      97.49,
      10.69,
@@ -147,15 +147,15 @@
     ]
    ],
    "fallback_pct": 2.51,
-   "merdiven": [
+   "ladder": [
     "(model, yıl) medyanı",
     "(model) medyanı — tüm yıllar",
     "global medyan"
    ],
-   "not": "Galerinin yaptığı iş: aynı model + aynı yıl, medyana bak. Fallback'lı OOF median tabanı — medyanlar HER fold'da yalnız train'de (sızıntısız, modelle aynı 5-fold). Test'te o (model, yıl) hücresi train'de yoksa merdiven iner: (model) tüm yıllar → global. taban = tüm satırların OOF metrikleri; metrik_kirilim = [basamak, n, %, MAPE, MAE, R2] (fallback basamaklarında hata belirgin artar — emsalsizde taban zaten zayıf). Model metrikleri kıyas için; aynı protokol → fark gerçek kazanç."
+   "note": "Galerinin yaptığı iş: aynı model + aynı yıl, medyana bak. Fallback'lı OOF median tabanı — medyanlar HER fold'da yalnız train'de (sızıntısız, modelle aynı 5-fold). Test'te o (model, yıl) hücresi train'de yoksa merdiven iner: (model) tüm yıllar → global. taban = tüm satırların OOF metrikleri; metrik_kirilim = [basamak, n, %, MAPE, MAE, R2] (fallback basamaklarında hata belirgin artar — emsalsizde taban zaten zayıf). Model metrikleri kıyas için; aynı protokol → fark gerçek kazanç."
   },
   "final_results": {
-   "model_karsilastirma": {
+   "model_comparison": {
     "naive": {
      "MAE": 203621.0,
      "MedAE": 142500.0,
@@ -191,15 +191,15 @@
      "MAPE": 6.58,
      "R2": 0.9739
     },
-    "kazanan": "catboost",
-    "not": "İKİ medyan tabanı + ÜÇ model varyantı, hepsi aynı 5-fold OOF ile. Tabanlar: naive (seri+yıl medyanı = kaba arama), dealer (model+yıl medyanı — basamak-başına fallback için bkz. domain.model_yil_medyani). Modeller: LightGBM (TF-IDF+SVD), CatBoost (TF-IDF+SVD, LightGBM ile aynı girdi=adil), CatBoost (kendi native text motoru). kazanan yalnız MODEL varyantları arasında seçilir. Metrikler sızıntısız OOF; final modeller tüm veriyle eğitildi."
+    "winner": "catboost",
+    "note": "İKİ medyan tabanı + ÜÇ model varyantı, hepsi aynı 5-fold OOF ile. Tabanlar: naive (seri+yıl medyanı = kaba arama), dealer (model+yıl medyanı — basamak-başına fallback için bkz. domain.model_year_median). Modeller: LightGBM (TF-IDF+SVD), CatBoost (TF-IDF+SVD, LightGBM ile aynı girdi=adil), CatBoost (kendi native text motoru). kazanan yalnız MODEL varyantları arasında seçilir. Metrikler sızıntısız OOF; final modeller tüm veriyle eğitildi."
    },
-   "egitim": {
-    "n_arac": 29988,
+   "training": {
+    "n_listings": 29988,
     "n_feature": 25,
-    "hedef": "log1p(price)"
+    "target": "log1p(price)"
    },
-   "not": "Metrikler 5-fold OOF (sızıntısız). Final modeller tüm veriyle eğitildi (production)."
+   "note": "Metrikler 5-fold OOF (sızıntısız). Final modeller tüm veriyle eğitildi (production)."
   }
  }
 }

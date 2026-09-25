@@ -23,7 +23,7 @@ from lib.common import CAT, FEATURES, TEXT, load_clean, save_metrics
 from lib.cv import (CB_PARAMS, N_JOBS, PRICE_CAP, SEED, catboost_device, catboost_task, fold_matrices, lgb_oof,
                 make_folds, price_metrics, round_metrics, save_oof)
 
-RUNGS = ["model+yıl", "model", "global"]
+RUNGS = ["model_year", "model", "global"]
 MIN_COMPS = 5                 # a (model, year) cell with ≥5 listings has ≥4 comparables | ≥5 ilan = ≥4 emsal
 
 
@@ -80,7 +80,7 @@ def median_baseline(listings, keycol, folds):
         by_key, overall = t.groupby("s")["p"].median().to_dict(), float(t["p"].median())
         for i in va:
             if not np.isnan(year[i]) and (key[i], year[i]) in cell:
-                pred[i], rung[i] = cell[(key[i], year[i])], f"{keycol}+yıl"
+                pred[i], rung[i] = cell[(key[i], year[i])], f"{keycol}_year"
             elif key[i] in by_key:
                 pred[i], rung[i] = by_key[key[i]], keycol
             else:
@@ -120,7 +120,7 @@ def comparable_coverage(listings, rung):
             "thin_pct": round(100 * float((size < MIN_COMPS).mean()), 2),
             "comped_pct": round(100 * float((size >= MIN_COMPS).mean()), 2),
             "groups": int(listings.groupby(["model", "gb_year"], dropna=False).ngroups),
-            "cv_fallback_pct": round(100 * float((rung != "model+yıl").mean()), 2)}
+            "cv_fallback_pct": round(100 * float((rung != "model_year").mean()), 2)}
 
 
 def same_listing_comparison(price, baseline, rung, model_pred):
@@ -132,7 +132,7 @@ def same_listing_comparison(price, baseline, rung, model_pred):
         eğitim fold'larında bulduğu ilanlar (manşetteki taban MAE'si merdivenin geri düşme basamaklarını da
         karıştırır).
     """
-    m = rung == "model+yıl"
+    m = rung == "model_year"
     base_mae = float(np.mean(np.abs(price[m] - baseline[m])))
     model_mae = float(np.mean(np.abs(price[m] - model_pred[m])))
     return {"n": int(m.sum()), "share": float(m.mean()), "base_mae": base_mae, "model_mae": model_mae}
@@ -141,56 +141,56 @@ def same_listing_comparison(price, baseline, rung, model_pred):
 # %% [3] Metrics assembly | Metrik derleme — naming and rounding only | yalnız adlandırma ve yuvarlama
 def to_metrics(res):
     """
-    EN: Published in the site tree (domain.model_compare, dealer_coverage, model_yil_medyani, final_results,
-        meta.repro) and the report inputs (error_drivers.taban_esit_kosul).
-    TR: Site ağacında (domain.model_compare, dealer_coverage, model_yil_medyani, final_results, meta.repro)
-        ve rapor girdilerinde (error_drivers.taban_esit_kosul) yayımlanır.
+    EN: Published in the site tree (domain.model_compare, dealer_coverage, model_year_median, final_results,
+        meta.repro) and the report inputs (error_drivers.baseline_equal_terms).
+    TR: Site ağacında (domain.model_compare, dealer_coverage, model_year_median, final_results, meta.repro)
+        ve rapor girdilerinde (error_drivers.baseline_equal_terms) yayımlanır.
     """
     lgb_m, svd_m, nat_m = (round_metrics(res[k]) for k in ("lgb", "cb_svd", "cb_native"))
     naive_m, dealer_m = round_metrics(res["naive"]), round_metrics(res["dealer"])
     sl = res["same_listing"]
     return {
-        "error_drivers": {"taban_esit_kosul": {
-            "ilan": sl["n"], "pct": round(100 * sl["share"], 2), "taban_mae": round(sl["base_mae"], 0),
-            "model_mae": round(sl["model_mae"], 0), "fark_tl": round(sl["base_mae"] - sl["model_mae"], 0),
-            "iyilesme_pct": round(100 * (sl["base_mae"] - sl["model_mae"]) / sl["base_mae"], 1),
-            "not": "Emsali olan ilanlar = taban merdiveninin model+yıl basamağı (fold içi)."}},
+        "error_drivers": {"baseline_equal_terms": {
+            "listings": sl["n"], "pct": round(100 * sl["share"], 2), "baseline_mae": round(sl["base_mae"], 0),
+            "model_mae": round(sl["model_mae"], 0), "gap_tl": round(sl["base_mae"] - sl["model_mae"], 0),
+            "improvement_pct": round(100 * (sl["base_mae"] - sl["model_mae"]) / sl["base_mae"], 1),
+            "note": "Emsali olan ilanlar = taban merdiveninin model+yıl basamağı (fold içi)."}},
         "meta": {"repro": {"seed": SEED, "catboost_device": res["device"], "lgb_deterministic": True,
-                           "row_order": "ORDER BY ad_id", "n_jobs": N_JOBS, "cv_agac": res["iters"]}},
+                           "row_order": "ORDER BY ad_id", "n_jobs": N_JOBS, "cv_trees": res["iters"]}},
         "domain": {
             "model_compare": {
                 "lightgbm": lgb_m, "catboost": svd_m, "catboost_svd": svd_m, "catboost_native": nat_m,
-                "not": ("CatBoost iki şekilde: TF-IDF-SVD beslemeli (LightGBM ile aynı girdi, adil "
+                "note": ("CatBoost iki şekilde: TF-IDF-SVD beslemeli (LightGBM ile aynı girdi, adil "
                         "karşılaştırma) ve kendi native text motoru. Ana karşılaştırma TF-IDF-SVD üzerinden.")},
             "dealer_coverage": {
                 **res["coverage"],
-                "not": ("(model, gb_year) grup boyutları, ilanın kendisi dahil. comped = grubunda en az 5 ilan olanların "
+                "note": ("(model, gb_year) grup boyutları, ilanın kendisi dahil. comped = grubunda en az 5 ilan olanların "
                         "oranı (yani en az 4 emsal); thin = 5'ten az; singleton = grupta tek ilan (emsalsiz). Taban "
                         "bu ilanlarda tanımsız değil: fold içinde (model) medyanına, o da yoksa genel medyana iner.")},
-            "model_yil_medyani": {
-                "taban": dealer_m, "model": lgb_m,
-                "kapsama": [[r[0], r[1], r[2]] for r in res["rungs"]], "metrik_kirilim": res["rungs"],
+            "model_year_median": {
+                "baseline": dealer_m, "model": lgb_m,
+                "coverage": [[r[0], r[1], r[2]] for r in res["rungs"]], "metric_breakdown": res["rungs"],
                 "fallback_pct": res["coverage"]["cv_fallback_pct"],
-                "merdiven": ["(model, yıl) medyanı", "(model) medyanı — tüm yıllar", "global medyan"],
-                "not": ("Galerinin yaptığı iş: aynı model + aynı yıl, medyana bak. Fallback'lı OOF median tabanı — "
+                "ladder": ["(model, yıl) medyanı", "(model) medyanı — tüm yıllar", "global medyan"],
+                "note": ("Galerinin yaptığı iş: aynı model + aynı yıl, medyana bak. Fallback'lı OOF median tabanı — "
                         "medyanlar HER fold'da yalnız train'de (sızıntısız, modelle aynı 5-fold). Test'te o "
                         "(model, yıl) hücresi train'de yoksa merdiven iner: (model) tüm yıllar → global. "
                         "taban = tüm satırların OOF metrikleri; metrik_kirilim = [basamak, n, %, MAPE, MAE, R2] "
                         "(fallback basamaklarında hata belirgin artar — emsalsizde taban zaten zayıf). "
                         "Model metrikleri kıyas için; aynı protokol → fark gerçek kazanç.")},
             "final_results": {
-                "model_karsilastirma": {
+                "model_comparison": {
                     "naive": naive_m, "dealer": dealer_m,
                     "lightgbm_tfidf_svd": lgb_m, "catboost_tfidf_svd": svd_m, "catboost_native": nat_m,
-                    "kazanan": "lightgbm" if res["lgb"]["MAPE"] < res["cb_svd"]["MAPE"] else "catboost",
-                    "not": ("İKİ medyan tabanı + ÜÇ model varyantı, hepsi aynı 5-fold OOF ile. Tabanlar: naive "
+                    "winner": "lightgbm" if res["lgb"]["MAPE"] < res["cb_svd"]["MAPE"] else "catboost",
+                    "note": ("İKİ medyan tabanı + ÜÇ model varyantı, hepsi aynı 5-fold OOF ile. Tabanlar: naive "
                             "(seri+yıl medyanı = kaba arama), dealer (model+yıl medyanı — basamak-başına fallback "
-                            "için bkz. domain.model_yil_medyani). Modeller: LightGBM (TF-IDF+SVD), CatBoost "
+                            "için bkz. domain.model_year_median). Modeller: LightGBM (TF-IDF+SVD), CatBoost "
                             "(TF-IDF+SVD, LightGBM ile aynı girdi=adil), CatBoost (kendi native text motoru). "
                             "kazanan yalnız MODEL varyantları arasında seçilir. Metrikler sızıntısız OOF; "
                             "final modeller tüm veriyle eğitildi.")},
-                "egitim": {"n_arac": res["n"], "n_feature": len(FEATURES), "hedef": "log1p(price)"},
-                "not": "Metrikler 5-fold OOF (sızıntısız). Final modeller tüm veriyle eğitildi (production)."}},
+                "training": {"n_listings": res["n"], "n_feature": len(FEATURES), "target": "log1p(price)"},
+                "note": "Metrikler 5-fold OOF (sızıntısız). Final modeller tüm veriyle eğitildi (production)."}},
     }
 
 

@@ -83,6 +83,19 @@ def test_order_kept_and_clash_stops():
         tr({"x": {"alt": 1, "lower": 2}})
 
 
+def test_prose_quotes_follow_the_rename():
+    """
+    EN: A prose value at a "prose" site gets the quoted old path replaced; elsewhere prose stays.
+    TR: "prose" yerindeki düzyazı değerde anılan eski yol değişir; başka yerde düzyazı kalır.
+    """
+    m = json.loads(json.dumps(MAP))
+    m["prose"] = {"a.note_here": {"domain.kova": "domain.range"}}
+    m = MR.compile_map(m)
+    doc = {"a": {"note_here": "see domain.kova", "elsewhere": "see domain.kova"}}
+    assert MR.translate(doc, m, lambda p: True, False) == {"a": {"note_here": "see domain.range",
+                                                                 "elsewhere": "see domain.kova"}}
+
+
 def test_translate_pattern_keeps_list_suffix():
     """EN: '[][3]' survives a pattern translation. / TR: '[][3]' kalıp çevirisinde kalır."""
     assert MR.translate_pattern("a.kova[][3]", MR.compile_map(json.loads(json.dumps(MAP)))) == "a.range[][3]"
