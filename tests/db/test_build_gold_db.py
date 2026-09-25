@@ -5,7 +5,10 @@ EN: Tests of db/build_gold_db.py and gold_rules.json. A semi-raw DB is built fro
       - the rule file matches the DB columns (39 panel flags in build_duckdb's order, 3 + 3 other columns, one
         dropped column) and a broken rule file is refused;
       - every gold rule column has no NULL left, a NULL became false / 0 and a known value did not change;
-      - every other column, the ids, the row order and the four other tables are cell for cell the semi-raw ones;
+      - the row rule: the blue-plate row of the semi-raw DB is not in gold, the empty-plate row is; a listing with
+        both a dropped and a kept row stops the build; the contract check catches a dropped value left in gold;
+      - every other column, the ids, the row order and the four other tables are cell for cell the semi-raw ones
+        (the rows and listings gold keeps);
       - the schema is id + GOLD_COLUMNS with the semi-raw types (no description_clean, no kb_paint_change_summary);
       - the input check refuses an old-contract or a gold file; the safe write leaves an old gold DB byte for byte;
       - publish_data_to_s3 accepts the built gold file.
@@ -15,7 +18,10 @@ TR: db/build_gold_db.py ve gold_rules.json testleri. Küçük sahte ham ağaçta
       - kural dosyası DB kolonlarıyla uyuşuyor (build_duckdb sırasıyla 39 panel bayrağı, 3 + 3 öteki kolon, bir
         alınmayan kolon) ve bozuk kural dosyası reddediliyor;
       - her gold kural kolonunda NULL kalmıyor, NULL false / 0 oluyor, bilinen değer değişmiyor;
-      - öteki her kolon, id'ler, satır sırası ve öteki dört tablo hücre hücre yarı hamdaki gibi;
+      - satır kuralı: yarı ham DB'deki mavi plakalı satır gold'da yok, plakası boş satır var; hem düşen hem tutulan
+        satırı olan ilan kurulumu durdurur; sözleşme denetimi gold'da kalmış düşen değeri yakalar;
+      - öteki her kolon, id'ler, satır sırası ve öteki dört tablo hücre hücre yarı hamdaki gibi (gold'un tuttuğu
+        satırlar ve ilanlar);
       - şema id + GOLD_COLUMNS, yarı hamdaki tiplerle (description_clean yok, kb_paint_change_summary yok);
       - girdi denetimi eski sözleşmeli ya da gold bir dosyayı reddediyor; güvenli yazma eski gold DB'yi bayt bayt
         bırakıyor;
@@ -28,7 +34,7 @@ import json
 import duckdb
 import pandas as pd
 import pytest
-from conftest import make_old_db, small_tree
+from conftest import S1, S2, make_old_db, raw_record, small_tree, write_raw_tree
 
 import build_duckdb as BD
 import build_gold_db as G
@@ -51,6 +57,23 @@ def frame(path, table="car_listings", order="id"):
         return con.execute(f"SELECT * FROM {table}" + (f" ORDER BY {order}" if order else "")).df()
     finally:
         con.close()
+
+
+def kept(path, table="car_listings", order="id"):
+    """
+    EN: The semi-raw table as gold should hold it: without the rows (car_listings) or listings (other tables) the
+        row rule drops.
+    TR: Yarı ham tablo, gold'un tutması gerektiği gibi: satır kuralının düşürdüğü satırlar (car_listings) ya da
+        ilanlar (öteki tablolar) olmadan.
+    """
+    con = duckdb.connect(str(path), read_only=True)
+    try:
+        where = (f" WHERE NOT ({G.dropped_sql()})" if table == "car_listings" else
+                 f" WHERE ad_id NOT IN (SELECT ad_id FROM car_listings WHERE {G.dropped_sql()})")
+        out = con.execute(f"SELECT * FROM {table}{where}" + (f" ORDER BY {order}" if order else "")).df()
+    finally:
+        con.close()
+    return out.reset_index(drop=True)
 
 
 @pytest.fixture(scope="module")
@@ -143,7 +166,7 @@ def test_rule_columns_filled(built):
         panel, bilinmeyen ağır hasar ve olmayan ilk sahip var; her grup gerçekten hücre dolduruyor.
     """
     summary, semi, gold = built
-    s, g = frame(semi), frame(gold)
+    s, g = kept(semi), frame(gold)
     assert list(g["id"]) == list(s["id"])
     for col, value in FILL.items():
         was_null = s[col].isna()
@@ -161,15 +184,34 @@ def test_other_columns_identical(built):
     TR: Kural dışındaki her kolon hücre hücre yarı hamdaki gibi (NULL'lar dahil).
     """
     _, semi, gold = built
-    pd.testing.assert_frame_equal(frame(gold)[["id"] + OTHER], frame(semi)[["id"] + OTHER])
+    pd.testing.assert_frame_equal(frame(gold)[["id"] + OTHER], kept(semi)[["id"] + OTHER])
 
 
 @pytest.mark.parametrize("table, order", [("duplicate_ad_ids", "ad_id"), ("price_history", "ad_id, snapshot_idx"),
                                           ("dashboard_cache", "scope_brand"), ("options_cache", "scope_brand")])
 def test_other_tables_copied(built, table, order):
-    """EN: The four other tables are copied unchanged. / TR: Öteki dört tablo aynen kopyalanır."""
+    """
+    EN: The four other tables are copied unchanged, without the listings the row rule drops.
+    TR: Öteki dört tablo aynen kopyalanır; satır kuralının düşürdüğü ilanlar olmadan.
+    """
     _, semi, gold = built
-    pd.testing.assert_frame_equal(frame(gold, table, order), frame(semi, table, order))
+    source = kept(semi, table, order) if table in G.COPIED_TABLES else frame(semi, table, order)
+    pd.testing.assert_frame_equal(frame(gold, table, order), source)
+
+
+def test_blue_plate_in_semi_raw_not_in_gold(built):
+    """
+    EN: The semi-raw DB keeps the blue-plate listing, gold leaves it out (row, price history, duplicates); the
+        empty-plate listing stays in both.
+    TR: Yarı ham DB mavi plakalı ilanı tutar, gold almaz (satır, fiyat geçmişi, tekrarlar); plakası boş ilan ikisinde
+        de kalır.
+    """
+    summary, semi, gold = built
+    s, g = frame(semi), frame(gold)
+    assert (s["gb_plate_origin"] == "Mavi plakalı").sum() == 1 and not (g["gb_plate_origin"] == "Mavi plakalı").any()
+    assert s["gb_plate_origin"].isna().sum() == g["gb_plate_origin"].isna().sum() == 1
+    assert summary["dropped_rows"] == summary["dropped_listings"] == 1 and len(g) == len(s) - 1
+    assert 10000003 not in set(frame(gold, "price_history", "ad_id")["ad_id"])
 
 
 def test_publish_accepts_built_gold(built):
@@ -295,3 +337,38 @@ def test_main(semi_and_gold, tmp_path, capsys):
     assert G.main(["--in", str(semi), "--out", str(tmp_path / "g2.duckdb")]) == 0
     assert G.main(["--in", str(tmp_path / "none.duckdb"), "--out", str(tmp_path / "g3.duckdb")]) == 1
     assert "FAILED" in capsys.readouterr().err
+
+
+# ---- row rule | satır kuralı ----
+
+def test_listing_with_dropped_and_kept_rows_stops(tmp_path):
+    """
+    EN: A listing blue in one snapshot and TR in another (never seen in the data) stops the gold build with nothing
+        written — gold does not guess which rows to keep.
+    TR: Bir taramada mavi, ötekinde TR olan ilan (veride hiç görülmedi) gold kurulumunu hiçbir şey yazmadan durdurur —
+        gold hangi satırları tutacağını tahmin etmez.
+    """
+    tree = write_raw_tree(tmp_path / "raw", {
+        ("audi", S1): [raw_record(10000001, **{"Genel Bakış - Plaka Uyruğu": "Mavi plakalı"})],
+        ("audi", S2): [raw_record(10000001, search_date=S2)],
+        ("bmw", S1): [raw_record(10000002, brand="bmw")]})
+    semi = tmp_path / "cars.duckdb"
+    BD.build(semi, data_dir=tree)
+    with pytest.raises(ValueError, match="both rows gold drops and rows it keeps"):
+        G.build(semi, tmp_path / "gold.duckdb")
+    assert not (tmp_path / "gold.duckdb").exists()
+
+
+def test_contract_catches_a_dropped_row(built, tmp_path):
+    """
+    EN: A gold file that still holds a blue-plate row breaks the contract (publish would refuse it).
+    TR: Hâlâ mavi plakalı satır taşıyan gold dosya sözleşmeyi bozar (yayın reddederdi).
+    """
+    copy = tmp_path / "gold.duckdb"
+    copy.write_bytes(built[2].read_bytes())
+    con = duckdb.connect(str(copy))
+    try:
+        con.execute("UPDATE car_listings SET gb_plate_origin = 'Mavi plakalı' WHERE id = (SELECT min(id) FROM car_listings)")
+        assert any("leave out" in p for p in G.contract_problems(con))
+    finally:
+        con.close()

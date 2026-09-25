@@ -1,8 +1,9 @@
 """
 build_duckdb.py
 EN: Builds the SEMI-RAW database data/cars.duckdb from data/raw/{audi,bmw}/<snapshot>/details.jsonl (the
-    analysis reads it). Rows come from lib/process_for_db.py; this script only reads the files, keeps TR plates,
-    and writes the tables. WHAT is written:
+    analysis reads it). Rows come from lib/process_for_db.py; this script only reads the files and writes the
+    tables — every listing the site showed is kept (blue plates too): scope decisions belong to gold
+    (db/gold_rules.json) and to the analysis (analysis/lib/common.py keeps TR plates). WHAT is written:
       - car_listings: every listing in every snapshot (no de-duplication), `id` (row number, 1…N) + DB_COLUMNS.
         Semi-raw: what the page does not say stays NULL — heavy damage "Belirtilmemiş" / missing, first owner
         missing, and the three flags of a panel whose status is "Belirtilmemiş". The analysis decides how to
@@ -27,8 +28,9 @@ EN: Builds the SEMI-RAW database data/cars.duckdb from data/raw/{audi,bmw}/<snap
     db/build_gold_db.py derives data/cars_gold.duckdb from this file, and publish_data_to_s3.py uploads only a
     file that keeps that gold contract (docs/database.md → "Gold adımı").
 TR: data/raw/{audi,bmw}/<tarama>/details.jsonl'den YARI HAM veritabanı data/cars.duckdb'yi kurar (analiz okur).
-    Satırlar lib/process_for_db.py'den gelir; bu betik yalnız dosyaları okur, TR plakalıları tutar ve tabloları
-    yazar. NE yazılır:
+    Satırlar lib/process_for_db.py'den gelir; bu betik yalnız dosyaları okur ve tabloları yazar — sitenin
+    gösterdiği her ilan tutulur (mavi plakalar da): kapsam kararları gold'a (db/gold_rules.json) ve analize
+    (analysis/lib/common.py TR plakalıları tutar) aittir. NE yazılır:
       - car_listings: her taramadaki her ilan (tekilleştirme yok), `id` (satır numarası, 1…N) + DB_COLUMNS.
         Yarı ham: sayfanın söylemediği NULL kalır — ağır hasar "Belirtilmemiş" / yok, ilk sahip yok ve durumu
         "Belirtilmemiş" olan panelin üç bayrağı. Nasıl okunacağına analiz karar verir. Açıklama, sayfa
@@ -72,9 +74,6 @@ DEFAULT_OUT = ROOT / "data" / "cars.duckdb"
 BRANDS = ("audi", "bmw")
 TABLE = "car_listings"
 CACHE_TABLES = ("dashboard_cache", "options_cache")
-# EN: plate values dropped (the report is about TR cars); the data shows only "Mavi plakalı" besides "(TR) Türkiye"
-# TR: atılan plaka değerleri (rapor TR araçlarla ilgili); veride "(TR) Türkiye" dışında yalnız "Mavi plakalı" var
-FOREIGN_PLATES = ("Mavi plakalı",)
 CSV_NAME = "duplicate_ad_ids.csv"
 
 # EN: DB column prefix of a panel → silver status column; all 13 panels (the first 11 in the old S3 order,
@@ -229,11 +228,11 @@ def duckdb_safe_dtypes(df):
 
 def read_all_silver(data_dir=DATA_DIR, brands=BRANDS):
     """
-    EN: Every snapshot of every brand → one silver DataFrame (no de-duplication), without blue plates.
+    EN: Every snapshot of every brand → one silver DataFrame (no de-duplication), every plate kept.
         Stops with FileNotFoundError on a missing brand folder or a snapshot folder without details.jsonl, and
         with ValueError on an unreadable line — nothing is skipped silently. Returns an empty DataFrame when
         no record is usable.
-    TR: Her markanın her taraması → tek silver DataFrame (tekilleştirme yok), mavi plakalılar hariç.
+    TR: Her markanın her taraması → tek silver DataFrame (tekilleştirme yok), her plaka tutulur.
         Marka klasörü ya da details.jsonl'suz tarama klasörü eksikse FileNotFoundError, okunamayan satırda
         ValueError ile durur — hiçbir şey sessizce atlanmaz. Kullanılabilir kayıt yoksa boş DataFrame döner.
     """
@@ -256,10 +255,6 @@ def read_all_silver(data_dir=DATA_DIR, brands=BRANDS):
     if not frames:
         return pd.DataFrame()
     df = pd.concat(frames, ignore_index=True)
-    foreign = df["plate_origin"].isin(FOREIGN_PLATES)
-    if foreign.any():
-        df = df[~foreign].reset_index(drop=True)
-        print(f"  - {int(foreign.sum())} blue-plate listings dropped | mavi plakalı atıldı")
     return duckdb_safe_dtypes(df)
 
 

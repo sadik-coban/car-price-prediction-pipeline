@@ -4,19 +4,21 @@ EN: The raw → DB code expects only what the data showed, and handles everythin
     register of observed values (db/observed_values.json; no data needed, the fast gate reads the JSON):
       (a) every value the code names occurs in the register — no assumed case ("Yabancı plakalı" was one);
       (b) every value in the register is handled on purpose — no silent default.
-    Covered: the dropped plate values, the damage labels, the yes/no text maps, and every observed form of the fields
+    Covered: the plate values (gold's row rule, the analysis' TR plate), the damage labels, the yes/no text maps,
+    and every observed form of the fields
     the parsers read strictly (each parses without UnknownValue, and each pattern the code has is used by the data).
 TR: Ham → DB kodu yalnız verinin gösterdiğini bekler ve gösterdiği her şeyi ele alır — iki yönde, gözlenen değerler
     kaydına göre (db/observed_values.json; veri gerekmez, hızlı kapı JSON'u okur):
       (a) kodun andığı her değer kayıtta geçiyor — varsayılan durum yok ("Yabancı plakalı" böyleydi);
       (b) kayıttaki her değer bilerek ele alınıyor — sessiz varsayılan yok.
-    Kapsam: atılan plaka değerleri, hasar etiketleri, evet/hayır metin haritaları ve ayrıştırıcıların katı okuduğu
+    Kapsam: plaka değerleri (gold'un satır kuralı, analizin TR plakası), hasar etiketleri, evet/hayır metin
+    haritaları ve ayrıştırıcıların katı okuduğu
     alanların gözlenen her biçimi (her biri UnknownValue olmadan ayrışır ve koddaki her kalıp veride kullanılıyor).
 """
 import pytest
 from conftest import raw_record
 
-import build_duckdb as BD
+import build_gold_db as G
 from lib import observed_values as OV, process_for_db as P
 
 REGISTER = OV.load()
@@ -32,12 +34,20 @@ def values(field):
 
 def test_plates_both_ways():
     """
-    EN: (a) every dropped plate value occurs; (b) every observed value is dropped or is the TR plate.
-    TR: (a) atılan her plaka değeri geçiyor; (b) gözlenen her değer ya atılıyor ya TR plakası.
+    EN: (a) every plate value the code names occurs: the analysis' TR plate and gold's dropped values; (b) every
+        observed value is one of them — TR is kept by gold and the analysis, a dropped value is left out by both.
+        An empty plate field (no value) is kept by gold and left out by the analysis. The semi-raw DB keeps every
+        observed value.
+    TR: (a) kodun andığı her plaka değeri geçiyor: analizin TR plakası ve gold'un düşürdüğü değerler; (b) gözlenen
+        her değer bunlardan biri — TR'yi gold ve analiz tutar, düşürülen değeri ikisi de almaz. Boş plaka alanını
+        (değer yok) gold tutar, analiz almaz. Yarı ham DB gözlenen her değeri tutar.
     """
     seen = set(values("Genel Bakış - Plaka Uyruğu"))
-    assert set(BD.FOREIGN_PLATES) <= seen, set(BD.FOREIGN_PLATES) - seen
-    assert seen - set(BD.FOREIGN_PLATES) == {TR_PLATE}
+    dropped = {v for r in G.RULES["drop_rows"] if r["column"] == "gb_plate_origin" for v in r["values"]}
+    assert {TR_PLATE} | dropped <= seen, ({TR_PLATE} | dropped) - seen
+    assert seen == {TR_PLATE} | dropped, seen - ({TR_PLATE} | dropped)
+    silver = {v for v, _ in REGISTER["silver"]["columns"]["gb_plate_origin"]["values"] if v is not None}
+    assert silver == seen, "the semi-raw DB must keep every plate value | yarı ham DB her plaka değerini tutmalı"
 
 
 def test_damage_labels_both_ways():

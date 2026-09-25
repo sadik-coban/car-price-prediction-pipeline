@@ -80,6 +80,16 @@
    }
   }
  ],
+ "drop_rows": [
+  {
+   "column": "gb_plate_origin",
+   "values": ["Mavi plakalı"],
+   "reason": {
+    "en": "Scope of the API: Turkish-plated cars. Blue-plate (foreign resident) cars are under a different tax regime; the semi-raw DB keeps them (it records what the site shows), gold leaves them out. A listing with an empty plate field is kept: unknown is not foreign, and the API's TR filter leaves it out itself.",
+    "tr": "API'nin kapsamı: TR plakalı araçlar. Mavi plakalı (Türkiye'de oturan yabancı) araçların vergilendirme rejimi farklı; yarı ham DB onları tutar (sitenin gösterdiğini kaydeder), gold almaz. Plaka alanı boş ilan alınır: bilinmiyor yabancı demek değil; API'nin TR filtresi onu zaten dışarıda bırakır."
+   }
+  }
+ ],
  "drop": [
   {
    "column": "kb_paint_change_summary",

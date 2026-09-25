@@ -237,8 +237,10 @@ SECOND = {"search_date": S2, "scraped_at": "2026-01-26T23:14:02.146290+00:00"}
 
 def small_tree(data_dir):
     """
-    EN: The fake raw tree of the end-to-end test: 8 records, 6 kept (one blue plate, one empty page dropped).
-    TR: Uçtan uca testin sahte ham ağacı: 8 kayıt, 6'sı tutulur (bir mavi plaka, bir boş sayfa atılır).
+    EN: The fake raw tree of the end-to-end test: 8 records; the semi-raw DB keeps 7 (the empty page is not a
+        listing), gold 6 (it leaves out the blue plate).
+    TR: Uçtan uca testin sahte ham ağacı: 8 kayıt; yarı ham DB 7'sini tutar (boş sayfa ilan değil), gold 6'sını
+        (mavi plakayı almaz).
     """
     return write_raw_tree(data_dir, {
         ("audi", S1): [

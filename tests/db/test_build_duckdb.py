@@ -84,11 +84,15 @@ def test_duplicate_report():
 
 def test_rows_and_plates(built):
     """
-    EN: Blue plates and empty pages are dropped; a listing without a plate field is kept.
-    TR: Mavi plaka ve boş sayfa atılır; plaka alanı olmayan ilan tutulur.
+    EN: Every listing is kept, the blue plate too (scope belongs to gold and the analysis); the empty page is not a
+        listing; a listing without a plate field is kept with NULL.
+    TR: Her ilan tutulur, mavi plaka da (kapsam gold'a ve analize ait); boş sayfa ilan değil; plaka alanı olmayan
+        ilan NULL ile tutulur.
     """
     summary, rows, _ = built
-    assert summary["rows"] == 6 and sorted({a for a, _ in rows}) == [10000001, 10000002, 10000004, 10000005, 10000006]
+    assert summary["rows"] == 7
+    assert sorted({a for a, _ in rows}) == [10000001, 10000002, 10000003, 10000004, 10000005, 10000006]
+    assert rows[(10000003, "2026-01-18")].gb_plate_origin == "Mavi plakalı"
     assert pd.isna(rows[(10000004, "2026-01-18")].gb_plate_origin)
 
 
@@ -157,7 +161,7 @@ def test_duplicates_price_history_ids(built):
     assert query(out, "SELECT ad_id, occurrence_count FROM duplicate_ad_ids") == [(10000001, 2)]
     assert query(out, "SELECT price_delta, snapshot_idx FROM price_history WHERE ad_id = 10000001 "
                       "ORDER BY snapshot_idx") == [(None, 1), (-50000.0, 2)]
-    assert query(out, "SELECT min(id), max(id), count(DISTINCT id) FROM car_listings") == [(1, 6, 6)]
+    assert query(out, "SELECT min(id), max(id), count(DISTINCT id) FROM car_listings") == [(1, 7, 7)]
 
 
 def test_csv_next_to_db_and_caches(built):
@@ -206,7 +210,7 @@ def test_leftover_tmp_is_replaced(tree_and_db):
     """EN: A .tmp left by an earlier crash does not block a build. / TR: Önceki çöküşten kalan .tmp engel olmaz."""
     data_dir, out = tree_and_db
     (out.parent / "cars.duckdb.tmp").write_bytes(b"old junk")
-    assert BD.build(out, data_dir=data_dir)["rows"] == 6
+    assert BD.build(out, data_dir=data_dir)["rows"] == 7
     assert not (out.parent / "cars.duckdb.tmp").exists()
 
 
@@ -261,13 +265,6 @@ def test_replace_blocked_stops(tree_and_db, monkeypatch):
     with pytest.raises(RuntimeError, match="another program"):
         BD.build(out, data_dir=data_dir)
     assert sha(out) == before and not (out.parent / "cars.duckdb.tmp").exists()
-
-
-def test_no_blue_plates(tmp_path):
-    """EN: A tree without blue plates keeps every row. / TR: Mavi plakasız ağaçta her satır kalır."""
-    data_dir = write_raw_tree(tmp_path / "raw", {("audi", S1): [raw_record(10000001)],
-                                                 ("bmw", S1): [raw_record(10000002, brand="bmw")]})
-    assert BD.build(tmp_path / "cars.duckdb", data_dir=data_dir)["rows"] == 2
 
 
 def test_missing_brand_folder(tmp_path):

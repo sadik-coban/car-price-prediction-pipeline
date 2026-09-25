@@ -3,11 +3,15 @@ build_gold_db.py
 EN: Builds the GOLD database data/cars_gold.duckdb (what the API gets) from the semi-raw data/cars.duckdb (what
     the analysis reads). The semi-raw DB keeps unknowns as NULL; the live API expects the old contract, where an
     unknown reads as "no". WHAT changes, and nothing else (the rules and their reasons are in gold_rules.json):
-      - car_listings: 45 columns get NULL → false / 0 (heavy damage ×2 and first owner → false; the 39 panel
-        flags and the 3 damage counters → 0); kb_paint_change_summary is not taken. Same rows, same order, same
-        id, same types; every other cell as it is (the description stays description_text, without the page
-        heading; there is no description_clean — owner's decision 2026-09-24);
-      - duplicate_ad_ids, price_history, dashboard_cache, options_cache: copied unchanged.
+      - car_listings: rows whose plate is a dropped value ("drop_rows": the blue plates) are not taken; 45
+        columns get NULL → false / 0 (heavy damage ×2 and first owner → false; the 39 panel flags and the 3 damage
+        counters → 0); kb_paint_change_summary is not taken. The other rows in the same order with the same id
+        (so ids have gaps where dropped rows were) and the same types; every other cell as it is (the description
+        stays description_text, without the page heading; there is no description_clean — owner's decision
+        2026-09-24);
+      - duplicate_ad_ids, price_history: copied without the dropped listings' ad_ids. If one listing had both a
+        dropped and a kept row (blue in one snapshot, TR in another) the build stops — the data never showed it;
+      - dashboard_cache, options_cache: copied unchanged.
     It first checks that the input really is the semi-raw DB (its columns are id + build_duckdb.DB_COLUMNS), so
     an old-contract or unrelated file is never turned into gold.
     HOW, safely: the input is opened read-only; the gold DB is built in <out>.tmp and moved over the old one only
@@ -16,11 +20,14 @@ EN: Builds the GOLD database data/cars_gold.duckdb (what the API gets) from the 
 TR: Yarı ham data/cars.duckdb'den (analizin okuduğu) GOLD veritabanı data/cars_gold.duckdb'yi (API'ye giden) kurar.
     Yarı ham DB bilinmeyeni NULL tutar; canlı API ise bilinmeyenin "hayır" okunduğu eski sözleşmeyi bekler. NE
     değişir, başka hiçbir şey değil (kurallar ve gerekçeleri gold_rules.json'da):
-      - car_listings: 45 kolonda NULL → false / 0 (ağır hasar ×2 ve ilk sahip → false; 39 panel bayrağı ve 3
-        hasar sayacı → 0); kb_paint_change_summary alınmaz. Aynı satırlar, aynı sıra, aynı id, aynı tipler;
-        öteki her hücre olduğu gibi (açıklama sayfa başlığı olmadan description_text olarak kalır;
-        description_clean yok — kullanıcı kararı 2026-09-24);
-      - duplicate_ad_ids, price_history, dashboard_cache, options_cache: aynen kopyalanır.
+      - car_listings: plakası düşürülen bir değer olan satırlar ("drop_rows": mavi plakalar) alınmaz; 45 kolonda
+        NULL → false / 0 (ağır hasar ×2 ve ilk sahip → false; 39 panel bayrağı ve 3 hasar sayacı → 0);
+        kb_paint_change_summary alınmaz. Öteki satırlar aynı sırada, aynı id ile (düşen satırların yerinde id
+        boşluğu kalır) ve aynı tiplerle; öteki her hücre olduğu gibi (açıklama sayfa başlığı olmadan
+        description_text olarak kalır; description_clean yok — kullanıcı kararı 2026-09-24);
+      - duplicate_ad_ids, price_history: düşen ilanların ad_id'leri olmadan kopyalanır. Bir ilanın hem düşen hem
+        tutulan satırı varsa (bir taramada mavi, ötekinde TR) kurulum durur — veri bunu hiç göstermedi;
+      - dashboard_cache, options_cache: aynen kopyalanır.
     Önce girdinin gerçekten yarı ham DB olduğunu sınar (kolonları id + build_duckdb.DB_COLUMNS); eski
     sözleşmeli ya da ilgisiz bir dosya gold'a çevrilmez.
     NASIL, güvenle: girdi salt okunur açılır; gold DB <out>.tmp'de kurulur ve yalnız tamamlanınca eskisinin
@@ -53,9 +60,11 @@ OPTIONAL_TABLES = ("dashboard_cache", "options_cache")
 def load_rules(path=RULES_PATH):
     """
     EN: Reads gold_rules.json and checks it against DB_COLUMNS: every column exists, none is in two rules, a
-        dropped column is not also filled. Returns: {"fill": {column: value}, "drop": [column], "groups": [...]}.
+        dropped column is not also filled, a row rule names a kept column and at least one value.
+        Returns: {"fill": {column: value}, "drop": [column], "groups": [...], "drop_rows": [{"column", "values"}]}.
     TR: gold_rules.json'u okur ve DB_COLUMNS'a göre sınar: her kolon var, hiçbiri iki kuralda değil, alınmayan
-        kolon doldurulmuyor. Döndürür: {"fill": {kolon: değer}, "drop": [kolon], "groups": [...]}.
+        kolon doldurulmuyor, satır kuralı alınan bir kolonu ve en az bir değeri anıyor.
+        Döndürür: {"fill": {kolon: değer}, "drop": [kolon], "groups": [...], "drop_rows": [{"column", "values"}]}.
     """
     raw = json.loads(Path(path).read_text(encoding="utf-8"))
     names = {n for n, _, _ in DB_COLUMNS}
@@ -72,7 +81,11 @@ def load_rules(path=RULES_PATH):
     bad = [c for c in drop if c not in names or c in fill]
     if bad:
         raise ValueError(f"bad dropped column | hatalı alınmayan kolon: {bad}")
-    return {"fill": fill, "drop": drop, "groups": groups}
+    drop_rows = [{"column": r["column"], "values": list(r["values"])} for r in raw.get("drop_rows", [])]
+    bad = [r["column"] for r in drop_rows if r["column"] not in names or r["column"] in drop or not r["values"]]
+    if bad:
+        raise ValueError(f"bad row rule | hatalı satır kuralı: {bad}")
+    return {"fill": fill, "drop": drop, "groups": groups, "drop_rows": drop_rows}
 
 
 RULES = load_rules()
@@ -84,6 +97,21 @@ GOLD_COLUMNS = [(n, t) for n, t, _ in DB_COLUMNS if n not in RULES["drop"]]
 def sql_literal(value):
     """EN: A rule value as SQL (false / 0). / TR: Kural değerinin SQL hâli (false / 0)."""
     return ("true" if value else "false") if isinstance(value, bool) else str(int(value))
+
+
+def dropped_sql():
+    """
+    EN: SQL condition of the rows gold leaves out (the row rules joined with OR; FALSE when there are none). NULL
+        never matches: COALESCE keeps "NOT (…)" true for an empty plate, so those rows stay in gold.
+    TR: Gold'un almadığı satırların SQL koşulu (satır kuralları OR ile; kural yoksa FALSE). NULL hiç eşleşmez:
+        COALESCE, boş plakada "NOT (…)"yu doğru tutar; o satırlar gold'da kalır.
+    """
+    def quoted(value):
+        """EN: A SQL string literal. / TR: SQL metin sabiti."""
+        return "'" + str(value).replace("'", "''") + "'"
+
+    parts = [f"COALESCE({r['column']} IN ({', '.join(map(quoted, r['values']))}), FALSE)" for r in RULES["drop_rows"]]
+    return " OR ".join(parts) or "FALSE"
 
 
 def table_columns(con, table=TABLE):
@@ -122,38 +150,54 @@ def check_input(con, table=f"src.{TABLE}"):
 def contract_problems(con, table=TABLE):
     """
     EN: What breaks the gold (API) contract in a connected DB: the car_listings columns are not id + GOLD_COLUMNS,
-        or a gold rule column still holds NULL. Used on the built file and by publish_data_to_s3.py.
-        Returns: list of problems ([] = the contract holds).
-    TR: Bağlı bir DB'de gold (API) sözleşmesini bozan şeyler: car_listings kolonları id + GOLD_COLUMNS değil ya da
-        bir kural kolonunda hâlâ NULL var. Kurulan dosyada ve publish_data_to_s3.py'de kullanılır.
-        Döndürür: sorun listesi ([] = sözleşme tutuyor).
+        a gold rule column still holds NULL, or a row gold must leave out (drop_rows) is there. Used on the built
+        file and by publish_data_to_s3.py. Returns: list of problems ([] = the contract holds).
+    TR: Bağlı bir DB'de gold (API) sözleşmesini bozan şeyler: car_listings kolonları id + GOLD_COLUMNS değil, bir
+        kural kolonunda hâlâ NULL var ya da gold'un almaması gereken bir satır (drop_rows) duruyor. Kurulan dosyada
+        ve publish_data_to_s3.py'de kullanılır. Döndürür: sorun listesi ([] = sözleşme tutuyor).
     """
     have, want = table_columns(con, table), ["id"] + [n for n, _ in GOLD_COLUMNS]
     if have != want:
         return [f"columns are not the gold contract | kolonlar gold sözleşmesi değil — {column_diff(have, want)}"]
     nulls = con.execute(f"SELECT {', '.join(f'count(*) - count({c})' for c in RULES['fill'])} FROM {table}").fetchone()
     bad = [c for c, n in zip(RULES["fill"], nulls) if n]
-    return [f"NULL left in {len(bad)} gold rule columns | {len(bad)} kural kolonunda NULL var: {bad[:5]}"] if bad else []
+    problems = [f"NULL left in {len(bad)} gold rule columns | {len(bad)} kural kolonunda NULL var: {bad[:5]}"] if bad else []
+    left = con.execute(f"SELECT count(*) FROM {table} WHERE {dropped_sql()}").fetchone()[0]
+    if left:
+        problems.append(f"{left} rows gold must leave out are there | gold'un almaması gereken {left} satır var")
+    return problems
 
 
 def write_gold(src_path, path):
     """
     EN: Writes the gold tables into a NEW DuckDB file at path from src_path (opened read-only).
-        Returns: {"rows", "filled": {column: cells filled}, "tables": [copied table names]}.
+        Returns: {"rows", "filled": {column: cells filled}, "tables": [copied table names],
+                  "dropped_rows", "dropped_listings"}.
     TR: src_path'ten (salt okunur açılır) path'teki YENİ bir DuckDB dosyasına gold tablolarını yazar.
-        Döndürür: {"rows", "filled": {kolon: doldurulan hücre}, "tables": [kopyalanan tablolar]}.
+        Döndürür: {"rows", "filled": {kolon: doldurulan hücre}, "tables": [kopyalanan tablolar],
+                   "dropped_rows", "dropped_listings"}.
     """
     con = duckdb.connect(str(path))
     try:
         con.execute(f"ATTACH '{Path(src_path).as_posix()}' AS src (READ_ONLY)")
         check_input(con)
+        drop_if, keep_if = dropped_sql(), f"NOT ({dropped_sql()})"
+        dropped_rows, dropped_ads = con.execute(
+            f"SELECT count(*), count(DISTINCT ad_id) FROM src.{TABLE} WHERE {drop_if}").fetchone()
+        mixed = con.execute(f"SELECT count(DISTINCT ad_id) FROM src.{TABLE} WHERE {keep_if} AND ad_id IN "
+                            f"(SELECT ad_id FROM src.{TABLE} WHERE {drop_if})").fetchone()[0]
+        if mixed:
+            raise ValueError(f"{mixed} listings have both rows gold drops and rows it keeps (e.g. blue in one snapshot, "
+                             f"TR in another) — the data never showed this; decide how to handle it first | "
+                             f"{mixed} ilanın hem düşen hem tutulan satırı var — veri bunu hiç göstermedi, önce karar verin")
         null_counts = ", ".join(f"count(*) - count({c})" for c in RULES["fill"])
-        filled = dict(zip(RULES["fill"], con.execute(f"SELECT {null_counts} FROM src.{TABLE}").fetchone()))
+        filled = dict(zip(RULES["fill"], con.execute(
+            f"SELECT {null_counts} FROM src.{TABLE} WHERE {keep_if}").fetchone()))
         col_defs = ",\n    ".join(f"{n} {t}" for n, t in GOLD_COLUMNS)
         select = ", ".join(f"COALESCE({n}, {sql_literal(RULES['fill'][n])}) AS {n}" if n in RULES["fill"] else n
                            for n, _ in GOLD_COLUMNS)
         con.execute(f"CREATE TABLE {TABLE} (\n    id BIGINT PRIMARY KEY,\n    {col_defs}\n);")
-        con.execute(f"INSERT INTO {TABLE} SELECT id, {select} FROM src.{TABLE} ORDER BY id;")
+        con.execute(f"INSERT INTO {TABLE} SELECT id, {select} FROM src.{TABLE} WHERE {keep_if} ORDER BY id;")
         present = {r[0] for r in con.execute("SELECT table_name FROM information_schema.tables "
                                              "WHERE table_catalog = 'src'").fetchall()}
         missing = [t for t in COPIED_TABLES if t not in present]
@@ -161,7 +205,9 @@ def write_gold(src_path, path):
             raise ValueError(f"input lacks tables | girdide tablo yok: {missing}")
         tables = [t for t in COPIED_TABLES + OPTIONAL_TABLES if t in present]
         for t in tables:
-            con.execute(f"CREATE TABLE {t} AS SELECT * FROM src.{t}")
+            where = (f" WHERE ad_id NOT IN (SELECT ad_id FROM src.{TABLE} WHERE {drop_if})"
+                     if t in COPIED_TABLES else "")
+            con.execute(f"CREATE TABLE {t} AS SELECT * FROM src.{t}{where}")
         rows = con.execute(f"SELECT count(*) FROM {TABLE}").fetchone()[0]
         problems = contract_problems(con)              # the built file checks itself | kurulan dosya kendini sınar
         if problems:
@@ -170,15 +216,16 @@ def write_gold(src_path, path):
         con.execute("CHECKPOINT")
     finally:
         con.close()
-    return {"rows": int(rows), "filled": {k: int(v) for k, v in filled.items()}, "tables": tables}
+    return {"rows": int(rows), "filled": {k: int(v) for k, v in filled.items()}, "tables": tables,
+            "dropped_rows": int(dropped_rows), "dropped_listings": int(dropped_ads)}
 
 
 def build(in_path=DEFAULT_IN, out_path=DEFAULT_OUT):
     """
     EN: Builds the gold DB at out_path from the semi-raw DB at in_path (steps in the module header).
-        Returns: {"out", "rows", "columns", "filled", "tables"}.
+        Returns: {"out", "rows", "columns", "filled", "tables", "dropped_rows", "dropped_listings"}.
     TR: in_path'teki yarı ham DB'den out_path'e gold DB'yi kurar (adımlar modül başlığında).
-        Döndürür: {"out", "rows", "columns", "filled", "tables"}.
+        Döndürür: {"out", "rows", "columns", "filled", "tables", "dropped_rows", "dropped_listings"}.
     """
     in_path, out_path = Path(in_path), Path(out_path)
     if not in_path.exists():
@@ -208,6 +255,9 @@ def build(in_path=DEFAULT_IN, out_path=DEFAULT_OUT):
     summary = {"out": out_path, "columns": len(GOLD_COLUMNS), **result}
     print(f"Written | yazıldı: {out_path}")
     print(f"  - {TABLE}: {summary['rows']} rows | satır, {summary['columns']} columns + id | kolon + id")
+    for rule in RULES["drop_rows"]:
+        print(f"  - rows not taken | alınmayan satır ({rule['column']} ∈ {rule['values']}): {summary['dropped_rows']} "
+              f"rows, {summary['dropped_listings']} listings | satır, ilan")
     for group in RULES["groups"]:
         cells = sum(summary["filled"][c] for c in group["columns"])
         print(f"  - {group['name']}: {cells} NULL cells → {sql_literal(group['value'])} | hücre")
