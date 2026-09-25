@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "08_conformal_coverage.py",
-  "generated_at": "2026-09-25T05:24:23+03:00",
+  "generated_at": "2026-09-25T16:37:08+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": "aa436e0cfd32",
   "source": {
    "script": {
-    "analysis/08_conformal_coverage.py": "9d9de0cb68fedf06750569ef925eaeb40c5701c58305ee839463a1ce09e7fab5"
+    "analysis/08_conformal_coverage.py": "45299b7c6657a2780e00b0cbe1da0bac7c41c7962a205048b3966efe3a818b08"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -41,8 +41,8 @@
      94.0
     ]
    ],
-   "coverage_hedef": 90,
-   "not": "Q1 (ucuz) under-coverage: model ucuzlarda daha belirsiz (dürüst bulgu)."
+   "coverage_target": 90,
+   "note": "Q1 (ucuz) under-coverage: model ucuzlarda daha belirsiz (dürüst bulgu)."
   }
  },
  "report": {

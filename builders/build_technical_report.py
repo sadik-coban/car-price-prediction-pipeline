@@ -1192,15 +1192,15 @@ def section_calibration(c):
     L, A, T, figs = c.L, c.A, c.T, c.figs
     # Son denetim (2026-09-23): bir ara "fiyata gore sistematik cekim var" yaziyordu; o desen GERCEK fiyata gore
     # gruplamanin urettigi ortalamaya donus. Yanlilik tahmine gore olculur: kalibrasyon egimi + tahmin ceyregi.
-    _kal, _tc = v["ed"]["kalibrasyon"], v["ed"]["tahmin_ceyrek"]
+    _calib, _tc = v["ed"]["calibration"], v["ed"]["pred_quartile"]
     _stl = lambda x_: ("−" if x_ < 0 else "+") + tl(abs(x_))   # noqa: E731
     A(L(f"OOF (sızıntısız) tahminler gerçek fiyata karşı — R² **{v['oof_r2']}**. Artık% ortalamada sıfıra "
         f"yakın (ort. {P(v['resid_mean'], lang, 2)}, std {P(v['resid_std'], lang, 2)}). Tahmin edilen fiyatın her "
-        f"düzeyinde de: gerçek fiyatın tahmine göre eğimi **{_kal['egim']:.3f}**, tahmin çeyreklerinde ortalama "
+        f"düzeyinde de: gerçek fiyatın tahmine göre eğimi **{_calib['slope']:.3f}**, tahmin çeyreklerinde ortalama "
         f"sapma {_stl(min(r[2] for r in _tc))} ile {_stl(max(r[2] for r in _tc))} arasında.",
         f"OOF (leak-free) predictions vs actual — R² **{v['oof_r2']}**. Residual% is close to zero on average "
         f"(mean {v['resid_mean']}%, std {v['resid_std']}%). It holds at every level of the prediction too: the "
-        f"slope of actual on predicted price is **{_kal['egim']:.3f}**, and the mean bias across predicted-price "
+        f"slope of actual on predicted price is **{_calib['slope']:.3f}**, and the mean bias across predicted-price "
         f"quartiles ranges from {_stl(min(r[2] for r in _tc))} to {_stl(max(r[2] for r in _tc))}."))
     A("")
     figs(8)
@@ -1265,13 +1265,13 @@ def section_calibration(c):
     # "once pahali, sonra ucuz" artik veriye kapili: artik = (gercek - tahmin)/gercek; eksi = pahali.
     # 2026-09-23: "piyasa yukseldikce once pahali, sonra ucuz" yorumu kalkti — gruplar ilanin SON GORULDUGU
     # tarama; erken kalkan ilanlarla hala yayinda olanlar ayrica olculuyor (hayatta kalma).
-    _kc = v["ed"]["kaybolan_canli"]
-    _hk_ucuz = _kc["kaybolan_medyan_artik"] < 0 < _kc["canli_medyan_artik"]
+    _live = v["ed"]["live_vs_gone"]
+    _gone_cheaper = _live["gone_median_resid"] < 0 < _live["live_median_resid"]
     # Inceleme (2026-09-23): farkin bir kismi donem (model zamani gormuyor). Hayatta kalma kaniti: piyasanin yerinde
     # saydigi ilk iki tarama arasinda da medyan artik kayiyor.
     _dk = v["ed"]["donem_kaymasi"]["canli"]
     _bs = [r_["median_resid_pct"] for r_ in ed["by_snapshot"]]
-    _sk = _hk_ucuz and abs(_dk[0][1]) < 0.5 and _bs[1] - _bs[0] > 1
+    _sk = _gone_cheaper and abs(_dk[0][1]) < 0.5 and _bs[1] - _bs[0] > 1
     A(L("### Büyük hatalar nereden geliyor", "### Where the large errors come from"))
     A("")
     A(L(f"Hatası ±%{ed['threshold_pct']:g} sınırını aşan {num(ov['n_big'], lang)} ilan ({num(ov['n_over'], lang)} fazla, "
@@ -1295,9 +1295,9 @@ def section_calibration(c):
         f"{sn0['snapshot']} {P(sn0['median_resid_pct'], lang, 2, sign=True)} → {sn1['snapshot']} "
         f"{P(sn1['median_resid_pct'], lang, 2, sign=True)}. Bunun bir kısmı dönem: model zamanı görmüyor ve piyasa bu "
         f"aralıkta {P(_dk[-1][1], lang, 2, sign=True)} kaydı (§{section_no('time')}). Bir kısmı hayatta kalma: son taramada "
-        f"hâlâ yayında olan {num(_kc['canli_n'], lang)} ilanın medyan artığı "
-        f"{P(_kc['canli_medyan_artik'], lang, 2, sign=True)}, daha önce kalkan {num(_kc['kaybolan_n'], lang)} ilanınki "
-        f"{P(_kc['kaybolan_medyan_artik'], lang, 2, sign=True)}"
+        f"hâlâ yayında olan {num(_live['live_n'], lang)} ilanın medyan artığı "
+        f"{P(_live['live_median_resid'], lang, 2, sign=True)}, daha önce kalkan {num(_live['gone_n'], lang)} ilanınki "
+        f"{P(_live['gone_median_resid'], lang, 2, sign=True)}"
         + (f"; piyasanın yerinde saydığı ilk iki tarama arasında ({P(_dk[0][1], lang, 2, sign=True)}) bile medyan artık "
            f"{P(_bs[0], lang, 2, sign=True)} → {P(_bs[1], lang, 2, sign=True)} geçiyor — erken kalkan ilanlar modelin "
            f"söylediğinden ucuza fiyatlanmıştı." if _sk else "."),
@@ -1311,32 +1311,32 @@ def section_calibration(c):
         f"{sn0['snapshot']} {P(sn0['median_resid_pct'], lang, 2, sign=True)} → {sn1['snapshot']} "
         f"{P(sn1['median_resid_pct'], lang, 2, sign=True)}. Part of this is the period: the model is time-blind "
         f"and the market moved {P(_dk[-1][1], lang, 2, sign=True)} over the span (§{section_no('time')}). Part is "
-        f"survival: the {num(_kc['canli_n'], lang)} listings still live in the last snapshot have a median residual "
-        f"of {P(_kc['canli_medyan_artik'], lang, 2, sign=True)}, the {num(_kc['kaybolan_n'], lang)} that left earlier "
-        f"{P(_kc['kaybolan_medyan_artik'], lang, 2, sign=True)}"
+        f"survival: the {num(_live['live_n'], lang)} listings still live in the last snapshot have a median residual "
+        f"of {P(_live['live_median_resid'], lang, 2, sign=True)}, the {num(_live['gone_n'], lang)} that left earlier "
+        f"{P(_live['gone_median_resid'], lang, 2, sign=True)}"
         + (f"; even between the first two snapshots, with the market flat ({P(_dk[0][1], lang, 2, sign=True)}), the "
            f"median residual moves {P(_bs[0], lang, 2, sign=True)} → {P(_bs[1], lang, 2, sign=True)} — listings that "
            f"left early had been priced below the model's figure." if _sk else ".")))
     A("")
     # B10 (2026-09-23): 18 yas veriden secilmis bir kirilma degil. Her yas ve her kesim sayilir.
-    _yd = {a_: p_ for a_, _n, p_ in ed["yas_duyarlilik"]}
-    _yk = {r_[0]: r_[4] for r_ in ed["yas_kesim"]}
-    _cap = [a_ for a_ in (5, 10, 15, 18, max(_yd)) if a_ in _yd]
-    _ys = sorted(_yd)
-    _j = max(zip(_ys, _ys[1:]), key=lambda t_: _yd[t_[1]] - _yd[t_[0]])
+    _age_rate = {a_: p_ for a_, _n, p_ in ed["age_sensitivity"]}
+    _age_cut = {r_[0]: r_[4] for r_ in ed["age_cuts"]}
+    _cap = [a_ for a_ in (5, 10, 15, 18, max(_age_rate)) if a_ in _age_rate]
+    _ys = sorted(_age_rate)
+    _j = max(zip(_ys, _ys[1:]), key=lambda t_: _age_rate[t_[1]] - _age_rate[t_[0]])
     _scope = ed["scope"]
     A(L(f"**18 yaş verinin seçtiği bir eşik değil.** Büyük hata oranı yaşla artıyor: "
-        + " · ".join(f"{a_} yaş {P(_yd[a_], lang, 2)}" for a_ in _cap)
-        + f". En büyük bir yıllık sıçrama {_j[0]}→{_j[1]} yaş arasında ({P(_yd[_j[0]], lang, 2)} → "
-        f"{P(_yd[_j[1]], lang, 2)}). Kesim {min(_yk)} ile {max(_yk)} arasında kaydırılınca yaşlı/genç oranı "
-        f"{min(_yk.values()):.1f}–{max(_yk.values()):.1f} kat arasında kalıyor; 18'de {_yk[18]:.1f} "
+        + " · ".join(f"{a_} yaş {P(_age_rate[a_], lang, 2)}" for a_ in _cap)
+        + f". En büyük bir yıllık sıçrama {_j[0]}→{_j[1]} yaş arasında ({P(_age_rate[_j[0]], lang, 2)} → "
+        f"{P(_age_rate[_j[1]], lang, 2)}). Kesim {min(_age_cut)} ile {max(_age_cut)} arasında kaydırılınca yaşlı/genç oranı "
+        f"{min(_age_cut.values()):.1f}–{max(_age_cut.values()):.1f} kat arasında kalıyor; 18'de {_age_cut[18]:.1f} "
         f"kat. Ayrıca en yaşlı kova toplama sınırına dayanıyor: veri {_scope['min_year']} model yılıyla başlıyor, yani 18 "
         f"ve üstü kovada yalnız {_scope['max_age'] - 18 + 1} model yılı var.",
         f"**Age 18 is not a threshold the data picked.** The large-error rate rises with age: "
-        + " · ".join(f"age {a_} {P(_yd[a_], lang, 2)}" for a_ in _cap)
-        + f". The largest one-year jump is between {_j[0]} and {_j[1]} ({P(_yd[_j[0]], lang, 2)} → "
-        f"{P(_yd[_j[1]], lang, 2)}). Moving the cut between {min(_yk)} and {max(_yk)} keeps the old/young ratio between "
-        f"{min(_yk.values()):.1f}× and {max(_yk.values()):.1f}×; at 18 it is {_yk[18]:.1f}×. "
+        + " · ".join(f"age {a_} {P(_age_rate[a_], lang, 2)}" for a_ in _cap)
+        + f". The largest one-year jump is between {_j[0]} and {_j[1]} ({P(_age_rate[_j[0]], lang, 2)} → "
+        f"{P(_age_rate[_j[1]], lang, 2)}). Moving the cut between {min(_age_cut)} and {max(_age_cut)} keeps the old/young ratio between "
+        f"{min(_age_cut.values()):.1f}× and {max(_age_cut.values()):.1f}×; at 18 it is {_age_cut[18]:.1f}×. "
         f"The oldest bucket also runs into the collection limit: data starts at model year {_scope['min_year']}, "
         f"so the 18-and-over bucket holds only {_scope['max_age'] - 18 + 1} model years."))
     A("")
@@ -1426,10 +1426,10 @@ def section_calibration(c):
         f"everywhere; Q1 coverage, for instance, is {P(v['cov_q1'], lang)}."))
     A("")
     figs(10)
-    _lc = v["ed"]["lira_ceyrek"]
-    _q4, _q1 = _lc[-1], _lc[0]
+    _lira_q = v["ed"]["lira_quartile"]
+    _q4, _q1 = _lira_q[-1], _lira_q[0]
     _stl = lambda x_: ("−" if x_ < 0 else "+") + tl(abs(x_))   # noqa: E731
-    _tc = v["ed"]["tahmin_ceyrek"]
+    _tc = v["ed"]["pred_quartile"]
     A(L(f"Liraya çevrilince tablo değişiyor: toplam lira hatasının {P(_q4[2], lang)} kadarı en pahalı "
         f"çeyrekte, {P(_q1[2], lang)} kadarı en ucuzda; ortalama mutlak hata {tl(_q4[3])} ile {tl(_q1[3])}. "
         f"Gerçek fiyata göre gruplanınca ortalama sapma (tahmin − gerçek) en ucuz çeyrekte {_stl(_q1[4])}, en "
@@ -1490,61 +1490,61 @@ def section_calibration(c):
     worst = dom["oof_outliers"][:6]
     n_over = sum(1 for r in worst if r[4] > r[3])
     med_age = float(np.median([r[1] for r in worst]))
-    _so = v["ed"]["spec_outliers"]
-    _to = v["ed"]["tl_olcekli"]
+    _spec = v["ed"]["spec_outliers"]
+    _lira = v["ed"]["lira_scaled"]
     # B9: en_kotu_6_* artik KONUMLA eslesiyor (error_drivers, ureticinin siralamasiyla alan alan kapili).
-    _tek = sum(1 for _m, _n in _so["en_kotu_6_emsal"] if _n <= 2)
-    _boz = _so["en_kotu_6_icinde"]
+    _thin = sum(1 for _m, _n in _spec["worst6_comparables"] if _n <= 2)
+    _worst_off = _spec["worst6_inside"]
     # Iki kategori ayrik: bozuk-oznitelik bayragi yalniz en az min_grup ilanli modelde kalkabiliyor.
-    assert _so["min_grup"] > 2, "kategoriler ortusebilir: min_grup <= 2"
-    _dig = len(worst) - _boz - _tek
-    _kor = _so["kor_nokta"]
+    assert _spec["min_group"] > 2, "kategoriler ortusebilir: min_grup <= 2"
+    _other_n = len(worst) - _worst_off - _thin
+    _blind = _spec["blind_spot"]
     A(L((f"En kötü {number_word(len(worst), lang)} ilanın hepsinde" if n_over == len(worst) else
          f"En kötü {number_word(len(worst), lang)} ilanın {number_word(n_over, lang)} tanesinde")
         + f" model gerçek fiyatın **üstünü** söylüyor; medyan yaş "
         f"{med_age:g}. Bu yön büyük ölçüde sıralamanın kendisinden geliyor: model düşük söylediğinde yüzde hata "
-        f"%100'ü geçemez (bu veride en yüksek {P(_to['dusuk_ape_max'], lang)}), bu listenin ilk 10'una girmek için "
-        f"ise {P(_to['ape_10_esik'], lang)} gerekiyor. Lira ölçeğindeki sıralama aşağıda.",
+        f"%100'ü geçemez (bu veride en yüksek {P(_lira['under_ape_max'], lang)}), bu listenin ilk 10'una girmek için "
+        f"ise {P(_lira['ape_top10_threshold'], lang)} gerekiyor. Lira ölçeğindeki sıralama aşağıda.",
         (f"In all {number_word(len(worst), 'en')} of the worst" if n_over == len(worst) else
          f"In {n_over} of the worst {len(worst)}")
         + f" the model says **more** than the actual price; median age "
         f"{med_age:g}. That direction comes largely from the ranking itself: when the model says too little the "
-        f"percentage error cannot exceed 100% (the highest here is {P(_to['dusuk_ape_max'], lang)}), while the "
-        f"top 10 of this list needs {P(_to['ape_10_esik'], lang)}. The lira ranking follows below."))
+        f"percentage error cannot exceed 100% (the highest here is {P(_lira['under_ape_max'], lang)}), while the "
+        f"top 10 of this list needs {P(_lira['ape_top10_threshold'], lang)}. The lira ranking follows below."))
     A("")
-    _par_tr, _par_en = [], []
-    if _boz:
-        _pahali = _so["medyan_hata_pct"] > _so["diger_medyan_hata_pct"]
-        _par_tr.append(
-            f"**{number_word(_boz, lang, cap=True)} ilanda sebep veri:** motor gücü ya da hacmi kendi emsal grubunun "
-            f"medyanından {_so['esik']} kattan fazla sapıyor — katalog eşleşmesi çökmüş, model olmayan bir motoru "
-            f"fiyatlıyor. Veride böyle {num(_so['n'], lang)} ilan var ({P(_so['pct'], lang, 2)})"
-            + (f" ve pahalıya mal oluyorlar: medyan hataları {P(_so['medyan_hata_pct'], lang)}, geri kalanınki "
-               f"{P(_so['diger_medyan_hata_pct'], lang)}." if _pahali else ".")
-            + f" Bu kontrol yalnız en az {_so['min_grup']} ilanı olan modellerde çalışıyor: daha az ilanlı "
-            f"{num(_kor['model'], lang)} modelin {num(_kor['ilan'], lang)} ilanı ({P(_kor['pct'], lang, 2)}) "
+    _parts_tr, _parts_en = [], []
+    if _worst_off:
+        _costly = _spec["median_error_pct"] > _spec["other_median_error_pct"]
+        _parts_tr.append(
+            f"**{number_word(_worst_off, lang, cap=True)} ilanda sebep veri:** motor gücü ya da hacmi kendi emsal grubunun "
+            f"medyanından {_spec['threshold']} kattan fazla sapıyor — katalog eşleşmesi çökmüş, model olmayan bir motoru "
+            f"fiyatlıyor. Veride böyle {num(_spec['n'], lang)} ilan var ({P(_spec['pct'], lang, 2)})"
+            + (f" ve pahalıya mal oluyorlar: medyan hataları {P(_spec['median_error_pct'], lang)}, geri kalanınki "
+               f"{P(_spec['other_median_error_pct'], lang)}." if _costly else ".")
+            + f" Bu kontrol yalnız en az {_spec['min_group']} ilanı olan modellerde çalışıyor: daha az ilanlı "
+            f"{num(_blind['model'], lang)} modelin {num(_blind['listings'], lang)} ilanı ({P(_blind['pct'], lang, 2)}) "
             f"onun kör noktası — emsalsizliğin en yoğun olduğu yer.")
-        _par_en.append(
-            f"**In {_boz} the cause is the data:** engine power or displacement deviates more than "
-            f"{_so['esik']}× from the median of its comparable group — the catalogue match collapsed and the model "
-            f"is pricing an engine the car does not have. There are {num(_so['n'], lang)} such listings "
-            f"({P(_so['pct'], lang, 2)})"
-            + (f" and they are expensive: their median error is {P(_so['medyan_hata_pct'], lang)} against "
-               f"{P(_so['diger_medyan_hata_pct'], lang)} for the rest." if _pahali else ".")
-            + f" The check only works on models with at least {_so['min_grup']} listings: the "
-            f"{num(_kor['ilan'], lang)} listings ({P(_kor['pct'], lang, 2)}) of the {num(_kor['model'], lang)} "
+        _parts_en.append(
+            f"**In {_worst_off} the cause is the data:** engine power or displacement deviates more than "
+            f"{_spec['threshold']}× from the median of its comparable group — the catalogue match collapsed and the model "
+            f"is pricing an engine the car does not have. There are {num(_spec['n'], lang)} such listings "
+            f"({P(_spec['pct'], lang, 2)})"
+            + (f" and they are expensive: their median error is {P(_spec['median_error_pct'], lang)} against "
+               f"{P(_spec['other_median_error_pct'], lang)} for the rest." if _costly else ".")
+            + f" The check only works on models with at least {_spec['min_group']} listings: the "
+            f"{num(_blind['listings'], lang)} listings ({P(_blind['pct'], lang, 2)}) of the {num(_blind['model'], lang)} "
             f"smaller models are its blind spot — exactly where comparables are scarcest.")
-    if _tek:
-        _par_tr.append(f"**{number_word(_tek, lang, cap=True)} ilanda sebep emsalsizlik:** aynı modelden veride en fazla "
+    if _thin:
+        _parts_tr.append(f"**{number_word(_thin, lang, cap=True)} ilanda sebep emsalsizlik:** aynı modelden veride en fazla "
                        f"iki ilan var.")
-        _par_en.append(f"**In {_tek} the cause is having no comparables:** at most two listings of that model "
+        _parts_en.append(f"**In {_thin} the cause is having no comparables:** at most two listings of that model "
                        f"exist.")
-    if _dig:
-        _par_tr.append(f"Kalan {number_word(_dig, lang)} ilan iki açıklamaya da girmiyor.")
-        _par_en.append(f"The remaining {number_word(_dig, 'en')} {'fits' if _dig == 1 else 'fit'} neither explanation.")
-    _par_tr.append("Tüm tahminler OOF; ilan kimliği (`ad_id`) bilerek yazılmadı.")
-    _par_en.append("All predictions are OOF; the listing id (`ad_id`) is deliberately not published.")
-    A(L(" ".join(_par_tr), " ".join(_par_en)))
+    if _other_n:
+        _parts_tr.append(f"Kalan {number_word(_other_n, lang)} ilan iki açıklamaya da girmiyor.")
+        _parts_en.append(f"The remaining {number_word(_other_n, 'en')} {'fits' if _other_n == 1 else 'fit'} neither explanation.")
+    _parts_tr.append("Tüm tahminler OOF; ilan kimliği (`ad_id`) bilerek yazılmadı.")
+    _parts_en.append("All predictions are OOF; the listing id (`ad_id`) is deliberately not published.")
+    A(L(" ".join(_parts_tr), " ".join(_parts_en)))
     A("")
 
     # B1 (2026-09-23): ayni OOF lira hatasiyla siralaninca liste tersine donuyor.
@@ -1553,25 +1553,25 @@ def section_calibration(c):
     T([L("model", "model"), L("yaş", "age"), "km", L("gerçek", "actual"), L("OOF tahmin", "OOF pred."),
        L("tahmin − gerçek", "pred. − actual")],
       [[r[0], f"{r[1]:.0f}", num(r[2], lang) if r[2] is not None else "—", tlx(r[3], lang), tlx(r[4], lang),
-        ("−" if r[6] < 0 else "+") + tl(abs(r[6]))] for r in _to["en_kotu"]], "lrrrrr")
-    _n6d = sum(1 for r in _to["en_kotu"] if r[6] < 0)
-    _perf_kat = (_to["ilk_n_perf"] / _to["ilk_n"] * 100) / _to["perf_genel_pct"] if _to["perf_genel_pct"] else 0
+        ("−" if r[6] < 0 else "+") + tl(abs(r[6]))] for r in _lira["worst"]], "lrrrrr")
+    _n6d = sum(1 for r in _lira["worst"] if r[6] < 0)
+    _perf_ratio = (_lira["top_n_perf"] / _lira["top_n"] * 100) / _lira["perf_overall_pct"] if _lira["perf_overall_pct"] else 0
     A(L(f"Lira ölçeğinde liste tersine dönüyor: ilk altının {number_word(_n6d, lang)} tanesinde model **düşük** söylüyor. "
-        f"İlk {_to['ilk_n']} lira hatasından {num(_to['ilk_n_dusuk'], lang)} tanesi düşük, "
-        f"{num(_to['ilk_n_fazla'], lang)} tanesi fazla tahmin; {num(_to['ilk_n_q4'], lang)} tanesi en pahalı "
-        f"çeyrekte. Segmentini model adından alan seriler ({', '.join(_to['perf_seriler'])}) verinin "
-        f"{P(_to['perf_genel_pct'], lang, 2)} kadarı ama ilk {_to['ilk_n']} içinde {num(_to['ilk_n_perf'], lang)} ilan"
-        + (f" — verideki paylarının {_perf_kat:.0f} katı." if _perf_kat >= 2 else ".")
+        f"İlk {_lira['top_n']} lira hatasından {num(_lira['top_n_under'], lang)} tanesi düşük, "
+        f"{num(_lira['top_n_over'], lang)} tanesi fazla tahmin; {num(_lira['top_n_q4'], lang)} tanesi en pahalı "
+        f"çeyrekte. Segmentini model adından alan seriler ({', '.join(_lira['perf_series'])}) verinin "
+        f"{P(_lira['perf_overall_pct'], lang, 2)} kadarı ama ilk {_lira['top_n']} içinde {num(_lira['top_n_perf'], lang)} ilan"
+        + (f" — verideki paylarının {_perf_ratio:.0f} katı." if _perf_ratio >= 2 else ".")
         + f" Fiyat tavanı ({tl(v['ed']['scope']['price_max'])}) bu uçta modelin "
         f"öğrendiği aralığı da kesiyor; en pahalı ilanlardaki düşük tahmin bu sınırla birlikte okunmalı.",
         f"In lira the list flips: in {_n6d} of the top six the model says **too little**. Of the top "
-        f"{_to['ilk_n']} lira errors {num(_to['ilk_n_dusuk'], lang)} are under- and "
-        f"{num(_to['ilk_n_fazla'], lang)} over-predictions; {num(_to['ilk_n_q4'], lang)} sit in the most "
+        f"{_lira['top_n']} lira errors {num(_lira['top_n_under'], lang)} are under- and "
+        f"{num(_lira['top_n_over'], lang)} over-predictions; {num(_lira['top_n_q4'], lang)} sit in the most "
         f"expensive quartile. The series that take their segment from the model name "
-        f"({', '.join(_to['perf_seriler'])}) "
-        f"are {P(_to['perf_genel_pct'], lang, 2)} of the data but {num(_to['ilk_n_perf'], lang)} of the top "
-        f"{_to['ilk_n']}"
-        + (f" — {_perf_kat:.0f}× their share of the data." if _perf_kat >= 2 else ".")
+        f"({', '.join(_lira['perf_series'])}) "
+        f"are {P(_lira['perf_overall_pct'], lang, 2)} of the data but {num(_lira['top_n_perf'], lang)} of the top "
+        f"{_lira['top_n']}"
+        + (f" — {_perf_ratio:.0f}× their share of the data." if _perf_ratio >= 2 else ".")
         + f" The price cap ({tl(v['ed']['scope']['price_max'])}) also truncates the range the "
         f"model learns at this end; under-prediction on the most expensive listings should be read with that "
         f"limit in mind."))

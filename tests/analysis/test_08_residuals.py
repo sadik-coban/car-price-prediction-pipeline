@@ -50,5 +50,5 @@ def test_error_bands_partition_the_listings(res):
 def test_quartile_groups_partition_the_listings(res, n_listings):
     """EN: Price and predicted-price quartiles each hold every listing once. / TR: Her çeyrek grubu her ilanı bir kez tutar."""
     ed = res["error_drivers"]
-    assert sum(r[1] for r in ed["lira_ceyrek"]) == n_listings
-    assert sum(r[1] for r in ed["tahmin_ceyrek"]) == n_listings
+    assert sum(r[1] for r in ed["lira_quartile"]) == n_listings
+    assert sum(r[1] for r in ed["pred_quartile"]) == n_listings

@@ -54,7 +54,7 @@
    "report.err_abs_median",
    "report.err_bands",
    "domain.pred_vs_true.r2",
-   "error_drivers.kalibrasyon.egim"
+   "error_drivers.calibration.slope"
   ]
  },
  "status": "complete"

@@ -896,15 +896,15 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T05:24:23+03:00",
+  "_meta.generated_at": "2026-09-25T16:37:08+03:00",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "08_conformal_coverage.py",
   "domain.conformal.by_quantile": {
    "len": 4,
    "sha256": "df4e3afc4b9ad89439dd60e13aa6c092cefaf4e290d3b8901760f0b7c08ed79d"
   },
-  "domain.conformal.coverage_hedef": 90,
-  "domain.conformal.not": "Q1 (ucuz) under-coverage: model ucuzlarda daha belirsiz (dürüst bulgu).",
+  "domain.conformal.coverage_target": 90,
+  "domain.conformal.note": "Q1 (ucuz) under-coverage: model ucuzlarda daha belirsiz (dürüst bulgu).",
   "report.conformal_all": 89.99933306655996,
   "report.conformal_by_pred": {
    "len": 4,
@@ -921,9 +921,17 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T05:24:31+03:00",
+  "_meta.generated_at": "2026-09-25T16:37:17+03:00",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "08_large_errors.py",
+  "error_drivers.age_cuts": {
+   "len": 14,
+   "sha256": "2e48fea772996e9871fd8a950dfc8adabe9d316295cc70fa0f9927ed8bbfc8f4"
+  },
+  "error_drivers.age_sensitivity": {
+   "len": 22,
+   "sha256": "3d644a8951ab39b1a5b559f15fc8780db7245b615a65b47ca91620ce8f091806"
+  },
   "error_drivers.by_age.age_18plus.big_pct": 12.04,
   "error_drivers.by_age.age_18plus.n": 2649,
   "error_drivers.by_age.age_under18.big_pct": 3.25,
@@ -940,25 +948,43 @@
    "len": 4,
    "sha256": "90053d4313780d156b0a8d5246ecac06aab8be86415ffa251588f96dd397117b"
   },
-  "error_drivers.eski_d_grubu.diger_ort_sapma_tl": -5754.0,
-  "error_drivers.eski_d_grubu.mae_tl": 473295.0,
-  "error_drivers.eski_d_grubu.mape": 13.5,
-  "error_drivers.eski_d_grubu.n": 224,
-  "error_drivers.eski_d_grubu.ort_sapma_tl": -61625.0,
-  "error_drivers.eski_d_grubu.seriler": {
-   "len": 6,
-   "sha256": "ea780bdcc76ae7f9ee6aca6b0a27a6f9316247eed158b14d82f93efc2addeb9f"
-  },
-  "error_drivers.eski_d_grubu.tl_ilk50_icinde": 17,
   "error_drivers.examples": {
    "len": 3,
    "sha256": "574b6705d67a9d7fec9fdde500db556fc7c3f4a0c5b07415772b1d51e00e81c9"
   },
-  "error_drivers.kaybolan_canli.canli_medyan_artik": 1.38,
-  "error_drivers.kaybolan_canli.canli_n": 11526,
-  "error_drivers.kaybolan_canli.kaybolan_medyan_artik": -1.24,
-  "error_drivers.kaybolan_canli.kaybolan_n": 18462,
-  "error_drivers.kaybolan_canli.son_tarama": "2026-06-27",
+  "error_drivers.lira_scaled.ape_top10_threshold": 72.7,
+  "error_drivers.lira_scaled.ape_top10_under": 0,
+  "error_drivers.lira_scaled.perf_overall_pct": 0.52,
+  "error_drivers.lira_scaled.perf_series": {
+   "len": 4,
+   "sha256": "179cac5db209ae585515dc85135798a8deca0bb2036c49123ea59b59ba96e2bc"
+  },
+  "error_drivers.lira_scaled.top_n": 100,
+  "error_drivers.lira_scaled.top_n_over": 27,
+  "error_drivers.lira_scaled.top_n_perf": 23,
+  "error_drivers.lira_scaled.top_n_q4": 91,
+  "error_drivers.lira_scaled.top_n_text": 23,
+  "error_drivers.lira_scaled.top_n_under": 73,
+  "error_drivers.lira_scaled.under_ape_max": 56.5,
+  "error_drivers.lira_scaled.worst": {
+   "len": 6,
+   "sha256": "b9cd3513c6b69e6283267690bd07e2fe8bc4c31aa7fb4c60d07fdbd951b8d377"
+  },
+  "error_drivers.live_vs_gone.gone_median_resid": -1.24,
+  "error_drivers.live_vs_gone.gone_n": 18462,
+  "error_drivers.live_vs_gone.last_snapshot": "2026-06-27",
+  "error_drivers.live_vs_gone.live_median_resid": 1.38,
+  "error_drivers.live_vs_gone.live_n": 11526,
+  "error_drivers.old_d_group.mae_tl": 473295.0,
+  "error_drivers.old_d_group.mape": 13.5,
+  "error_drivers.old_d_group.mean_bias_tl": -61625.0,
+  "error_drivers.old_d_group.n": 224,
+  "error_drivers.old_d_group.other_mean_bias_tl": -5754.0,
+  "error_drivers.old_d_group.series": {
+   "len": 6,
+   "sha256": "ea780bdcc76ae7f9ee6aca6b0a27a6f9316247eed158b14d82f93efc2addeb9f"
+  },
+  "error_drivers.old_d_group.tl_top50_inside": 17,
   "error_drivers.overall.big_pct": 4.03,
   "error_drivers.overall.n": 29988,
   "error_drivers.overall.n_big": 1208,
@@ -972,57 +998,31 @@
    "len": 745,
    "sha256": "4f8aed661e88760bc22e51c955053533cc81c856533768507261dc45a4d76e4c"
   },
-  "error_drivers.spec_outliers.buyuk_hata_pct": 40.0,
-  "error_drivers.spec_outliers.diger_buyuk_hata_pct": 4.0,
-  "error_drivers.spec_outliers.diger_medyan_hata_pct": 4.7,
-  "error_drivers.spec_outliers.en_kotu_6_emsal": {
+  "error_drivers.spec_outliers.big_error_pct": 40.0,
+  "error_drivers.spec_outliers.blind_spot.listings": 632,
+  "error_drivers.spec_outliers.blind_spot.median_error_pct": 8.3,
+  "error_drivers.spec_outliers.blind_spot.model": 307,
+  "error_drivers.spec_outliers.blind_spot.pct": 2.11,
+  "error_drivers.spec_outliers.median_error_pct": 12.8,
+  "error_drivers.spec_outliers.min_group": 5,
+  "error_drivers.spec_outliers.n": 15,
+  "error_drivers.spec_outliers.other_big_error_pct": 4.0,
+  "error_drivers.spec_outliers.other_median_error_pct": 4.7,
+  "error_drivers.spec_outliers.pct": 0.05,
+  "error_drivers.spec_outliers.threshold": 1.5,
+  "error_drivers.spec_outliers.worst6_comparables": {
    "len": 6,
    "sha256": "979e0c55dd37d9e329324845d138a929a1ecca9abb7924f4f9e0bde92fa1fe42"
   },
-  "error_drivers.spec_outliers.en_kotu_6_icinde": 1,
-  "error_drivers.spec_outliers.esik": 1.5,
-  "error_drivers.spec_outliers.kor_nokta.ilan": 632,
-  "error_drivers.spec_outliers.kor_nokta.medyan_hata_pct": 8.3,
-  "error_drivers.spec_outliers.kor_nokta.model": 307,
-  "error_drivers.spec_outliers.kor_nokta.pct": 2.11,
-  "error_drivers.spec_outliers.medyan_hata_pct": 12.8,
-  "error_drivers.spec_outliers.min_grup": 5,
-  "error_drivers.spec_outliers.n": 15,
-  "error_drivers.spec_outliers.pct": 0.05,
-  "error_drivers.threshold_pct": 20.0,
-  "error_drivers.tl_olcekli.ape_10_esik": 72.7,
-  "error_drivers.tl_olcekli.ape_ilk10_dusuk": 0,
-  "error_drivers.tl_olcekli.dusuk_ape_max": 56.5,
-  "error_drivers.tl_olcekli.en_kotu": {
-   "len": 6,
-   "sha256": "b9cd3513c6b69e6283267690bd07e2fe8bc4c31aa7fb4c60d07fdbd951b8d377"
-  },
-  "error_drivers.tl_olcekli.ilk_n": 100,
-  "error_drivers.tl_olcekli.ilk_n_dusuk": 73,
-  "error_drivers.tl_olcekli.ilk_n_fazla": 27,
-  "error_drivers.tl_olcekli.ilk_n_metin": 23,
-  "error_drivers.tl_olcekli.ilk_n_perf": 23,
-  "error_drivers.tl_olcekli.ilk_n_q4": 91,
-  "error_drivers.tl_olcekli.perf_genel_pct": 0.52,
-  "error_drivers.tl_olcekli.perf_seriler": {
-   "len": 4,
-   "sha256": "179cac5db209ae585515dc85135798a8deca0bb2036c49123ea59b59ba96e2bc"
-  },
-  "error_drivers.yas_duyarlilik": {
-   "len": 22,
-   "sha256": "3d644a8951ab39b1a5b559f15fc8780db7245b615a65b47ca91620ce8f091806"
-  },
-  "error_drivers.yas_kesim": {
-   "len": 14,
-   "sha256": "2e48fea772996e9871fd8a950dfc8adabe9d316295cc70fa0f9927ed8bbfc8f4"
-  }
+  "error_drivers.spec_outliers.worst6_inside": 1,
+  "error_drivers.threshold_pct": 20.0
  },
  "08_residuals": {
   "_meta.data_until": "2026-06-27",
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T05:24:25+03:00",
+  "_meta.generated_at": "2026-09-25T16:37:10+03:00",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "08_residuals.py",
   "domain.oof_best": {
@@ -1038,7 +1038,7 @@
    "sha256": "0fbb8c5925985b4343ccd54017700d9a9c214e1661d634a0f702270209c44a0c"
   },
   "domain.pred_vs_true.n": 29988,
-  "domain.pred_vs_true.not": "OOF tahmin (sızıntısız), TÜM noktalar. Frontend: yoğunluk/hexbin veya düşük-opacity ile render (30K nokta ham scatter'da okunmaz).",
+  "domain.pred_vs_true.note": "OOF tahmin (sızıntısız), TÜM noktalar. Frontend: yoğunluk/hexbin veya düşük-opacity ile render (30K nokta ham scatter'da okunmaz).",
   "domain.pred_vs_true.points": {
    "len": 29988,
    "sha256": "ea58e6676ed58b7d959b7f29bab6dbd2321ca90538ba2300dee6f32fedbe8d09"
@@ -1050,7 +1050,7 @@
   },
   "domain.residual_scatter.mean_resid_pct": -0.47,
   "domain.residual_scatter.n": 29988,
-  "domain.residual_scatter.not": "Artık% = (gerçek-tahmin)/gerçek, TÜM noktalar. Ortalama sıfıra yakın, ama medyan artık dönemlere göre %-3.27 ile %+1.38 arasında kayıyor (model zamanı görmüyor). Fiyata göre yanlılık tahmin edilen fiyata göre gruplanarak ölçülmeli; gerçek fiyata göre gruplamak ortalamaya dönüş üretir. Frontend: yoğunluk/hexbin render önerilir.",
+  "domain.residual_scatter.note": "Artık% = (gerçek-tahmin)/gerçek, TÜM noktalar. Ortalama sıfıra yakın, ama medyan artık dönemlere göre %-3.27 ile %+1.38 arasında kayıyor (model zamanı görmüyor). Fiyata göre yanlılık tahmin edilen fiyata göre gruplanarak ölçülmeli; gerçek fiyata göre gruplamak ortalamaya dönüş üretir. Frontend: yoğunluk/hexbin render önerilir.",
   "domain.residual_scatter.points": {
    "len": 29988,
    "sha256": "73578490d8a61b1a820e90141584bfced8c83d419f306ec1ff23f980ceafe547"
@@ -1060,13 +1060,13 @@
    "len": 438,
    "sha256": "965e7d7f6b89cef714e85847e9008a9dcc25af6e9440af7342e8d2c520984c51"
   },
-  "error_drivers.kalibrasyon.egim": 1.0033,
-  "error_drivers.kalibrasyon.kesisim": 86.0,
-  "error_drivers.lira_ceyrek": {
+  "error_drivers.calibration.intercept": 86.0,
+  "error_drivers.calibration.slope": 1.0033,
+  "error_drivers.lira_quartile": {
    "len": 4,
    "sha256": "57d945a1baadc2f135cc6d662ea12a3edbb3449cd671aee67fb89357cdc22c06"
   },
-  "error_drivers.tahmin_ceyrek": {
+  "error_drivers.pred_quartile": {
    "len": 4,
    "sha256": "f1c08efa58cf30682ed9d3469c10dee3a989008d4e17d7a4a0a169d8e08e7323"
   },

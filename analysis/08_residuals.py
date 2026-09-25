@@ -143,20 +143,20 @@ def to_metrics(res):
                 "points": [[float(a), float(b)] for a, b in zip(price, pred)],
                 "ideal_line": [float(min(price.min(), pred.min())), float(max(price.max(), pred.max()))],
                 "r2": round(float(r2_score(price, pred)), 4), "n": int(len(price)),
-                "not": ("OOF tahmin (sızıntısız), TÜM noktalar. Frontend: yoğunluk/hexbin veya "
+                "note": ("OOF tahmin (sızıntısız), TÜM noktalar. Frontend: yoğunluk/hexbin veya "
                         "düşük-opacity ile render (30K nokta ham scatter'da okunmaz).")},
             "residual_scatter": {
                 "points": [[float(b), round(float(r), 2)] for b, r in zip(pred, resid)],
                 "mean_resid_pct": round(float(np.mean(resid)), 2), "std_resid_pct": round(float(np.std(resid)), 2),
                 "n": int(len(price)),
-                "not": (f"Artık% = (gerçek-tahmin)/gerçek, TÜM noktalar. Ortalama sıfıra yakın, ama medyan artık "
+                "note": (f"Artık% = (gerçek-tahmin)/gerçek, TÜM noktalar. Ortalama sıfıra yakın, ama medyan artık "
                         f"dönemlere göre %{min(snap_med):+.2f} ile %{max(snap_med):+.2f} arasında kayıyor (model "
                         f"zamanı görmüyor). Fiyata göre yanlılık tahmin edilen fiyata göre gruplanarak ölçülmeli; "
                         f"gerçek fiyata göre gruplamak ortalamaya dönüş üretir. Frontend: yoğunluk/hexbin render önerilir.")}},
         "error_drivers": {
-            "lira_ceyrek": [[b, n, round(s, 1), round(m, 0), round(d, 0), round(a, 2)] for b, n, s, m, d, a in res["lira"]],
-            "tahmin_ceyrek": [[b, n, round(m, 0), round(md, 0)] for b, n, m, md in res["bias_pred"]],
-            "kalibrasyon": {"egim": round(res["slope"], 4), "kesisim": round(res["intercept"], 0)}},
+            "lira_quartile": [[b, n, round(s, 1), round(m, 0), round(d, 0), round(a, 2)] for b, n, s, m, d, a in res["lira"]],
+            "pred_quartile": [[b, n, round(m, 0), round(md, 0)] for b, n, m, md in res["bias_pred"]],
+            "calibration": {"slope": round(res["slope"], 4), "intercept": round(res["intercept"], 0)}},
         "report": {**res["bands"], "model_r2_log": round(res["r2_log"], 4)},
     }
 

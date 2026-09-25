@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "08_large_errors.py",
-  "generated_at": "2026-09-25T05:24:31+03:00",
+  "generated_at": "2026-09-25T16:37:17+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": "aa436e0cfd32",
   "source": {
    "script": {
-    "analysis/08_large_errors.py": "87bbfac45775195c272cba63083c15d7ea2a565af51ef430cb8fd010f4917024"
+    "analysis/08_large_errors.py": "f0cbd47153b19f5ca55e2e41e2e90aa7df94f8c195251384447a40feb553cd89"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -3134,15 +3134,15 @@
     "median_resid_pct": 1.38
    }
   ],
-  "kaybolan_canli": {
-   "son_tarama": "2026-06-27",
-   "canli_n": 11526,
-   "canli_medyan_artik": 1.38,
-   "kaybolan_n": 18462,
-   "kaybolan_medyan_artik": -1.24
+  "live_vs_gone": {
+   "last_snapshot": "2026-06-27",
+   "live_n": 11526,
+   "live_median_resid": 1.38,
+   "gone_n": 18462,
+   "gone_median_resid": -1.24
   },
-  "tl_olcekli": {
-   "en_kotu": [
+  "lira_scaled": {
+   "worst": [
     [
      "M3",
      17,
@@ -3204,24 +3204,24 @@
      "temel_sinif"
     ]
    ],
-   "ilk_n": 100,
-   "ilk_n_dusuk": 73,
-   "ilk_n_fazla": 27,
-   "ilk_n_q4": 91,
-   "ilk_n_perf": 23,
-   "perf_genel_pct": 0.52,
-   "ape_ilk10_dusuk": 0,
-   "ape_10_esik": 72.7,
-   "dusuk_ape_max": 56.5,
-   "ilk_n_metin": 23,
-   "perf_seriler": [
+   "top_n": 100,
+   "top_n_under": 73,
+   "top_n_over": 27,
+   "top_n_q4": 91,
+   "top_n_perf": 23,
+   "perf_overall_pct": 0.52,
+   "ape_top10_under": 0,
+   "ape_top10_threshold": 72.7,
+   "under_ape_max": 56.5,
+   "top_n_text": 23,
+   "perf_series": [
     "M Serisi",
     "RS",
     "S",
     "i Serisi"
    ]
   },
-  "yas_duyarlilik": [
+  "age_sensitivity": [
    [
     0,
     2,
@@ -3333,7 +3333,7 @@
     15.34
    ]
   ],
-  "yas_kesim": [
+  "age_cuts": [
    [
     8,
     22919,
@@ -3433,8 +3433,8 @@
     4.02
    ]
   ],
-  "eski_d_grubu": {
-   "seriler": [
+  "old_d_group": {
+   "series": [
     "S",
     "M Serisi",
     "i Serisi",
@@ -3443,29 +3443,29 @@
     "Z Serisi"
    ],
    "n": 224,
-   "ort_sapma_tl": -61625.0,
-   "diger_ort_sapma_tl": -5754.0,
+   "mean_bias_tl": -61625.0,
+   "other_mean_bias_tl": -5754.0,
    "mae_tl": 473295.0,
    "mape": 13.5,
-   "tl_ilk50_icinde": 17
+   "tl_top50_inside": 17
   },
   "spec_outliers": {
-   "esik": 1.5,
-   "min_grup": 5,
-   "kor_nokta": {
-    "ilan": 632,
+   "threshold": 1.5,
+   "min_group": 5,
+   "blind_spot": {
+    "listings": 632,
     "pct": 2.11,
     "model": 307,
-    "medyan_hata_pct": 8.3
+    "median_error_pct": 8.3
    },
    "n": 15,
    "pct": 0.05,
-   "medyan_hata_pct": 12.8,
-   "buyuk_hata_pct": 40.0,
-   "diger_medyan_hata_pct": 4.7,
-   "diger_buyuk_hata_pct": 4.0,
-   "en_kotu_6_icinde": 1,
-   "en_kotu_6_emsal": [
+   "median_error_pct": 12.8,
+   "big_error_pct": 40.0,
+   "other_median_error_pct": 4.7,
+   "other_big_error_pct": 4.0,
+   "worst6_inside": 1,
+   "worst6_comparables": [
     [
      "A4 Sedan 2.0 TDI",
      979

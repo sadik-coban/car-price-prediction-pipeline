@@ -53,8 +53,8 @@ def to_metrics(res):
     """
     return {"domain": {"conformal": {
                 "by_quantile": [[b, round(res["by_actual"][b], 1)] for b in QUARTILES],
-                "coverage_hedef": round(100 * LEVEL),
-                "not": "Q1 (ucuz) under-coverage: model ucuzlarda daha belirsiz (dürüst bulgu)."}},
+                "coverage_target": round(100 * LEVEL),
+                "note": "Q1 (ucuz) under-coverage: model ucuzlarda daha belirsiz (dürüst bulgu)."}},
             "report": {"conformal_q": res["q"], "conformal_all": res["all"],
                        "conformal_by_pred": [[b, res["by_pred"][b]] for b in QUARTILES],
                        "q_bounds": res["bounds"]}}

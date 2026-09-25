@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "08_residuals.py",
-  "generated_at": "2026-09-25T05:24:25+03:00",
+  "generated_at": "2026-09-25T16:37:10+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": "aa436e0cfd32",
   "source": {
    "script": {
-    "analysis/08_residuals.py": "513748b5b36b16b6f5036850a3ceaedfbbd39915d0fc4a02c014a11f4215951a"
+    "analysis/08_residuals.py": "a293cb1a24b651bfa0db83e2c854369de8b377ede291242665c5f787d29a21fb"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -122317,7 +122317,7 @@
    ],
    "r2": 0.9745,
    "n": 29988,
-   "not": "OOF tahmin (sızıntısız), TÜM noktalar. Frontend: yoğunluk/hexbin veya düşük-opacity ile render (30K nokta ham scatter'da okunmaz)."
+   "note": "OOF tahmin (sızıntısız), TÜM noktalar. Frontend: yoğunluk/hexbin veya düşük-opacity ile render (30K nokta ham scatter'da okunmaz)."
   },
   "residual_scatter": {
    "points": [
@@ -242277,11 +242277,11 @@
    "mean_resid_pct": -0.47,
    "std_resid_pct": 9.27,
    "n": 29988,
-   "not": "Artık% = (gerçek-tahmin)/gerçek, TÜM noktalar. Ortalama sıfıra yakın, ama medyan artık dönemlere göre %-3.27 ile %+1.38 arasında kayıyor (model zamanı görmüyor). Fiyata göre yanlılık tahmin edilen fiyata göre gruplanarak ölçülmeli; gerçek fiyata göre gruplamak ortalamaya dönüş üretir. Frontend: yoğunluk/hexbin render önerilir."
+   "note": "Artık% = (gerçek-tahmin)/gerçek, TÜM noktalar. Ortalama sıfıra yakın, ama medyan artık dönemlere göre %-3.27 ile %+1.38 arasında kayıyor (model zamanı görmüyor). Fiyata göre yanlılık tahmin edilen fiyata göre gruplanarak ölçülmeli; gerçek fiyata göre gruplamak ortalamaya dönüş üretir. Frontend: yoğunluk/hexbin render önerilir."
   }
  },
  "error_drivers": {
-  "lira_ceyrek": [
+  "lira_quartile": [
    [
     "Q1",
     7547,
@@ -242315,7 +242315,7 @@
     3.59
    ]
   ],
-  "tahmin_ceyrek": [
+  "pred_quartile": [
    [
     "Q1",
     7497,
@@ -242341,9 +242341,9 @@
     8863.0
    ]
   ],
-  "kalibrasyon": {
-   "egim": 1.0033,
-   "kesisim": 86.0
+  "calibration": {
+   "slope": 1.0033,
+   "intercept": 86.0
   }
  },
  "report": {

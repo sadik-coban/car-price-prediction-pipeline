@@ -25,7 +25,7 @@ def conf(metrics):
 def test_overall_coverage_at_target(conf, metrics):
     """EN: |coverage − target| ≤ 3 binomial SE (n = listings). / TR: |kapsama − hedef| ≤ 3 binom SE (n = ilan)."""
     n = metrics("01_dedup_leakage")["meta"]["n_dedup"]
-    target = conf["domain"]["conformal"]["coverage_hedef"]
+    target = conf["domain"]["conformal"]["coverage_target"]
     se = 100 * math.sqrt(target / 100 * (1 - target / 100) / n)
     assert abs(conf["report"]["conformal_all"] - target) <= 3 * se
 

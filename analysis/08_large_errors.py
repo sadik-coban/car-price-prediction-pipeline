@@ -90,9 +90,9 @@ def by_snapshot(snap, resid):
     rows = [{"snapshot": s, "n": int(len(g)), "median_resid_pct": round(float(g.median()), 2)}
             for s, g in pd.Series(resid).groupby(snap.values)]
     live = (snap == snap.max()).values
-    return rows, {"son_tarama": str(snap.max()), "canli_n": int(live.sum()),
-                  "canli_medyan_artik": round(float(np.median(resid[live])), 2), "kaybolan_n": int((~live).sum()),
-                  "kaybolan_medyan_artik": round(float(np.median(resid[~live])), 2)}
+    return rows, {"last_snapshot": str(snap.max()), "live_n": int(live.sum()),
+                  "live_median_resid": round(float(np.median(resid[live])), 2), "gone_n": int((~live).sum()),
+                  "gone_median_resid": round(float(np.median(resid[~live])), 2)}
 
 
 def by_age(age, big):
@@ -132,14 +132,14 @@ def lira_ranking(listings, price, pred, resid, path, text_flag):
                      float(price[i]), round(float(pred[i]), 0), round(float(-resid[i]), 1), round(float(dev[i]), 0),
                      str(path[i])]
     perf = path != "harita"
-    return {"en_kotu": [row(i) for i in order[:6]], "ilk_n": TOP_N_LIRA,
-            "ilk_n_dusuk": int((dev[top] < 0).sum()), "ilk_n_fazla": int((dev[top] > 0).sum()),
-            "ilk_n_q4": int((price[top] >= q75).sum()), "ilk_n_perf": int(perf[top].sum()),
-            "perf_genel_pct": round(100 * float(perf.mean()), 2),
-            "ape_ilk10_dusuk": int((dev[ape_top] < 0).sum()), "ape_10_esik": round(float(ape[ape_top[-1]]), 1),
-            "dusuk_ape_max": round(float(np.abs(resid[dev < 0]).max()), 1),
-            "ilk_n_metin": int(text_flag[top].sum()),
-            "perf_seriler": sorted({str(x) for x in listings.loc[perf, "series"]})}, order, ape_top
+    return {"worst": [row(i) for i in order[:6]], "top_n": TOP_N_LIRA,
+            "top_n_under": int((dev[top] < 0).sum()), "top_n_over": int((dev[top] > 0).sum()),
+            "top_n_q4": int((price[top] >= q75).sum()), "top_n_perf": int(perf[top].sum()),
+            "perf_overall_pct": round(100 * float(perf.mean()), 2),
+            "ape_top10_under": int((dev[ape_top] < 0).sum()), "ape_top10_threshold": round(float(ape[ape_top[-1]]), 1),
+            "under_ape_max": round(float(np.abs(resid[dev < 0]).max()), 1),
+            "top_n_text": int(text_flag[top].sum()),
+            "perf_series": sorted({str(x) for x in listings.loc[perf, "series"]})}, order, ape_top
 
 
 def old_d_group(series, dev, resid, order):
@@ -150,9 +150,9 @@ def old_d_group(series, dev, resid, order):
         hatasında kaç tane oldukları — yeni segment kuralı hatalarını küçülttü mü?
     """
     g = series.isin(OLD_D_SERIES).values
-    return {"seriler": list(OLD_D_SERIES), "n": int(g.sum()), "ort_sapma_tl": round(float(dev[g].mean()), 0),
-            "diger_ort_sapma_tl": round(float(dev[~g].mean()), 0), "mae_tl": round(float(np.abs(dev[g]).mean()), 0),
-            "mape": round(float(np.abs(resid[g]).mean()), 2), "tl_ilk50_icinde": int(g[order[:50]].sum())}
+    return {"series": list(OLD_D_SERIES), "n": int(g.sum()), "mean_bias_tl": round(float(dev[g].mean()), 0),
+            "other_mean_bias_tl": round(float(dev[~g].mean()), 0), "mae_tl": round(float(np.abs(dev[g]).mean()), 0),
+            "mape": round(float(np.abs(resid[g]).mean()), 2), "tl_top50_inside": int(g[order[:50]].sum())}
 
 
 def spec_outliers(listings, resid, big):
@@ -173,14 +173,14 @@ def spec_outliers(listings, resid, big):
                                           | (cc > SPEC_RATIO * cc_med) | (cc < cc_med / SPEC_RATIO))).fillna(False).values
     err = np.abs(resid)
     blind = (n_model < SPEC_MIN_GROUP).values
-    return {"esik": SPEC_RATIO, "min_grup": SPEC_MIN_GROUP,
-            "kor_nokta": {"ilan": int(blind.sum()), "pct": round(100 * float(blind.mean()), 2),
+    return {"threshold": SPEC_RATIO, "min_group": SPEC_MIN_GROUP,
+            "blind_spot": {"listings": int(blind.sum()), "pct": round(100 * float(blind.mean()), 2),
                           "model": int(listings.loc[blind, "model"].nunique()),
-                          "medyan_hata_pct": round(float(np.median(err[blind])), 1) if blind.any() else None},
+                          "median_error_pct": round(float(np.median(err[blind])), 1) if blind.any() else None},
             "n": int(off.sum()), "pct": round(100 * float(off.mean()), 2),
-            "medyan_hata_pct": round(float(np.median(err[off])), 1), "buyuk_hata_pct": round(100 * float(big[off].mean()), 1),
-            "diger_medyan_hata_pct": round(float(np.median(err[~off])), 1),
-            "diger_buyuk_hata_pct": round(100 * float(big[~off].mean()), 1)}, off
+            "median_error_pct": round(float(np.median(err[off])), 1), "big_error_pct": round(100 * float(big[off].mean()), 1),
+            "other_median_error_pct": round(float(np.median(err[~off])), 1),
+            "other_big_error_pct": round(100 * float(big[~off].mean()), 1)}, off
 
 
 def example_reasons(listings, i, age, flags, n_model, n_model_year):
@@ -255,8 +255,8 @@ def to_metrics(res):
         "threshold_pct": LARGE_ERROR_PCT, "overall": res["overall"], "by_model_year_n": res["by_comparables"],
         "per_model_error": res["per_model"], "per_model_buckets": res["buckets"],
         "by_age": res["by_age"], "by_segment_FS": res["by_segment"], "by_snapshot": res["by_snapshot"],
-        "kaybolan_canli": res["live"], "tl_olcekli": res["lira"], "yas_duyarlilik": res["age_each"],
-        "yas_kesim": res["age_cuts"], "eski_d_grubu": res["old_d"], "spec_outliers": res["spec"],
+        "live_vs_gone": res["live"], "lira_scaled": res["lira"], "age_sensitivity": res["age_each"],
+        "age_cuts": res["age_cuts"], "old_d_group": res["old_d"], "spec_outliers": res["spec"],
         "examples": res["examples"]}}
 
 
@@ -282,8 +282,8 @@ snaps, live = by_snapshot(listings["snap"], resid)
 age_each, age_cuts = by_age(age, big)
 lira, lira_order, ape_top = lira_ranking(listings, price, pred, resid, path, flags["conversion"] | flags["modification"])
 spec, off = spec_outliers(listings, resid, big)
-spec["en_kotu_6_icinde"] = int(off[ape_top[:6]].sum())
-spec["en_kotu_6_emsal"] = [[str(listings["model"].iat[i])[:35], int(n_model[i])] for i in ape_top[:6]]
+spec["worst6_inside"] = int(off[ape_top[:6]].sum())
+spec["worst6_comparables"] = [[str(listings["model"].iat[i])[:35], int(n_model[i])] for i in ape_top[:6]]
 fs = np.isin(listings["segment"].values, ["F", "S"])
 res = {"overall": {"n": len(listings), "n_big": int(big.sum()), "n_over": int(over.sum()), "n_under": int(under.sum()),
                    "big_pct": round(100 * float(big.mean()), 2)},

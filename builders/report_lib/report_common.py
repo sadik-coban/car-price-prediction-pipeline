@@ -47,11 +47,11 @@ REQUIRED = [
     "methodology.backtest.per_snapshot", "methodology.backtest.insample", "methodology.backtest.protokol",
     "methodology.systematic_missing.systematic_groups", "methodology.systematic_missing.note",
     "methodology.pca_axes", "meta.repro", "meta.brands", "column_labels"] + [f"error_drivers.{p_}" for p_ in [
-    "plate_scope", "segment_quality", "hedonic_dropped", "per_model_error", "per_model_buckets", "lira_ceyrek",
-    "tl_olcekli", "scope", "price_changes", "unspecified", "baseline_equal_terms", "text_flag",
-    "yas_duyarlilik", "yas_kesim", "eski_d_grubu", "spec_outliers.kor_nokta", "donem_kaymasi",
+    "plate_scope", "segment_quality", "hedonic_dropped", "per_model_error", "per_model_buckets", "lira_quartile",
+    "lira_scaled", "scope", "price_changes", "unspecified", "baseline_equal_terms", "text_flag",
+    "age_sensitivity", "age_cuts", "old_d_group", "spec_outliers.blind_spot", "donem_kaymasi",
     "by_model_year_n", "by_segment_FS", "by_age", "by_snapshot", "raw_columns", "examples",
-    "engine_rule.engine_cc", "engine_rule.power_hp", "unspecified.structure", "kaybolan_canli", "metin_kaynak"]] + [
+    "engine_rule.engine_cc", "engine_rule.power_hp", "unspecified.structure", "live_vs_gone", "metin_kaynak"]] + [
     f"report.{p_}" for p_ in ["q_bounds", "model_r2_log", "err_bands", "conformal_q", "conformal_all",
                               "conformal_by_pred", "drift_holm", "text_ablation"]]
 
@@ -179,7 +179,7 @@ def derive(d):
         "oof_r2": dom["pred_vs_true"]["r2"],
         "resid_mean": dom["residual_scatter"]["mean_resid_pct"],
         "resid_std": dom["residual_scatter"]["std_resid_pct"],
-        "cov_target": dom["conformal"]["coverage_hedef"],
+        "cov_target": dom["conformal"]["coverage_target"],
         "cov_q1": dom["conformal"]["by_quantile"][0][1],
         # EN: price quartile bounds (08_conformal_coverage) | TR: fiyat çeyreği sınırları (08_conformal_coverage)
         "q_bounds": rep["q_bounds"],
@@ -509,7 +509,7 @@ def build_figures(d, v, lang, only=None):
     # 12 kapsama  [IS + TEKNIK]
     if want(12):
         rows = dom["conformal"]["by_quantile"]
-        tgt = dom["conformal"]["coverage_hedef"]
+        tgt = dom["conformal"]["coverage_target"]
         t = L(f"%{tgt} aralık kaç ilanda tuttu (hedef %{tgt})",
               f"How often the {tgt}% range held (target {tgt}%)")
         fig, ax = plt.subplots(figsize=(7, 3.2))
@@ -729,8 +729,8 @@ def build_figures(d, v, lang, only=None):
 
     # 27 fiyat ceyregine gore LIRA hatasi  [IS + TEKNIK] — figur 10'un eslikcisi (2026-09-23).
     if want(27):
-        # Yuzde hata ucuz ceyrege isaret ediyor; lira hatasi pahaliya. Kaynak error_drivers.lira_ceyrek.
-        lc = v["ed"]["lira_ceyrek"]
+        # Yuzde hata ucuz ceyrege isaret ediyor; lira hatasi pahaliya. Kaynak error_drivers.lira_quartile.
+        lc = v["ed"]["lira_quartile"]
         t = L("Fiyat çeyreğine göre lira hatası", "Lira error by price quartile")
         fig, (a1, a2) = plt.subplots(1, 2, figsize=(8.4, 3.4))
         qs = [r[0] for r in lc]
@@ -742,7 +742,7 @@ def build_figures(d, v, lang, only=None):
         a1.set_title(L("hata nerede birikiyor", "where the error adds up"), fontsize=9)
         # Son denetim (2026-09-23): sapma GERCEK fiyat ceyregine gore cizilince ortalamaya donus "ucuzda fazla,
         # pahalida dusuk" deseni uretiyordu. Bir fiyatlama araci yalniz tahmini bilir -> tahmin ceyregi.
-        tc = v["ed"]["tahmin_ceyrek"]
+        tc = v["ed"]["pred_quartile"]
         # Ortalama tek basina kuyruk hatalarina bagli (medyan her ceyrekte pozitif) ve otomatik eksen kucuk farki
         # buyuk gosteriyordu: ortalama + medyan yan yana, eksen genel MAE'nin yarisinda sabit.
         _x = np.arange(len(tc))

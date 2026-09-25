@@ -143,28 +143,28 @@ def fmt_business(v, F, lang):
     A("")
     ed = v["ed"]
     # B2 (2026-09-23): yuzde hata ucuz ceyrege isaret ediyor ama para pahali ceyrekte. Tum sayilar
-    # error_drivers.lira_ceyrek'ten (medyan APE'si ureticinin quantile_error'uyla kapili).
-    _lc = ed["lira_ceyrek"]
-    _qtop = max(_lc, key=lambda r: r[2])
-    _qape = max(_lc, key=lambda r: r[5])
-    _q4, _q1 = _lc[-1], _lc[0]
+    # error_drivers.lira_quartile'dan (medyan APE'si ureticinin quantile_error'uyla kapili).
+    _lira_q = ed["lira_quartile"]
+    _qtop = max(_lira_q, key=lambda r: r[2])
+    _qape = max(_lira_q, key=lambda r: r[5])
+    _q4, _q1 = _lira_q[-1], _lira_q[0]
     _LOC = {"Q1": "Q1'de", "Q2": "Q2'de", "Q3": "Q3'te", "Q4": "Q4'te"}
     # Yanlilik TAHMIN ceyreginden: gercek fiyata gore gruplama ortalamaya donus uretir (son denetim).
-    _kal = ed["kalibrasyon"]
-    _tcm = max(abs(r[2]) for r in ed["tahmin_ceyrek"])
-    _kal_ok = abs(_kal["egim"] - 1) < 0.02 and _tcm < 0.2 * v["model_mae"]
+    _calib = ed["calibration"]
+    _tcm = max(abs(r[2]) for r in ed["pred_quartile"])
+    _calib_ok = abs(_calib["slope"] - 1) < 0.02 and _tcm < 0.2 * v["model_mae"]
     A(L((f"**Liraya çevrilince tablo tersine dönüyor.** " if _qtop[0] != _qape[0] else
          f"**Lira hatası da aynı yeri gösteriyor.** ")
         + f"Toplam lira hatasının en büyük payı ({P(_qtop[2], lang)}) {_LOC[_qtop[0]]}; ortalama mutlak "
         f"hata en pahalı çeyrekte {tl(_q4[3])}, en ucuzda {tl(_q1[3])}."
         + (f" Tahmin edilen fiyata göre bakınca (fiyatlama aracının bildiği tek şey) model hiçbir çeyrekte belirgin "
-           f"yanlı değil: gerçek fiyat ile tahmin arasındaki eğim {_kal['egim']:.3f}." if _kal_ok else ""),
+           f"yanlı değil: gerçek fiyat ile tahmin arasındaki eğim {_calib['slope']:.3f}." if _calib_ok else ""),
         (f"**In lira the picture flips.** " if _qtop[0] != _qape[0] else
          f"**The lira error points to the same place.** ")
         + f"The largest share of total lira error ({P(_qtop[2], lang)}) sits in {_qtop[0]}; mean absolute "
         f"error is {tl(_q4[3])} in the most expensive quartile and {tl(_q1[3])} in the cheapest."
         + (f" Grouped by the predicted price (the only thing the tool knows) the model is not noticeably "
-           f"biased in any quartile: the slope of actual on predicted price is {_kal['egim']:.3f}." if _kal_ok else "")))
+           f"biased in any quartile: the slope of actual on predicted price is {_calib['slope']:.3f}." if _calib_ok else "")))
     A("")
     A(f"![{F[27][1]}](figures/{F[27][0]})")
     A("")
