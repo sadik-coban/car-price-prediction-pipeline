@@ -165,7 +165,7 @@ def dependence_facts(listings, sv, names, price):
     f["km_rates"] = [((1 - np.exp(mids[i + 1] - mids[i])) * 100) / ((centers[i + 1] - centers[i]) / 1e5) for i in range(3)]
     f["km_n_last"] = ns[-1]
     f["km_flat"] = max(f["km_rates"]) / max(min(f["km_rates"]), 1e-9) >= 1.35
-    f["km_son_min"] = f["km_rates"][-1] == min(f["km_rates"])
+    f["km_last_min"] = f["km_rates"][-1] == min(f["km_rates"])
     return f
 
 
@@ -347,8 +347,8 @@ def to_metrics(res):
     EN: Published under shap (the SHAP report reads these; figure names included).
     TR: shap altında yayımlanır (SHAP raporu bunları okur; figür adları dahil).
     """
-    return {"shap": {"n": res["n"], "lightgbm_tfidf_svd": res["table"], "oof_ayri": res["separate"],
-                     "n_svd": res["n_svd"], "fold_sira": res["fold_rank"], "tipik": res["typical"],
+    return {"shap": {"n": res["n"], "lightgbm_tfidf_svd": res["table"], "oof_separate": res["separate"],
+                     "n_svd": res["n_svd"], "fold_ranks": res["fold_rank"], "typical": res["typical"],
                      "direction": res["direction"], "dep_facts": res["dep"], "km_age": res["km_age"],
                      "cohorts": res["cohorts"], "figures": res["figures"]}}
 
@@ -360,7 +360,7 @@ z = np.load(NPZ, allow_pickle=False)
 if str(z["run_id"]) != oof_info["run_id"]:
     raise SystemExit("oof_shap.npz is from another run | başka koşumdan — run first | önce: python analysis/shap/02_oof_shap.py")
 G = {"sv": z["shap"].astype(float), "names": [str(g) for g in z["groups"]], "base": z["base"].astype(float),
-     "fold": z["fold"], "raw": z["ham_shap"].astype(float)}
+     "fold": z["fold"], "raw": z["raw_shap"].astype(float)}
 
 # %% [5] Compute | Hesapla — look at the results here | sonuçlara burada bak
 price = listings["price"].values.astype(float)

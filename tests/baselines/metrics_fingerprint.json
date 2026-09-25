@@ -1256,38 +1256,38 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T05:26:06+03:00",
+  "_meta.generated_at": "2026-09-25T16:49:53+03:00",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "shap/02_oof_shap.py",
-  "oof_shap.gruplama_kurali": "kuresel = mean|sum phi| (grup ici isaretli toplam, sonra mutlak ortalama); kuresel_ayri = sum mean|phi| (her uye ayri, iptal yok). Tek uyeli gruplarda ayni.",
-  "oof_shap.gruplar": {
-   "len": 24,
-   "sha256": "fb2bf07af92d1fa5f0cd825d644348a71393ae059cdcf95a19c04e1a7e7bc7d3"
-  },
-  "oof_shap.kapi.esik_mape": 0.01,
-  "oof_shap.kapi.esik_max_tl": 1.0,
-  "oof_shap.kapi.is_parcacigi": 16,
-  "oof_shap.kapi.mape_yayimlanan": 6.49,
-  "oof_shap.kapi.mape_yeniden": 6.4898,
-  "oof_shap.kapi.max_fark_tl": 0.0,
-  "oof_shap.kapi.ortalama_fark_tl": 0.0,
-  "oof_shap.kuresel": {
+  "oof_shap.gate.mape_published": 6.49,
+  "oof_shap.gate.mape_refit": 6.4898,
+  "oof_shap.gate.max_gap_tl": 0.0,
+  "oof_shap.gate.mean_gap_tl": 0.0,
+  "oof_shap.gate.n_threads": 16,
+  "oof_shap.gate.threshold_mape": 0.01,
+  "oof_shap.gate.threshold_max_tl": 1.0,
+  "oof_shap.global": {
    "len": 24,
    "sha256": "1a7aa6163e8c515d68cd4539e4d1b2ed2df6fd5a8301314fb407a4abcebedd8f"
   },
-  "oof_shap.kuresel_ayri": {
+  "oof_shap.global_separate": {
    "len": 24,
    "sha256": "b94d7fa0833281b48505984c524135de4393e44e6367729cffbc534b51425943"
   },
+  "oof_shap.grouping_rule": "kuresel = mean|sum phi| (grup ici isaretli toplam, sonra mutlak ortalama); kuresel_ayri = sum mean|phi| (her uye ayri, iptal yok). Tek uyeli gruplarda ayni.",
+  "oof_shap.groups": {
+   "len": 24,
+   "sha256": "fb2bf07af92d1fa5f0cd825d644348a71393ae059cdcf95a19c04e1a7e7bc7d3"
+  },
   "oof_shap.n": 29988,
-  "oof_shap.not": "Her ilan, onu egitimde hic gormemis fold modeliyle aciklandi (5-fold, ureticinin kurulumunun aynisi). SHAP degerleri log1p(fiyat) uzayinda ve text_only_key ile 24 kaleme gruplandi."
+  "oof_shap.note": "Her ilan, onu egitimde hic gormemis fold modeliyle aciklandi (5-fold, ureticinin kurulumunun aynisi). SHAP degerleri log1p(fiyat) uzayinda ve text_only_key ile 24 kaleme gruplandi."
  },
  "shap/03_what_sets_price": {
   "_meta.data_until": "2026-06-27",
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T05:26:12+03:00",
+  "_meta.generated_at": "2026-09-25T16:50:00+03:00",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "shap/03_what_sets_price.py",
   "shap.cohorts.en.name": "Age (years)",
@@ -1330,12 +1330,12 @@
    "sha256": "8a104f5d5b5997de60c57bd61751e4ee5358eebc744e2b07a115ba5b42e034c9"
   },
   "shap.dep_facts.km_flat": true,
+  "shap.dep_facts.km_last_min": true,
   "shap.dep_facts.km_n_last": 1723,
   "shap.dep_facts.km_rates": {
    "len": 3,
    "sha256": "8ed9dccdb51b720f330796b13ecd29ab26868638e89660695ac43bd68898d52f"
   },
-  "shap.dep_facts.km_son_min": true,
   "shap.direction.gb_mileage": -0.9613258258036923,
   "shap.direction.power_hp_val": 0.8944759603791989,
   "shap.direction.vehicle_age": -0.9911873895358259,
@@ -1343,7 +1343,7 @@
    "len": 10,
    "sha256": "eb2d1c81e1a47bed4d41f203a4f709b26148d43be97f92e617661977bdbdc5f7"
   },
-  "shap.fold_sira": {
+  "shap.fold_ranks": {
    "len": 5,
    "sha256": "cc0bc8b167295ab7e7a3599a5c157f7012dec5bf67dccd6be2d2ea6fd32b7d77"
   },
@@ -1357,51 +1357,51 @@
   },
   "shap.n": 29988,
   "shap.n_svd": 170,
-  "shap.oof_ayri": {
+  "shap.oof_separate": {
    "len": 11,
    "sha256": "ed4ce2885869f42d5c98c565a93b69079514e34a6ec7057c74094943857b5bd1"
   },
-  "shap.tipik.DAMAGE": {
+  "shap.typical.DAMAGE": {
    "len": 2,
    "sha256": "bf60527475d6e793e1ab02ca343b28ed9826b662ada4ad3025e900e68e685edf"
   },
-  "shap.tipik.ENGINE": {
+  "shap.typical.ENGINE": {
    "len": 2,
    "sha256": "e516437e554659e7164a34e258e8b3a3e25f8f22e15e307ae8970a362f923599"
   },
-  "shap.tipik.MODEL_SERIES (text)": {
+  "shap.typical.MODEL_SERIES (text)": {
    "len": 2,
    "sha256": "7ce53bcacaad1026039982e04217ee730b31203f9248d214ab6e109bc8c6903c"
   },
-  "shap.tipik.brand": {
+  "shap.typical.brand": {
    "len": 2,
    "sha256": "723e4588b460fc7633f9daf03781f5b68db7d6f63f81c559b3851ede1618f2a6"
   },
-  "shap.tipik.gb_mileage": {
+  "shap.typical.gb_mileage": {
    "len": 2,
    "sha256": "fd213c94cbcc8fc56bb3383aee34e802a830e753c948f76ab785462f838aee16"
   },
-  "shap.tipik.kb_body_type": {
+  "shap.typical.kb_body_type": {
    "len": 2,
    "sha256": "ff43bc0d03142494fd53477d9acf96fb62529db81ced15388c3bb4837da06ea6"
   },
-  "shap.tipik.kb_drivetrain": {
+  "shap.typical.kb_drivetrain": {
    "len": 2,
    "sha256": "bcca2b25b73833f5ab1b236c5f41bbf07fff8c6d0b77db996b7e73fe639549ef"
   },
-  "shap.tipik.kb_fuel": {
+  "shap.typical.kb_fuel": {
    "len": 2,
    "sha256": "41e57150bd59a6f609fe9361adbd1e3d938e3f0807e2f1c61145f6148a6a95d3"
   },
-  "shap.tipik.kb_transmission": {
+  "shap.typical.kb_transmission": {
    "len": 2,
    "sha256": "2219c09ba5aa1303e9da885d0cf4cf4ac79d93ccf183df2e14a797f96f2f2599"
   },
-  "shap.tipik.segment": {
+  "shap.typical.segment": {
    "len": 2,
    "sha256": "b2a8260f6f99052c6d6ef17dd3e39421200de774372b5e424bbf2e458aac0690"
   },
-  "shap.tipik.vehicle_age": {
+  "shap.typical.vehicle_age": {
    "len": 2,
    "sha256": "3bf9bd9f9ddf903792ec03691da63d67614ec8e9dcbc7a06e0a3c8592506497a"
   }
@@ -1411,7 +1411,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T05:28:41+03:00",
+  "_meta.generated_at": "2026-09-25T16:51:08+03:00",
   "_meta.run_id": null,
   "_meta.script": "shap/04_variants.py",
   "domain.shap.catboost_native": {
@@ -1426,40 +1426,40 @@
    "len": 11,
    "sha256": "d24efe8a8369c8cef5c0de22a08fd309be098f42897c0fe4ce50764b8858ea74"
   },
-  "domain.shap.n_kullanilan": 29988,
-  "domain.shap.not": "SVD boyutları (model_0..) → MODEL_SERIES gruplandı. ENGINE (hp+cc), DAMAGE (boya/değişen/hasar) gruplu. Native ham text (SVD yok).",
+  "domain.shap.method": "TÜM VERİ (örnekleme YOK). Grup SHAP = satır bazında üye SHAP toplamı (işaretli net), sonra ortalama-mutlak. LGB→shap.TreeExplainer, CatBoost→kendi ShapValues (text-güvenli, EXACT).",
+  "domain.shap.n_used": 29988,
+  "domain.shap.note": "SVD boyutları (model_0..) → MODEL_SERIES gruplandı. ENGINE (hp+cc), DAMAGE (boya/değişen/hasar) gruplu. Native ham text (SVD yok).",
   "domain.shap.png": {
    "len": 6,
    "sha256": "756d661866dbaf1c78a6483aebb267658a121ecb31909b19d394a94b654a1e52"
   },
-  "domain.shap.yontem": "TÜM VERİ (örnekleme YOK). Grup SHAP = satır bazında üye SHAP toplamı (işaretli net), sonra ortalama-mutlak. LGB→shap.TreeExplainer, CatBoost→kendi ShapValues (text-güvenli, EXACT).",
   "shap_final.add_err": 5.062616992290714e-13,
   "shap_final.base_log": 14.299831654389688,
   "shap_final.catboost_native": {
    "len": 12,
    "sha256": "1e4766d2394e4c2261669632eaad9567f78a24b4ccea25a29478893797dfcfde"
   },
-  "shap_final.catboost_native_ayri": {
-   "len": 12,
-   "sha256": "cfe82e2da4614fea5d322c7fd3f2af20f0d855ab4d16301b18765a7aeb834bb1"
-  },
-  "shap_final.catboost_native_birlesik": {
+  "shap_final.catboost_native_combined": {
    "len": 11,
    "sha256": "4522c3429f11542cd972343ec793b04a0ec058a1928f36349bfea7c46210a2b0"
+  },
+  "shap_final.catboost_native_separate": {
+   "len": 12,
+   "sha256": "cfe82e2da4614fea5d322c7fd3f2af20f0d855ab4d16301b18765a7aeb834bb1"
   },
   "shap_final.catboost_tfidf_svd": {
    "len": 11,
    "sha256": "b58f7826c73ac4551b47c3fe399242e72a70dd3b3d3384db489b53510077e188"
   },
-  "shap_final.catboost_tfidf_svd_ayri": {
+  "shap_final.catboost_tfidf_svd_separate": {
    "len": 11,
    "sha256": "afa165fb2a86494b007525bf76a812c801a6ffb56b9a38efca5daaa56a291dc5"
   },
-  "shap_final.final_model_tablo": {
+  "shap_final.final_model_table": {
    "len": 11,
    "sha256": "d24efe8a8369c8cef5c0de22a08fd309be098f42897c0fe4ce50764b8858ea74"
   },
-  "shap_final.final_model_tablo_ayri": {
+  "shap_final.final_model_table_separate": {
    "len": 11,
    "sha256": "162bf21b61c33ffe50b1cbce72c4544cf1eaabc99a84f0691f038269c7ca1848"
   }
@@ -1469,7 +1469,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T05:27:09+03:00",
+  "_meta.generated_at": "2026-09-25T16:51:12+03:00",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "shap/06_one_listing.py",
   "shap_case.figures": {

@@ -1,0 +1,54 @@
+{
+ "script": "analysis/shap/04_variants.py",
+ "question": {
+  "tr": "Servis edilen üç modeli (LightGBM, CatBoost SVD, CatBoost native) hangi öznitelikler sürüklüyor?",
+  "en": "Which features drive the three served models (LightGBM, CatBoost SVD, CatBoost native)?"
+ },
+ "data": {
+  "tr": "load_clean() (29.988 ilan) ve data/serving'deki final modeller.",
+  "en": "load_clean() (29,988 listings) and the final models in data/serving."
+ },
+ "method": {
+  "tr": "Her modelde bütün veride SHAP (örnekleme yok), toplanabilirlik kontrolü, gruplu ve ayrı önem tabloları, beeswarm figürleri. Native CatBoost atfı koşumdan koşuma iki durum arasında gidip geliyor (muaf, belgelenmiş).",
+  "en": "SHAP on all data for each model (no sampling), an additivity check, grouped and separate importance tables, beeswarm figures. The native CatBoost attribution flips between two states run to run (exempt, documented)."
+ },
+ "split": "none",
+ "leakage": {
+  "duplicate_ad_id": {
+   "status": "n/a",
+   "note": null
+  },
+  "target_in_features": {
+   "status": "none",
+   "note": {
+    "tr": "SHAP, fiyattan türeyen öznitelik içermeyen modelin tahminlerini açıklıyor.",
+    "en": "SHAP explains the predictions of a model with no price-derived feature."
+   }
+  },
+  "fit_on_full_data": {
+   "status": "present",
+   "note": {
+    "tr": "Tasarım gereği: servis edilen, bütün veride kurulmuş final modeller açıklanıyor; performans iddiası yok.",
+    "en": "By design: the served final models, fitted on all data, are explained; no performance claim."
+   }
+  },
+  "temporal": {
+   "status": "n/a",
+   "note": null
+  }
+ },
+ "evidence": {
+  "tests": [
+   "tests/analysis/test_shap_04_variants.py::test_additivity_and_size",
+   "tests/analysis/test_shap_04_variants.py::test_report_tables_are_the_site_tables",
+   "tests/analysis/test_shap_04_variants.py::test_deterministic_tables",
+   "tests/analysis/test_shap_04_variants.py::test_native_tables_shape"
+  ],
+  "report_keys": [
+   "shap_final.final_model_table",
+   "shap_final.catboost_tfidf_svd",
+   "domain.shap.lightgbm_tfidf_svd"
+  ]
+ },
+ "status": "complete"
+}

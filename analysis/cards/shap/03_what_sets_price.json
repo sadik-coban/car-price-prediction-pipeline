@@ -1,0 +1,52 @@
+{
+ "script": "analysis/shap/03_what_sets_price.py",
+ "question": {
+  "tr": "OOF SHAP'a göre fiyatı ne belirliyor: sıralama, yön, tipik etki, yaş/güç/km bağımlılığı ve fold'lar arası kararlılık?",
+  "en": "What sets the price according to OOF SHAP: ranking, direction, typical effect, age/power/mileage dependence and stability across folds?"
+ },
+ "data": {
+  "tr": "load_clean() ve 02_oof_shap'ın SHAP dizileri (data/analysis/oof_shap.npz, run_id kapısı).",
+  "en": "load_clean() and 02_oof_shap's SHAP arrays (data/analysis/oof_shap.npz, run_id gate)."
+ },
+ "method": {
+  "tr": "Grup önem tablosu, fold başına sıralama, yön (Spearman), tipik etki (fiyattaki karşılık), yaş bantları, güç bantları, km pencereleri, yaş × km, iki dilli figürler.",
+  "en": "The group importance table, per-fold ranking, direction (Spearman), typical effect (in price), age bands, power bands, mileage windows, age × km, bilingual figures."
+ },
+ "split": "oof_input",
+ "leakage": {
+  "duplicate_ad_id": {
+   "status": "n/a",
+   "note": null
+  },
+  "target_in_features": {
+   "status": "none",
+   "note": {
+    "tr": "SHAP, fiyattan türeyen öznitelik içermeyen modelin tahminlerini açıklıyor.",
+    "en": "SHAP explains the predictions of a model with no price-derived feature."
+   }
+  },
+  "fit_on_full_data": {
+   "status": "n/a",
+   "note": null
+  },
+  "temporal": {
+   "status": "n/a",
+   "note": null
+  }
+ },
+ "evidence": {
+  "tests": [
+   "tests/analysis/test_shap_03_what_sets_price.py::test_table",
+   "tests/analysis/test_shap_03_what_sets_price.py::test_fold_rankings",
+   "tests/analysis/test_shap_03_what_sets_price.py::test_directions",
+   "tests/analysis/test_shap_03_what_sets_price.py::test_mileage_windows_and_figures"
+  ],
+  "report_keys": [
+   "shap.lightgbm_tfidf_svd",
+   "shap.fold_ranks",
+   "shap.typical",
+   "shap.direction"
+  ]
+ },
+ "status": "complete"
+}

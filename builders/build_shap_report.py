@@ -32,9 +32,9 @@ sys.path.insert(0, str(ROOT / "analysis"))
 from report_lib import metrics_view as MV      # noqa: E402  the single metrics reader | tek metrik okuyucu
 from lib.labels import lb                      # noqa: E402  display names | görünen adlar
 
-REQUIRED = ["oof_shap.kapi", "shap.lightgbm_tfidf_svd", "shap.direction", "shap.dep_facts", "shap.cohorts",
-            "shap.km_age", "shap.tipik", "shap.fold_sira", "shap.oof_ayri", "shap_final.final_model_tablo",
-            "shap_final.catboost_tfidf_svd", "shap_final.catboost_native_birlesik", "shap_final.add_err",
+REQUIRED = ["oof_shap.gate", "shap.lightgbm_tfidf_svd", "shap.direction", "shap.dep_facts", "shap.cohorts",
+            "shap.km_age", "shap.typical", "shap.fold_ranks", "shap.oof_separate", "shap_final.final_model_table",
+            "shap_final.catboost_tfidf_svd", "shap_final.catboost_native_combined", "shap_final.add_err",
             "shap_case.top", "domain.model_compare", "domain.brand_ablation", "methodology.theils_matrix"]
 
 
@@ -110,15 +110,15 @@ def shap_md(d, lang):
     A("")
     # 2026-09-23: "kurusu kurusuna" / "down to the lira" elle yaziliydi (iki dil farkli); kapi degeri JSON'dan.
     # "§6'da guc ile hacim ayri gorunur" da olculmemisti: ornek ilanda waterfall'in gosterdigi satirlar sayilir.
-    _kapi = d["oof_shap"]["kapi"]
-    _gor = set(case["visible"])
-    _hp_g, _cc_g = "power_hp_val" in _gor, "engine_cc_val" in _gor
-    _mot_tr = ("orada motor gücü ile hacim ayrı satır." if _hp_g and _cc_g else
+    _gate = d["oof_shap"]["gate"]
+    _visible = set(case["visible"])
+    _hp_g, _cc_g = "power_hp_val" in _visible, "engine_cc_val" in _visible
+    _engine_tr = ("orada motor gücü ile hacim ayrı satır." if _hp_g and _cc_g else
                "orada motor gücü kendi satırında; hacmin bu ilandaki payı küçük olduğu için \"diğer öznitelik\" "
                "çubuğunda kalıyor." if _hp_g else
                "orada motor gücü ile hacim ayrı öznitelik, ama bu ilanda ikisinin de payı küçük olduğu için "
                "\"diğer öznitelik\" çubuğunda kalıyorlar.")
-    _mot_en = ("there power and displacement are separate rows." if _hp_g and _cc_g else
+    _engine_en = ("there power and displacement are separate rows." if _hp_g and _cc_g else
                "there power has its own row; displacement's share on that listing is small, so it stays inside "
                "the \"other features\" bar." if _hp_g else
                "there power and displacement are separate features, but on that listing both are small enough to "
@@ -126,7 +126,7 @@ def shap_md(d, lang):
     A(L(f"- **Veri:** {N(n)} ilanın **tamamı** — örnekleme yok.\n"
         f"- **Model: OOF.** Her ilan, onu eğitimde hiç görmemiş fold modeliyle açıklanıyor — "
         f"zincirin kendi 5-fold kurulumu. Yeniden kurulan fold'ların tahminleri zincirin yazdığı OOF "
-        f"tahminlerle eşleşti (en büyük fark ₺{_kapi['max_fark_tl']:.2f}).\n"
+        f"tahminlerle eşleşti (en büyük fark ₺{_gate['max_gap_tl']:.2f}).\n"
         f"- **Yöntem:** `shap.TreeExplainer` (exact). Toplamsallık hatası {fin['add_err']:.1e} "
         f"(final model üzerinde ölçüldü), yani parçalar tahmini tam veriyor.\n"
         f"- **Ölçek:** hedef `log1p(fiyat)`, yani katkılar log'da toplanıyor ve fiyatta "
@@ -135,13 +135,13 @@ def shap_md(d, lang):
         f"SVD boyutu tek tek anlamsız, `MODEL_SERIES` altında toplandı. §3'teki tabloda `ENGINE` = "
         f"hp + cc, `DAMAGE` = 13 panelden türeyen 12 öznitelik + ağır hasar kaydı; beeswarm ve grup "
         f"grafiklerinde bunlar ayrı satır. §6'nın dökümü yalnız SVD boyutlarını (`MODEL_SERIES`) toplar, öteki "
-        f"öznitelikler ayrı — {_mot_tr} "
+        f"öznitelikler ayrı — {_engine_tr} "
         f"Grubun değeri satır başına üyelerinin **işaretli toplamı** — "
         f"grubun o ilandaki net etkisi; tablodaki sayı onun ortalama mutlak değeri (§7).",
         f"- **Data:** **all** {N(n)} listings — no sampling.\n"
         f"- **Model: OOF.** Every listing is explained by the fold model that never saw it in "
         f"training — the chain's own 5-fold setup. The rebuilt folds' predictions match the chain's "
-        f"stored OOF predictions (largest difference ₺{_kapi['max_fark_tl']:.2f}).\n"
+        f"stored OOF predictions (largest difference ₺{_gate['max_gap_tl']:.2f}).\n"
         f"- **Method:** `shap.TreeExplainer` (exact). Additivity error {fin['add_err']:.1e} "
         f"(measured on the final model), so the parts reconstruct the prediction exactly.\n"
         f"- **Scale:** target `log1p(price)`, so contributions add in log and **multiply** "
@@ -151,7 +151,7 @@ def shap_md(d, lang):
         f"`MODEL_SERIES`. In the §3 table `ENGINE` = hp + cc and `DAMAGE` = the 12 features derived "
         f"from 13 panels plus the heavy-damage record; in the beeswarm and cohort charts they appear "
         f"as separate rows. The §6 breakdown only merges the SVD dimensions (`MODEL_SERIES`); every other "
-        f"feature stays separate — {_mot_en} A group's value is the **signed sum** of its members on each "
+        f"feature stays separate — {_engine_en} A group's value is the **signed sum** of its members on each "
         f"row — the group's net effect on that listing; the table reports its mean absolute value (§7)."))
     A("")
     A(L("### Hangi grafikte hangi ölçek", "### Which scale in which chart"))
@@ -188,12 +188,12 @@ def shap_md(d, lang):
     A("")
     A(f"![{L('Fiyatı en çok ne belirliyor', 'What drives price')}](figures/{lang}-sh-01-importance.png)")
     A("")
-    _tip = res["tipik"]
+    _typical = res["typical"]
     A(L("| öznitelik | ortalama \\|SHAP\\| | pay | fiyatta tipik etki |",
         "| feature | mean \\|SHAP\\| | share | typical effect on price |"))
     A("|---|---:|---:|---:|")
     for k, val, pct in lgb_rows:
-        A(f"| {lb(k, lang)} | {val:.4f} | {P(pct)} | {P(_tip[k][0])} |")
+        A(f"| {lb(k, lang)} | {val:.4f} | {P(pct)} | {P(_typical[k][0])} |")
     A("")
     A(L("*Paylar LightGBM'e özgü (§4). **Fiyatta tipik etki** katkının fiyattaki karşılığının (`|e^s − 1|`) "
         "ilanlar üzerindeki medyanı.*",
@@ -202,17 +202,17 @@ def shap_md(d, lang):
     A("")
     _ms = "MODEL_SERIES (text)"
     _ms_s = next(r for r in lgb_rows if r[0] == _ms)
-    _kat = {r[0]: r for r in res["oof_ayri"]}[_ms][1] / _ms_s[1]      # yalniz §7'nin incelik olcusu
+    _ratio = {r[0]: r for r in res["oof_separate"]}[_ms][1] / _ms_s[1]      # yalniz §7'nin incelik olcusu
     A(L(f"Atfın {P(top[2])} kadarını tek başına **{lb(top[0], lang)}** alıyor, ilk üç öznitelik {P(top3)} kadarını.",
         f"**{lb(top[0], lang)}** alone takes {P(top[2])} of the attribution, the top three {P(top3)}."))
     A("")
-    _fs = res["fold_sira"]
-    _oynak = [i + 1 for i in range(min(6, len(lgb_rows))) if len({f_[i] for f_ in _fs}) > 1]
-    A(L((f"Sıralama fold'dan fold'a tam sabit değil: {', '.join(f'{i}.' for i in _oynak)} sıradaki kalem en az "
-         f"bir fold'da değişiyor; payları yakın kalemlerin sırası tek başına okunmamalı." if _oynak else
+    _folds = res["fold_ranks"]
+    _volatile = [i + 1 for i in range(min(6, len(lgb_rows))) if len({f_[i] for f_ in _folds}) > 1]
+    A(L((f"Sıralama fold'dan fold'a tam sabit değil: {', '.join(f'{i}.' for i in _volatile)} sıradaki kalem en az "
+         f"bir fold'da değişiyor; payları yakın kalemlerin sırası tek başına okunmamalı." if _volatile else
          f"İlk altı sıra beş fold'un hepsinde aynı."),
-        (f"The ranking is not fully stable across folds: the item in position(s) {', '.join(str(i) for i in _oynak)} "
-         f"changes in at least one fold; do not read much into the order of items with close shares." if _oynak else
+        (f"The ranking is not fully stable across folds: the item in position(s) {', '.join(str(i) for i in _volatile)} "
+         f"changes in at least one fold; do not read much into the order of items with close shares." if _volatile else
          f"The top six positions are the same in all five folds.")))
     A("")
     A(L("### Yön kontrolü", "### Direction check"))
@@ -237,13 +237,13 @@ def shap_md(d, lang):
     _kr = df_["km_rates"]
     _kc = [round(c_ / 1000) for c_ in df_["km_centers"]]
     _km_tr = ((f"Son pencerede oran belirgin düşüyor (bir öncekinin {_kr[2] / _kr[1]:.2f} katı): çok yüksek "
-               f"kilometrede ek kilometrenin bedeli azalıyor ama sürüyor." if df_["km_son_min"] else
+               f"kilometrede ek kilometrenin bedeli azalıyor ama sürüyor." if df_["km_last_min"] else
                f"Oran pencereler arasında değişiyor ({P(min(_kr))}–{P(max(_kr))}).")
               if df_["km_flat"] else
               "Oran pencereler arasında yakın: kilometre etkisi geniş bir aralıkta neredeyse sabit oranlı ilerliyor.")
     _km_tr += f" 350 bin km ve üstünde {N(df_['km_n_last'])} ilan var."
     _km_en = ((f"The rate drops clearly in the last window ({_kr[2] / _kr[1]:.2f}× the previous one): at very high "
-               f"mileage extra kilometres cost less, but they still cost." if df_["km_son_min"] else
+               f"mileage extra kilometres cost less, but they still cost." if df_["km_last_min"] else
                f"The rate varies across windows ({P(min(_kr))}–{P(max(_kr))}).")
               if df_["km_flat"] else
               "The rates are close: mileage works at a nearly constant proportional rate across a wide range.")
@@ -287,30 +287,30 @@ def shap_md(d, lang):
     # "Yaş (yıl) < 9.5" gibi bir grup adindan esigi ayikla: metin esigi tek kez yazsin.
     _m = re.match(r"^(.*?)\s*[<>=]+\s*([-\d.]+)$", _cf["split"][0])
     assert _m, f"grup adi beklenmedik bicimde: {_cf['split'][0]}"
-    _sp_ad, _sp_esik = _m.group(1), _m.group(2)
+    _split_name, _split_threshold = _m.group(1), _m.group(2)
     # C10 (2026-09-23): eskiden "yeni aracta fiyati yas kurar, yaslida sira digerlerine gecer" yaziyordu.
     # |SHAP| ortalamadan SAPMAYI olcer: tipik yastaki aracta yasin katkisi kucuk, iki ucta buyuk. Olculdu.
     _ab = df_["age_abs"]
-    _yas = _cf["name"] == lb("vehicle_age", lang)
+    _is_age = _cf["name"] == lb("vehicle_age", lang)
     _mid = min(range(len(_ab)), key=lambda i: _ab[i][2])
     _v = 0 < _mid < len(_ab) - 1 and _ab[0][2] > 2 * _ab[_mid][2] and _ab[-1][2] > 2 * _ab[_mid][2]
     _bt = " · ".join((f"{lo}–{hi - 1}" if hi < 100 else f"{lo}+") + f" {m:.3f}" for lo, hi, m in _ab)
-    A(L(f"Bölmeyi biz vermedik: shap kendi karar ağacıyla veriyi **{_sp_ad} = {_sp_esik}** eşiğinden "
+    A(L(f"Bölmeyi biz vermedik: shap kendi karar ağacıyla veriyi **{_split_name} = {_split_threshold}** eşiğinden "
         f"ikiye ayırdı. *{_cf['name']}* için ortalama |SHAP| `{_cf['split'][0]}` grubunda {_cf['v0']:.3f}, "
         f"`{_cf['split'][1]}` grubunda {_cf['v1']:.3f}."
         + (f" Bunu \"model yeni araçta yaşa daha çok bakıyor\" diye okumak yanıltır: |SHAP| ortalamadan "
            f"sapmayı ölçtüğü için tipik yaştaki araçta yaşın katkısı küçük. Yaş bantlarına göre ortalama "
            f"|SHAP|: {_bt}"
            + (" — V şeklinde; yaşın ağırlığı hem yeni hem çok yaşlı araçta büyük." if _v else ".")
-           if _yas else ""),
-        f"We did not pick the split: shap's own decision tree cut the data at **{_sp_ad} = {_sp_esik}**. "
+           if _is_age else ""),
+        f"We did not pick the split: shap's own decision tree cut the data at **{_split_name} = {_split_threshold}**. "
         f"The mean |SHAP| of *{_cf['name']}* is {_cf['v0']:.3f} in `{_cf['split'][0]}` and {_cf['v1']:.3f} in "
         f"`{_cf['split'][1]}`."
         + (f" Reading that as \"the model looks at age more on new cars\" misleads: |SHAP| measures the "
            f"deviation from the average, so at a typical age the age contribution is small. Mean |SHAP| by "
            f"age band: {_bt}"
            + (" — V-shaped; age weighs heavily on both new and very old cars." if _v else ".")
-           if _yas else "")))
+           if _is_age else "")))
     A("")
     A(L("### Yaş ve kilometre birlikte çalışıyor", "### Age and mileage act together"))
     A("")
@@ -337,56 +337,56 @@ def shap_md(d, lang):
     A("")
     # C9 (2026-09-23): tablo eskiden iki kurali karistiriyordu — SVD varyantlarinda model/seri adi
     # ISARETLI toplam, native'de iki ayri ozniteligin paylari toplaniyordu. Tek kurala getirildi: uc modelde
-    # de satir basina ISARETLI grup toplami (grouped; native'de model+seri catboost_native_birlesik).
-    _fa = {r[0]: r[2] for r in fin["final_model_tablo"]}
+    # de satir basina ISARETLI grup toplami (grouped; native'de model+seri catboost_native_combined).
+    _fa = {r[0]: r[2] for r in fin["final_model_table"]}
     _ca = {r[0]: r[2] for r in fin["catboost_tfidf_svd"]}
-    _na = {r[0]: r[2] for r in fin["catboost_native_birlesik"]}
+    _na = {r[0]: r[2] for r in fin["catboost_native_combined"]}
     A(L("| öznitelik | LightGBM | CatBoost (SVD) | CatBoost (native) |",
         "| feature | LightGBM | CatBoost (SVD) | CatBoost (native) |"))
     A("|---|---:|---:|---:|")
-    for k in [r[0] for r in fin["final_model_tablo"]]:
+    for k in [r[0] for r in fin["final_model_table"]]:
         A(f"| {lb(k, lang)} | {P(_fa.get(k, 0))} | {P(_ca.get(k, 0))} | {P(_na.get(k, 0))} |")
     A("")
     # §3 (OOF) ile bu tablo (final) arasindaki en buyuk fark olculur; not "birkac ondalik" diye tahmin yurutmez.
     _f34 = max(((k_, abs(p_ - _fa.get(k_, 0))) for k_, _v, p_ in lgb_rows), key=lambda x: x[1])
     _mc = d["domain"]["model_compare"]
     _mp = [_mc["lightgbm"]["MAPE"], _mc["catboost_svd"]["MAPE"], _mc["catboost_native"]["MAPE"]]
-    _esit = max(_mp) - min(_mp) < 0.25
-    _ag, _kl = _fa["vehicle_age"], _fa["gb_mileage"]
-    _cg, _ck = _ca["vehicle_age"], _ca["gb_mileage"]
-    _ters = (_ag - _cg) * (_kl - _ck) < 0
+    _equal = max(_mp) - min(_mp) < 0.25
+    _lgb_age, _lgb_km = _fa["vehicle_age"], _fa["gb_mileage"]
+    _cb_age, _cb_km = _ca["vehicle_age"], _ca["gb_mileage"]
+    _reversed = (_lgb_age - _cb_age) * (_lgb_km - _cb_km) < 0
     _t3 = [set(k for k, _ in sorted(t.items(), key=lambda kv: -kv[1])[:3]) for t in (_fa, _ca, _na)]
-    _ortak = _t3[0] == _t3[1] == _t3[2]
+    _common = _t3[0] == _t3[1] == _t3[2]
     # Son denetim: "ilk uc ayni" native'de 0.4 puanlik farka dayaniyordu -> 3. ile 4. arasindaki en dar fark yazilir.
-    _mrj = [(ad_, sorted(t.values(), reverse=True)) for ad_, t in (("LightGBM", _fa), ("CatBoost (SVD)", _ca),
+    _margins = [(name_, sorted(t.values(), reverse=True)) for name_, t in (("LightGBM", _fa), ("CatBoost (SVD)", _ca),
                                                                    ("CatBoost (native)", _na))]
-    _dar = min(((ad_, v_[2] - v_[3]) for ad_, v_ in _mrj), key=lambda x: x[1])
-    _t3ad = ", ".join(lb(k, lang) for k in sorted(_t3[0], key=lambda k: -_fa[k]))
+    _narrowest = min(((name_, v_[2] - v_[3]) for name_, v_ in _margins), key=lambda x: x[1])
+    _top3_names = ", ".join(lb(k, lang) for k in sorted(_t3[0], key=lambda k: -_fa[k]))
     _mps = " · ".join(P(x, 2) for x in _mp)
-    A(L((f"Doğrulukta üç varyant birbirine yakın (MAPE {_mps}). " if _esit else
+    A(L((f"Doğrulukta üç varyant birbirine yakın (MAPE {_mps}). " if _equal else
          f"Doğrulukta varyantlar ayrışıyor (MAPE {_mps}). ")
-        + f"Gerekçede ayrılıyorlar: LightGBM yaşa {P(_ag)} pay veriyor, CatBoost (SVD) {P(_cg)} "
-        f"({abs(_ag - _cg):.1f} puan fark)"
-        + (f"; kilometrede durum tersine dönüyor ({P(_kl)} · {P(_ck)}). Yaş ile kilometre birlikte hareket "
-           f"ettiği için payın hangisine yazılacağı modelin tercihi." if _ters else ".")
-        + (f" **Sonuç:** ilk üç kalem üç modelde de aynı ({_t3ad}), ama sıraları ve payları modele bağlı"
-           + (f"; {_dar[0]} modelinde 3. ile 4. kalem arasındaki fark yalnız {_dar[1]:.1f} puan." if _dar[1] < 1
+        + f"Gerekçede ayrılıyorlar: LightGBM yaşa {P(_lgb_age)} pay veriyor, CatBoost (SVD) {P(_cb_age)} "
+        f"({abs(_lgb_age - _cb_age):.1f} puan fark)"
+        + (f"; kilometrede durum tersine dönüyor ({P(_lgb_km)} · {P(_cb_km)}). Yaş ile kilometre birlikte hareket "
+           f"ettiği için payın hangisine yazılacağı modelin tercihi." if _reversed else ".")
+        + (f" **Sonuç:** ilk üç kalem üç modelde de aynı ({_top3_names}), ama sıraları ve payları modele bağlı"
+           + (f"; {_narrowest[0]} modelinde 3. ile 4. kalem arasındaki fark yalnız {_narrowest[1]:.1f} puan." if _narrowest[1] < 1
               else ".")
-           if _ortak else " **Sonuç:** ilk üç kalem modelden modele değişiyor; \"en önemli öznitelik\" modele bağlı.")
+           if _common else " **Sonuç:** ilk üç kalem modelden modele değişiyor; \"en önemli öznitelik\" modele bağlı.")
         + "\n\n*Tablo üç modeli **final** hâlleriyle ve §3'le aynı kuralla karşılaştırır: grup değeri satır "
         "başına işaretli toplam. Native varyantta model ve seri adı ayrı iki öznitelik; burada onlar da satır "
         f"başına toplandı. §3'ün payları OOF modellerinden, buradaki LightGBM sütunu final modelden; aynı kalem "
         f"iki tabloda en fazla {_f34[1]:.1f} puan ayrılıyor ({lb(_f34[0], lang)}).*",
-        (f"On accuracy the three variants are close (MAPE {_mps}). " if _esit else
+        (f"On accuracy the three variants are close (MAPE {_mps}). " if _equal else
          f"On accuracy the variants differ (MAPE {_mps}). ")
-        + f"They differ on reasoning: LightGBM gives age {P(_ag)}, CatBoost (SVD) {P(_cg)} "
-        f"({abs(_ag - _cg):.1f} points apart)"
-        + (f"; on mileage it reverses ({P(_kl)} · {P(_ck)}). Age and mileage move together, so which one gets "
-           f"the credit is the model's preference." if _ters else ".")
-        + (f" **Takeaway:** the top three items are the same in all three models ({_t3ad}), but their order and "
+        + f"They differ on reasoning: LightGBM gives age {P(_lgb_age)}, CatBoost (SVD) {P(_cb_age)} "
+        f"({abs(_lgb_age - _cb_age):.1f} points apart)"
+        + (f"; on mileage it reverses ({P(_lgb_km)} · {P(_cb_km)}). Age and mileage move together, so which one gets "
+           f"the credit is the model's preference." if _reversed else ".")
+        + (f" **Takeaway:** the top three items are the same in all three models ({_top3_names}), but their order and "
            f"shares depend on the model"
-           + (f"; in {_dar[0]} the 3rd and 4th items are only {_dar[1]:.1f} points apart." if _dar[1] < 1 else ".")
-           if _ortak else
+           + (f"; in {_narrowest[0]} the 3rd and 4th items are only {_narrowest[1]:.1f} points apart." if _narrowest[1] < 1 else ".")
+           if _common else
            " **Takeaway:** the top three items change from model to model; \"the most important feature\" is "
            "model-dependent.")
         + "\n\n*This table compares the three models in their **final** form and under the same rule as §3: "
@@ -404,19 +404,19 @@ def shap_md(d, lang):
     A("")
     # Uc yontemin ayni yere ciktigi iddiasi (2026-09-23) artik uc olcume kapili.
     _ba = d["domain"]["brand_ablation"]
-    _abl = abs(_ba["brand_series_model"]["MAE"] - _ba["series_model"]["MAE"])
-    _uc = _brand_pct < 1 and _abl < 0.001 * _ba["series_model"]["MAE"] and _u_bm >= 0.99
+    _ablation_gap = abs(_ba["brand_series_model"]["MAE"] - _ba["series_model"]["MAE"])
+    _three_agree = _brand_pct < 1 and _ablation_gap < 0.001 * _ba["series_model"]["MAE"] and _u_bm >= 0.99
     A(L(f"`brand`'in ortalama |SHAP|'i **{_brand:.4f}**, atfın {P(_brand_pct)} kadarı. Model adı markayı zaten "
         f"belirliyor (teknik rapor §3: U(marka | model) = {_u_bm:.2f}); seri+modelin üzerine marka eklemek "
-        f"ortalama hatayı ₺{N(_abl)} değiştiriyor."
+        f"ortalama hatayı ₺{N(_ablation_gap)} değiştiriyor."
         + ("\n\nÜç yöntem — bağımlılık ölçüsü, ablasyon, SHAP — aynı yere çıkıyor: **marka ayrı bilgi "
-           "taşımıyor.** Bu \"marka fiyatı etkilemez\" demek değil; etkisi model adının içinde." if _uc else ""),
+           "taşımıyor.** Bu \"marka fiyatı etkilemez\" demek değil; etkisi model adının içinde." if _three_agree else ""),
         f"`brand` has mean |SHAP| **{_brand:.4f}**, {P(_brand_pct)} of the attribution. The model name already "
         f"determines the brand (technical report §3: U(brand | model) = {_u_bm:.2f}); adding brand on top of "
-        f"series+model changes the mean error by ₺{N(_abl)}."
+        f"series+model changes the mean error by ₺{N(_ablation_gap)}."
         + ("\n\nThree methods — dependence, ablation, SHAP — land in the same place: **brand carries no "
            "separate information.** That is not \"brand does not affect price\"; its effect sits inside the "
-           "model name." if _uc else "")))
+           "model name." if _three_agree else "")))
     A("")
 
     # §6 — tek ilanda karar. Katkilar ve etiketler AYNI satirdan; elle yazilan sayi yok.
@@ -424,11 +424,11 @@ def shap_md(d, lang):
     _p3s = "\n".join(f"{n}. {lb(k, lang)} = {lab_[lang]} → ×{np.exp(v):.2f}"
                       for n, (k, v, lab_) in enumerate(case["top"], 1))
     _km = case["km_label"][lang]
-    _sap = (case["pred"] - case["price"]) / case["price"] * 100
+    _deviation = (case["pred"] - case["price"]) / case["price"] * 100
     # C10: "listede olmayan kucuk kalemler pek oynatmiyor" olculmeden yaziliyordu.
     _rest = case["rest"]
     _n_rest = case["n_rest"]
-    _kucuk = abs(np.expm1(_rest)) < 0.02
+    _small = abs(np.expm1(_rest)) < 0.02
     A(L("## 6. Tek bir ilanda karar", "## 6. How one prediction is built"))
     A("")
     A(f"![{case['name']}](figures/{lang}-sh-06-waterfall.png)")
@@ -438,14 +438,14 @@ def shap_md(d, lang):
         f"diğer öznitelik\" oku ise kalanların toplamı (log ölçek, §2).\n\n"
         f"- **İlan:** {case['name']} · {case['year']} · {_km}\n"
         f"- **Gerçek fiyat:** ₺{N(case['price'])}\n"
-        f"- **İlanı görmemiş modelin tahmini:** ₺{N(round(case['pred']))} ({P(_sap)})\n\n"
+        f"- **İlanı görmemiş modelin tahmini:** ₺{N(round(case['pred']))} ({P(_deviation)})\n\n"
         f"Tahmini kuran en büyük üç kalem:\n\n{_p3s}\n\n"
         + (f"Listede olmayan {_n_rest} kalem birlikte fiyatı ×{np.exp(_rest):.3f} yapıyor; kararı birkaç "
-           f"büyük ok kuruyor.\n\n" if _kucuk else
+           f"büyük ok kuruyor.\n\n" if _small else
            f"Listede olmayan {_n_rest} kalem birlikte fiyatı ×{np.exp(_rest):.2f} yapıyor "
            f"({P(as_pct(_rest))}) — toplamda küçük değil.\n\n")
         +
-        f"Gerçek fiyatla aradaki {P(abs(_sap))} fark hiçbir çubukta görünmüyor: SHAP **tahmini** parçalara "
+        f"Gerçek fiyatla aradaki {P(abs(_deviation))} fark hiçbir çubukta görünmüyor: SHAP **tahmini** parçalara "
         f"ayırır, gerçek fiyatı değil. Modelin neyi bilmediği dökümde yazmaz.",
         f"At the bottom `E[f(X)]` is what the model predicts before it sees any feature, at the top "
         f"`f(x)` is its prediction for this listing; each arrow between them is one feature's "
@@ -453,14 +453,14 @@ def shap_md(d, lang):
         f"summed (log scale, §2).\n\n"
         f"- **Listing:** {case['name']} · {case['year']} · {_km}\n"
         f"- **Actual price:** ₺{N(case['price'])}\n"
-        f"- **Model's prediction** (it never saw this listing)**:** ₺{N(round(case['pred']))} ({P(_sap)})\n\n"
+        f"- **Model's prediction** (it never saw this listing)**:** ₺{N(round(case['pred']))} ({P(_deviation)})\n\n"
         f"The three biggest contributions:\n\n{_p3s}\n\n"
         + (f"The other {_n_rest} items together multiply the price by {np.exp(_rest):.3f}; a few large arrows "
-           f"do the work.\n\n" if _kucuk else
+           f"do the work.\n\n" if _small else
            f"The other {_n_rest} items together multiply the price by "
            f"{np.exp(_rest):.2f} ({P(as_pct(_rest))}) — not small in total.\n\n")
         +
-        f"No bar accounts for the {P(abs(_sap))} gap: SHAP decomposes the **prediction**, not the "
+        f"No bar accounts for the {P(abs(_deviation))} gap: SHAP decomposes the **prediction**, not the "
         f"actual price. What the model does not know is not written in the breakdown."))
     A("")
 
@@ -477,7 +477,7 @@ def shap_md(d, lang):
         f"- **Gruplama bir karardır.** `MODEL_SERIES` {_n_svd} SVD boyutunun satır başına işaretli toplamı, "
         f"yani adın o ilandaki net etkisi; boyutlara tek tek bakılsa her biri küçük görünür. Üyelerin "
         f"|SHAP|'ini ayrı ayrı toplamak kullanılmadı: o toplam girdinin kaç parçaya bölündüğüne göre büyür — "
-        f"aynı ad {_n_svd} boyutta ayrı toplanınca {_kat:.1f} kat büyük çıkar.",
+        f"aynı ad {_n_svd} boyutta ayrı toplanınca {_ratio:.1f} kat büyük çıkar.",
         "- **Attribution, not causation.** SHAP says what the model used, not how the market works.\n"
         "- **Features that move together share the credit.** How age and mileage split it depends on "
         "the model (§4). TreeSHAP runs here in `tree_path_dependent` mode, i.e. observational, which "
@@ -488,7 +488,7 @@ def shap_md(d, lang):
         f"- **The grouping is a decision.** `MODEL_SERIES` is the signed per-row sum of {_n_svd} SVD "
         f"dimensions, i.e. the name's net effect on that listing; taken one by one each dimension looks small. "
         f"Summing the members' |SHAP| separately was not used: that sum grows with how many pieces the input is "
-        f"split into — the same name summed over its {_n_svd} dimensions comes out {_kat:.1f}× larger."))
+        f"split into — the same name summed over its {_n_svd} dimensions comes out {_ratio:.1f}× larger."))
     A("")
     # son bolumun arkasindaki bos satirlar dosyaya dusmesin: tek satir sonuyla biter
     return "\n".join(out).rstrip("\n") + "\n"

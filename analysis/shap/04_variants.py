@@ -181,17 +181,17 @@ def to_metrics(res):
     """
     t = res["tables"]
     return {"domain": {"shap": {
-                "n_kullanilan": res["n"],
-                "yontem": ("TÜM VERİ (örnekleme YOK). Grup SHAP = satır bazında üye SHAP toplamı (işaretli net), sonra "
+                "n_used": res["n"],
+                "method": ("TÜM VERİ (örnekleme YOK). Grup SHAP = satır bazında üye SHAP toplamı (işaretli net), sonra "
                            "ortalama-mutlak. LGB→shap.TreeExplainer, CatBoost→kendi ShapValues (text-güvenli, EXACT)."),
-                "not": ("SVD boyutları (model_0..) → MODEL_SERIES gruplandı. ENGINE (hp+cc), DAMAGE (boya/değişen/hasar) "
+                "note": ("SVD boyutları (model_0..) → MODEL_SERIES gruplandı. ENGINE (hp+cc), DAMAGE (boya/değişen/hasar) "
                         "gruplu. Native ham text (SVD yok)."),
                 "png": sorted(f"shap_plots/{p}" for p in res["pngs"]),
                 "lightgbm_tfidf_svd": t["lgb"], "catboost_tfidf_svd": t["cb"], "catboost_native": t["native"]}},
-            "shap_final": {"add_err": res["add_err"], "base_log": res["base"], "final_model_tablo": t["lgb"],
-                           "final_model_tablo_ayri": t["lgb_sep"], "catboost_tfidf_svd": t["cb"],
-                           "catboost_tfidf_svd_ayri": t["cb_sep"], "catboost_native": t["native"],
-                           "catboost_native_ayri": t["native_sep"], "catboost_native_birlesik": t["native_joined"]}}
+            "shap_final": {"add_err": res["add_err"], "base_log": res["base"], "final_model_table": t["lgb"],
+                           "final_model_table_separate": t["lgb_sep"], "catboost_tfidf_svd": t["cb"],
+                           "catboost_tfidf_svd_separate": t["cb_sep"], "catboost_native": t["native"],
+                           "catboost_native_separate": t["native_sep"], "catboost_native_combined": t["native_joined"]}}
 
 
 # %% [4] Load | Yükle — the only cells that read files | dosya okuyan tek hücreler

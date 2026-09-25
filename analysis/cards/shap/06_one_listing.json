@@ -1,0 +1,50 @@
+{
+ "script": "analysis/shap/06_one_listing.py",
+ "question": {
+  "tr": "Tek bir ilanın tahmini, OOF SHAP'la adım adım nasıl açıklanır?",
+  "en": "How is one listing's prediction explained step by step with OOF SHAP?"
+ },
+ "data": {
+  "tr": "load_clean() ve 02_oof_shap'ın SHAP dizileri (run_id kapısı).",
+  "en": "load_clean() and 02_oof_shap's SHAP arrays (run_id gate)."
+ },
+ "method": {
+  "tr": "Temsili bir ilan seçilir; taban değerden tahmine giden şelale, en büyük katkılar görünür, kalanlar katlanır; iki dilli figür.",
+  "en": "A representative listing is chosen; a waterfall from the base value to the prediction, the largest contributions visible, the rest folded; a bilingual figure."
+ },
+ "split": "oof_input",
+ "leakage": {
+  "duplicate_ad_id": {
+   "status": "n/a",
+   "note": null
+  },
+  "target_in_features": {
+   "status": "none",
+   "note": {
+    "tr": "SHAP, fiyattan türeyen öznitelik içermeyen modelin tahminlerini açıklıyor.",
+    "en": "SHAP explains the predictions of a model with no price-derived feature."
+   }
+  },
+  "fit_on_full_data": {
+   "status": "n/a",
+   "note": null
+  },
+  "temporal": {
+   "status": "n/a",
+   "note": null
+  }
+ },
+ "evidence": {
+  "tests": [
+   "tests/analysis/test_shap_06_one_listing.py::test_items",
+   "tests/analysis/test_shap_06_one_listing.py::test_listing_and_labels",
+   "tests/analysis/test_shap_06_one_listing.py::test_figures_exist"
+  ],
+  "report_keys": [
+   "shap_case.top",
+   "shap_case.visible",
+   "shap_case.figures"
+  ]
+ },
+ "status": "complete"
+}

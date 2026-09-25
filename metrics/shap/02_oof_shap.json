@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "shap/02_oof_shap.py",
-  "generated_at": "2026-09-25T05:26:06+03:00",
+  "generated_at": "2026-09-25T16:49:53+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": "aa436e0cfd32",
   "source": {
    "script": {
-    "analysis/shap/02_oof_shap.py": "d8f125636f1da475e5097f48dc6f21546493caf5833a94858cb1277c867a677b"
+    "analysis/shap/02_oof_shap.py": "e432ad5871425441d90f09caa05585c9a1543de58c09f45de605f6efb0fc7eb6"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -22,17 +22,17 @@
   }
  },
  "oof_shap": {
-  "kapi": {
-   "max_fark_tl": 0.0,
-   "ortalama_fark_tl": 0.0,
-   "mape_yeniden": 6.4898,
-   "mape_yayimlanan": 6.49,
-   "is_parcacigi": 16,
-   "esik_max_tl": 1.0,
-   "esik_mape": 0.01
+  "gate": {
+   "max_gap_tl": 0.0,
+   "mean_gap_tl": 0.0,
+   "mape_refit": 6.4898,
+   "mape_published": 6.49,
+   "n_threads": 16,
+   "threshold_max_tl": 1.0,
+   "threshold_mape": 0.01
   },
   "n": 29988,
-  "gruplar": [
+  "groups": [
    "brand",
    "kb_body_type",
    "kb_drivetrain",
@@ -58,7 +58,7 @@
    "is_heavy_damaged",
    "MODEL_SERIES (text)"
   ],
-  "kuresel": [
+  "global": [
    [
     "vehicle_age",
     0.287,
@@ -180,7 +180,7 @@
     0.0
    ]
   ],
-  "kuresel_ayri": [
+  "global_separate": [
    [
     "vehicle_age",
     0.287,
@@ -302,7 +302,7 @@
     0.0
    ]
   ],
-  "gruplama_kurali": "kuresel = mean|sum phi| (grup ici isaretli toplam, sonra mutlak ortalama); kuresel_ayri = sum mean|phi| (her uye ayri, iptal yok). Tek uyeli gruplarda ayni.",
-  "not": "Her ilan, onu egitimde hic gormemis fold modeliyle aciklandi (5-fold, ureticinin kurulumunun aynisi). SHAP degerleri log1p(fiyat) uzayinda ve text_only_key ile 24 kaleme gruplandi."
+  "grouping_rule": "kuresel = mean|sum phi| (grup ici isaretli toplam, sonra mutlak ortalama); kuresel_ayri = sum mean|phi| (her uye ayri, iptal yok). Tek uyeli gruplarda ayni.",
+  "note": "Her ilan, onu egitimde hic gormemis fold modeliyle aciklandi (5-fold, ureticinin kurulumunun aynisi). SHAP degerleri log1p(fiyat) uzayinda ve text_only_key ile 24 kaleme gruplandi."
  }
 }

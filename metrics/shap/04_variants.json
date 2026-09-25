@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "shap/04_variants.py",
-  "generated_at": "2026-09-25T05:28:41+03:00",
+  "generated_at": "2026-09-25T16:51:08+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": null,
   "source": {
    "script": {
-    "analysis/shap/04_variants.py": "d39ed47de16e68e898456fe01439d8c37554e5521bc31490b1937cce3cb28927"
+    "analysis/shap/04_variants.py": "9d79fc34b66311346967519157472914b36172139be1bf8f0beee5688aad7c96"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -22,9 +22,9 @@
  },
  "domain": {
   "shap": {
-   "n_kullanilan": 29988,
-   "yontem": "TÜM VERİ (örnekleme YOK). Grup SHAP = satır bazında üye SHAP toplamı (işaretli net), sonra ortalama-mutlak. LGB→shap.TreeExplainer, CatBoost→kendi ShapValues (text-güvenli, EXACT).",
-   "not": "SVD boyutları (model_0..) → MODEL_SERIES gruplandı. ENGINE (hp+cc), DAMAGE (boya/değişen/hasar) gruplu. Native ham text (SVD yok).",
+   "n_used": 29988,
+   "method": "TÜM VERİ (örnekleme YOK). Grup SHAP = satır bazında üye SHAP toplamı (işaretli net), sonra ortalama-mutlak. LGB→shap.TreeExplainer, CatBoost→kendi ShapValues (text-güvenli, EXACT).",
+   "note": "SVD boyutları (model_0..) → MODEL_SERIES gruplandı. ENGINE (hp+cc), DAMAGE (boya/değişen/hasar) gruplu. Native ham text (SVD yok).",
    "png": [
     "shap_plots/beeswarm_catboost_native.png",
     "shap_plots/beeswarm_catboost_svd.png",
@@ -214,7 +214,7 @@
  "shap_final": {
   "add_err": 5.062616992290714e-13,
   "base_log": 14.299831654389688,
-  "final_model_tablo": [
+  "final_model_table": [
    [
     "vehicle_age",
     0.2871,
@@ -271,7 +271,7 @@
     0.0
    ]
   ],
-  "final_model_tablo_ayri": [
+  "final_model_table_separate": [
    [
     "vehicle_age",
     0.2871,
@@ -385,7 +385,7 @@
     0.0
    ]
   ],
-  "catboost_tfidf_svd_ayri": [
+  "catboost_tfidf_svd_separate": [
    [
     "vehicle_age",
     0.2044,
@@ -504,7 +504,7 @@
     0.0
    ]
   ],
-  "catboost_native_ayri": [
+  "catboost_native_separate": [
    [
     "vehicle_age",
     0.2112,
@@ -566,7 +566,7 @@
     0.0
    ]
   ],
-  "catboost_native_birlesik": [
+  "catboost_native_combined": [
    [
     "vehicle_age",
     0.2112,

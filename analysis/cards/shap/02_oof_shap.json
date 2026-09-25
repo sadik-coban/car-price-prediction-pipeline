@@ -1,0 +1,60 @@
+{
+ "script": "analysis/shap/02_oof_shap.py",
+ "question": {
+  "tr": "Model tahminlerini hangi öznitelikler sürüklüyor, her ilanı onu görmemiş fold modeliyle açıklayınca?",
+  "en": "Which features drive the model's predictions when every listing is explained by the fold model that never saw it?"
+ },
+ "data": {
+  "tr": "load_clean() (29.988 ilan) ve 07_model_comparison'ın OOF artefaktı (data/analysis/oof.parquet, run_id kapısı).",
+  "en": "load_clean() (29,988 listings) and 07_model_comparison's OOF artefact (data/analysis/oof.parquet, run_id gate)."
+ },
+ "method": {
+  "tr": "Beş fold modeli aynı parametrelerle yeniden kurulur; saklı OOF tahminlerini eşikler içinde üretmezlerse durur (kapı). Her ilanın SHAP değerleri kendi fold modelinden; grup SHAP = satır başına üye SHAP toplamı; genel önem = ortalama |SHAP|, gruplu ve ayrı. Ham SHAP diziler data/analysis/oof_shap.npz'ye yazılır.",
+  "en": "The five fold models are refitted with the same parameters; the script stops unless they reproduce the stored OOF predictions within the thresholds (gate). Each listing's SHAP comes from its own fold model; group SHAP = per-row sum of member SHAP; global importance = mean |SHAP|, grouped and separate. The raw SHAP arrays go to data/analysis/oof_shap.npz."
+ },
+ "split": "kfold_oof",
+ "leakage": {
+  "duplicate_ad_id": {
+   "status": "present",
+   "note": {
+    "tr": "Farklı ad_id ile yeniden ilan edilen aynı araç fold'lar arasına düşebilir: 01_dedup_leakage katı tanımda %0,46, fiyatsız tanımda %4,26 ölçüyor; etkisi ölçülmedi.",
+    "en": "The same car re-listed under a new ad_id can span folds: 01_dedup_leakage measures 0.46% (strict) to 4.26% (without price); its effect was not measured."
+   }
+  },
+  "target_in_features": {
+   "status": "none",
+   "note": {
+    "tr": "Öznitelik listesinde (lib/common.FEATURES) fiyat ya da fiyattan türeyen bir alan yok.",
+    "en": "No price or price-derived field in the feature list (lib/common.FEATURES)."
+   }
+  },
+  "fit_on_full_data": {
+   "status": "present",
+   "note": {
+    "tr": "Kategori kodları, TF-IDF/SVD ve tabanlar yalnız eğitim fold'unda kurulur (lib/cv.fold_matrices). Ama LightGBM'in erken durdurması her fold'un kendi doğrulama kısmında (lib/cv.fit_lgb_fold): ağaç sayısı skorlanan veriyle seçiliyor, OOF hatası hafifçe iyimser olabilir. Etkisi ölçülmedi (iç içe bölmeyle ölçülebilir).",
+    "en": "Category codes, TF-IDF/SVD and the baselines are fitted on the training fold only (lib/cv.fold_matrices). But LightGBM's early stopping uses each fold's own validation part (lib/cv.fit_lgb_fold): the tree count is chosen on the scored data, so the OOF error may be slightly optimistic. Not measured (a nested split would measure it)."
+   }
+  },
+  "temporal": {
+   "status": "present",
+   "note": {
+    "tr": "KFold dönemleri karıştırır; model zamanı görmez. Medyan artık dönemlere göre kayıyor (08_residuals); ileriye dönük hata 09_backtest'te ayrıca ölçülüyor.",
+    "en": "KFold mixes the snapshots; the model does not see time. The median residual shifts by snapshot (08_residuals); the forward error is measured separately in 09_backtest."
+   }
+  }
+ },
+ "evidence": {
+  "tests": [
+   "tests/analysis/test_shap_02_oof_shap.py::test_gate",
+   "tests/analysis/test_shap_02_oof_shap.py::test_sizes",
+   "tests/analysis/test_shap_02_oof_shap.py::test_global_table",
+   "tests/analysis/test_shap_02_oof_shap.py::test_grouping_never_raises_importance"
+  ],
+  "report_keys": [
+   "oof_shap.gate",
+   "oof_shap.global",
+   "oof_shap.global_separate"
+  ]
+ },
+ "status": "complete"
+}

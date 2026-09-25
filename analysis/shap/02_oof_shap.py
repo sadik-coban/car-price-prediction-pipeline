@@ -91,9 +91,9 @@ def gate(price, new_price, published_price, published_mape):
     if d.max() > TOL_MAX_TL or abs(mape_new - published_mape) > TOL_MAPE:
         raise SystemExit(f"G-OOF GATE FAILED | G-OOF KAPISI DÜŞTÜ: max ₺{d.max():,.2f} · MAPE {mape_new:.4f} vs "
                          f"{published_mape:.4f} — nothing written | hiçbir dosya yazılmadı")
-    return {"max_fark_tl": float(d.max()), "ortalama_fark_tl": float(d.mean()), "mape_yeniden": round(mape_new, 4),
-            "mape_yayimlanan": round(published_mape, 4), "is_parcacigi": N_JOBS, "esik_max_tl": TOL_MAX_TL,
-            "esik_mape": TOL_MAPE}
+    return {"max_gap_tl": float(d.max()), "mean_gap_tl": float(d.mean()), "mape_refit": round(mape_new, 4),
+            "mape_published": round(published_mape, 4), "n_threads": N_JOBS, "threshold_max_tl": TOL_MAX_TL,
+            "threshold_mape": TOL_MAPE}
 
 
 def global_tables(sv, groups, raw, raw_names):
@@ -124,11 +124,11 @@ def to_metrics(res):
     TR: oof_shap altında yayımlanır (SHAP raporu kapıyı ve küresel tabloları okur).
     """
     return {"oof_shap": {
-        "kapi": res["gate"], "n": res["n"], "gruplar": res["groups"], "kuresel": res["table"],
-        "kuresel_ayri": res["table_sep"],
-        "gruplama_kurali": ("kuresel = mean|sum phi| (grup ici isaretli toplam, sonra mutlak ortalama); "
+        "gate": res["gate"], "n": res["n"], "groups": res["groups"], "global": res["table"],
+        "global_separate": res["table_sep"],
+        "grouping_rule": ("kuresel = mean|sum phi| (grup ici isaretli toplam, sonra mutlak ortalama); "
                             "kuresel_ayri = sum mean|phi| (her uye ayri, iptal yok). Tek uyeli gruplarda ayni."),
-        "not": ("Her ilan, onu egitimde hic gormemis fold modeliyle aciklandi (5-fold, "
+        "note": ("Her ilan, onu egitimde hic gormemis fold modeliyle aciklandi (5-fold, "
                 "ureticinin kurulumunun aynisi). SHAP degerleri log1p(fiyat) uzayinda ve "
                 "text_only_key ile 24 kaleme gruplandi.")}}
 
@@ -145,11 +145,11 @@ published = np.clip(oof["lgb"].values, 0, PRICE_CAP)
 res = {"n": len(X), "groups": r["groups"],
        "gate": gate(price, np.expm1(r["pred_log"]), published, round(price_metrics(price, published)["MAPE"], 2))}
 res["table"], res["table_sep"] = global_tables(r["sv"], r["groups"], r["raw"], r["raw_names"])
-print(f"G-OOF ✓ max ₺{res['gate']['max_fark_tl']:.2f} ·", res["table"][:3])
+print(f"G-OOF ✓ max ₺{res['gate']['max_gap_tl']:.2f} ·", res["table"][:3])
 
 # %% [6] Save | Kaydet — the only cell that writes files | dosya yazan tek hücre
 NPZ.parent.mkdir(parents=True, exist_ok=True)
 np.savez_compressed(NPZ, shap=r["sv"], base=r["base"], fold=r["fold"].astype(np.int8), groups=np.array(r["groups"]),
-                    oof=np.expm1(r["pred_log"]), ham_shap=r["raw"], ham_ad=np.array(r["raw_names"]),
-                    ham_grup=np.array([text_only_key(c) for c in r["raw_names"]]), run_id=np.array(oof_info["run_id"]))
+                    oof=np.expm1(r["pred_log"]), raw_shap=r["raw"], raw_names=np.array(r["raw_names"]),
+                    raw_groups=np.array([text_only_key(c) for c in r["raw_names"]]), run_id=np.array(oof_info["run_id"]))
 print("written | yazıldı:", save_metrics("shap/02_oof_shap", to_metrics(res), run_id=oof_info["run_id"]))

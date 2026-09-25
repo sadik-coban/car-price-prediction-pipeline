@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "shap/03_what_sets_price.py",
-  "generated_at": "2026-09-25T05:26:12+03:00",
+  "generated_at": "2026-09-25T16:50:00+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": "aa436e0cfd32",
   "source": {
    "script": {
-    "analysis/shap/03_what_sets_price.py": "e5e5f979794ee156b981cbb49e4b79812e5e97e992b05b809e4338bb951efef8"
+    "analysis/shap/03_what_sets_price.py": "c7de2d02c567f07754f79026a3b0d7a1ed169d454c057a63a24f1a3bef45ebc5"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -81,7 +81,7 @@
     0.0
    ]
   ],
-  "oof_ayri": [
+  "oof_separate": [
    [
     "vehicle_age",
     0.287,
@@ -139,7 +139,7 @@
    ]
   ],
   "n_svd": 170,
-  "fold_sira": [
+  "fold_ranks": [
    [
     "vehicle_age",
     "ENGINE",
@@ -206,7 +206,7 @@
     "brand"
    ]
   ],
-  "tipik": {
+  "typical": {
    "brand": [
     0.0,
     62.3
@@ -334,7 +334,7 @@
    ],
    "km_n_last": 1723,
    "km_flat": true,
-   "km_son_min": true
+   "km_last_min": true
   },
   "km_age": {
    "young": -0.03035346303574969,

@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "shap/06_one_listing.py",
-  "generated_at": "2026-09-25T05:27:09+03:00",
+  "generated_at": "2026-09-25T16:51:12+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
