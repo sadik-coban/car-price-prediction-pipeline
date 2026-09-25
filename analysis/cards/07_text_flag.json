@@ -1,0 +1,53 @@
+{
+ "script": "analysis/07_text_flag.py",
+ "question": {
+  "tr": "İlan metninde dönüşüm ya da modifiye geçen ilanlarda model daha çok mu yanılıyor, başka etkenler sabitken de?",
+  "en": "Does the model err more on listings whose text mentions a conversion or modification, even with other factors held fixed?"
+ },
+ "data": {
+  "tr": "load_clean() (29.988 ilan), ilan metinleri ve 07_model_comparison'ın OOF tahminleri (data/analysis/oof.parquet).",
+  "en": "load_clean() (29,988 listings), the listing texts and 07_model_comparison's OOF predictions (data/analysis/oof.parquet)."
+ },
+ "method": {
+  "tr": "Metin bayrağı (dönüşüm/modifiye ifadesi) kurulur; bayraklı ve öteki ilanların büyük hata oranı ve medyan hatası karşılaştırılır; büyük hatanın bayrağa yaş bandı, log km, fiyat çeyreği, performans ailesi, log emsal ve marka kontrollü lojistik regresyonu.",
+  "en": "A text flag (conversion/modification wording) is built; the large-error rate and median error of flagged and other listings are compared; a logistic regression of large error on the flag controlled for age band, log km, price quartile, performance family, log comparables and brand."
+ },
+ "split": "oof_input",
+ "leakage": {
+  "duplicate_ad_id": {
+   "status": "n/a",
+   "note": null
+  },
+  "target_in_features": {
+   "status": "none",
+   "note": {
+    "tr": "Bayrak ilan metninden, fiyattan değil; hata OOF tahminden.",
+    "en": "The flag comes from the listing text, not price; the error from OOF predictions."
+   }
+  },
+  "fit_on_full_data": {
+   "status": "present",
+   "note": {
+    "tr": "Tasarım gereği: lojistik regresyon bütün veride bir ilişki testi, tahmin iddiası yok.",
+    "en": "By design: the logistic regression is an association test on all data, with no predictive claim."
+   }
+  },
+  "temporal": {
+   "status": "n/a",
+   "note": null
+  }
+ },
+ "evidence": {
+  "tests": [
+   "tests/analysis/test_07_text_flag.py::test_odds_interval",
+   "tests/analysis/test_07_text_flag.py::test_share",
+   "tests/analysis/test_07_text_flag.py::test_rates_add_up_to_overall"
+  ],
+  "report_keys": [
+   "error_drivers.text_flag.controlled",
+   "error_drivers.text_flag.big_pct",
+   "error_drivers.text_flag.other_big_pct"
+  ]
+ },
+ "status": "complete"
+}

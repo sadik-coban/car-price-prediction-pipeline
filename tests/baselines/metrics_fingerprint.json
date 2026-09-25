@@ -663,102 +663,102 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T05:24:17+03:00",
+  "_meta.generated_at": "2026-09-25T16:34:02+03:00",
   "_meta.run_id": null,
   "_meta.script": "07_lofo.py",
   "methodology.lofo": {
    "len": 22,
    "sha256": "c8171b1476cfce80b9234005577fd2c8930ceb0ccaf3e1da0e2e74fc8424c224"
   },
-  "methodology.lofo_agac.DAMAGE_COLS": {
+  "methodology.lofo_trees.DAMAGE_COLS": {
    "len": 5,
    "sha256": "4d45ef89d6f5a14b08dd95a6bf9d27cb1bc0d15eb0c6f8a4be9769e04722096e"
   },
-  "methodology.lofo_agac.ENGINE": {
+  "methodology.lofo_trees.ENGINE": {
    "len": 5,
    "sha256": "fa4c753ced42e6454352d0f4301b123e758ae8e9ba55e68383b3451bec55ef8a"
   },
-  "methodology.lofo_agac.MODEL_SERIES": {
+  "methodology.lofo_trees.MODEL_SERIES": {
    "len": 5,
    "sha256": "00503f5bb9d871c3ea988b2311328a09befb3b427ea9fc88bc08b8f217fff6c3"
   },
-  "methodology.lofo_agac.bumper_changed": {
-   "len": 5,
-   "sha256": "6102d61ad70d077dd1b7a1294aa1b0da561ffac03e2f22d0ec38e91c62915b94"
-  },
-  "methodology.lofo_agac.bumper_local": {
-   "len": 5,
-   "sha256": "405c14f9642d787b13cc32ca94a4be80d00fa565a1c696465ae039e20b1af80c"
-  },
-  "methodology.lofo_agac.bumper_painted": {
-   "len": 5,
-   "sha256": "65a942d943d3a6ad87493148cb9e0836bd98bdf60abaa4acecea8d703acaf93c"
-  },
-  "methodology.lofo_agac.door_changed": {
-   "len": 5,
-   "sha256": "a7a1c59f7967646344423599089869d11c4370f8231f8e12bbf78f5738061fec"
-  },
-  "methodology.lofo_agac.door_local": {
-   "len": 5,
-   "sha256": "b182ae2ef109d6126fb7eec422e1e8986f06ac016cea5deb5f8d232e5667fb96"
-  },
-  "methodology.lofo_agac.door_painted": {
-   "len": 5,
-   "sha256": "3e63e838b80d9d0b39e536e7d175ad77a3e3d5076dc0781b19caf3d0a59f1302"
-  },
-  "methodology.lofo_agac.engine_cc_val": {
-   "len": 5,
-   "sha256": "43c9f5dcf7380bd941e850c18319bf7974aee8bfe5f1559df01966a5fab144dc"
-  },
-  "methodology.lofo_agac.fender_changed": {
-   "len": 5,
-   "sha256": "169b0220d1d5370ddc81a7ccc5a802cb0a4b15562d7ea0eb2417a0e9c6178e73"
-  },
-  "methodology.lofo_agac.fender_local": {
-   "len": 5,
-   "sha256": "9674a74043c84a9b0644a4f4877045e00e72f82dd32b02d4bd1b0828b4bc63cd"
-  },
-  "methodology.lofo_agac.fender_painted": {
-   "len": 5,
-   "sha256": "743bd5ed1cad10d454c9071d5c7d42ed4e7ea2a27f7b8e9ac71754e67fb750e5"
-  },
-  "methodology.lofo_agac.gb_mileage": {
-   "len": 5,
-   "sha256": "f833085e6d962888ef8cbb709908ac735af40a13e8aaf1766ca325c59fbfe412"
-  },
-  "methodology.lofo_agac.hood_state": {
-   "len": 5,
-   "sha256": "4ae50a642f3fcfd7a1bfd7c73f778e53a8477b4fce84d0fd1e2e178ed4742ec6"
-  },
-  "methodology.lofo_agac.is_heavy_damaged": {
-   "len": 5,
-   "sha256": "7623920befe9fc9fc0f3d33f1aa45b2bc3c93f65756c10ea9ec73ae6d513ef85"
-  },
-  "methodology.lofo_agac.model": {
-   "len": 5,
-   "sha256": "bcc655b3c6d8d12bbf27cc9531d954bd7206a87d06426fa62e35b2334ca303ae"
-  },
-  "methodology.lofo_agac.power_hp_val": {
-   "len": 5,
-   "sha256": "519f347e73e1edfaa314f8a6649c93a5617bb0622df240cda216f83e8a41acf4"
-  },
-  "methodology.lofo_agac.roof_state": {
-   "len": 5,
-   "sha256": "d02bc8664ac01700f87017197ec25e4758351254196546f3d75f6bfa37b02c3b"
-  },
-  "methodology.lofo_agac.series": {
-   "len": 5,
-   "sha256": "1bd7bd99d26b56bd32196fe38f38af7147d11110de1d28bb74af70bf1c5f6280"
-  },
-  "methodology.lofo_agac.taban": {
+  "methodology.lofo_trees.baseline": {
    "len": 5,
    "sha256": "1ed8bf05064fa5df7d26f1888c663d98157250ef573a7f3324635a69c0ed5bc7"
   },
-  "methodology.lofo_agac.trunk_state": {
+  "methodology.lofo_trees.bumper_changed": {
+   "len": 5,
+   "sha256": "6102d61ad70d077dd1b7a1294aa1b0da561ffac03e2f22d0ec38e91c62915b94"
+  },
+  "methodology.lofo_trees.bumper_local": {
+   "len": 5,
+   "sha256": "405c14f9642d787b13cc32ca94a4be80d00fa565a1c696465ae039e20b1af80c"
+  },
+  "methodology.lofo_trees.bumper_painted": {
+   "len": 5,
+   "sha256": "65a942d943d3a6ad87493148cb9e0836bd98bdf60abaa4acecea8d703acaf93c"
+  },
+  "methodology.lofo_trees.door_changed": {
+   "len": 5,
+   "sha256": "a7a1c59f7967646344423599089869d11c4370f8231f8e12bbf78f5738061fec"
+  },
+  "methodology.lofo_trees.door_local": {
+   "len": 5,
+   "sha256": "b182ae2ef109d6126fb7eec422e1e8986f06ac016cea5deb5f8d232e5667fb96"
+  },
+  "methodology.lofo_trees.door_painted": {
+   "len": 5,
+   "sha256": "3e63e838b80d9d0b39e536e7d175ad77a3e3d5076dc0781b19caf3d0a59f1302"
+  },
+  "methodology.lofo_trees.engine_cc_val": {
+   "len": 5,
+   "sha256": "43c9f5dcf7380bd941e850c18319bf7974aee8bfe5f1559df01966a5fab144dc"
+  },
+  "methodology.lofo_trees.fender_changed": {
+   "len": 5,
+   "sha256": "169b0220d1d5370ddc81a7ccc5a802cb0a4b15562d7ea0eb2417a0e9c6178e73"
+  },
+  "methodology.lofo_trees.fender_local": {
+   "len": 5,
+   "sha256": "9674a74043c84a9b0644a4f4877045e00e72f82dd32b02d4bd1b0828b4bc63cd"
+  },
+  "methodology.lofo_trees.fender_painted": {
+   "len": 5,
+   "sha256": "743bd5ed1cad10d454c9071d5c7d42ed4e7ea2a27f7b8e9ac71754e67fb750e5"
+  },
+  "methodology.lofo_trees.gb_mileage": {
+   "len": 5,
+   "sha256": "f833085e6d962888ef8cbb709908ac735af40a13e8aaf1766ca325c59fbfe412"
+  },
+  "methodology.lofo_trees.hood_state": {
+   "len": 5,
+   "sha256": "4ae50a642f3fcfd7a1bfd7c73f778e53a8477b4fce84d0fd1e2e178ed4742ec6"
+  },
+  "methodology.lofo_trees.is_heavy_damaged": {
+   "len": 5,
+   "sha256": "7623920befe9fc9fc0f3d33f1aa45b2bc3c93f65756c10ea9ec73ae6d513ef85"
+  },
+  "methodology.lofo_trees.model": {
+   "len": 5,
+   "sha256": "bcc655b3c6d8d12bbf27cc9531d954bd7206a87d06426fa62e35b2334ca303ae"
+  },
+  "methodology.lofo_trees.power_hp_val": {
+   "len": 5,
+   "sha256": "519f347e73e1edfaa314f8a6649c93a5617bb0622df240cda216f83e8a41acf4"
+  },
+  "methodology.lofo_trees.roof_state": {
+   "len": 5,
+   "sha256": "d02bc8664ac01700f87017197ec25e4758351254196546f3d75f6bfa37b02c3b"
+  },
+  "methodology.lofo_trees.series": {
+   "len": 5,
+   "sha256": "1bd7bd99d26b56bd32196fe38f38af7147d11110de1d28bb74af70bf1c5f6280"
+  },
+  "methodology.lofo_trees.trunk_state": {
    "len": 5,
    "sha256": "3967f287d6a3f38954b46baaca5227773d683027029a869609175f8b5bb0a299"
   },
-  "methodology.lofo_agac.vehicle_age": {
+  "methodology.lofo_trees.vehicle_age": {
    "len": 5,
    "sha256": "8eb7629440796d74782520af88a3736303001f0c6151201eab97ba8cdbcd6ea6"
   }
@@ -875,21 +875,21 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T05:24:21+03:00",
+  "_meta.generated_at": "2026-09-25T16:24:13+03:00",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "07_text_flag.py",
-  "error_drivers.metin_bayrak.big_pct": 4.9,
-  "error_drivers.metin_bayrak.diger_big_pct": 3.9,
-  "error_drivers.metin_bayrak.diger_medyan_hata_pct": 4.6,
-  "error_drivers.metin_bayrak.kontrollu.ci_hi": 1.37,
-  "error_drivers.metin_bayrak.kontrollu.ci_lo": 0.94,
-  "error_drivers.metin_bayrak.kontrollu.kontroller": "yas bandi, log km, fiyat ceyregi, performans ailesi, log emsal, marka",
-  "error_drivers.metin_bayrak.kontrollu.or": 1.14,
-  "error_drivers.metin_bayrak.kontrollu.p": 0.174,
-  "error_drivers.metin_bayrak.kontrollu.perf_icinde_pct": 43.6,
-  "error_drivers.metin_bayrak.medyan_hata_pct": 5.1,
-  "error_drivers.metin_bayrak.n": 3107,
-  "error_drivers.metin_bayrak.pct": 10.36
+  "error_drivers.text_flag.big_pct": 4.9,
+  "error_drivers.text_flag.controlled.ci_hi": 1.37,
+  "error_drivers.text_flag.controlled.ci_lo": 0.94,
+  "error_drivers.text_flag.controlled.controls": "yas bandi, log km, fiyat ceyregi, performans ailesi, log emsal, marka",
+  "error_drivers.text_flag.controlled.or": 1.14,
+  "error_drivers.text_flag.controlled.p": 0.174,
+  "error_drivers.text_flag.controlled.perf_share_pct": 43.6,
+  "error_drivers.text_flag.median_error_pct": 5.1,
+  "error_drivers.text_flag.n": 3107,
+  "error_drivers.text_flag.other_big_pct": 3.9,
+  "error_drivers.text_flag.other_median_error_pct": 4.6,
+  "error_drivers.text_flag.pct": 10.36
  },
  "08_conformal_coverage": {
   "_meta.data_until": "2026-06-27",

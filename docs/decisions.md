@@ -55,7 +55,7 @@ modellerinden gelir; son LightGBM eskiden sabit 900 ağaçla eğitiliyordu. Art�
 durdurmanın seçtiği ağaç sayılarının medyanı (`meta.repro.final_lgb_trees`, fold değerleri `cv_trees`).
 `data/serving/serve/README.md` girdinin eğitimle birebir nasıl kurulacağını yazar; `encoders.pkl` segment
 kuralını (`PERF_RE` dahil) ve %90 aralık için `CONFORMAL_Q`'yu taşır. LOFO'da taban ve çıkarma modelleri
-aynı ağaç sınırıyla kurulur, durdukları tur `methodology.lofo_agac`'ta.
+aynı ağaç sınırıyla kurulur, durdukları tur `methodology.lofo_trees`'te.
 
 ## İş / teknik ayrımı
 

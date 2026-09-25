@@ -48,7 +48,7 @@ REQUIRED = [
     "methodology.systematic_missing.systematic_groups", "methodology.systematic_missing.note",
     "methodology.pca_axes", "meta.repro", "meta.brands", "column_labels"] + [f"error_drivers.{p_}" for p_ in [
     "plate_scope", "segment_quality", "hedonic_dropped", "per_model_error", "per_model_buckets", "lira_ceyrek",
-    "tl_olcekli", "scope", "price_changes", "unspecified", "baseline_equal_terms", "metin_bayrak",
+    "tl_olcekli", "scope", "price_changes", "unspecified", "baseline_equal_terms", "text_flag",
     "yas_duyarlilik", "yas_kesim", "eski_d_grubu", "spec_outliers.kor_nokta", "donem_kaymasi",
     "by_model_year_n", "by_segment_FS", "by_age", "by_snapshot", "raw_columns", "examples",
     "engine_rule.engine_cc", "engine_rule.power_hp", "unspecified.structure", "kaybolan_canli", "metin_kaynak"]] + [

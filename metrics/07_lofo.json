@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "07_lofo.py",
-  "generated_at": "2026-09-25T05:24:17+03:00",
+  "generated_at": "2026-09-25T16:34:02+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": null,
   "source": {
    "script": {
-    "analysis/07_lofo.py": "59f065db32764874886a81822e36333f1136bafc24b798dfc69bdb841900d62d"
+    "analysis/07_lofo.py": "df85b00bf8674f2a39fb51b71a4cc00a5ae09309067c97995416e5f467c25ec3"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -134,8 +134,8 @@
     "single"
    ]
   ],
-  "lofo_agac": {
-   "taban": [
+  "lofo_trees": {
+   "baseline": [
     274,
     258,
     212,

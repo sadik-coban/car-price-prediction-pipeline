@@ -1132,18 +1132,18 @@ def section_model(c):
     # domain.noise_floor'da duruyor, notebook'ta da hesaplaniyor.
     # 2026-09-23: "sapmalarin baslica kaynagi metne gizli bilgi" ve "performans tavani veri kapsamiyla
     # sinirli" olculmeden yaziliyordu (ikincisinin kaniti gurultu tabaniydi, rapordan cikti). Olculen yazilir.
-    _mb = v["ed"]["metin_bayrak"]
-    _mbk = _mb["kontrollu"]
+    _flag = v["ed"]["text_flag"]
+    _flag_ctl = _flag["controlled"]
     _b1, _bm = v["ed"]["by_model_year_n"][0], v["ed"]["by_model_year_n"][-1]
     A(L("**Model Kısıtları ve Gözlemler.** Modifiye, özel donanım veya ÖTV muafiyeti gibi form alanlarında "
         "yer almayıp serbest metne gizlenen bilgiler modele girmiyor"
         + f"; metninde dönüşüm ya da modifiye ifadesi geçen ilanlarda büyük hata oranı ham olarak "
-        f"{P(_mb['big_pct'], lang)}, diğerlerinde {P(_mb['diger_big_pct'], lang)}"
+        f"{P(_flag['big_pct'], lang)}, diğerlerinde {P(_flag['other_big_pct'], lang)}"
         + (f" ve yaş, km, fiyat, performans ailesi, emsal sayısı ve marka sabitken de fark sürüyor (olasılık "
-           f"oranı {_mbk['or']:.2f}, %95 GA {_mbk['ci_lo']:.2f}–{_mbk['ci_hi']:.2f})." if _mbk["ci_lo"] > 1 else
+           f"oranı {_flag_ctl['or']:.2f}, %95 GA {_flag_ctl['ci_lo']:.2f}–{_flag_ctl['ci_hi']:.2f})." if _flag_ctl["ci_lo"] > 1 else
            f"; yaş, km, fiyat, performans ailesi, emsal sayısı ve marka sabitken olasılık oranı "
-           f"{_mbk['or']:.2f} (%95 GA {_mbk['ci_lo']:.2f}–{_mbk['ci_hi']:.2f}): anlamlı bir fark ölçülmedi. Bu ifade performans ailelerindeki ilanların "
-           f"{P(_mbk['perf_icinde_pct'], lang)} kadarında geçiyor.")
+           f"{_flag_ctl['or']:.2f} (%95 GA {_flag_ctl['ci_lo']:.2f}–{_flag_ctl['ci_hi']:.2f}): anlamlı bir fark ölçülmedi. Bu ifade performans ailelerindeki ilanların "
+           f"{P(_flag_ctl['perf_share_pct'], lang)} kadarında geçiyor.")
         + f" Emsali olmayan ilanlarda hata belirgin şekilde büyüyor: aynı model ve yıldan "
         f"başka ilan yoksa büyük hata oranı {P(_b1['big_pct'], lang)}, {_bm['bin']} emsal varsa "
         f"{P(_bm['big_pct'], lang)}; lira ölçeğindeki en büyük hatalar da bu uçta (§{section_no('calibration')}). "
@@ -1151,13 +1151,13 @@ def section_model(c):
         "**Model limitations and observations.** Information that never reaches the form fields and hides in "
         "the free text — modifications, special equipment, tax-exemption status — does not enter the model"
         + f"; listings whose text mentions a conversion or modification have a raw large-error rate of "
-        f"{P(_mb['big_pct'], lang)} against {P(_mb['diger_big_pct'], lang)} for the rest"
+        f"{P(_flag['big_pct'], lang)} against {P(_flag['other_big_pct'], lang)} for the rest"
         + (f", and the gap holds with age, mileage, price, performance family, comparable count and brand held "
-           f"fixed (odds ratio {_mbk['or']:.2f}, 95% CI {_mbk['ci_lo']:.2f}–{_mbk['ci_hi']:.2f})." if _mbk["ci_lo"] > 1 else
+           f"fixed (odds ratio {_flag_ctl['or']:.2f}, 95% CI {_flag_ctl['ci_lo']:.2f}–{_flag_ctl['ci_hi']:.2f})." if _flag_ctl["ci_lo"] > 1 else
            f"; with age, mileage, price, performance family, comparable count and brand held fixed the odds "
-           f"ratio is {_mbk['or']:.2f} (95% CI {_mbk['ci_lo']:.2f}–{_mbk['ci_hi']:.2f}): no significant difference "
+           f"ratio is {_flag_ctl['or']:.2f} (95% CI {_flag_ctl['ci_lo']:.2f}–{_flag_ctl['ci_hi']:.2f}): no significant difference "
            f"was measured. The wording appears in "
-           f"{P(_mbk['perf_icinde_pct'], lang)} of performance-family listings.")
+           f"{P(_flag_ctl['perf_share_pct'], lang)} of performance-family listings.")
         + f" Without comparables the error grows markedly: with no other "
         f"listing of the same model and year the large-error rate is {P(_b1['big_pct'], lang)}, with "
         f"{_bm['bin']} comparables {P(_bm['big_pct'], lang)}; the largest lira errors sit at this end too "
@@ -1888,7 +1888,7 @@ def section_text(c):
     ab, llm = ta["ablation"], ta["llm"]
     # 2026-09-23: kapsam, ablasyon kurulumu ve bayrak sayisi elle/eksik yaziliydi — error_drivers'tan.
     _mk = v["ed"]["metin_kaynak"]
-    _mb = v["ed"]["metin_bayrak"]
+    _flag = v["ed"]["text_flag"]
     _kalan = ab["delta_r2"] / (1 - ab["r2_structured"]) * 100
     _SIN = {"tr": {"bakim": "bakım"}, "en": {"hasar": "damage", "bakim": "maintenance", "modifiye": "modification"}}
     _sin = ", ".join(_SIN[lang].get(k_, k_) for k_ in llm["siniflar"])
@@ -1939,7 +1939,7 @@ def section_text(c):
     A("")
     A(L("Yapılması gereken belli: çıkarımlar önce doğrulanmalı, sonra modele **temiz sinyal** "
         "olarak verilip katkısı aynı protokolle test edilmeli. Önündeki engel **örneklem**: "
-        f"metninde dönüşüm ya da modifiye ifadesi geçen ilan {num(_mb['n'], lang)} ({P(_mb['pct'], lang)}) ve "
+        f"metninde dönüşüm ya da modifiye ifadesi geçen ilan {num(_flag['n'], lang)} ({P(_flag['pct'], lang)}) ve "
         "bunların ne kadarının gerçekten modifiye olduğu bilinmiyor; yeterli doğrulanmış "
         "örnek yoksa model bu sinyali öğrenemez, gürültüye karışır. Bir de alternatif yol var: "
         "sinyali modele "
@@ -1948,7 +1948,7 @@ def section_text(c):
         "edilmemeli.",
         "What it would take is clear: validate the extractions, then feed them to the model as a "
         "**clean signal** and test the gain under the same protocol. The obstacle is **sample "
-        f"size**: {num(_mb['n'], lang)} listings ({P(_mb['pct'], lang)}) mention a conversion or modification "
+        f"size**: {num(_flag['n'], lang)} listings ({P(_flag['pct'], lang)}) mention a conversion or modification "
         "in their text, and how many of them really are modified is unknown; "
         "with too few verified examples the model cannot learn the signal — it stays noise. There is also an "
         "alternative route: keep the signal out of the model and **drop those listings from the data**, "

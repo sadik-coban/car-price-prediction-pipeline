@@ -61,7 +61,7 @@ the median of the tree counts early stopping picked in CV (`meta.repro.final_lgb
 `cv_trees`). `data/serving/serve/README.md` describes how to build the input exactly as in training;
 `encoders.pkl` carries the segment rule (including `PERF_RE`) and `CONFORMAL_Q` for the 90% interval. In
 LOFO the base and the drop models use the same tree limit; where each stopped is in
-`methodology.lofo_agac`.
+`methodology.lofo_trees`.
 
 ## Business / technical split
 

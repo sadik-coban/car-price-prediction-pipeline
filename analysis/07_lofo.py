@@ -54,14 +54,14 @@ def rmse_without(X, yl, price, folds, drop):
 def to_metrics(res):
     """
     EN: Published in the site tree (methodology.lofo = [name, ΔRMSE ₺, single/group], largest first;
-        methodology.lofo_agac = trees per fold for the base and every removal).
+        methodology.lofo_trees = trees per fold for the base and every removal).
     TR: Site ağacında yayımlanır (methodology.lofo = [ad, ΔRMSE ₺, tekil/grup], büyükten küçüğe;
-        methodology.lofo_agac = taban ve her çıkarma için fold başına ağaç).
+        methodology.lofo_trees = taban ve her çıkarma için fold başına ağaç).
     """
     rows = [[name, round(rmse - res["base_rmse"], 1), "group" if name in GROUPS else "single"]
             for name, (rmse, _it) in res["removed"].items()]
     return {"methodology": {"lofo": sorted(rows, key=lambda x: -x[1]),
-                            "lofo_agac": {"taban": res["base_iters"],
+                            "lofo_trees": {"baseline": res["base_iters"],
                                           **{name: it for name, (_r, it) in res["removed"].items()}}}}
 
 

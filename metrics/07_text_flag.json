@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "07_text_flag.py",
-  "generated_at": "2026-09-25T05:24:21+03:00",
+  "generated_at": "2026-09-25T16:24:13+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": "aa436e0cfd32",
   "source": {
    "script": {
-    "analysis/07_text_flag.py": "876fcdbe75612495cc69db1017f66595da02d41e8362d184f387ca0423925b57"
+    "analysis/07_text_flag.py": "b279ba4a6ec142ff895ebca8c77bf43210f43f125c883d1b59154ac0b5bc8137"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -23,21 +23,21 @@
   }
  },
  "error_drivers": {
-  "metin_bayrak": {
-   "kontrollu": {
+  "text_flag": {
+   "controlled": {
     "or": 1.14,
     "ci_lo": 0.94,
     "ci_hi": 1.37,
     "p": 0.174,
-    "perf_icinde_pct": 43.6,
-    "kontroller": "yas bandi, log km, fiyat ceyregi, performans ailesi, log emsal, marka"
+    "perf_share_pct": 43.6,
+    "controls": "yas bandi, log km, fiyat ceyregi, performans ailesi, log emsal, marka"
    },
    "n": 3107,
    "pct": 10.36,
    "big_pct": 4.9,
-   "diger_big_pct": 3.9,
-   "medyan_hata_pct": 5.1,
-   "diger_medyan_hata_pct": 4.6
+   "other_big_pct": 3.9,
+   "median_error_pct": 5.1,
+   "other_median_error_pct": 4.6
   }
  }
 }

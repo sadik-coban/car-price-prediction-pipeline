@@ -24,7 +24,7 @@ from lib.common import load_clean, save_metrics
 from lib.cv import large_errors, load_oof, residual_pct
 
 AGE_BANDS = [-1, 5, 10, 15, 18, 100]
-FORMULA = "big ~ bayrak + C(yas) + lkm + C(fq) + perf + lemsal + C(marka)"
+FORMULA = "big ~ flag + C(age_band) + log_km + C(price_q) + perf + log_comps + C(brand)"
 
 
 # %% [2] Analysis functions | Analiz fonksiyonları — pure: no file I/O, they only return values
@@ -53,16 +53,16 @@ def controlled_odds(listings, big, flag, perf):
     age = pd.to_numeric(listings["vehicle_age"], errors="coerce").values.astype(float)
     km = pd.to_numeric(listings["gb_mileage"], errors="coerce").values
     price = listings["price"].astype(float).values
-    d = pd.DataFrame({"big": big.astype(int), "bayrak": flag.astype(int),
-                      "yas": pd.cut(age, AGE_BANDS).astype(str),
-                      "lkm": np.log1p(np.nan_to_num(km, nan=np.nanmedian(km))),
-                      "fq": pd.qcut(price, 4, labels=False).astype(str), "perf": perf.astype(int),
-                      "lemsal": np.log(listings.groupby("model")["model"].transform("size").values),
-                      "marka": listings["brand"].astype(str).values})
+    d = pd.DataFrame({"big": big.astype(int), "flag": flag.astype(int),
+                      "age_band": pd.cut(age, AGE_BANDS).astype(str),
+                      "log_km": np.log1p(np.nan_to_num(km, nan=np.nanmedian(km))),
+                      "price_q": pd.qcut(price, 4, labels=False).astype(str), "perf": perf.astype(int),
+                      "log_comps": np.log(listings.groupby("model")["model"].transform("size").values),
+                      "brand": listings["brand"].astype(str).values})
     fit = smf.logit(FORMULA, data=d).fit(disp=0)
-    ci = fit.conf_int().loc["bayrak"]
-    return {"or": float(np.exp(fit.params["bayrak"])), "ci_lo": float(np.exp(ci[0])), "ci_hi": float(np.exp(ci[1])),
-            "p": float(fit.pvalues["bayrak"])}
+    ci = fit.conf_int().loc["flag"]
+    return {"or": float(np.exp(fit.params["flag"])), "ci_lo": float(np.exp(ci[0])), "ci_hi": float(np.exp(ci[1])),
+            "p": float(fit.pvalues["flag"])}
 
 
 def flag_rates(resid, big, flag, perf):
@@ -81,18 +81,18 @@ def flag_rates(resid, big, flag, perf):
 # %% [3] Metrics assembly | Metrik derleme — naming and rounding only | yalnız adlandırma ve yuvarlama
 def to_metrics(res):
     """
-    EN: Published in the report inputs (error_drivers.metin_bayrak).
-    TR: Rapor girdilerinde yayımlanır (error_drivers.metin_bayrak).
+    EN: Published in the report inputs (error_drivers.text_flag).
+    TR: Rapor girdilerinde yayımlanır (error_drivers.text_flag).
     """
     o, r = res["odds"], res["rates"]
     pct = lambda v, d: round(100 * v, d) if v is not None else None      # noqa: E731
-    return {"error_drivers": {"metin_bayrak": {
-        "kontrollu": {"or": round(o["or"], 2), "ci_lo": round(o["ci_lo"], 2), "ci_hi": round(o["ci_hi"], 2),
-                      "p": round(o["p"], 3), "perf_icinde_pct": pct(r["perf_share"], 1),
-                      "kontroller": "yas bandi, log km, fiyat ceyregi, performans ailesi, log emsal, marka"},
-        "n": r["n"], "pct": pct(r["share"], 2), "big_pct": pct(r["big"], 1), "diger_big_pct": pct(r["other_big"], 1),
-        "medyan_hata_pct": round(r["median_err"], 1) if r["median_err"] is not None else None,
-        "diger_medyan_hata_pct": round(r["other_median_err"], 1)}}}
+    return {"error_drivers": {"text_flag": {
+        "controlled": {"or": round(o["or"], 2), "ci_lo": round(o["ci_lo"], 2), "ci_hi": round(o["ci_hi"], 2),
+                       "p": round(o["p"], 3), "perf_share_pct": pct(r["perf_share"], 1),
+                       "controls": "yas bandi, log km, fiyat ceyregi, performans ailesi, log emsal, marka"},
+        "n": r["n"], "pct": pct(r["share"], 2), "big_pct": pct(r["big"], 1), "other_big_pct": pct(r["other_big"], 1),
+        "median_error_pct": round(r["median_err"], 1) if r["median_err"] is not None else None,
+        "other_median_error_pct": round(r["other_median_err"], 1)}}}
 
 
 # %% [4] Load | Yükle — the only cells that read files | dosya okuyan tek hücreler

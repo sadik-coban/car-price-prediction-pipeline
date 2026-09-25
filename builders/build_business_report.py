@@ -204,14 +204,14 @@ def fmt_business(v, F, lang):
     A("")
     # Maddeler veriye kapili (2026-09-23): "donusum/modifiye en buyuk hatalarin kaynagi" ve "veri
     # biriktikce hata dusuyor" cumlelerinin arkasinda hesap yoktu; artik olculene gore basiliyor.
-    _mb = ed["metin_bayrak"]
+    _flag = ed["text_flag"]
     # Son denetim: ham oran farki arac ozellikleriyle karisik; yalniz KONTROLLU test anlamliysa yazilir.
-    _mbk = _mb["kontrollu"]
-    _mb_ust = _mbk["ci_lo"] > 1
-    _mb_tr = (f" ve yaş, km, fiyat ve performans ailesi sabitken de büyük hata olasılığı {_mbk['or']:.2f} kat"
-              if _mb_ust else "")
-    _mb_en = (f", and with age, mileage, price and performance family held fixed the odds of a large error are "
-              f"still {_mbk['or']:.2f}×" if _mb_ust else "")
+    _flag_ctl = _flag["controlled"]
+    _flag_sig = _flag_ctl["ci_lo"] > 1
+    _flag_tr = (f" ve yaş, km, fiyat ve performans ailesi sabitken de büyük hata olasılığı {_flag_ctl['or']:.2f} kat"
+              if _flag_sig else "")
+    _flag_en = (f", and with age, mileage, price and performance family held fixed the odds of a large error are "
+              f"still {_flag_ctl['or']:.2f}×" if _flag_sig else "")
     _ins = [r[1] for r in v["bt_insample"]]
     _bir = all(a >= b for a, b in zip(_ins, _ins[1:])) and _ins[-1] < _ins[0]
     _bir_tr = " Eski dönemleri atma: veri biriktikçe hata düşüyor." if _bir else ""
@@ -221,7 +221,7 @@ def fmt_business(v, F, lang):
     A(L(f"- Ucuz araçlarda aralığı genişlet — tek sayıya güvenme.\n"
         f"- Nadir ve uç araçları elle fiyatla; model orada saçılıyor.\n"
         + (f"- Metninde dönüşüm, motor değişimi ya da modifiye geçen ilanı otomatik fiyatlama, "
-           f"elle incele; bu bilgi formda yok{_mb_tr}.\n" if _mb_ust else
+           f"elle incele; bu bilgi formda yok{_flag_tr}.\n" if _flag_sig else
            f"- Metninde dönüşüm, motor değişimi ya da modifiye geçen ilanı yayına almadan önce gözden geçir: "
            f"bu bilgi formda yok. Araç özellikleri sabitken bu ilanlarda hata oranında anlamlı bir fark ölçülmedi; gözden "
            f"geçirme model hatasına değil, formun göremediği bilgiye karşı.\n")
@@ -237,7 +237,7 @@ def fmt_business(v, F, lang):
         f"- Widen the range on cheap cars — don't trust a point estimate.\n"
         f"- Price rare and edge cars by hand; the model scatters there.\n"
         + (f"- Never auto-price a listing whose text mentions a conversion, an engine swap or "
-           f"modifications — price it by hand; that information is not in the form{_mb_en}.\n" if _mb_ust else
+           f"modifications — price it by hand; that information is not in the form{_flag_en}.\n" if _flag_sig else
            f"- Review a listing whose text mentions a conversion, an engine swap or modifications before it goes "
            f"live: that information is not in the form. With vehicle attributes held fixed no significant difference "
            f"in its error rate was measured; the review guards against what the form cannot see, not against model error.\n")
