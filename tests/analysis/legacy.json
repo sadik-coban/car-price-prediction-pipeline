@@ -4,9 +4,6 @@
   "tr": "Analiz kartları ve testlerinden önce yazılmış betikler (2026-09-24); kaynakları bu sha256'yı taşıdıkça (CRLF → LF) kapsam matrisinin kart ve test hücrelerinden muaf. Listedeki bir betik değişince kart (analysis/cards/) ve gerçek test (tests/analysis/) ister, sonra satırı buradan silinir. Liste yalnız kısalır: tests/analysis/test_coverage.py ilk listede olmayan bir adı reddeder."
  },
  "scripts": {
-  "04_target.py": "e239c7fcd6f38a400fdaa9594fc5aae4bf3a1b709bde7b82d13f984eade6dc94",
-  "05_segmentation.py": "123346d65ae28c821a2c502538b634cb1ab20dbfe8440c7f4bafd25febe0b33f",
-  "06_hedonic.py": "2f58d02b092ea4a0c33e44af4cd4b3e559c802cb68d09ff4b79e77783960a3c6",
   "07_lofo.py": "59f065db32764874886a81822e36333f1136bafc24b798dfc69bdb841900d62d",
   "07_text_flag.py": "876fcdbe75612495cc69db1017f66595da02d41e8362d184f387ca0423925b57",
   "08_large_errors.py": "87bbfac45775195c272cba63083c15d7ea2a565af51ef430cb8fd010f4917024",

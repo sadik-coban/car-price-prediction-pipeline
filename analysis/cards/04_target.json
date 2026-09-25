@@ -1,0 +1,47 @@
+{
+ "script": "analysis/04_target.py",
+ "question": {
+  "tr": "Fiyat nasıl dağılıyor ve model neden log fiyatı hedef alıyor?",
+  "en": "How is price distributed, and why does the model target log price?"
+ },
+ "data": {
+  "tr": "load_clean() (29.988 ilan), yalnız fiyat.",
+  "en": "load_clean() (29,988 listings), price only."
+ },
+ "method": {
+  "tr": "P10 / medyan / P90, 250 bin TL'lik kovalarla histogram, ham ve log fiyatın çarpıklığı.",
+  "en": "P10 / median / P90, a histogram in 250k TL bins, the skewness of raw and log price."
+ },
+ "split": "none",
+ "leakage": {
+  "duplicate_ad_id": {
+   "status": "n/a",
+   "note": null
+  },
+  "target_in_features": {
+   "status": "n/a",
+   "note": null
+  },
+  "fit_on_full_data": {
+   "status": "n/a",
+   "note": null
+  },
+  "temporal": {
+   "status": "n/a",
+   "note": null
+  }
+ },
+ "evidence": {
+  "tests": [
+   "tests/analysis/test_04_target.py::test_quantiles_ordered",
+   "tests/analysis/test_04_target.py::test_histogram_covers_listings",
+   "tests/analysis/test_04_target.py::test_log_is_less_skewed"
+  ],
+  "report_keys": [
+   "domain.price_dist.skew_log",
+   "domain.price_dist.median",
+   "domain.price_histogram"
+  ]
+ },
+ "status": "complete"
+}

@@ -39,15 +39,15 @@ RESID_VIEW = 40
 # TR: rapor metninin okuduğu her yol; eksik olan paragrafı sessizce düşürmek yerine derlemeyi durdurur
 REQUIRED = [
     "domain.drift.all_pairs", "domain.drift.ortusme", "domain.drift.not",
-    "domain.hedonic_reliability.merkez", "domain.brand_ablation.validation",
-    "methodology.column_accounting", "methodology.kb_gb_twins", "domain.hedonic_reliability.model_etkili",
+    "domain.hedonic_reliability.center", "domain.brand_ablation.validation",
+    "methodology.column_accounting", "methodology.kb_gb_twins", "domain.hedonic_reliability.with_model",
     "domain.segment_ladder", "domain.model_yil_medyani.merdiven", "domain.price_dist.p10", "domain.price_dist.p90",
     "domain.final_results.egitim.hedef", "domain.shap.lightgbm_tfidf_svd", "domain.kmeans",
     "methodology.cramers_null", "methodology.theils_null", "methodology.column_missing",
     "methodology.backtest.per_snapshot", "methodology.backtest.insample", "methodology.backtest.protokol",
     "methodology.systematic_missing.systematic_groups", "methodology.systematic_missing.note",
     "methodology.pca_axes", "meta.repro", "meta.brands", "column_labels"] + [f"error_drivers.{p_}" for p_ in [
-    "plate_scope", "segment_quality", "hedonik_eksik", "per_model_error", "per_model_buckets", "lira_ceyrek",
+    "plate_scope", "segment_quality", "hedonic_dropped", "per_model_error", "per_model_buckets", "lira_ceyrek",
     "tl_olcekli", "scope", "price_changes", "unspecified", "taban_esit_kosul", "metin_bayrak",
     "yas_duyarlilik", "yas_kesim", "eski_d_grubu", "spec_outliers.kor_nokta", "donem_kaymasi",
     "by_model_year_n", "by_segment_FS", "by_age", "by_snapshot", "raw_columns", "examples",
@@ -154,10 +154,10 @@ def derive(d):
     hr = dom["hedonic_reliability"]
 
     model_mae, base_mae = lgb["MAE"], myl["taban"]["MAE"]
-    boot = {b["terim"]: b for b in hr["bootstrap"]}
+    boot = {b["term"]: b for b in hr["bootstrap"]}
     # EN: the effects by English term id; an unknown display term stops (no silent None)
     # TR: etkiler İngilizce terim kimliğiyle; bilinmeyen görünen terim durdurur (sessiz None yok)
-    hed_terms = {HED_TERM_ID[k]: b["yuzde_etki"] for k, b in boot.items()}
+    hed_terms = {HED_TERM_ID[k]: b["pct_effect"] for k, b in boot.items()}
 
     v = {
         # olcek
@@ -184,12 +184,12 @@ def derive(d):
         # EN: price quartile bounds (08_conformal_coverage) | TR: fiyat çeyreği sınırları (08_conformal_coverage)
         "q_bounds": rep["q_bounds"],
         # hedonik
-        "hed_r2": hr["model_r2"], "hed_n": hr["n"], "hed_merkez": hr["merkez"],
+        "hed_r2": hr["model_r2"], "hed_n": hr["n"], "hed_center": hr["center"],
         "age_pct": hed_terms["age"], "km_pct": hed_terms["km100k"],
         # teknik §6'nin kontrollu etkileri — karar notu da bunlari basiyor
         "hed_terms": hed_terms,
         "n_boot": len(hr["bootstrap"]),
-        "all_sig": all(not b["sifir_iceriyor"] for b in hr["bootstrap"]),
+        "all_sig": all(not b["contains_zero"] for b in hr["bootstrap"]),
         # marka
         "brand_mae_delta": abs(ba["brand_series_model"]["MAE"] - ba["series_model"]["MAE"]),
         "brand_mape_delta": abs(ba["brand_series_model"]["MAPE"] - ba["series_model"]["MAPE"]),
@@ -200,7 +200,7 @@ def derive(d):
         "dup_loose_pct": met["content_duplicates"]["loose_pct"],
         "n_missing_cols": len(met["systematic_missing"]["column_missing_all"]),
         # kumeler
-        "k": met["kmeans_selection"]["secilen_k"],
+        "k": met["kmeans_selection"]["chosen_k"],
         "clusters": dom["kmeans"],
         "pca": met["pca_axes"],
     }
@@ -381,9 +381,9 @@ def build_figures(d, v, lang, only=None):
         b = dom["hedonic_reliability"]["bootstrap"]
         t = L("Bootstrap katsayıları (nokta + %95 GA)", "Bootstrap coefficients (point + 95% CI)")
         _t03 = {"km(100K)": "km (100 bin)", "+100 HP": "+100 hp"}
-        reg(3, errorbar(f"{p}-03-bootstrap-ci", [(_t03.get(x["terim"], x["terim"]) if lang == "tr"
-                                                 else HED_TERM_EN.get(x["terim"], x["terim"])) for x in b],
-                        [x["nokta"] for x in b], [x["ci_lo"] for x in b], [x["ci_hi"] for x in b],
+        reg(3, errorbar(f"{p}-03-bootstrap-ci", [(_t03.get(x["term"], x["term"]) if lang == "tr"
+                                                 else HED_TERM_EN.get(x["term"], x["term"])) for x in b],
+                        [x["point"] for x in b], [x["ci_lo"] for x in b], [x["ci_hi"] for x in b],
                         t, L("log-fiyat katsayısı", "log-price coefficient")), t)
 
     # 04 LOFO - DUZ surum  [TEKNIK]
@@ -407,12 +407,12 @@ def build_figures(d, v, lang, only=None):
     # 06 km'ye gore fiyat  [IS]
     if want(6):
         rows = dom["km_price"]
-        _kk = dom["km_price_kapsam"]
+        _kk = dom["km_price_scope"]
         _w06 = rows[1][0] - rows[0][0]                         # kova genisligi; nokta kovanin ortasina
-        t = L(f"Kilometreye göre ham fiyat — düzeltilmemiş (medyan + ort.; {num(_kk['ust_sinir'] // 1000, lang)} bin km "
-              f"altı, {num(_kk['disarida'], lang)} ilan dışarıda)",
-              f"Raw price by mileage — unadjusted (median + mean; below {num(_kk['ust_sinir'] // 1000, lang)}k km, "
-              f"{num(_kk['disarida'], lang)} listings left out)")
+        t = L(f"Kilometreye göre ham fiyat — düzeltilmemiş (medyan + ort.; {num(_kk['upper_limit'] // 1000, lang)} bin km "
+              f"altı, {num(_kk['outside'], lang)} ilan dışarıda)",
+              f"Raw price by mileage — unadjusted (median + mean; below {num(_kk['upper_limit'] // 1000, lang)}k km, "
+              f"{num(_kk['outside'], lang)} listings left out)")
         reg(6, line(f"{p}-06-km-price", [(r[0] + _w06 / 2) / 1000 for r in rows],
                     [(L("medyan", "median"), [r[1] / 1e6 for r in rows], C1, "o-"),
                      (L("ortalama", "mean"), [r[3] / 1e6 for r in rows], C2, "s--")],
@@ -424,7 +424,7 @@ def build_figures(d, v, lang, only=None):
         t = L("Ham medyan fiyat: BMW vs Audi — model karmasını yansıtır",
               "Raw median price: BMW vs Audi — reflects the model mix")
         reg(7, bar(f"{p}-07-brand", ["BMW", "Audi"],
-                   [bc["bmw_medyan"] / 1e6, bc["audi_medyan"] / 1e6], t,
+                   [bc["bmw_median"] / 1e6, bc["audi_median"] / 1e6], t,
                    L("medyan fiyat (₺M)", "median price (₺M)")), t)
 
     # 08 tahmin vs gercek  [TEKNIK]
@@ -686,7 +686,7 @@ def build_figures(d, v, lang, only=None):
         ax2 = ax.twinx()
         ax2.plot([r[0] for r in ks["silhouette"]], [r[1] for r in ks["silhouette"]], "s--",
                  color=C3, label=L("siluet", "silhouette"))
-        ax.axvline(ks["secilen_k"], color=C2, ls=":", lw=1.2)
+        ax.axvline(ks["chosen_k"], color=C2, ls=":", lw=1.2)
         ax.set_ylabel(L("atalet (bin)", "inertia (thousands)")); ax2.set_ylabel(L("siluet", "silhouette"))
         ax.set_xlabel(L("k (küme sayısı) · noktalı çizgi = seçilen k", "k (number of clusters) · dotted = chosen k"))
         ax.set_title(t)
@@ -1035,8 +1035,8 @@ def cluster_labels(clusters, lang):
     TR: Kümeler adlandırılmaz, numaralanır (üretilen adlar çakışıyor ve eksenlerle çelişiyordu); etikette
         ölçülen ağır hasar payı kalır.
     """
-    return [(f"Küme {i} · ağır hasar %{c['agir_hasar_pct']:.0f}" if lang == "tr"
-             else f"Cluster {i} · {c['agir_hasar_pct']:.0f}% heavy damage")
+    return [(f"Küme {i} · ağır hasar %{c['heavy_damage_pct']:.0f}" if lang == "tr"
+             else f"Cluster {i} · {c['heavy_damage_pct']:.0f}% heavy damage")
             for i, c in enumerate(clusters, 1)]
 
 

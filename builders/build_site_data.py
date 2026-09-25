@@ -32,7 +32,7 @@ LABELS_OUT = OUT_ROOT / "data" / "serving" / "column_labels.json"
 # EN: the keys the site reads; a missing one stops the build | TR: sitenin okuduğu anahtarlar; eksikse durur
 SITE_KEYS = {
     "meta": ["n_dedup", "n_raw", "snapshots", "n_features", "brands", "repro"],
-    "domain": ["price_dist", "price_histogram", "segment_ladder", "body_median", "age_depreciation", "km_price_kapsam",
+    "domain": ["price_dist", "price_histogram", "segment_ladder", "body_median", "age_depreciation", "km_price_scope",
                "km_price", "brand_compare", "series_segment_matrix", "age_km_note", "numeric_correlation", "kmeans",
                "pca_scatter", "pca_scatter_13", "model_compare", "conformal", "quantile_error", "oof_outliers",
                "oof_best", "residual_vs_n", "pred_vs_true", "residual_scatter", "drift", "hedonic",

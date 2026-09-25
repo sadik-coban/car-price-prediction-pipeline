@@ -487,7 +487,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T05:12:39+03:00",
+  "_meta.generated_at": "2026-09-25T16:03:51+03:00",
   "_meta.run_id": null,
   "_meta.script": "05_segmentation.py",
   "domain.age_depreciation": {
@@ -499,24 +499,24 @@
    "len": 7,
    "sha256": "8523126177989ce24b2639eb1d3b25ba47837d644c95cce2a60235f66e05fbfe"
   },
-  "domain.brand_compare.audi_medyan": 1475000.0,
+  "domain.brand_compare.audi_mean": 1822023.2974694013,
+  "domain.brand_compare.audi_median": 1475000.0,
   "domain.brand_compare.audi_n": 12092,
-  "domain.brand_compare.audi_ortalama": 1822023.2974694013,
-  "domain.brand_compare.bmw_medyan": 1575000.0,
+  "domain.brand_compare.bmw_mean": 1910680.0848793027,
+  "domain.brand_compare.bmw_median": 1575000.0,
   "domain.brand_compare.bmw_n": 17896,
-  "domain.brand_compare.bmw_ortalama": 1910680.0848793027,
   "domain.brand_compare.cliffs_delta": 0.0663,
   "domain.brand_compare.mwu_p": 1.6737972933552e-22,
-  "domain.brand_compare.not": "Mann-Whitney U: iki markanın fiyat dağılımı farkı (p<0.05 anlamlı). Cliff's δ: etki büyüklüğü (|δ|>0.33 orta, >0.47 büyük fark).",
+  "domain.brand_compare.note": "Mann-Whitney U: iki markanın fiyat dağılımı farkı (p<0.05 anlamlı). Cliff's δ: etki büyüklüğü (|δ|>0.33 orta, >0.47 büyük fark).",
   "domain.km_price": {
    "len": 16,
    "sha256": "23513bb45e9d3fe48217842160af4af99469cb9dffd8a1a410bb0128610dbb17"
   },
-  "domain.km_price_kapsam.disarida": 653,
-  "domain.km_price_kapsam.ust_sinir": 400000,
+  "domain.km_price_scope.outside": 653,
+  "domain.km_price_scope.upper_limit": 400000,
   "domain.kmeans": {
    "len": 3,
-   "sha256": "f6170ea8dcb45c831ec2e855c5f34f968d9053d800cf30e81cf957ef540f4066"
+   "sha256": "2f3de941d5b1821f6eb1e5da0004facd79cd6cbd0fcf870083b7999871c14764"
   },
   "domain.pca_scatter": {
    "len": 29988,
@@ -530,12 +530,12 @@
    "len": 6,
    "sha256": "c7a1fe2b01f5f4316f77242999aac2118d0b806efda7c14af58166ad75687871"
   },
+  "methodology.kmeans_selection.chosen_k": 3,
   "methodology.kmeans_selection.elbow": {
    "len": 7,
    "sha256": "c4c341d2ab92dc29ba430a85df28d74c8fed6e2b8492dafb232c260a6a6738fd"
   },
-  "methodology.kmeans_selection.not": "Silhouette en yüksek k=2 (0.242); k=3 için 0.188. k=3 silhouette ile değil, yorumlanabilirlik için sabit seçildi.",
-  "methodology.kmeans_selection.secilen_k": 3,
+  "methodology.kmeans_selection.note": "Silhouette en yüksek k=2 (0.242); k=3 için 0.188. k=3 silhouette ile değil, yorumlanabilirlik için sabit seçildi.",
   "methodology.kmeans_selection.silhouette": {
    "len": 7,
    "sha256": "91ca8e5f3985625fe3da8913cb05caffcae23a6d69fec6602ee1719227673ceb"
@@ -550,7 +550,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T05:14:06+03:00",
+  "_meta.generated_at": "2026-09-25T16:05:53+03:00",
   "_meta.run_id": null,
   "_meta.script": "06_hedonic.py",
   "domain.hedonic.age_pct": -6.64,
@@ -558,80 +558,80 @@
   "domain.hedonic.damage_pct": -11.6,
   "domain.hedonic.hp100_pct": 19.86,
   "domain.hedonic.km100k_pct": -15.11,
-  "domain.hedonic.not": "Dönem etkisi modelde yok (kullanıcı kararı): dönemler havuzlanarak kestirildi.",
+  "domain.hedonic.note": "Dönem etkisi modelde yok (kullanıcı kararı): dönemler havuzlanarak kestirildi.",
   "domain.hedonic.r2": 0.9312,
-  "domain.hedonic_reliability.birim.cc": "1 litre",
-  "domain.hedonic_reliability.birim.hp": "100 HP",
+  "domain.hedonic_reliability.assumptions.homoskedasticity_p": 0.0,
+  "domain.hedonic_reliability.assumptions.normality_p": 0.0,
+  "domain.hedonic_reliability.assumptions.note": "Breusch-Pagan ve Jarque-Bera ihlal (p<0.05). Bu yüzden çıkarım çıplak OLS p-değerine değil, satır bootstrap'inin %2.5–97.5 yüzdeliklerine dayanıyor.",
   "domain.hedonic_reliability.bootstrap": {
    "len": 10,
-   "sha256": "bd7cbe0b4e3871d863155a31abaa0cc5160984fbf7f211669a5f2d06f82e2f12"
+   "sha256": "33d73d8ea11cc73b3549858eb2c6ad53446e0350b722ffb13a45fecfb1826486"
   },
-  "domain.hedonic_reliability.bootstrap_ayar.n_boot": 1000,
-  "domain.hedonic_reliability.bootstrap_ayar.n_istenen": 1000,
-  "domain.hedonic_reliability.bootstrap_ayar.n_jobs": 16,
-  "domain.hedonic_reliability.bootstrap_ayar.sure_sn": 82.1,
-  "domain.hedonic_reliability.genel_korelasyon": 0.73,
-  "domain.hedonic_reliability.merkez.km": 181000.0,
-  "domain.hedonic_reliability.merkez.yas": 11.0,
-  "domain.hedonic_reliability.model_etkili.katsayi_pct.agir_hasar": {
-   "len": 2,
-   "sha256": "4b48348f2e4305202a9dd1a1ea76321bbe369f2c247e43fd1a4e299bb268af2c"
+  "domain.hedonic_reliability.bootstrap_setup.n_boot": 1000,
+  "domain.hedonic_reliability.bootstrap_setup.n_jobs": 16,
+  "domain.hedonic_reliability.bootstrap_setup.n_requested": 1000,
+  "domain.hedonic_reliability.bootstrap_setup.seconds": 115.1,
+  "domain.hedonic_reliability.center.age": 11.0,
+  "domain.hedonic_reliability.center.km": 181000.0,
+  "domain.hedonic_reliability.engine_effect.cc_litre_pct": 7.5,
+  "domain.hedonic_reliability.engine_effect.hp100_pct": 19.9,
+  "domain.hedonic_reliability.fuel_correlation": {
+   "len": 4,
+   "sha256": "87154a3251039ce49b839d0dd6235c9b78164d11b0c3b7e6a6893f7f72b3766e"
   },
-  "domain.hedonic_reliability.model_etkili.katsayi_pct.boyali": {
-   "len": 2,
-   "sha256": "04cdcedcef1cc7de3bb59e9ff538790f8388f2ae15cea62e87068a2dd517a162"
-  },
-  "domain.hedonic_reliability.model_etkili.katsayi_pct.cc_litre": {
-   "len": 2,
-   "sha256": "4d8cc0720d852e80173058271933bcbc805f28f98b94e7b6af6db4f6688e16e1"
-  },
-  "domain.hedonic_reliability.model_etkili.katsayi_pct.degisen": {
-   "len": 2,
-   "sha256": "6e147f489290d0a6acca928901809984ec2198490b5382d3af5100ff81eb820d"
-  },
-  "domain.hedonic_reliability.model_etkili.katsayi_pct.hp100": {
-   "len": 2,
-   "sha256": "735e409c1cbdcb273ed5a9150a8f8a2aae613e8f8d83f997aa37d34673f32b20"
-  },
-  "domain.hedonic_reliability.model_etkili.katsayi_pct.km100k": {
-   "len": 2,
-   "sha256": "c05a748d4b731fcfc2fe1c0704b91fd223ec57e5721c7a5be958412941bae296"
-  },
-  "domain.hedonic_reliability.model_etkili.katsayi_pct.yas": {
-   "len": 2,
-   "sha256": "e076b48c474e446fd28e0989f5597cf189216cf20539409bb9a3df095c94d95d"
-  },
-  "domain.hedonic_reliability.model_etkili.n_model": 735,
-  "domain.hedonic_reliability.model_etkili.not": "C(model) eklenmiş tek OLS (bootstrap yok); katsayi_pct = [model yok, model var], yüzde etki.",
-  "domain.hedonic_reliability.model_etkili.r2": 0.9648,
   "domain.hedonic_reliability.model_r2": 0.9312,
-  "domain.hedonic_reliability.motor_etki.cc_litre_pct": 7.5,
-  "domain.hedonic_reliability.motor_etki.hp100_pct": 19.9,
   "domain.hedonic_reliability.n": 29554,
-  "domain.hedonic_reliability.not": "Ham (log yok) cc+HP: birim başına yorum. Yaş ve km medyan araca ortalandı; doğrusal katsayılar o noktadaki marjinal etki. Güven aralıkları satır bootstrap'inden.",
-  "domain.hedonic_reliability.varsayim.homoskedastisite_p": 0.0,
-  "domain.hedonic_reliability.varsayim.normallik_p": 0.0,
-  "domain.hedonic_reliability.varsayim.not": "Breusch-Pagan ve Jarque-Bera ihlal (p<0.05). Bu yüzden çıkarım çıplak OLS p-değerine değil, satır bootstrap'inin %2.5–97.5 yüzdeliklerine dayanıyor.",
+  "domain.hedonic_reliability.note": "Ham (log yok) cc+HP: birim başına yorum. Yaş ve km medyan araca ortalandı; doğrusal katsayılar o noktadaki marjinal etki. Güven aralıkları satır bootstrap'inden.",
+  "domain.hedonic_reliability.overall_correlation": 0.73,
+  "domain.hedonic_reliability.unit.cc": "1 litre",
+  "domain.hedonic_reliability.unit.hp": "100 HP",
   "domain.hedonic_reliability.vif": {
    "len": 10,
    "sha256": "7055c68b1862ef4accef436b9ec15a9e57443c7aa8bc6de28a562defc3fd10fe"
   },
-  "domain.hedonic_reliability.vif_ham": {
-   "len": 10,
-   "sha256": "b3052b2e2d2e7bc90c045cfcac926801ee91b0d42194981c84a1d479270e8ea1"
-  },
-  "domain.hedonic_reliability.vif_kukla": {
+  "domain.hedonic_reliability.vif_dummy": {
    "len": 2,
    "sha256": "77a71b5365e8e943dc60b7650778d9707c3abfcd92af60c28e9463eaa808fd9a"
   },
-  "domain.hedonic_reliability.yakit_korelasyon": {
-   "len": 4,
-   "sha256": "3d7932654b33a0c22c1ce20dbf88074d4b6d7a7c4502b62d576ebd52df0e71f4"
+  "domain.hedonic_reliability.vif_raw": {
+   "len": 10,
+   "sha256": "b3052b2e2d2e7bc90c045cfcac926801ee91b0d42194981c84a1d479270e8ea1"
   },
-  "error_drivers.hedonik_eksik.cc": 356,
-  "error_drivers.hedonik_eksik.hp": 426,
-  "error_drivers.hedonik_eksik.ikisi_birden": 348,
-  "error_drivers.hedonik_eksik.toplam": 434
+  "domain.hedonic_reliability.with_model.coef_pct.age": {
+   "len": 2,
+   "sha256": "e076b48c474e446fd28e0989f5597cf189216cf20539409bb9a3df095c94d95d"
+  },
+  "domain.hedonic_reliability.with_model.coef_pct.cc_litre": {
+   "len": 2,
+   "sha256": "4d8cc0720d852e80173058271933bcbc805f28f98b94e7b6af6db4f6688e16e1"
+  },
+  "domain.hedonic_reliability.with_model.coef_pct.changed": {
+   "len": 2,
+   "sha256": "6e147f489290d0a6acca928901809984ec2198490b5382d3af5100ff81eb820d"
+  },
+  "domain.hedonic_reliability.with_model.coef_pct.heavy_damage": {
+   "len": 2,
+   "sha256": "4b48348f2e4305202a9dd1a1ea76321bbe369f2c247e43fd1a4e299bb268af2c"
+  },
+  "domain.hedonic_reliability.with_model.coef_pct.hp100": {
+   "len": 2,
+   "sha256": "735e409c1cbdcb273ed5a9150a8f8a2aae613e8f8d83f997aa37d34673f32b20"
+  },
+  "domain.hedonic_reliability.with_model.coef_pct.km100k": {
+   "len": 2,
+   "sha256": "c05a748d4b731fcfc2fe1c0704b91fd223ec57e5721c7a5be958412941bae296"
+  },
+  "domain.hedonic_reliability.with_model.coef_pct.painted": {
+   "len": 2,
+   "sha256": "04cdcedcef1cc7de3bb59e9ff538790f8388f2ae15cea62e87068a2dd517a162"
+  },
+  "domain.hedonic_reliability.with_model.n_model": 735,
+  "domain.hedonic_reliability.with_model.note": "C(model) eklenmiş tek OLS (bootstrap yok); katsayi_pct = [model yok, model var], yüzde etki.",
+  "domain.hedonic_reliability.with_model.r2": 0.9648,
+  "error_drivers.hedonic_dropped.both": 348,
+  "error_drivers.hedonic_dropped.cc": 356,
+  "error_drivers.hedonic_dropped.hp": 426,
+  "error_drivers.hedonic_dropped.total": 434
  },
  "07_final_model": {
   "_meta.data_until": "2026-06-27",

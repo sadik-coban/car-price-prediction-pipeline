@@ -110,11 +110,11 @@ def fmt_business(v, F, lang):
     # 2026-09-23: burada "dusuk-km yasli arac sistematik olarak ucuz kaliyor" yaziyordu; arkasinda hesap
     # yoktu ve olcum tersini gosterdi (ayni model+yil hucresinde 100 bin km'nin etkisi genc/orta/yasli
     # aracta -%13 / -%16 / -%13; yasli dusuk-km ceyrek hucresinin %14 USTUNDE). Iddia silindi.
-    _mz = v["hed_merkez"]
+    _center = v["hed_center"]
     A(L(f"Yaş ve kilometre birbirine bağlı iki eksen; tablodaki yaş ve km satırları biri sabitken "
-        f"ötekinin etkisi, tipik araçta ({num(_mz['yas'], lang)} yaş, {num(_mz['km'], lang)} km) ölçüldü.",
+        f"ötekinin etkisi, tipik araçta ({num(_center['age'], lang)} yaş, {num(_center['km'], lang)} km) ölçüldü.",
         f"Age and mileage are linked axes; the age and km rows above are each measured with the other "
-        f"held fixed, at a typical car ({num(_mz['yas'], lang)} years, {num(_mz['km'], lang)} km)."))
+        f"held fixed, at a typical car ({num(_center['age'], lang)} years, {num(_center['km'], lang)} km)."))
     A("")
     for no in (5, 6):
         A(f"![{F[no][1]}](figures/{F[no][0]})")

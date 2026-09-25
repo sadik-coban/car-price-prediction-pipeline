@@ -37,8 +37,8 @@ FORMULA = ("log_price~age+I(age**2)+km10+I(km10**2)+age:km10+dmg+painted+changed
 TRACKED = ["age", "I(age ** 2)", "km10", "I(km10 ** 2)", "age:km10", "dmg", "painted", "changed", "hp100", "cc_L"]
 LABELS = {"age": "yaş", "I(age ** 2)": "yaş²", "km10": "km(100K)", "I(km10 ** 2)": "km²", "age:km10": "yaş×km",
           "dmg": "ağır hasar", "painted": "boyalı", "changed": "değişen", "hp100": "+100 HP", "cc_L": "+1 litre"}
-MODEL_ID_TERMS = {"age": "yas", "km10": "km100k", "hp100": "hp100", "cc_L": "cc_litre", "dmg": "agir_hasar",
-                  "painted": "boyali", "changed": "degisen"}
+MODEL_ID_TERMS = {"age": "age", "km10": "km100k", "hp100": "hp100", "cc_L": "cc_litre", "dmg": "heavy_damage",
+                  "painted": "painted", "changed": "changed"}
 
 
 # %% [2] Analysis functions | Analiz fonksiyonları — pure: no file I/O, they only return values
@@ -82,8 +82,8 @@ def dropped_rows(listings):
     hp = listings[["power_hp_low", "power_hp_up"]].apply(pd.to_numeric, errors="coerce").mean(axis=1)
     cc = pd.to_numeric(listings["engine_cc_up"], errors="coerce")
     bad_hp, bad_cc = hp.isna() | (hp <= 0), cc.isna() | (cc <= 0)
-    return {"hp": int(bad_hp.sum()), "cc": int(bad_cc.sum()), "ikisi_birden": int((bad_hp & bad_cc).sum()),
-            "toplam": int((bad_hp | bad_cc).sum())}
+    return {"hp": int(bad_hp.sum()), "cc": int(bad_cc.sum()), "both": int((bad_hp & bad_cc).sum()),
+            "total": int((bad_hp | bad_cc).sum())}
 
 
 def one_bootstrap(h, seed):
@@ -119,9 +119,9 @@ def bootstrap_table(h, fit, n_boot, n_jobs, seed):
         arr = np.array([r[k] for r in reps])
         arr = arr[np.isfinite(arr)]
         lo, hi = np.percentile(arr, [2.5, 97.5])
-        table.append({"terim": LABELS[k], "nokta": round(float(fit.params[k]), 4), "boot_ort": round(float(arr.mean()), 4),
+        table.append({"term": LABELS[k], "point": round(float(fit.params[k]), 4), "boot_mean": round(float(arr.mean()), 4),
                       "ci_lo": round(float(lo), 4), "ci_hi": round(float(hi), 4), "std": round(float(arr.std()), 4),
-                      "yuzde_etki": round(pct(fit.params[k]), 2), "sifir_iceriyor": bool(lo <= 0 <= hi)})
+                      "pct_effect": round(pct(fit.params[k]), 2), "contains_zero": bool(lo <= 0 <= hi)})
     return table, len(reps), seconds
 
 
@@ -157,10 +157,10 @@ def fuel_correlation(h, min_n=30):
     for fuel in h["kb_fuel"].value_counts().index:
         sub = h[h["kb_fuel"] == fuel]
         if len(sub) >= min_n:
-            out.append({"yakit": str(fuel)[:20], "pearson": round(float(stats.pearsonr(sub.hp, sub.cc)[0]), 3),
+            out.append({"fuel": str(fuel)[:20], "pearson": round(float(stats.pearsonr(sub.hp, sub.cc)[0]), 3),
                         "pearson_log": round(float(stats.pearsonr(np.log(sub.hp), np.log(sub.cc))[0]), 3),
                         "spearman": round(float(stats.spearmanr(sub.hp, sub.cc)[0]), 3),
-                        "cc_hp_oran": round(float((sub.cc / sub.hp).median()), 1), "n": int(len(sub))})
+                        "cc_hp_ratio": round(float((sub.cc / sub.hp).median()), 1), "n": int(len(sub))})
     return out
 
 
@@ -175,7 +175,7 @@ def model_identity_fit(h, fit):
     """
     fit_m = smf.ols(FORMULA + "+C(model)", data=h).fit()
     return {"r2": round(float(fit_m.rsquared), 4), "n_model": int(h["model"].nunique()),
-            "katsayi_pct": {name: [round(pct(fit.params[k]), 2), round(pct(fit_m.params[k]), 2)]
+            "coef_pct": {name: [round(pct(fit.params[k]), 2), round(pct(fit_m.params[k]), 2)]
                             for k, name in MODEL_ID_TERMS.items()}}
 
 
@@ -183,9 +183,9 @@ def model_identity_fit(h, fit):
 def to_metrics(res):
     """
     EN: Published in the site tree (domain.hedonic, domain.hedonic_reliability) and the report inputs
-        (error_drivers.hedonik_eksik).
+        (error_drivers.hedonic_dropped).
     TR: Site ağacında (domain.hedonic, domain.hedonic_reliability) ve rapor girdilerinde
-        (error_drivers.hedonik_eksik) yayımlanır.
+        (error_drivers.hedonic_dropped) yayımlanır.
     """
     fit, p = res["fit"], res["fit"].params
     return {
@@ -193,23 +193,23 @@ def to_metrics(res):
             "hedonic": {"r2": round(float(fit.rsquared), 4), "age_pct": round(pct(p["age"]), 2),
                         "damage_pct": round(pct(p["dmg"]), 2), "km100k_pct": round(pct(p["km10"]), 2),
                         "hp100_pct": round(pct(p["hp100"]), 2), "cc_litre_pct": round(pct(p["cc_L"]), 2),
-                        "not": "Dönem etkisi modelde yok (kullanıcı kararı): dönemler havuzlanarak kestirildi."},
+                        "note": "Dönem etkisi modelde yok (kullanıcı kararı): dönemler havuzlanarak kestirildi."},
             "hedonic_reliability": {
-                "model_r2": round(float(fit.rsquared), 4), "n": int(fit.nobs), "birim": {"hp": "100 HP", "cc": "1 litre"},
-                "motor_etki": {"hp100_pct": round(pct(p["hp100"]), 1), "cc_litre_pct": round(pct(p["cc_L"]), 1)},
-                "bootstrap": res["boot"], "vif": res["vif"], "vif_ham": res["vif_raw"], "vif_kukla": res["vif_dummy"],
-                "merkez": {"yas": res["age_c"], "km": res["km_c"] * 1e5},
-                "yakit_korelasyon": res["fuel"], "genel_korelasyon": res["hp_cc_r"],
-                "varsayim": {"homoskedastisite_p": res["bp_p"], "normallik_p": res["jb_p"],
-                             "not": ("Breusch-Pagan ve Jarque-Bera ihlal (p<0.05). Bu yüzden çıkarım çıplak OLS p-değerine "
+                "model_r2": round(float(fit.rsquared), 4), "n": int(fit.nobs), "unit": {"hp": "100 HP", "cc": "1 litre"},
+                "engine_effect": {"hp100_pct": round(pct(p["hp100"]), 1), "cc_litre_pct": round(pct(p["cc_L"]), 1)},
+                "bootstrap": res["boot"], "vif": res["vif"], "vif_raw": res["vif_raw"], "vif_dummy": res["vif_dummy"],
+                "center": {"age": res["age_c"], "km": res["km_c"] * 1e5},
+                "fuel_correlation": res["fuel"], "overall_correlation": res["hp_cc_r"],
+                "assumptions": {"homoskedasticity_p": res["bp_p"], "normality_p": res["jb_p"],
+                             "note": ("Breusch-Pagan ve Jarque-Bera ihlal (p<0.05). Bu yüzden çıkarım çıplak OLS p-değerine "
                                      "değil, satır bootstrap'inin %2.5–97.5 yüzdeliklerine dayanıyor.")},
-                "bootstrap_ayar": {"n_boot": res["n_boot"], "n_istenen": N_BOOT, "n_jobs": N_JOBS,
-                                   "sure_sn": round(res["seconds"], 1)},
-                "not": ("Ham (log yok) cc+HP: birim başına yorum. Yaş ve km medyan araca ortalandı; doğrusal "
+                "bootstrap_setup": {"n_boot": res["n_boot"], "n_requested": N_BOOT, "n_jobs": N_JOBS,
+                                    "seconds": round(res["seconds"], 1)},
+                "note": ("Ham (log yok) cc+HP: birim başına yorum. Yaş ve km medyan araca ortalandı; doğrusal "
                         "katsayılar o noktadaki marjinal etki. Güven aralıkları satır bootstrap'inden."),
-                "model_etkili": {**res["model_id"],
-                                 "not": "C(model) eklenmiş tek OLS (bootstrap yok); katsayi_pct = [model yok, model var], yüzde etki."}}},
-        "error_drivers": {"hedonik_eksik": res["dropped"]},
+                "with_model": {**res["model_id"],
+                               "note": "C(model) eklenmiş tek OLS (bootstrap yok); katsayi_pct = [model yok, model var], yüzde etki."}}},
+        "error_drivers": {"hedonic_dropped": res["dropped"]},
     }
 
 
@@ -220,7 +220,7 @@ listings = load_clean()
 h, age_c, km_c = hedonic_frame(listings)
 fit = smf.ols(FORMULA, data=h).fit(cov_type="HC3")
 dropped = dropped_rows(listings)
-assert len(listings) - dropped["toplam"] == int(fit.nobs), "OLS row count does not match the dropped count"
+assert len(listings) - dropped["total"] == int(fit.nobs), "OLS row count does not match the dropped count"
 # EN: one BLAS thread per bootstrap worker (avoids oversubscription) | TR: işçi başına tek BLAS iş parçacığı
 for var in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
     os.environ[var] = "1"

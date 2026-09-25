@@ -35,8 +35,8 @@ def median_by(listings, col, min_n=0):
     TR: col'un her değeri için medyan fiyat ve sayı (min_n'den az ilanlı değerler atılır), en ucuz önce.
         Döndürür: [[değer, medyan, n], ...].
     """
-    t = listings.groupby(col).agg(medyan=("price", "median"), n=("price", "size")).reset_index()
-    return t[t["n"] >= min_n].sort_values("medyan").values.tolist()
+    t = listings.groupby(col).agg(median=("price", "median"), n=("price", "size")).reset_index()
+    return t[t["n"] >= min_n].sort_values("median").values.tolist()
 
 
 def age_curve(listings, max_age, min_n):
@@ -47,24 +47,24 @@ def age_curve(listings, max_age, min_n):
         Döndürür: [[yaş, medyan, n, ortalama], ...].
     """
     a = (listings[listings["vehicle_age"] <= max_age].groupby("vehicle_age")
-         .agg(medyan=("price", "median"), n=("price", "size"), ortalama=("price", "mean")).reset_index())
+         .agg(median=("price", "median"), n=("price", "size"), mean=("price", "mean")).reset_index())
     a = a[a["n"] >= min_n]
-    a["ortalama"] = a["ortalama"].round(0)
+    a["mean"] = a["mean"].round(0)
     return a.values.tolist()
 
 
 def mileage_curve(listings, bin_width, limit):
     """
     EN: Median, count and mean price per mileage bin below limit (bins aligned to the limit), and how many
-        listings are at or above it. Returns: (rows [[bin, median, n, mean], ...], {"ust_sinir", "disarida"}).
+        listings are at or above it. Returns: (rows [[bin, median, n, mean], ...], {"upper_limit", "outside"}).
     TR: limit altındaki kilometre kovası başına medyan, sayı ve ortalama fiyat (kovalar sınıra hizalı) ve
-        sınırda ya da üstünde kaç ilan olduğu. Döndürür: (satırlar, {"ust_sinir", "disarida"}).
+        sınırda ya da üstünde kaç ilan olduğu. Döndürür: (satırlar, {"upper_limit", "outside"}).
     """
     d = listings.assign(km_bin=listings["gb_mileage"] // bin_width * bin_width)
     k = (d[d["gb_mileage"] < limit].groupby("km_bin")
-         .agg(medyan=("price", "median"), n=("price", "size"), ortalama=("price", "mean")).reset_index())
-    k["ortalama"] = k["ortalama"].round(0)
-    return k.values.tolist(), {"ust_sinir": limit, "disarida": int((listings["gb_mileage"] >= limit).sum())}
+         .agg(median=("price", "median"), n=("price", "size"), mean=("price", "mean")).reset_index())
+    k["mean"] = k["mean"].round(0)
+    return k.values.tolist(), {"upper_limit": limit, "outside": int((listings["gb_mileage"] >= limit).sum())}
 
 
 def cliffs_delta(a, b, chunk=2000):
@@ -90,9 +90,9 @@ def brand_compare(listings):
     """
     bmw, audi = listings.loc[listings["brand"] == "bmw", "price"].values, listings.loc[listings["brand"] == "audi", "price"].values
     _stat, p = stats.mannwhitneyu(bmw, audi, alternative="two-sided")
-    return {"bmw_medyan": float(np.median(bmw)), "audi_medyan": float(np.median(audi)),
+    return {"bmw_median": float(np.median(bmw)), "audi_median": float(np.median(audi)),
             "bmw_n": int(len(bmw)), "audi_n": int(len(audi)),
-            "bmw_ortalama": float(np.mean(bmw)), "audi_ortalama": float(np.mean(audi)),
+            "bmw_mean": float(np.mean(bmw)), "audi_mean": float(np.mean(audi)),
             "mwu_p": float(p), "cliffs_delta": float(cliffs_delta(bmw, audi))}
 
 
@@ -137,15 +137,15 @@ def kmeans_and_pca(listings, k, k_range, sample, seed):
         z = (nc[mask].mean() - nc.mean()) / nc.std()
         top = z.abs().sort_values(ascending=False).head(3)
         damage_axis = str(top.index[0]).startswith(DAMAGE_AXES) or str(top.index[0]).endswith("_state")
-        profiles.append({"cluster": int(c), "ad": "Hasar yoğun" if damage_axis else cluster_name(m), "n": int(mask.sum()),
-                         "medyan": float(m["price"].median()), "yas": float(m["vehicle_age"].median()),
+        profiles.append({"cluster": int(c), "name": "Hasar yoğun" if damage_axis else cluster_name(m), "n": int(mask.sum()),
+                         "median": float(m["price"].median()), "age": float(m["vehicle_age"].median()),
                          "km": float(m["gb_mileage"].median()), "hp": float(m["power_hp_val"].median()),
-                         "agir_hasar_pct": round(100 * float(m["is_heavy_damaged"].mean()), 0),
-                         "ayirt_edici": [[kk, "+" if z[kk] > 0 else "-"] for kk in top.index]})
-    names = pd.Series([p["ad"] for p in profiles]).value_counts()
+                         "heavy_damage_pct": round(100 * float(m["is_heavy_damaged"].mean()), 0),
+                         "distinguishing": [[kk, "+" if z[kk] > 0 else "-"] for kk in top.index]})
+    names = pd.Series([p["name"] for p in profiles]).value_counts()
     for p in profiles:                        # repeated names get numbered | tekrar eden adlar numaralanır
-        if names[p["ad"]] > 1:
-            p["ad"] = f"{p['ad']} ({p['cluster'] + 1})"
+        if names[p["name"]] > 1:
+            p["name"] = f"{p['name']} ({p['cluster'] + 1})"
     axes = [{"pc": f"PC{i + 1}", "var_pct": round(pca_m.explained_variance_ratio_[i] * 100, 1),
              "top": [[n, round(w, 2)] for n, w in sorted(zip(NUM, pca_m.components_[i]), key=lambda x: -abs(x[1]))[:4]]}
             for i in range(3)]
@@ -165,15 +165,15 @@ def to_metrics(res):
     return {
         "domain": {
             "segment_ladder": res["segment"], "body_median": res["body"], "age_depreciation": res["age"],
-            "km_price_kapsam": res["km_scope"], "km_price": res["km_rows"],
+            "km_price_scope": res["km_scope"], "km_price": res["km_rows"],
             "brand_compare": {**bc, "cliffs_delta": round(bc["cliffs_delta"], 4),
-                              "not": ("Mann-Whitney U: iki markanın fiyat dağılımı farkı (p<0.05 anlamlı). "
+                              "note": ("Mann-Whitney U: iki markanın fiyat dağılımı farkı (p<0.05 anlamlı). "
                                       "Cliff's δ: etki büyüklüğü (|δ|>0.33 orta, >0.47 büyük fark).")},
             "age_km_note": "Medyan tipik fiyat, ortalama aykırı-etkili. Açıklık = fiyat çarpıklığı.",
             "kmeans": km["profiles"], "pca_scatter": km["pca12"], "pca_scatter_13": km["pca13"]},
         "methodology": {
-            "kmeans_selection": {"elbow": km["elbow"], "silhouette": km["silhouette"], "secilen_k": K,
-                                 "not": (f"Silhouette en yüksek k={best[0]} ({best[1]}); k={K} için "
+            "kmeans_selection": {"elbow": km["elbow"], "silhouette": km["silhouette"], "chosen_k": K,
+                                 "note": (f"Silhouette en yüksek k={best[0]} ({best[1]}); k={K} için "
                                          f"{dict(km['silhouette']).get(K)}. k={K} silhouette ile değil, "
                                          f"yorumlanabilirlik için sabit seçildi.")},
             "pca_axes": km["axes"]},
@@ -188,7 +188,7 @@ km_rows, km_scope = mileage_curve(listings, KM_BIN, KM_LIMIT)
 res = {"segment": median_by(listings, "segment"), "body": median_by(listings, "kb_body_type", MIN_BODY_N),
        "age": age_curve(listings, MAX_AGE, MIN_AGE_N), "km_rows": km_rows, "km_scope": km_scope,
        "brand": brand_compare(listings), "km": kmeans_and_pca(listings, K, K_RANGE, SILHOUETTE_SAMPLE, SEED)}
-print("clusters | kümeler:", [(p["ad"], p["n"]) for p in res["km"]["profiles"]])
+print("clusters | kümeler:", [(p["name"], p["n"]) for p in res["km"]["profiles"]])
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
 print("written | yazıldı:", save_metrics("05_segmentation", to_metrics(res)))

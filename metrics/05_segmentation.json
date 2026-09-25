@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "05_segmentation.py",
-  "generated_at": "2026-09-25T05:12:39+03:00",
+  "generated_at": "2026-09-25T16:03:51+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": null,
   "source": {
    "script": {
-    "analysis/05_segmentation.py": "123346d65ae28c821a2c502538b634cb1ab20dbfe8440c7f4bafd25febe0b33f"
+    "analysis/05_segmentation.py": "2bd38953f80fe5bfa3da4b27601acd4a2eda3cdf0fb3c1fdef815e946d940659"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -218,9 +218,9 @@
     698583.0
    ]
   ],
-  "km_price_kapsam": {
-   "ust_sinir": 400000,
-   "disarida": 653
+  "km_price_scope": {
+   "upper_limit": 400000,
+   "outside": 653
   },
   "km_price": [
    [
@@ -321,28 +321,28 @@
    ]
   ],
   "brand_compare": {
-   "bmw_medyan": 1575000.0,
-   "audi_medyan": 1475000.0,
+   "bmw_median": 1575000.0,
+   "audi_median": 1475000.0,
    "bmw_n": 17896,
    "audi_n": 12092,
-   "bmw_ortalama": 1910680.0848793027,
-   "audi_ortalama": 1822023.2974694013,
+   "bmw_mean": 1910680.0848793027,
+   "audi_mean": 1822023.2974694013,
    "mwu_p": 1.6737972933552e-22,
    "cliffs_delta": 0.0663,
-   "not": "Mann-Whitney U: iki markanın fiyat dağılımı farkı (p<0.05 anlamlı). Cliff's δ: etki büyüklüğü (|δ|>0.33 orta, >0.47 büyük fark)."
+   "note": "Mann-Whitney U: iki markanın fiyat dağılımı farkı (p<0.05 anlamlı). Cliff's δ: etki büyüklüğü (|δ|>0.33 orta, >0.47 büyük fark)."
   },
   "age_km_note": "Medyan tipik fiyat, ortalama aykırı-etkili. Açıklık = fiyat çarpıklığı.",
   "kmeans": [
    {
     "cluster": 0,
-    "ad": "Yaşlı & yüksek-km ekonomik",
+    "name": "Yaşlı & yüksek-km ekonomik",
     "n": 9046,
-    "medyan": 1325000.0,
-    "yas": 14.0,
+    "median": 1325000.0,
+    "age": 14.0,
     "km": 253000.0,
     "hp": 177.0,
-    "agir_hasar_pct": 5.0,
-    "ayirt_edici": [
+    "heavy_damage_pct": 5.0,
+    "distinguishing": [
      [
       "gb_mileage",
       "+"
@@ -359,14 +359,14 @@
    },
    {
     "cluster": 1,
-    "ad": "Genç & temiz premium",
+    "name": "Genç & temiz premium",
     "n": 15976,
-    "medyan": 1950000.0,
-    "yas": 9.0,
+    "median": 1950000.0,
+    "age": 9.0,
     "km": 128000.0,
     "hp": 150.0,
-    "agir_hasar_pct": 2.0,
-    "ayirt_edici": [
+    "heavy_damage_pct": 2.0,
+    "distinguishing": [
      [
       "gb_mileage",
       "-"
@@ -383,14 +383,14 @@
    },
    {
     "cluster": 2,
-    "ad": "Hasar yoğun",
+    "name": "Hasar yoğun",
     "n": 4966,
-    "medyan": 1060000.0,
-    "yas": 14.0,
+    "median": 1060000.0,
+    "age": 14.0,
     "km": 247000.0,
     "hp": 150.0,
-    "agir_hasar_pct": 13.0,
-    "ayirt_edici": [
+    "heavy_damage_pct": 13.0,
+    "distinguishing": [
      [
       "door_painted",
       "+"
@@ -300353,8 +300353,8 @@
      0.224
     ]
    ],
-   "secilen_k": 3,
-   "not": "Silhouette en yüksek k=2 (0.242); k=3 için 0.188. k=3 silhouette ile değil, yorumlanabilirlik için sabit seçildi."
+   "chosen_k": 3,
+   "note": "Silhouette en yüksek k=2 (0.242); k=3 için 0.188. k=3 silhouette ile değil, yorumlanabilirlik için sabit seçildi."
   },
   "pca_axes": [
    {

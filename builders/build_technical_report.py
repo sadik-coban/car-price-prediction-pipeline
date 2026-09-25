@@ -780,7 +780,7 @@ def section_segment(c):
     L, A, T, figs = c.L, c.A, c.T, c.figs
     ks = met["kmeans_selection"]
     sil = ks["silhouette"]
-    K = ks["secilen_k"]
+    K = ks["chosen_k"]
     best_k, best_s = max(sil, key=lambda r: r[1])
     k_s = dict(sil)[K]
     rank = sorted([s for _, s in sil], reverse=True).index(k_s) + 1 if k_s is not None else None
@@ -804,7 +804,7 @@ def section_segment(c):
     A("")
     labs = cluster_labels(dom["kmeans"], lang)
     T([L("küme", "cluster"), L("ilan", "listings"), L("ortalamadan en çok ayrıldığı 3 eksen", "top 3 axes vs the mean")],
-      [[lab, num(c["n"], lang), " · ".join(f"{col(d, k, lang)} {arrow.get(s, s)}" for k, s in c["ayirt_edici"])]
+      [[lab, num(c["n"], lang), " · ".join(f"{col(d, k, lang)} {arrow.get(s, s)}" for k, s in c["distinguishing"])]
        for lab, c in zip(labs, dom["kmeans"])], "lrl")
     A(L("↑/↓ = kümenin ortalaması genelin üstünde/altında (z-skoru büyüklüğüne göre ilk 3). "
         "Kümelere ad verilmedi: k yorumlanabilirlik için sabitlendi, ayrım bu sütunda okunur.",
@@ -848,50 +848,50 @@ def section_hedonic(c):
     _n_model = len(v["ed"]["per_model_error"])
     # 2026-09-23: "eklenseydi katsayilari tasirdi" / "farkin bir kismi" olculmemisti ve "seri zaten onun
     # kabalastirilmis hali" regresyonda seri varmis gibi okunuyordu (yalniz segment var). Model etkili OLS bir kez
-    # kuruldu (build_site_data: hedonic_reliability.model_etkili).
-    _me = hr["model_etkili"]
-    _kp = _me["katsayi_pct"]
-    _pay = (_me["r2"] - v["hed_r2"]) / (v["model_r2_log"] - v["hed_r2"]) * 100
-    _ks = lambda k_, lab_: f"{lab_} {P(_kp[k_][0], lang, 2, sign=True)} → {P(_kp[k_][1], lang, 2, sign=True)}"  # noqa: E731
-    _yon = all((a_ > 0) == (b_ > 0) for a_, b_ in (_kp[k_] for k_ in ("yas", "hp100", "cc_litre", "km100k")))
+    # kuruldu (06_hedonic: hedonic_reliability.with_model).
+    _with_model = hr["with_model"]
+    _coef = _with_model["coef_pct"]
+    _share = (_with_model["r2"] - v["hed_r2"]) / (v["model_r2_log"] - v["hed_r2"]) * 100
+    _coef_text = lambda k_, lab_: f"{lab_} {P(_coef[k_][0], lang, 2, sign=True)} → {P(_coef[k_][1], lang, 2, sign=True)}"  # noqa: E731
+    _same_sign = all((a_ > 0) == (b_ > 0) for a_, b_ in (_coef[k_] for k_ in ("age", "hp100", "cc_litre", "km100k")))
     A(L(f"**`model` bu regresyona girmiyor.** Kardinalitesi çok yüksek"
         + (f" ({num(_n_model, lang)} ayrı değer)" if _n_model else "")
         + f"; regresyonda seri de yok, yalnız segment var. Ölçüldü: `C(model)` eklenince R² {v['hed_r2']} → "
-        f"{_me['r2']} — hedonik R² ile modelin aynı ölçekteki OOF R²'si ({v['model_r2_log']}, log fiyat) "
-        f"arasındaki farkın yaklaşık {P(_pay, lang, 0)} kadarı model kimliğinden — bir üst tahmin: C(model)'li R² "
+        f"{_with_model['r2']} — hedonik R² ile modelin aynı ölçekteki OOF R²'si ({v['model_r2_log']}, log fiyat) "
+        f"arasındaki farkın yaklaşık {P(_share, lang, 0)} kadarı model kimliğinden — bir üst tahmin: C(model)'li R² "
         f"örneklem içi, modelinki OOF (iki R² farklı n'de de: hedonik "
         f"{num(hr['n'], lang)}, model {num(v['n_dedup'], lang)} ilan). Doğrusal katsayılar "
-        + ("yönünü koruyor, büyüklükleri kayıyor" if _yon else "kayıyor, bazılarının yönü değişiyor")
-        + f": {_ks('yas', 'yaş')}, {_ks('hp100', '+100 hp')}, {_ks('cc_litre', '1 litre')}, "
-        f"{_ks('km100k', '100 bin km')}. Yani "
+        + ("yönünü koruyor, büyüklükleri kayıyor" if _same_sign else "kayıyor, bazılarının yönü değişiyor")
+        + f": {_coef_text('age', 'yaş')}, {_coef_text('hp100', '+100 hp')}, {_coef_text('cc_litre', '1 litre')}, "
+        f"{_coef_text('km100k', '100 bin km')}. Yani "
         f"buradaki \"kontrollü\" etkiler **model kimliği hariç** kontrollüdür. Modelin başlıktaki R²'si "
         f"({v['model_r2']}) ham ₺ ölçeğinde; hedonikle o karşılaştırılmamalı.",
         f"**`model` does not enter this regression.** Its cardinality is very high"
         + (f" ({num(_n_model, lang)} distinct values)" if _n_model else "")
         + f"; series is not in the regression either, only segment. Measured: adding `C(model)` moves R² from "
-        f"{v['hed_r2']} to {_me['r2']} — about {P(_pay, lang, 0)} of the gap between the hedonic R² and the model's "
+        f"{v['hed_r2']} to {_with_model['r2']} — about {P(_share, lang, 0)} of the gap between the hedonic R² and the model's "
         f"OOF R² on the same scale ({v['model_r2_log']}, log price) is model identity — an upper estimate: the "
         f"R² with C(model) is in-sample while the model's is OOF (the two also come from different n: hedonic {num(hr['n'], lang)}, model {num(v['n_dedup'], lang)} listings). The linear "
-        f"coefficients " + ("keep their sign but shift in size" if _yon else "shift, some changing sign")
-        + f": {_ks('yas', 'age')}, {_ks('hp100', '+100 hp')}, {_ks('cc_litre', '1 litre')}, "
-        f"{_ks('km100k', '100k km')}. So the \"controlled\" effects here are controlled for everything **except "
+        f"coefficients " + ("keep their sign but shift in size" if _same_sign else "shift, some changing sign")
+        + f": {_coef_text('age', 'age')}, {_coef_text('hp100', '+100 hp')}, {_coef_text('cc_litre', '1 litre')}, "
+        f"{_coef_text('km100k', '100k km')}. So the \"controlled\" effects here are controlled for everything **except "
         f"model identity**. The model's headline R² ({v['model_r2']}) is on the raw ₺ scale and should not be "
         f"read against the hedonic one."))
     A("")
     # OLS eksik deger kaldirmaz: kac ilanin neden elendigi build_error_drivers.py'de SAYILIR
-    # (hedonik_eksik), burada yalnizca yazilir. Kapi: n_dedup - toplam == hedonik n.
-    _he = v["ed"]["hedonik_eksik"]
-    if _he:
-        assert v["n_dedup"] - _he["toplam"] == v["hed_n"], (
-            f"hedonik eleme rapordaki n ile uyusmuyor: {v['n_dedup']} - {_he['toplam']} != {v['hed_n']}")
+    # (hedonic_dropped), burada yalnizca yazilir. Kapi: n_dedup - total == hedonik n.
+    _dropped = v["ed"]["hedonic_dropped"]
+    if _dropped:
+        assert v["n_dedup"] - _dropped["total"] == v["hed_n"], (
+            f"hedonik eleme rapordaki n ile uyusmuyor: {v['n_dedup']} - {_dropped['total']} != {v['hed_n']}")
         A(L(f"**Not:** Hedonik model bir OLS modelidir ve eksik değerlerle çalışamaz; bu yüzden eksik "
-            f"motor gücü ({num(_he['hp'], lang)}) ve eksik motor hacmi ({num(_he['cc'], lang)}) bulunan "
+            f"motor gücü ({num(_dropped['hp'], lang)}) ve eksik motor hacmi ({num(_dropped['cc'], lang)}) bulunan "
             f"ilanlar analiz öncesinde elenmiştir. Her iki alanın da ortak eksik olduğu satırlar "
-            f"düşüldüğünde veri setinden toplam {num(_he['toplam'], lang)} satır çıkarılmıştır.",
+            f"düşüldüğünde veri setinden toplam {num(_dropped['total'], lang)} satır çıkarılmıştır.",
             f"**Note:** The hedonic model is an OLS and cannot run with missing values, so listings with "
-            f"missing engine power ({num(_he['hp'], lang)}) or missing displacement ({num(_he['cc'], lang)}) "
+            f"missing engine power ({num(_dropped['hp'], lang)}) or missing displacement ({num(_dropped['cc'], lang)}) "
             f"were removed before the analysis. Once the rows missing both are counted only once, "
-            f"{num(_he['toplam'], lang)} rows in total were dropped from the dataset."))
+            f"{num(_dropped['total'], lang)} rows in total were dropped from the dataset."))
         A("")
     figs(3)
 
@@ -900,70 +900,70 @@ def section_hedonic(c):
     A("")
     T([L("terim", "term"), L("etki", "effect"), L("log katsayı [%95 GA]", "log coef [95% CI]"),
        L("etki %95 GA", "effect 95% CI"), L("anlamlı", "significant")],
-      [[tx(HED_TERM_EN, b["terim"], lang), P(b["yuzde_etki"], lang, 2, sign=True),
-        f"{b['nokta']:+.4f} [{b['ci_lo']:+.4f}, {b['ci_hi']:+.4f}]",
+      [[tx(HED_TERM_EN, b["term"], lang), P(b["pct_effect"], lang, 2, sign=True),
+        f"{b['point']:+.4f} [{b['ci_lo']:+.4f}, {b['ci_hi']:+.4f}]",
         f"{P(ex(b['ci_lo']), lang, 2, sign=True)} … {P(ex(b['ci_hi']), lang, 2, sign=True)}",
-        L("hayır", "no") if b["sifir_iceriyor"] else L("evet", "yes")]
+        L("hayır", "no") if b["contains_zero"] else L("evet", "yes")]
        for b in hr["bootstrap"]], "lrrrl")
-    _mz = hr["merkez"]
-    A(L(f"Etki = exp(β)−1. Yaş ve km **medyan araca** ({num(_mz['yas'], lang)} yaş, "
-        f"{num(_mz['km'], lang)} km) ortalandı: yaş ve km satırları o araçtaki marjinal etki. "
+    _center = hr["center"]
+    A(L(f"Etki = exp(β)−1. Yaş ve km **medyan araca** ({num(_center['age'], lang)} yaş, "
+        f"{num(_center['km'], lang)} km) ortalandı: yaş ve km satırları o araçtaki marjinal etki. "
         f"Kare ve etkileşim terimleri (yaş², km², yaş×km) tek başına okunmaz; eğrinin bükülmesini taşır.",
-        f"Effect = exp(β)−1. Age and km are centred on the **median car** ({num(_mz['yas'], lang)} "
-        f"years, {num(_mz['km'], lang)} km): the age and km rows are the marginal effect at that car. "
+        f"Effect = exp(β)−1. Age and km are centred on the **median car** ({num(_center['age'], lang)} "
+        f"years, {num(_center['km'], lang)} km): the age and km rows are the marginal effect at that car. "
         f"Squared and interaction terms (age², km², age×km) are not read alone; they carry the curvature."))
     A("")
 
-    me = hr["motor_etki"]
+    eng = hr["engine_effect"]
     A(L("### Motor etkisi", "### Engine effect"))
     A("")
-    A(L(f"+{hr['birim']['hp']} → **{P(me['hp100_pct'], lang, sign=True)}**, +{hr['birim']['cc']} → "
-        f"**{P(me['cc_litre_pct'], lang, sign=True)}** (aynı regresyonda, diğeri sabitken). Hacmin etkisi, güç "
+    A(L(f"+{hr['unit']['hp']} → **{P(eng['hp100_pct'], lang, sign=True)}**, +{hr['unit']['cc']} → "
+        f"**{P(eng['cc_litre_pct'], lang, sign=True)}** (aynı regresyonda, diğeri sabitken). Hacmin etkisi, güç "
         f"sabitlendikten sonra kalan kısımdır; birimler farklı olduğu için iki sayı doğrudan kıyaslanmaz.",
-        f"+{hr['birim']['hp']} → **{P(me['hp100_pct'], lang, sign=True)}**, +{hr['birim']['cc']} → "
-        f"**{P(me['cc_litre_pct'], lang, sign=True)}** (same regression, the other held fixed). Displacement's effect "
+        f"+{hr['unit']['hp']} → **{P(eng['hp100_pct'], lang, sign=True)}**, +{hr['unit']['cc']} → "
+        f"**{P(eng['cc_litre_pct'], lang, sign=True)}** (same regression, the other held fixed). Displacement's effect "
         f"is what remains once power is fixed; the units differ, so the two numbers are not directly comparable."))
     A("")
 
     A(L("### Yakıt bazında cc–HP korelasyonu", "### cc–HP correlation by fuel"))
     A("")
     T([L("yakıt", "fuel"), "Pearson", "Pearson (log)", "Spearman", "cc / HP", "n"],
-      [[tx(FUEL_EN, r["yakit"], lang), f"{r['pearson']:.3f}", f"{r['pearson_log']:.3f}", f"{r['spearman']:.3f}",
-        f"{r['cc_hp_oran']:.1f}", num(r["n"], lang)] for r in hr["yakit_korelasyon"]], "lrrrrr")
-    _wk = min(hr["yakit_korelasyon"], key=lambda r: r["pearson"])
-    A(L(f"Genel korelasyon {hr['genel_korelasyon']}. İlişki yakıta göre değişiyor — en zayıf "
-        f"{_wk['yakit']} (Pearson {_wk['pearson']:.3f}, n {num(_wk['n'], lang)}). Hacim güçten türetilemiyor; "
+      [[tx(FUEL_EN, r["fuel"], lang), f"{r['pearson']:.3f}", f"{r['pearson_log']:.3f}", f"{r['spearman']:.3f}",
+        f"{r['cc_hp_ratio']:.1f}", num(r["n"], lang)] for r in hr["fuel_correlation"]], "lrrrrr")
+    _weakest = min(hr["fuel_correlation"], key=lambda r: r["pearson"])
+    A(L(f"Genel korelasyon {hr['overall_correlation']}. İlişki yakıta göre değişiyor — en zayıf "
+        f"{_weakest['fuel']} (Pearson {_weakest['pearson']:.3f}, n {num(_weakest['n'], lang)}). Hacim güçten türetilemiyor; "
         f"ikisi ayrı öznitelik olarak kalır.",
-        f"Overall correlation {hr['genel_korelasyon']}. The relationship varies by fuel — weakest for "
-        f"{tx(FUEL_EN, _wk['yakit'], lang)} (Pearson {_wk['pearson']:.3f}, n {num(_wk['n'], lang)}). Displacement "
+        f"Overall correlation {hr['overall_correlation']}. The relationship varies by fuel — weakest for "
+        f"{tx(FUEL_EN, _weakest['fuel'], lang)} (Pearson {_weakest['pearson']:.3f}, n {num(_weakest['n'], lang)}). Displacement "
         f"cannot be derived from power; both stay as separate features."))
     A("")
 
     # VIF — 2026-09-23: eskiden 7 degiskenli, HIC KURULMAMIS bir yardimci matristen geliyordu ve
     # "hepsi 5'in altinda" cumlesi oradan cikiyordu. Artik kurulan modelin kendi tasarimindan; yanina
     # ayni tasarimin ORTALANMAMIS hali konuyor ki ortalamanin neyi duzelttigi gorunsun.
-    vif, vif_ham = hr["vif"], dict(hr["vif_ham"])
-    vk_t, vk_v = hr["vif_kukla"]
+    vif, vif_raw = hr["vif"], dict(hr["vif_raw"])
+    vk_t, vk_v = hr["vif_dummy"]
     vmax = max(vif, key=lambda r: r[1])
-    hmax = max(hr["vif_ham"], key=lambda r: r[1])
+    hmax = max(hr["vif_raw"], key=lambda r: r[1])
     _nm = lambda t_: VIF_TERM.get(t_, (t_, t_))[0 if lang == "tr" else 1]
     A(L("### VIF — çoklu bağlantı", "### VIF — multicollinearity"))
     A("")
     T([L("terim", "term"), L("VIF (kurulan model)", "VIF (fitted model)"), L("VIF (ortalanmamış)", "VIF (uncentred)")],
-      [[_nm(t), f"{x:.2f}", f"{vif_ham[t]:.2f}"] for t, x in vif], "lrr")
-    _esik = ("hepsi 5'in altında" if vmax[1] < 5 else
+      [[_nm(t), f"{x:.2f}", f"{vif_raw[t]:.2f}"] for t, x in vif], "lrr")
+    _vif_level_tr = ("hepsi 5'in altında" if vmax[1] < 5 else
              ("10'un altında" if vmax[1] < 10 else "10'un üzerinde — dikkatle okunmalı"))
-    _esik_en = ("all below 5" if vmax[1] < 5 else
+    _vif_level_en = ("all below 5" if vmax[1] < 5 else
                 ("below 10" if vmax[1] < 10 else "above 10 — read with care"))
     A(L(f"Tablodaki değerler kurulan modelin kendi tasarım matrisinden. En yüksek **{_nm(vmax[0])} "
-        f"{vmax[1]:.2f}** — {_esik}. Ortalanmamış tasarımda aynı terim grubu çok daha yüksek "
+        f"{vmax[1]:.2f}** — {_vif_level_tr}. Ortalanmamış tasarımda aynı terim grubu çok daha yüksek "
         f"(**{_nm(hmax[0])} {hmax[1]:.2f}**): yaş, yaş², km, km² ve yaş×km aynı iki değişkenden türediği "
         f"için birbirine yapısal olarak bağlı. Medyan araca ortalamak bunu giderir; tahminler ve R² "
         f"değişmez, yalnız doğrusal katsayıların anlamı netleşir. Kuklalar arasında en yüksek VIF "
         f"`{vk_t}` ({vk_v:.2f}): kukla VIF'i referans seviyesi küçük olduğunda şişer ve yalnız o kukla "
         f"katsayılarının standart hatasını etkiler — burada raporlanmıyor.",
         f"The values come from the fitted model's own design matrix. The highest is **{_nm(vmax[0])} "
-        f"{vmax[1]:.2f}** — {_esik_en}. In the uncentred design the same group is far higher "
+        f"{vmax[1]:.2f}** — {_vif_level_en}. In the uncentred design the same group is far higher "
         f"(**{_nm(hmax[0])} {hmax[1]:.2f}**): age, age², km, km² and age×km are all built from two "
         f"variables, so they are structurally linked. Centring on the median car removes that; "
         f"predictions and R² do not change, only the meaning of the linear coefficients sharpens. "
@@ -973,19 +973,19 @@ def section_hedonic(c):
     A("")
 
 
-    va = hr["varsayim"]
+    assum = hr["assumptions"]
     A(L("### Varsayım testleri", "### Assumption tests"))
     A("")
-    A(L(f"Breusch-Pagan (eşit varyans) p = **{fp(va['homoskedastisite_p'])}** · Jarque-Bera "
-        f"(normallik) p = **{fp(va['normallik_p'])}** → ikisi de ihlal. Bu yüzden çıkarım çıplak "
-        f"OLS p-değerine dayanmıyor: güven aralıkları, veriyi **{hr['bootstrap_ayar']['n_boot']} "
+    A(L(f"Breusch-Pagan (eşit varyans) p = **{fp(assum['homoskedasticity_p'])}** · Jarque-Bera "
+        f"(normallik) p = **{fp(assum['normality_p'])}** → ikisi de ihlal. Bu yüzden çıkarım çıplak "
+        f"OLS p-değerine dayanmıyor: güven aralıkları, veriyi **{hr['bootstrap_setup']['n_boot']} "
         f"kez yerine koymalı yeniden örnekleyip** modeli her turda yeniden kuran bootstrap'in "
         f"**%2.5–97.5 yüzdeliklerinden** geliyor. Model ayrıca HC3 robust kovaryansla kuruluyor; "
         f"bu, yayımlanan aralıklara girmiyor.",
-        f"Breusch-Pagan (equal variance) p = **{fp(va['homoskedastisite_p'])}** · Jarque-Bera "
-        f"(normality) p = **{fp(va['normallik_p'])}** → both violated. Inference therefore does "
+        f"Breusch-Pagan (equal variance) p = **{fp(assum['homoskedasticity_p'])}** · Jarque-Bera "
+        f"(normality) p = **{fp(assum['normality_p'])}** → both violated. Inference therefore does "
         f"not rest on plain OLS p-values: the intervals are the **2.5–97.5 percentiles** of a "
-        f"bootstrap that resamples the rows with replacement **{hr['bootstrap_ayar']['n_boot']} "
+        f"bootstrap that resamples the rows with replacement **{hr['bootstrap_setup']['n_boot']} "
         f"times** and refits the model each round. The model is also fitted with HC3 robust "
         f"covariance, which does not enter the published intervals."))
     A("")

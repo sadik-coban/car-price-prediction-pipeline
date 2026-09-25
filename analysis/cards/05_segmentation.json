@@ -1,0 +1,51 @@
+{
+ "script": "analysis/05_segmentation.py",
+ "question": {
+  "tr": "Piyasanın yapısı ne: segment, kasa, yaş ve km'ye göre fiyat, iki markanın farkı, ilanların kümeleri ve onları ayıran eksenler?",
+  "en": "What is the market's structure: price by segment, body, age and mileage, the difference between the two brands, the clusters of listings and the axes that separate them?"
+ },
+ "data": {
+  "tr": "load_clean() (29.988 ilan).",
+  "en": "load_clean() (29,988 listings)."
+ },
+ "method": {
+  "tr": "Gruplara göre medyan / ortalama fiyat tabloları; BMW–Audi için Mann–Whitney U ve Cliff's δ; standartlaştırılmış sayısal özniteliklerde k=2..8 için dirsek ve silhouette, yorumlanabilirlik için sabit k ile KMeans; PCA eksenleri ve yükleri.",
+  "en": "Median / mean price tables by group; Mann–Whitney U and Cliff's δ for BMW vs Audi; elbow and silhouette for k=2..8 on the standardised numeric features, KMeans with a k fixed for interpretability; PCA axes and loadings."
+ },
+ "split": "none",
+ "leakage": {
+  "duplicate_ad_id": {
+   "status": "n/a",
+   "note": null
+  },
+  "target_in_features": {
+   "status": "n/a",
+   "note": null
+  },
+  "fit_on_full_data": {
+   "status": "n/a",
+   "note": null
+  },
+  "temporal": {
+   "status": "n/a",
+   "note": null
+  }
+ },
+ "evidence": {
+  "tests": [
+   "tests/analysis/test_05_segmentation.py::test_brands_add_up",
+   "tests/analysis/test_05_segmentation.py::test_price_tables_cover_listings",
+   "tests/analysis/test_05_segmentation.py::test_clusters",
+   "tests/analysis/test_05_segmentation.py::test_k_selection",
+   "tests/analysis/test_05_segmentation.py::test_pca_axes"
+  ],
+  "report_keys": [
+   "domain.brand_compare.bmw_median",
+   "domain.km_price_scope",
+   "domain.kmeans",
+   "methodology.kmeans_selection.chosen_k",
+   "methodology.pca_axes"
+  ]
+ },
+ "status": "complete"
+}

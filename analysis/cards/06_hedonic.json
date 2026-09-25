@@ -1,0 +1,57 @@
+{
+ "script": "analysis/06_hedonic.py",
+ "question": {
+  "tr": "Her sürücünün (yaş, km, motor, hasar) fiyata kontrollü etkisi ne kadar ve bu tahmin ne kadar güvenilir?",
+  "en": "How large is each driver's (age, mileage, engine, damage) controlled effect on price, and how reliable is that estimate?"
+ },
+ "data": {
+  "tr": "load_clean() (29.988 ilan); motor gücü ya da hacmi eksik 434 ilan OLS'tan çıkar (29.554).",
+  "en": "load_clean() (29,988 listings); the 434 listings missing engine power or displacement leave the OLS (29,554)."
+ },
+ "method": {
+  "tr": "Log fiyat üzerine OLS (yaş ve km medyan araca ortalanmış, kare ve etkileşim terimleri, segment kuklaları); 1000 satır bootstrap'iyle %95 güven aralıkları; VIF (ortalanmış ve ortalanmamış), Breusch–Pagan ve Jarque–Bera; yakıt bazında hp–cc korelasyonu; C(model) eklenmiş tek OLS ile model kimliğinin etkisi.",
+  "en": "OLS on log price (age and km centred on the median car, squared and interaction terms, segment dummies); 95% intervals from a 1000-round row bootstrap; VIF (centred and uncentred), Breusch–Pagan and Jarque–Bera; the hp–cc correlation by fuel; one OLS with C(model) added for the effect of model identity."
+ },
+ "split": "none",
+ "leakage": {
+  "duplicate_ad_id": {
+   "status": "n/a",
+   "note": null
+  },
+  "target_in_features": {
+   "status": "none",
+   "note": {
+    "tr": "Fiyat yalnız bağımlı değişken; açıklayıcılarda fiyattan türeyen terim yok.",
+    "en": "Price is only the dependent variable; no regressor is derived from price."
+   }
+  },
+  "fit_on_full_data": {
+   "status": "present",
+   "note": {
+    "tr": "Tasarım gereği: açıklama modeli bütün veride kuruluyor, tahmin performansı iddiası yok; çıkarım satır bootstrap'iyle.",
+    "en": "By design: an explanatory model fitted on all data, with no claim of predictive performance; inference comes from a row bootstrap."
+   }
+  },
+  "temporal": {
+   "status": "n/a",
+   "note": null
+  }
+ },
+ "evidence": {
+  "tests": [
+   "tests/analysis/test_06_hedonic.py::test_sample_size",
+   "tests/analysis/test_06_hedonic.py::test_bootstrap_rows",
+   "tests/analysis/test_06_hedonic.py::test_headline_matches_bootstrap",
+   "tests/analysis/test_06_hedonic.py::test_vif",
+   "tests/analysis/test_06_hedonic.py::test_model_identity"
+  ],
+  "report_keys": [
+   "domain.hedonic_reliability.bootstrap",
+   "domain.hedonic_reliability.center",
+   "domain.hedonic_reliability.with_model.coef_pct",
+   "domain.hedonic_reliability.assumptions",
+   "error_drivers.hedonic_dropped"
+  ]
+ },
+ "status": "complete"
+}
