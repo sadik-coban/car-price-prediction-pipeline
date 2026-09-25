@@ -17,6 +17,12 @@ EN: Builds the SEMI-RAW database data/cars.duckdb from data/raw/{audi,bmw}/<snap
     leaves the old DB untouched. It stops before touching anything when <out>.wal exists (the old DB was not
     closed cleanly), when the old DB is open in another program, or when the raw data is incomplete (a missing
     brand folder, a snapshot folder without details.jsonl, an unreadable line).
+    NO GUESSING: before anything is read into rows, the raw files are compared with the register of observed
+    values (db/observed_values.json, db/lib/observed_values.py): a new field, a value or format the register has
+    not seen, or an unknown damage label stops the build with the field, the value, how many records and the first
+    file:line — nothing is written. The parsers (lib/process_for_db.py) raise UnknownValue on any form the data never
+    showed, as a second guard. Adapt the code to the new value first, then update the register
+    (python tools/observed_values.py); tests/db/test_observed_values.py checks the code against the register.
     NOTE — the API: this semi-raw file is NOT what the API gets. The live API expects unknown = false / 0;
     db/build_gold_db.py derives data/cars_gold.duckdb from this file, and publish_data_to_s3.py uploads only a
     file that keeps that gold contract (docs/database.md → "Gold adımı").
@@ -36,6 +42,12 @@ TR: data/raw/{audi,bmw}/<tarama>/details.jsonl'den YARI HAM veritabanı data/car
     dokunulmadan kalır. <out>.wal varsa (eski DB düzgün kapanmamış), eski DB başka programda açıksa ya da ham
     veri eksikse (marka klasörü yok, details.jsonl'suz tarama klasörü, okunamayan satır) hiçbir şeye dokunmadan
     durur.
+    TAHMİN YOK: satırlar okunmadan önce ham dosyalar gözlenen değerler kaydıyla karşılaştırılır
+    (db/observed_values.json, db/lib/observed_values.py): yeni bir alan, kaydın görmediği bir değer ya da biçim veya
+    bilinmeyen bir hasar etiketi kurulumu alan, değer, kayıt sayısı ve ilk dosya:satır ile durdurur — hiçbir şey
+    yazılmaz. Ayrıştırıcılar (lib/process_for_db.py) verinin hiç göstermediği her biçimde ikinci emniyet olarak
+    UnknownValue yükseltir. Önce kodu yeni değere göre uyarlayın, sonra kaydı güncelleyin
+    (python tools/observed_values.py); tests/db/test_observed_values.py kodu kayda göre sınar.
     NOT — API: bu yarı ham dosya API'ye giden dosya DEĞİL. Canlı API bilinmeyen = false / 0 bekler;
     db/build_gold_db.py bu dosyadan data/cars_gold.duckdb'yi türetir ve publish_data_to_s3.py yalnız o gold
     sözleşmesini tutan dosyayı yükler (docs/database.md → "Gold adımı").
@@ -51,6 +63,7 @@ import duckdb
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib import observed_values as OV  # noqa: E402
 from lib.process_for_db import DAMAGE_STATUS_MAP, jsonl_to_silver_df  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent          # repo root | depo kökü
@@ -59,7 +72,9 @@ DEFAULT_OUT = ROOT / "data" / "cars.duckdb"
 BRANDS = ("audi", "bmw")
 TABLE = "car_listings"
 CACHE_TABLES = ("dashboard_cache", "options_cache")
-FOREIGN_PLATES = ("Mavi plakalı", "Yabancı plakalı")   # dropped: the report is about TR cars | TR araçlara odak
+# EN: plate values dropped (the report is about TR cars); the data shows only "Mavi plakalı" besides "(TR) Türkiye"
+# TR: atılan plaka değerleri (rapor TR araçlarla ilgili); veride "(TR) Türkiye" dışında yalnız "Mavi plakalı" var
+FOREIGN_PLATES = ("Mavi plakalı",)
 CSV_NAME = "duplicate_ad_ids.csv"
 
 # EN: DB column prefix of a panel → silver status column; all 13 panels (the first 11 in the old S3 order,
@@ -214,11 +229,11 @@ def duckdb_safe_dtypes(df):
 
 def read_all_silver(data_dir=DATA_DIR, brands=BRANDS):
     """
-    EN: Every snapshot of every brand → one silver DataFrame (no de-duplication), without foreign / blue plates.
+    EN: Every snapshot of every brand → one silver DataFrame (no de-duplication), without blue plates.
         Stops with FileNotFoundError on a missing brand folder or a snapshot folder without details.jsonl, and
         with ValueError on an unreadable line — nothing is skipped silently. Returns an empty DataFrame when
         no record is usable.
-    TR: Her markanın her taraması → tek silver DataFrame (tekilleştirme yok), yabancı / mavi plakalılar hariç.
+    TR: Her markanın her taraması → tek silver DataFrame (tekilleştirme yok), mavi plakalılar hariç.
         Marka klasörü ya da details.jsonl'suz tarama klasörü eksikse FileNotFoundError, okunamayan satırda
         ValueError ile durur — hiçbir şey sessizce atlanmaz. Kullanılabilir kayıt yoksa boş DataFrame döner.
     """
@@ -244,7 +259,7 @@ def read_all_silver(data_dir=DATA_DIR, brands=BRANDS):
     foreign = df["plate_origin"].isin(FOREIGN_PLATES)
     if foreign.any():
         df = df[~foreign].reset_index(drop=True)
-        print(f"  - {int(foreign.sum())} foreign / blue-plate listings dropped | yabancı / mavi plakalı atıldı")
+        print(f"  - {int(foreign.sum())} blue-plate listings dropped | mavi plakalı atıldı")
     return duckdb_safe_dtypes(df)
 
 
@@ -337,12 +352,35 @@ def write_csv(dups, path):
     os.replace(tmp, path)
 
 
-def build(out_path=DEFAULT_OUT, data_dir=DATA_DIR, brands=BRANDS):
+def check_observed(data_dir=DATA_DIR, brands=BRANDS, register=None):
+    """
+    EN: Compares the raw files with the register of observed values (register: a dict, default the file
+        db/observed_values.json). Raises ValueError listing every unseen field, value, format or damage label (with
+        counts and the first file:line) — the build must not guess.
+    TR: Ham dosyaları gözlenen değerler kaydıyla karşılaştırır (register: dict; varsayılan db/observed_values.json
+        dosyası). Görülmemiş her alanı, değeri, biçimi ya da hasar etiketini (sayı ve ilk dosya:satır ile) listeleyen
+        ValueError yükseltir — kurulum tahmin etmemeli.
+    """
+    register = OV.load() if register is None else register
+    _, detail = OV.scan_raw(OV.raw_files(data_dir, brands))
+    problems = OV.unseen(detail, register)
+    if problems:
+        raise ValueError("raw data has what the register has not seen | ham veride kaydın görmediği şeyler var:\n  "
+                         + "\n  ".join(problems)
+                         + "\nadapt the code, then update the register | kodu uyarlayın, sonra kaydı güncelleyin: "
+                           "python tools/observed_values.py")
+
+
+def build(out_path=DEFAULT_OUT, data_dir=DATA_DIR, brands=BRANDS, register=None):
     """
     EN: Builds the DB at out_path from data_dir (steps in the module header) and writes duplicate_ad_ids.csv
-        next to it. Returns: {"out", "csv", "rows", "columns", "duplicate_ad_ids", "price_history", "caches"}.
+        next to it. First checks the raw files against the register of observed values (check_observed; register
+        None = db/observed_values.json) and stops before anything is written on an unseen value.
+        Returns: {"out", "csv", "rows", "columns", "duplicate_ad_ids", "price_history", "caches"}.
         Raises SystemExit when there is no data at all.
-    TR: data_dir'den out_path'e DB'yi kurar (adımlar modül başlığında) ve yanına duplicate_ad_ids.csv yazar.
+    TR: data_dir'den out_path'e DB'yi kurar (adımlar modül başlığında) ve yanına duplicate_ad_ids.csv yazar. Önce
+        ham dosyaları gözlenen değerler kaydına göre sınar (check_observed; register None = db/observed_values.json)
+        ve görülmemiş bir değerde hiçbir şey yazmadan durur.
         Döndürür: {"out", "csv", "rows", "columns", "duplicate_ad_ids", "price_history", "caches"}.
         Hiç veri yoksa SystemExit.
     """
@@ -351,6 +389,8 @@ def build(out_path=DEFAULT_OUT, data_dir=DATA_DIR, brands=BRANDS):
     if wal.exists():
         raise RuntimeError(f"{wal} exists: the old DB was not closed cleanly; open and close it once with DuckDB "
                            f"first | eski DB düzgün kapanmamış; önce DuckDB ile bir kez açıp kapatın")
+    print(f"Checking against the register | kayda göre sınanıyor: {OV.REGISTRY_PATH.name}")
+    check_observed(data_dir, brands, register)
     print(f"Reading | okunuyor: {', '.join(brands)}")
     df = read_all_silver(data_dir, brands)
     if df.empty:

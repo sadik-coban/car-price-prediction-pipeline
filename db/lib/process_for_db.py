@@ -53,6 +53,20 @@ from bs4 import BeautifulSoup
 _MAPPINGS = json.loads((Path(__file__).with_name("damage_mappings.json")).read_text(encoding="utf-8"))
 DAMAGE_PART_MAP = _MAPPINGS["panels"]          # site label → silver status column | site etiketi → silver kolonu
 DAMAGE_STATUS_MAP = _MAPPINGS["statuses"]      # site label → enum | site etiketi → enum
+# EN: the exact texts of the yes/no fields in the data (db/observed_values.json); None = unknown on purpose
+# TR: verideki evet/hayır alanlarının tam metinleri (db/observed_values.json); None = bilerek bilinmiyor
+HEAVY_DAMAGE_TEXT = {"Evet": True, "Hayır": False, "Belirtilmemiş": None}
+TRADE_TEXT = {"Takasa Uygun": True, "Takasa Uygun Değil": False}
+FIRST_OWNER_TEXT = {"İlk Sahibiyim": True, "İlk Sahibi Değilim": False}
+ENGINE_CC_EXACT = re.compile(r"^(\d+) cc$")
+ENGINE_CC_BUCKET = re.compile(r"^(\d+) - (\d+) cm3$")
+ENGINE_CC_BELOW = re.compile(r"^(\d+) cm3' e kadar$")
+POWER_HP_EXACT = re.compile(r"^(\d+) hp$")
+POWER_HP_BUCKET = re.compile(r"^(\d+) - (\d+) HP$")
+POWER_HP_BELOW = re.compile(r"^(\d+) HP'ye kadar$")
+POWER_HP_ABOVE = re.compile(r"^(\d+) HP ve üzeri$")
+YEAR_RANGE = re.compile(r"^(\d{4}) - (\d{4})$")
+LISTING_DATE = re.compile(r"^(\d{1,2}) (\S+) (\d{4})$")
 
 TR_MONTHS = {
     "Ocak": 1, "Şubat": 2, "Mart": 3, "Nisan": 4,
@@ -67,6 +81,21 @@ DESCRIPTION_HEADING = re.compile(r"^Açıklama ?")
 # =====================================================================
 # Helpers | Yardımcılar
 # =====================================================================
+
+class UnknownValue(ValueError):
+    """
+    EN: A raw value in a form the data never showed. The build stops instead of guessing; adapt the code to the
+        value, then update the register (python tools/observed_values.py). where = "file:line" once known.
+    TR: Verinin hiç göstermediği biçimde bir ham değer. Kurulum tahmin etmek yerine durur; kodu değere göre uyarlayın,
+        sonra kaydı güncelleyin (python tools/observed_values.py). where = biliniyorsa "dosya:satır".
+    """
+
+    def __init__(self, what, value, where=None):
+        """EN: Keeps what, value and where. / TR: Ne, değer ve nerede bilgisini tutar."""
+        self.what, self.value, self.where = what, value, where
+        super().__init__(f"{where + ': ' if where else ''}{what}: görülmemiş değer · unseen value {value!r} — "
+                         f"kurulum tahmin etmez, durur | the build does not guess, it stops")
+
 
 def _is_blank(val):
     """
@@ -98,16 +127,6 @@ def _opt_int(val):
     if val is None:
         return None
     return int(val)
-
-
-def _tr_lower(s):
-    """
-    EN: Turkish-safe lower case. Python's "İ".lower() gives "i" + a combining dot (U+0307), so
-        "İlk Sahibiyim".lower().startswith("ilk") was False (first owner was always False until 2026-09-23).
-    TR: Türkçe güvenli küçültme. Python'da "İ".lower() "i" + birleşik nokta (U+0307) verir; bu yüzden
-        "İlk Sahibiyim".lower().startswith("ilk") False dönüyordu (2026-09-23'e kadar ilk sahip hep False).
-    """
-    return str(s).replace("İ", "i").replace("I", "ı").lower()
 
 
 # =====================================================================
@@ -183,22 +202,20 @@ def _price_tl(val):
 
 def _listing_date(val):
     """
-    EN: '26 Kasım 2025' → date(2025, 11, 26).
-    TR: '26 Kasım 2025' → date(2025, 11, 26).
+    EN: '26 Kasım 2025' → date(2025, 11, 26); blank → None. Any other form, an unknown month or an impossible day
+        raises UnknownValue.
+    TR: '26 Kasım 2025' → date(2025, 11, 26); boş → None. Başka her biçim, bilinmeyen ay ya da olmayan gün
+        UnknownValue yükseltir.
     """
     if _is_blank(val):
         return None
-    parts = str(val).strip().split()
-    if len(parts) != 3:
-        return None
-    day_s, month_s, year_s = parts
-    month = TR_MONTHS.get(month_s)
-    if not (month and day_s.isdigit() and year_s.isdigit()):
-        return None
+    m = LISTING_DATE.match(str(val).strip())
+    if not m or m.group(2) not in TR_MONTHS:
+        raise UnknownValue("KısaBilgi - İlan Tarihi", val)
     try:
-        return datetime(int(year_s), month, int(day_s)).date()
+        return datetime(int(m.group(3)), TR_MONTHS[m.group(2)], int(m.group(1))).date()
     except ValueError:
-        return None
+        raise UnknownValue("KısaBilgi - İlan Tarihi", val) from None
 
 
 def _scraped_at(val):
@@ -231,28 +248,20 @@ def _engine_cc(val):
           '1601 - 1800 cm3'    → (None, 1601, 1800, True)       bucket | kova
           "1200 cm3' e kadar"  → (None, None, 1200, True)       open below | alttan açık
           '-' or blank         → (None, None, None, None)
-    TR: Motor hacmi, iki biçim. (cc, alt, üst, aralık_mı) döndürür (örnekler yukarıda).
+        Any other form raises UnknownValue (the data shows only these three).
+    TR: Motor hacmi, iki biçim. (cc, alt, üst, aralık_mı) döndürür (örnekler yukarıda). Başka her biçim
+        UnknownValue yükseltir (veri yalnız bu üçünü gösteriyor).
     """
     if _is_blank(val):
         return None, None, None, None
     s = str(val).strip()
-    # EN: 'cc' is exact, 'cm3' a bucket ('cc' never occurs inside 'cm3') | TR: 'cc' kesin, 'cm3' kova
-    if "cc" in s and "cm3" not in s:
-        digits = re.sub(r"\D", "", s)
-        if digits:
-            return int(digits), None, None, False
-        return None, None, None, None
-    if "kadar" in s:
-        nums = re.findall(r"\d+", s)
-        if nums:
-            return None, None, int(nums[0]), True
-        return None, None, None, None
-    nums = re.findall(r"\d+", s)
-    if len(nums) >= 2:
-        return None, int(nums[0]), int(nums[1]), True
-    if len(nums) == 1:
-        return None, int(nums[0]), int(nums[0]), True
-    return None, None, None, None
+    if m := ENGINE_CC_EXACT.match(s):
+        return int(m.group(1)), None, None, False
+    if m := ENGINE_CC_BUCKET.match(s):
+        return None, int(m.group(1)), int(m.group(2)), True
+    if m := ENGINE_CC_BELOW.match(s):
+        return None, None, int(m.group(1)), True
+    raise UnknownValue("KısaBilgi - Motor Hacmi", val)
 
 
 def _power_hp(val):
@@ -263,50 +272,52 @@ def _power_hp(val):
           "50 HP'ye kadar"    → (None, None, 50, True)          open below | alttan açık
           '601 HP ve üzeri'   → (None, 601, None, True)         open above | üstten açık
           '-' or blank        → (None, None, None, None)
-        Until 2026-09-23 the two open buckets were written as exact values.
+        Until 2026-09-23 the two open buckets were written as exact values. Any other form raises UnknownValue.
     TR: Motor gücü, iki biçim. (hp, alt, üst, aralık_mı) döndürür (örnekler yukarıda).
-        2026-09-23'e kadar iki açık uçlu kova kesin değer yazılıyordu.
+        2026-09-23'e kadar iki açık uçlu kova kesin değer yazılıyordu. Başka her biçim UnknownValue yükseltir.
     """
     if _is_blank(val):
         return None, None, None, None
     s = str(val).strip()
-    nums = re.findall(r"\d+", s)
-    if not nums:
-        return None, None, None, None
-    low_s = _tr_lower(s)
-    if "kadar" in low_s:
-        return None, None, int(nums[0]), True
-    if "üzeri" in low_s:
-        return None, int(nums[0]), None, True
-    is_range = " - " in s or s.endswith("HP")
-    if is_range:
-        if len(nums) >= 2:
-            return None, int(nums[0]), int(nums[1]), True
-        return None, int(nums[0]), int(nums[0]), True
-    return int(nums[0]), None, None, False
+    if m := POWER_HP_EXACT.match(s):
+        return int(m.group(1)), None, None, False
+    if m := POWER_HP_BUCKET.match(s):
+        return None, int(m.group(1)), int(m.group(2)), True
+    if m := POWER_HP_BELOW.match(s):
+        return None, None, int(m.group(1)), True
+    if m := POWER_HP_ABOVE.match(s):
+        return None, int(m.group(1)), None, True
+    raise UnknownValue("KısaBilgi - Motor Gücü", val)
 
 
 def _year_range(val):
     """
-    EN: '2003 - 2008' → (2003, 2008).
-    TR: '2003 - 2008' → (2003, 2008).
+    EN: '2003 - 2008' → (2003, 2008); blank → (None, None); any other form (e.g. a single year) raises
+        UnknownValue instead of guessing.
+    TR: '2003 - 2008' → (2003, 2008); boş → (None, None); başka her biçim (ör. tek yıl) tahmin yerine UnknownValue
+        yükseltir.
     """
     if _is_blank(val):
         return None, None
-    nums = re.findall(r"\d{4}", str(val))
-    if len(nums) >= 2:
-        return int(nums[0]), int(nums[1])
-    if len(nums) == 1:
-        return int(nums[0]), int(nums[0])
-    return None, None
+    m = YEAR_RANGE.match(str(val).strip())
+    if not m:
+        raise UnknownValue("Genel Bakış - Üretim Yılı (İlk/Son)", val)
+    return int(m.group(1)), int(m.group(2))
 
 
 def _yes_no(val):
     """
-    EN: 'Evet' → True, 'Hayır' → False; 'Belirtilmemiş', blank or missing → None (unknown stays unknown).
-    TR: 'Evet' → True, 'Hayır' → False; 'Belirtilmemiş', boş ya da yok → None (bilinmeyen bilinmeyen kalır).
+    EN: 'Evet' → True, 'Hayır' → False; 'Belirtilmemiş', blank or missing → None (unknown stays unknown); any other
+        text raises UnknownValue.
+    TR: 'Evet' → True, 'Hayır' → False; 'Belirtilmemiş', boş ya da yok → None (bilinmeyen bilinmeyen kalır); başka
+        her metin UnknownValue yükseltir.
     """
-    return {"Evet": True, "Hayır": False}.get(_str(val))
+    s = _str(val)
+    if s is None:
+        return None
+    if s not in HEAVY_DAMAGE_TEXT:
+        raise UnknownValue("KısaBilgi - Ağır Hasarlı", val)
+    return HEAVY_DAMAGE_TEXT[s]
 
 
 def _bool_takasa(val):
@@ -320,21 +331,25 @@ def _bool_takasa(val):
     """
     if _is_blank(val):
         return None
-    s = _tr_lower(str(val).strip())
-    if "değil" in s:
-        return False
-    return True if "uygun" in s else None
+    s = str(val).strip()
+    if s not in TRADE_TEXT:
+        raise UnknownValue("Takasa Uygun", val)
+    return TRADE_TEXT[s]
 
 
 def _bool_first_owner(val):
     """
-    EN: 'İlk Sahibiyim' → True; 'İlk Sahibi Değilim' → False; missing / '-' → None (was False until 2026-09-24).
-    TR: 'İlk Sahibiyim' → True; 'İlk Sahibi Değilim' → False; yok / '-' → None (2026-09-24'e kadar False).
+    EN: 'İlk Sahibiyim' → True; 'İlk Sahibi Değilim' → False; missing / '-' → None (was False until 2026-09-24);
+        any other text raises UnknownValue (it used to become False silently).
+    TR: 'İlk Sahibiyim' → True; 'İlk Sahibi Değilim' → False; yok / '-' → None (2026-09-24'e kadar False); başka
+        her metin UnknownValue yükseltir (eskiden sessizce False oluyordu).
     """
     if _is_blank(val):
         return None
-    s = _tr_lower(str(val).strip())
-    return s.startswith("ilk sahib") and "değil" not in s
+    s = str(val).strip()
+    if s not in FIRST_OWNER_TEXT:
+        raise UnknownValue("Genel Bakış - Aracın ilk sahibiyim", val)
+    return FIRST_OWNER_TEXT[s]
 
 
 def _strip_html(val):
@@ -373,20 +388,23 @@ def _description(val):
 
 def _parse_damage_list(items):
     """
-    EN: Hasar_Listesi ("Panel: Status" lines) → dict of the 13 status columns (None when not listed).
-    TR: Hasar_Listesi ("Parça: Durum" satırları) → 13 durum kolonunun dict'i (listede yoksa None).
+    EN: Hasar_Listesi ("Panel: Status" lines) → dict of the 13 status columns (None when not listed). An item
+        without ":", an unknown panel or an unknown status raises UnknownValue (they used to be skipped silently).
+    TR: Hasar_Listesi ("Parça: Durum" satırları) → 13 durum kolonunun dict'i (listede yoksa None). ":" içermeyen
+        öğe, bilinmeyen parça ya da bilinmeyen durum UnknownValue yükseltir (eskiden sessizce atlanıyordu).
     """
     out = {col: None for col in DAMAGE_PART_MAP.values()}
     if not isinstance(items, list):
         return out
     for entry in items:
         if not isinstance(entry, str) or ":" not in entry:
-            continue
-        part, status = entry.split(":", 1)
-        col = DAMAGE_PART_MAP.get(part.strip())
-        enum = DAMAGE_STATUS_MAP.get(status.strip())
-        if col and enum:
-            out[col] = enum
+            raise UnknownValue("Hasar_Listesi", entry)
+        part, status = (s.strip() for s in entry.split(":", 1))
+        if part not in DAMAGE_PART_MAP:
+            raise UnknownValue("Hasar_Listesi parça · part", part)
+        if status not in DAMAGE_STATUS_MAP:
+            raise UnknownValue("Hasar_Listesi durum · status", status)
+        out[DAMAGE_PART_MAP[part]] = DAMAGE_STATUS_MAP[status]
     return out
 
 
@@ -552,7 +570,10 @@ def jsonl_to_silver_df(path):
                 raw = json.loads(line)
             except json.JSONDecodeError as e:
                 raise ValueError(f"{path}:{lineno}: unreadable JSON line | okunamayan JSON satırı ({e.msg})") from e
-            rec = process_record(raw)
+            try:
+                rec = process_record(raw)
+            except UnknownValue as e:
+                raise UnknownValue(e.what, e.value, f"{path}:{lineno}") from None
             if rec is not None:
                 rows.append(rec)
     return pd.DataFrame(rows)

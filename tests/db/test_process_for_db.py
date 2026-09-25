@@ -141,7 +141,7 @@ def test_process_record_full():
     s = P.process_record(raw_record())
     assert (s["ad_id"], s["price"], s["brand"], s["kb_year"], s["kb_mileage"]) == (10000001, 1250000, "audi", 2015, 120000)
     assert (s["engine_cc"], s["engine_cc_is_range"], s["power_hp"], s["torque_nm"]) == (1968, False, 150, 320)
-    assert (s["accel_0_100"], s["fuel_cons_avg"], s["mtv_yearly"], s["seat_count"]) == (8.6, 4.9, 8629, 5)
+    assert (s["accel_0_100"], s["fuel_cons_avg"], s["mtv_yearly"], s["seat_count"]) == (8.6, 4.9, 1198, 5)
     assert (s["is_heavy_damaged"], s["is_first_owner"], s["kb_trade_available"]) == (False, False, True)
     assert s["plate_origin"] == "(TR) Türkiye" and s["description_text"] == "Araç sorunsuzdur."
     assert s["kb_paint_change_summary"] == "Tamamı orjinal" and s["listing_date"] == date(2025, 11, 26)
@@ -201,4 +201,32 @@ def test_jsonl_broken_line_names_file_and_line(tmp_path):
     path = tmp_path / "details.jsonl"
     path.write_text(json.dumps(raw_record(), ensure_ascii=False) + "\n{bozuk\n", encoding="utf-8")
     with pytest.raises(ValueError, match=r"details\.jsonl:2"):
+        P.jsonl_to_silver_df(path)
+
+
+@pytest.mark.parametrize("parse, value", [
+    (P._year_range, "2019 -"), (P._year_range, "2019 - Devam ediyor"), (P._year_range, "Belirtilmemiş"),
+    (P._yes_no, "Bilinmiyor"), (P._bool_takasa, "Uygun olabilir"), (P._bool_first_owner, "Belirtilmemiş"),
+    (P._engine_cc, "1.8 L"), (P._engine_cc, "2001 cm3 ve üzeri"), (P._power_hp, "150 HP"), (P._power_hp, "150 PS"),
+    (P._listing_date, "26.11.2025"), (P._listing_date, "26 Kasm 2025"), (P._listing_date, "31 Şubat 2025"),
+    (P._parse_damage_list, ["Tavan Orjinal"]), (P._parse_damage_list, ["Kaput: Orjinal"]),
+    (P._parse_damage_list, ["Tavan: Çizik"]),
+])
+def test_unseen_forms_stop(parse, value):
+    """
+    EN: A form the data never showed raises UnknownValue instead of a guess (a single production year used to
+        become start = end, an unknown first-owner text became False, unknown damage labels were skipped).
+    TR: Verinin hiç göstermediği bir biçim tahmin yerine UnknownValue yükseltir (tek üretim yılı ilk = son oluyordu,
+        bilinmeyen ilk sahip metni False oluyordu, bilinmeyen hasar etiketleri atlanıyordu).
+    """
+    with pytest.raises(P.UnknownValue):
+        parse(value)
+
+
+def test_unknown_value_names_file_and_line(tmp_path):
+    """EN: The error names the file, the line and the value. / TR: Hata dosyayı, satırı ve değeri söyler."""
+    path = tmp_path / "details.jsonl"
+    records = [raw_record(), raw_record(10000002, **{"Genel Bakış - Aracın ilk sahibiyim": "Belirtilmemiş"})]
+    path.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in records) + "\n", encoding="utf-8")
+    with pytest.raises(P.UnknownValue, match=r"details\.jsonl:2: Genel Bakış - Aracın ilk sahibiyim: .*'Belirtilmemiş'"):
         P.jsonl_to_silver_df(path)

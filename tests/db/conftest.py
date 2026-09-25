@@ -98,7 +98,7 @@ def raw_record(ad_no=10000001, **overrides):
         "Boyut ve Kapasite - Aks Aralığı": "2820 mm",
         "Boyut ve Kapasite - Koltuk Sayısı": "5",
         "Boyut ve Kapasite - Ön Lastik": "225/50 R17",
-        "Genel Bakış - Yıllık MTV": "8.629 TL",
+        "Genel Bakış - Yıllık MTV": "1.198 TL",
         "Genel Bakış - Ortalama Kasko": "25.000 TL",
         "Genel Bakış - Ortalama Trafik Sigortası": "7.000 TL",
         "Genel Bakış - Üretim Yılı (İlk/Son)": "2015 - 2019",

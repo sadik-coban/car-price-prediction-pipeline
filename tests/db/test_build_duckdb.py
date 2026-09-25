@@ -10,11 +10,12 @@ TR: db/build_duckdb.py testleri — kolon listesi, kurulan DB'deki yarı ham kur
     durdurur, eksik ham veri yolu söyleyerek durdurur. Her şey geçici klasörlerde kurulur.
 """
 import hashlib
+import re
 
 import duckdb
 import pandas as pd
 import pytest
-from conftest import S1, S2, make_old_db, raw_record, small_tree, write_raw_tree
+from conftest import S1, S2, damage_list, make_old_db, raw_record, small_tree, write_raw_tree
 
 import build_duckdb as BD
 from lib.process_for_db import DAMAGE_PART_MAP
@@ -262,8 +263,8 @@ def test_replace_blocked_stops(tree_and_db, monkeypatch):
     assert sha(out) == before and not (out.parent / "cars.duckdb.tmp").exists()
 
 
-def test_no_foreign_plates(tmp_path):
-    """EN: A tree without foreign plates keeps every row. / TR: Yabancı plakasız ağaçta her satır kalır."""
+def test_no_blue_plates(tmp_path):
+    """EN: A tree without blue plates keeps every row. / TR: Mavi plakasız ağaçta her satır kalır."""
     data_dir = write_raw_tree(tmp_path / "raw", {("audi", S1): [raw_record(10000001)],
                                                  ("bmw", S1): [raw_record(10000002, brand="bmw")]})
     assert BD.build(tmp_path / "cars.duckdb", data_dir=data_dir)["rows"] == 2
@@ -317,3 +318,42 @@ def test_main(tmp_path, monkeypatch, capsys):
         raise FileNotFoundError("brand folder missing")
     monkeypatch.setattr(BD, "build", fail)
     assert BD.main([]) == 1 and "FAILED: brand folder missing" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("overrides, expected", [
+    ({"Genel Bakış - Plaka Uyruğu": "Yabancı plakalı"}, "unseen value 'Yabancı plakalı'"),
+    ({"Genel Bakış - Üretim Yılı (İlk/Son)": "2019 -"}, "unseen format '# -'"),
+    ({"Yeni Alan": "x"}, "Yeni Alan: yeni alan"),
+    ({"Hasar_Listesi": damage_list(Tavan="Çizik")}, "unseen state 'Çizik'"),
+])
+def test_unseen_value_stops_before_writing(tmp_path, overrides, expected):
+    """
+    EN: A value, format, field or damage label the register (db/observed_values.json) has not seen stops the build
+        before anything is written; the message names it and its first file:line.
+    TR: Kaydın (db/observed_values.json) görmediği bir değer, biçim, alan ya da hasar etiketi kurulumu hiçbir şey
+        yazılmadan durdurur; mesaj onu ve ilk dosya:satırını söyler.
+    """
+    data_dir = write_raw_tree(tmp_path / "raw", {("audi", S1): [raw_record(10000001)],
+                                                 ("bmw", S1): [raw_record(10000002, brand="bmw", **overrides)]})
+    out = tmp_path / "cars.duckdb"
+    with pytest.raises(ValueError, match=re.escape(expected)) as info:
+        BD.build(out, data_dir=data_dir)
+    assert f"bmw/{S1}/details.jsonl:1" in str(info.value)
+    assert not out.exists() and not (tmp_path / "cars.duckdb.tmp").exists() and not (tmp_path / BD.CSV_NAME).exists()
+
+
+def test_register_argument_is_used(tmp_path):
+    """
+    EN: An explicit register is the one checked: a register without blue plates stops a tree that has one.
+    TR: Açıkça verilen kayıt sınanır: mavi plakasız bir kayıt, mavi plaka içeren ağacı durdurur.
+    """
+    from lib import observed_values as OV
+    clean = write_raw_tree(tmp_path / "clean", {("audi", S1): [raw_record(10000001)],
+                                                ("bmw", S1): [raw_record(10000002, brand="bmw")]})
+    register = {"raw": OV.scan_raw(OV.raw_files(clean))[0]}
+    blue = write_raw_tree(tmp_path / "blue", {("audi", S1): [raw_record(10000001)],
+                                              ("bmw", S1): [raw_record(10000002, brand="bmw",
+                                                                       **{"Genel Bakış - Plaka Uyruğu": "Mavi plakalı"})]})
+    with pytest.raises(ValueError, match="Mavi plakalı"):
+        BD.build(tmp_path / "cars.duckdb", data_dir=blue, register=register)
+    assert BD.build(tmp_path / "cars.duckdb", data_dir=clean, register=register)["rows"] == 2
