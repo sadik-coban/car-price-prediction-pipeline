@@ -19,6 +19,7 @@ TR: Verify kapısının metrik referansı. Analiz zinciri donuk veride determini
 Run / Koşum:
     python tools/snapshot_metrics.py --diff                       # differences | farklar
     python tools/snapshot_metrics.py --accept "<reason | gerekçe>"
+    python tools/snapshot_metrics.py --accept "<reason>" --rename-exemption FILE OLD NEW   # after a key rename
 """
 import argparse
 import fnmatch
@@ -161,13 +162,39 @@ def _short(value):
     return text if len(text) <= 60 else text[:57] + "..."
 
 
-def accept(reason, metrics_dir=METRICS_DIR, baseline_dir=BASELINE_DIR, now=None):
+def rename_exemption(name, old, new, metrics_dir=METRICS_DIR, baseline_dir=BASELINE_DIR):
+    """
+    EN: Moves one exemption to the new name of its key after a metric key rename (docs/metric-key-renames.json),
+        keeping its reasons. Refuses unless an exemption with exactly (name, old) exists, old matches no current
+        key of that file and new matches at least one. Returns: (old, new).
+    TR: Bir metrik anahtarı yeniden adlandırıldıktan sonra (docs/metric-key-renames.json) bir istisnayı, gerekçeleri
+        korunarak anahtarın yeni adına taşır. Tam olarak (name, old) istisnası yoksa, old o dosyanın güncel bir
+        anahtarına hâlâ uyuyorsa ya da new hiçbirine uymuyorsa reddeder. Döndürür: (old, new).
+    """
+    path = baseline_dir / EXEMPTIONS_FILE.name
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    hits = [e for e in doc["exemptions"] if e["file"] == name and e["path"] == old]
+    if len(hits) != 1:
+        raise ValueError(f"no single exemption {name} {old} | tek istisna yok")
+    keys = snapshot(metrics_dir)[0].get(name, {})
+    if any(fnmatch.fnmatchcase(k, old) for k in keys):
+        raise ValueError(f"{old} still matches a key of {name} | eski yol hâlâ uyuyor")
+    if not any(fnmatch.fnmatchcase(k, new) for k in keys):
+        raise ValueError(f"{new} matches no key of {name} | yeni yol hiçbir anahtara uymuyor")
+    hits[0]["path"] = new
+    with open(path, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(json.dumps(doc, ensure_ascii=False, indent=2) + "\n")
+    return old, new
+
+
+def accept(reason, metrics_dir=METRICS_DIR, baseline_dir=BASELINE_DIR, now=None, renamed=()):
     """
     EN: Takes the current metrics as the new baseline, for a stated reason, and appends the acceptance (time,
-        reason, what changed) to accept_log.jsonl. Refuses without a reason.
+        reason, what changed, exemptions moved by rename_exemption) to accept_log.jsonl. Refuses without a reason.
         Returns: the differences that were accepted.
-    TR: Güncel metrikleri belirtilen gerekçeyle yeni referans yapar ve onayı (zaman, gerekçe, ne değişti)
-        accept_log.jsonl'a ekler. Gerekçesiz reddeder. Döndürür: onaylanan farklar.
+    TR: Güncel metrikleri belirtilen gerekçeyle yeni referans yapar ve onayı (zaman, gerekçe, ne değişti,
+        rename_exemption'ın taşıdığı istisnalar) accept_log.jsonl'a ekler. Gerekçesiz reddeder.
+        Döndürür: onaylanan farklar.
     """
     if not reason or not reason.strip():
         raise ValueError("a reason is required | gerekçe gerekli")
@@ -179,6 +206,8 @@ def accept(reason, metrics_dir=METRICS_DIR, baseline_dir=BASELINE_DIR, now=None)
         path.write_text(json.dumps(doc, ensure_ascii=False, indent=1, sort_keys=True) + "\n", encoding="utf-8")
     entry = {"at": (now or datetime.now(timezone.utc)).isoformat(timespec="seconds"), "reason": reason.strip(),
              "changed": {k: len(v) for k, v in changed.items()}, "first": [m for v in changed.values() for m in v][:20]}
+    if renamed:
+        entry["exemptions_renamed"] = [list(r) for r in renamed]
     with open(baseline_dir / LOG_FILE.name, "a", encoding="utf-8") as fh:
         fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
     return changed
@@ -193,7 +222,11 @@ def main(argv=None):
     group = ap.add_mutually_exclusive_group(required=True)
     group.add_argument("--diff", action="store_true", help="show differences from the baseline")
     group.add_argument("--accept", metavar="REASON", help="take the current metrics as the baseline, with a reason")
+    ap.add_argument("--rename-exemption", nargs=3, action="append", default=[], metavar=("FILE", "OLD", "NEW"),
+                    help="with --accept: move an exemption to its key's new name (metric key rename)")
     args = ap.parse_args(argv)
+    if args.rename_exemption and args.accept is None:
+        ap.error("--rename-exemption only with --accept | yalnız --accept ile")
     if args.accept is not None:
         if not args.accept.strip():
             ap.error("--accept needs a reason | gerekçe gerekli")
@@ -202,7 +235,8 @@ def main(argv=None):
         sys.path.insert(0, str(ROOT / "builders"))
         from report_lib import metrics_view
         metrics_view.load_view(ROOT)
-        changed = accept(args.accept)
+        renamed = [rename_exemption(*r) for r in args.rename_exemption]
+        changed = accept(args.accept, renamed=renamed)
         print("baseline updated | referans güncellendi:", {k: len(v) for k, v in changed.items()})
         return 0
     diff = compare()
