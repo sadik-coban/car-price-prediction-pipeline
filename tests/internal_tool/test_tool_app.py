@@ -21,7 +21,7 @@ TOOL = ROOT / "internal_tool"
 sys.path.insert(0, str(ROOT))
 from internal_tool import report_sections as rs  # noqa: E402
 
-PAGES = ["views/reports.py", "views/scripts.py", "views/explorer.py"]
+PAGES = ["views/reports.py", "views/scripts.py", "views/explorer.py", "views/values.py"]
 TIMEOUT = 60
 
 
@@ -42,7 +42,7 @@ def test_router_opens_the_start_page(loopback):
     at = AppTest.from_file(str(TOOL / "app.py"), default_timeout=TIMEOUT).run()
     assert not at.exception, [e.value for e in at.exception]
     assert at.title[0].value == "cardatasys · iç araç"
-    assert [s.value for s in at.subheader][:3] == ["Raporlar", "Betikler", "Veri gezgini"]
+    assert [s.value for s in at.subheader][:4] == ["Raporlar", "Betikler", "Veri gezgini", "Değerler"]
     assert any(m.value.startswith("**Analizlerin son koşumu:** 20") for m in at.markdown)
 
 

@@ -35,6 +35,29 @@ Bu dosya analizin girdisi. API'ye doğrudan gitmez: yayın, ondan türetilen gol
   dokunulmadan kalır. `<out>.wal` varsa, DB başka programda açıksa ya da ham veri eksikse (marka klasörü,
   `details.jsonl`'suz tarama, okunamayan satır) hiçbir şeye dokunmadan durur. `duplicate_ad_ids.csv` DB'nin
   yanına yazılır.
+- **Tahmin yok: gözlenen değerler kaydı (2026-09-25, kullanıcının ilkesi: "yaşanmamış case'leri varsayma").**
+  `db/observed_values.json` verinin gerçekte ne tuttuğunu yazar:
+  - her ham alanın değerleri (60 farklı değere kadar) ya da biçimleri (`"# TL"`, `"# - # cm3"`);
+  - hasar etiketleri;
+  - az değerli silver kolonları;
+  - seri → modeller.
+
+  Dosya `python tools/observed_values.py` ile üretilir (`--check` veriyle karşılaştırır). Kurulum bu kayda üç yerden
+  bağlanır:
+  - `build_duckdb.py` satırları okumadan önce ham veriyi kayıtla karşılaştırır. Yeni bir alan, görülmemiş bir değer
+    ya da biçim veya bilinmeyen bir hasar etiketi kurulumu **hiçbir şey yazmadan** durdurur; mesaj alanı, değeri,
+    kaç kayıtta olduğunu ve ilk dosya:satır'ı söyler.
+  - Ayrıştırıcılar (`db/lib/process_for_db.py`) verinin hiç göstermediği biçimde tahmin etmek yerine
+    `UnknownValue` yükseltir. Eskiden tek yıllı üretim yılı "ilk = son" oluyor, bilinmeyen ilk sahip metni `False`
+    sayılıyor, bilinmeyen hasar etiketi atlanıyordu.
+  - Testler iki yönde sınar: kodun andığı her değer veride görülmüş, verideki her değer kodda bilerek ele alınmış
+    (`tests/db/test_observed_values.py`, `tests/analysis/test_observed_values_analysis.py`).
+
+  Bu sırada veride hiç görülmeyen üç varsayım kaldırıldı: plaka `"Yabancı plakalı"`, segment kuralındaki 14 seri
+  (`8 Serisi`, `X1`–`X7`, `Z4`, `Q2`–`Q8`) ve `02_missingness`'in `"nan"`/`"None"` gibi eksik jetonları.
+  Gerçek ham veri geçici bir yola yeniden kurulunca `data/cars.duckdb` ile satır satır aynı çıkıyor (veri testi).
+
+  Yeni bir değer görülürse önce kod o değere göre uyarlanır, sonra kayıt güncellenir.
 - **`engine_cc_val` iki yerde iki anlamda.** DB'de kovanın orta noktası (açık uçlu kovada bilinen sınır);
   modelin aynı adlı özniteliği `engine_cc_up` (üst sınır, gerekçe teknik rapor §1). DB kolonunun adı,
   onu okuyan bir API kırılmasın diye değiştirilmedi. API'nin drift ekranı bu kolonu okuyor, yani orta noktayı

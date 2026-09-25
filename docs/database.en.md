@@ -37,6 +37,29 @@ derived from it (`data/cars_gold.duckdb`, below). Until 2026-09-24 this file its
   leaves the old DB untouched. It stops before touching anything when `<out>.wal` exists, when the DB is open
   in another program, or when the raw data is incomplete (a brand folder, a snapshot without
   `details.jsonl`, an unreadable line). `duplicate_ad_ids.csv` is written next to the DB.
+- **No guessing: the register of observed values (2026-09-25, the owner's rule: "don't assume cases that never
+  happened").** `db/observed_values.json` records what the data actually holds:
+  - each raw field's values (up to 60 distinct) or formats (`"# TL"`, `"# - # cm3"`);
+  - the damage labels;
+  - the silver columns with few values;
+  - series → models.
+
+  It is written by `python tools/observed_values.py` (`--check` compares it with the data). The build ties to it in
+  three places:
+  - `build_duckdb.py` compares the raw data with the register before reading any rows. A new field, an unseen
+    value or format, or an unknown damage label stops the build **with nothing written**; the message names the
+    field, the value, how many records and the first file:line.
+  - The parsers (`db/lib/process_for_db.py`) raise `UnknownValue` on any form the data never showed instead of
+    guessing. A single production year used to become "start = end", an unknown first-owner text became `False`,
+    and an unknown damage label was skipped.
+  - Tests check both ways: every value the code names was seen in the data, and every value in the data is handled
+    on purpose (`tests/db/test_observed_values.py`, `tests/analysis/test_observed_values_analysis.py`).
+
+  At the same time, three assumptions the data never showed were removed: the plate `"Yabancı plakalı"`, 14 series
+  in the segment rule (`8 Serisi`, `X1`–`X7`, `Z4`, `Q2`–`Q8`), and `02_missingness`'s missing tokens such as
+  `"nan"`/`"None"`. The real raw data rebuilt in a temp folder equals `data/cars.duckdb` row for row (a data test).
+
+  When a new value shows up, the code is adapted to it first, then the register is updated.
 - **`engine_cc_val` means two things in two places.** In the DB it is the bucket's midpoint (the known
   bound for an open-ended bucket); the model's feature of the same name is `engine_cc_up` (the upper bound,
   reasoning in technical report §1). The DB column was not renamed, so an API reading it does not break.

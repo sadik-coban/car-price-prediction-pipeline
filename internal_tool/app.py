@@ -1,10 +1,11 @@
 """
 app.py
 EN: The internal tool's entry point (started by launch.py): page setup, the loopback guard and the pages — start
-    (opens first), reports, scripts, data explorer. Each page is its own file under views/ so it can also be tested
-    alone.
-TR: İç aracın giriş noktası (launch.py başlatır): sayfa ayarı, loopback koruması ve sayfalar — başlangıç (ilk açılan),
-    raporlar, betikler, veri gezgini. Her sayfa views/ altında kendi dosyasında, böylece tek başına da sınanabilir.
+    (opens first), reports, scripts, data explorer, values. Each page is its own file under views/ so it can also
+    be tested alone.
+TR: İç aracın giriş noktası (launch.py başlatır): sayfa ayarı, loopback koruması ve sayfalar — başlangıç (ilk
+    açılan), raporlar, betikler, veri gezgini, değerler. Her sayfa views/ altında kendi dosyasında, böylece tek
+    başına da sınanabilir.
 """
 import sys
 from pathlib import Path
@@ -22,4 +23,5 @@ ui.require_loopback()
 st.navigation([st.Page("views/home.py", title="Başlangıç", default=True),
                st.Page("views/reports.py", title="Raporlar"),
                st.Page("views/scripts.py", title="Betikler"),
-               st.Page("views/explorer.py", title="Veri gezgini")]).run()
+               st.Page("views/explorer.py", title="Veri gezgini"),
+               st.Page("views/values.py", title="Değerler")]).run()

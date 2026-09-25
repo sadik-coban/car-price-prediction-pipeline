@@ -27,6 +27,8 @@ PAGES = [
     ("views/explorer.py", "Veri gezgini", "Kaynak seç (ham / silver / gold), **+ Koşul ekle** ile istediğin kolona "
                                           "koşul koy (koşullar VE ile birleşir). Bir ilanın herhangi bir hücresine "
                                           "tıkla: tüm ayrıntısı bir pencerede açılır."),
+    ("views/values.py", "Değerler", "Verinin gerçekte ne tuttuğu: her alanın değerleri ya da biçimleri. DB kurulumu "
+                                    "burada olmayan bir değerde durur; kod yalnız buradakileri bekleyebilir."),
 ]
 
 ui.require_loopback()
