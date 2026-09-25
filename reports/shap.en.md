@@ -79,17 +79,17 @@ Colour is the car's age. In the same **150–250k km** band the median mileage c
 
 | feature | LightGBM | CatBoost (SVD) | CatBoost (native) |
 |---|---:|---:|---:|
-| Age (years) | 43.9% | 30.9% | 33.0% |
-| Engine (hp + cc) | 20.8% | 17.2% | 17.6% |
-| Mileage | 12.9% | 22.1% | 22.9% |
-| Model/series name | 8.8% | 13.7% | 17.2% |
-| Damage (panels + heavy damage) | 6.5% | 7.6% | 6.9% |
+| Age (years) | 43.9% | 30.9% | 32.1% |
+| Engine (hp + cc) | 20.8% | 17.2% | 17.1% |
+| Mileage | 12.9% | 22.1% | 22.3% |
+| Model/series name | 8.8% | 13.7% | 16.7% |
+| Damage (panels + heavy damage) | 6.5% | 7.6% | 5.5% |
 | Segment | 5.2% | 7.1% | 0.1% |
-| Body type | 1.0% | 0.4% | 1.2% |
-| Transmission | 0.7% | 0.9% | 0.1% |
-| Fuel | 0.1% | 0.1% | 0.0% |
-| Drivetrain | 0.0% | 0.1% | 0.3% |
-| Brand | 0.0% | 0.0% | 0.6% |
+| Body type | 1.0% | 0.4% | 2.9% |
+| Transmission | 0.7% | 0.9% | 1.4% |
+| Fuel | 0.1% | 0.1% | 0.3% |
+| Drivetrain | 0.0% | 0.1% | 0.5% |
+| Brand | 0.0% | 0.0% | 1.1% |
 
 On accuracy the three variants are close (MAPE 6.49% · 6.44% · 6.58%). They differ on reasoning: LightGBM gives age 43.9%, CatBoost (SVD) 30.9% (13.0 points apart); on mileage it reverses (12.9% · 22.1%). Age and mileage move together, so which one gets the credit is the model's preference. **Takeaway:** the top three items are the same in all three models (Age (years), Engine (hp + cc), Mileage), but their order and shares depend on the model; in CatBoost (native) the 3rd and 4th items are only 0.4 points apart.
 

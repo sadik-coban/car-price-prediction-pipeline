@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "03_segment_quality.py",
-  "generated_at": "2026-09-25T15:55:15+03:00",
+  "generated_at": "2026-09-25T16:55:28+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,12 +11,12 @@
   "run_id": null,
   "source": {
    "script": {
-    "analysis/03_segment_quality.py": "3e498d8c4b66dac8828b9e3a78c876a0566d07a03cf361fcb40c38134aa3a8a4"
+    "analysis/03_segment_quality.py": "13278a2118b96a933ef433c7c7b322b5de76322320283108a404b5f11a3474b1"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
     "analysis/lib/common.py": "533eaad7a29580e93aeff01214fc024538dd6a6ab717e6b669e7e7b0a4399295",
-    "analysis/lib/segment_rule.py": "2def025c05905657341f21133844b1a378be05202a67bc93b975e086448b60c1"
+    "analysis/lib/segment_rule.py": "9631086ebfe07bc7bc90bd672acbab305243b9a96bff427ee6ea0c20639defa1"
    }
   }
  },
@@ -216,9 +216,9 @@
     ]
    },
    "paths": {
-    "harita": 29832,
-    "temel_sinif": 137,
-    "model_tablosu": 19
+    "series_map": 29832,
+    "base_class": 137,
+    "model_table": 19
    },
    "from_model_name": [
     [

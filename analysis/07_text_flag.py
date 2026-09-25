@@ -42,7 +42,7 @@ def performance_family(listings):
     EN: Listings whose segment was resolved outside the plain series map (M/S/RS lines, i8, Z4 M).
     TR: Segmenti düz seri haritası dışında çözülen ilanlar (M/S/RS serileri, i8, Z4 M).
     """
-    return np.array([SR.resolve(s, m)[1] != "harita" for s, m in zip(listings["series"], listings["model"])])
+    return np.array([SR.resolve(s, m)[1] != SR.PATH_SERIES_MAP for s, m in zip(listings["series"], listings["model"])])
 
 
 def controlled_odds(listings, big, flag, perf):

@@ -4,7 +4,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T15:41:59+03:00",
+  "_meta.generated_at": "2026-09-25T16:55:02+03:00",
   "_meta.run_id": null,
   "_meta.script": "01_dedup_leakage.py",
   "error_drivers.plate_scope.distribution": {
@@ -81,7 +81,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T15:42:00+03:00",
+  "_meta.generated_at": "2026-09-25T16:55:03+03:00",
   "_meta.run_id": null,
   "_meta.script": "01_engine_rule.py",
   "error_drivers.engine_rule.definition": "referans = ayni modelin kesin (kovasiz) degerli ilanlarinin medyani; fark = |aday − referans|; yalniz iki siniri da bilinen kovalar ve referansi olan modeller; yuzdelikler 5/25/50/75/95; konum = (referans − alt) / (ust − alt); ciftler = [alt, ust, aralik mi, ilan], iki siniri da olan ilanlar (kesin degerde alt = ust)",
@@ -185,7 +185,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T15:42:07+03:00",
+  "_meta.generated_at": "2026-09-25T16:55:10+03:00",
   "_meta.run_id": null,
   "_meta.script": "01_gold_contract.py",
   "error_drivers.gold_contract.dropped": {
@@ -208,7 +208,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T15:42:06+03:00",
+  "_meta.generated_at": "2026-09-25T16:55:09+03:00",
   "_meta.run_id": null,
   "_meta.script": "01_unspecified_panels.py",
   "error_drivers.unspecified.all_unspecified": 1235,
@@ -232,7 +232,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T15:54:53+03:00",
+  "_meta.generated_at": "2026-09-25T16:55:12+03:00",
   "_meta.run_id": null,
   "_meta.script": "02_missingness.py",
   "error_drivers.raw_columns.raw": 117,
@@ -336,7 +336,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T15:55:14+03:00",
+  "_meta.generated_at": "2026-09-25T16:55:26+03:00",
   "_meta.run_id": null,
   "_meta.script": "03_association.py",
   "domain.numeric_correlation.high_pairs": {
@@ -398,7 +398,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T15:56:33+03:00",
+  "_meta.generated_at": "2026-09-25T16:56:37+03:00",
   "_meta.run_id": null,
   "_meta.script": "03_brand_ablation.py",
   "domain.brand_ablation.brand_only.MAE": 162812.0,
@@ -426,7 +426,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T15:55:15+03:00",
+  "_meta.generated_at": "2026-09-25T16:55:28+03:00",
   "_meta.run_id": null,
   "_meta.script": "03_segment_quality.py",
   "domain.series_segment_matrix": {
@@ -460,16 +460,16 @@
    "sha256": "3be570c5dc4ac064712ed1f0e4de1ffefdfe186d6ceab85338be49ff4e3a2d23"
   },
   "error_drivers.segment_quality.note": "Segment seri + gerekirse model adindan turetiliyor; ham gb_segment kullanilmiyor. 'G' gercek bir segment degil (govdesi MPV). Cozulemeyen seri/model kalirsa uretec durur.",
-  "error_drivers.segment_quality.paths.harita": 29832,
-  "error_drivers.segment_quality.paths.model_tablosu": 19,
-  "error_drivers.segment_quality.paths.temel_sinif": 137
+  "error_drivers.segment_quality.paths.base_class": 137,
+  "error_drivers.segment_quality.paths.model_table": 19,
+  "error_drivers.segment_quality.paths.series_map": 29832
  },
  "04_target": {
   "_meta.data_until": "2026-06-27",
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T05:12:36+03:00",
+  "_meta.generated_at": "2026-09-25T16:56:39+03:00",
   "_meta.run_id": null,
   "_meta.script": "04_target.py",
   "domain.price_dist.median": 1545000.0,
@@ -487,7 +487,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T16:03:51+03:00",
+  "_meta.generated_at": "2026-09-25T16:56:43+03:00",
   "_meta.run_id": null,
   "_meta.script": "05_segmentation.py",
   "domain.age_depreciation": {
@@ -550,7 +550,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T16:11:05+03:00",
+  "_meta.generated_at": "2026-09-25T16:58:29+03:00",
   "_meta.run_id": null,
   "_meta.script": "06_hedonic.py",
   "domain.hedonic.age_pct": -6.64,
@@ -570,7 +570,7 @@
   "domain.hedonic_reliability.bootstrap_setup.n_boot": 1000,
   "domain.hedonic_reliability.bootstrap_setup.n_jobs": 16,
   "domain.hedonic_reliability.bootstrap_setup.n_requested": 1000,
-  "domain.hedonic_reliability.bootstrap_setup.seconds": 116.0,
+  "domain.hedonic_reliability.bootstrap_setup.seconds": 97.8,
   "domain.hedonic_reliability.center.age": 11.0,
   "domain.hedonic_reliability.center.km": 181000.0,
   "domain.hedonic_reliability.engine_effect.cc_litre_pct": 7.5,
@@ -638,7 +638,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T16:22:24+03:00",
+  "_meta.generated_at": "2026-09-25T17:04:17+03:00",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "07_final_model.py",
   "domain.final_results.example_prediction.actual": 718000.0,
@@ -663,7 +663,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T16:34:02+03:00",
+  "_meta.generated_at": "2026-09-25T17:14:32+03:00",
   "_meta.run_id": null,
   "_meta.script": "07_lofo.py",
   "methodology.lofo": {
@@ -768,7 +768,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T16:21:27+03:00",
+  "_meta.generated_at": "2026-09-25T17:03:16+03:00",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "07_model_comparison.py",
   "domain.dealer_coverage.comped_pct": 92.68,
@@ -875,7 +875,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T16:24:13+03:00",
+  "_meta.generated_at": "2026-09-25T17:14:38+03:00",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "07_text_flag.py",
   "error_drivers.text_flag.big_pct": 4.9,
@@ -896,7 +896,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T16:37:08+03:00",
+  "_meta.generated_at": "2026-09-25T17:14:40+03:00",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "08_conformal_coverage.py",
   "domain.conformal.by_quantile": {
@@ -921,7 +921,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T16:37:17+03:00",
+  "_meta.generated_at": "2026-09-25T17:14:49+03:00",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "08_large_errors.py",
   "error_drivers.age_cuts": {
@@ -968,7 +968,7 @@
   "error_drivers.lira_scaled.under_ape_max": 56.5,
   "error_drivers.lira_scaled.worst": {
    "len": 6,
-   "sha256": "b9cd3513c6b69e6283267690bd07e2fe8bc4c31aa7fb4c60d07fdbd951b8d377"
+   "sha256": "0d6b2744d8adbdb4a2a27e5fd9ff97d36ef8c932dd6eda7f2e3028ad8bfeb40a"
   },
   "error_drivers.live_vs_gone.gone_median_resid": -1.24,
   "error_drivers.live_vs_gone.gone_n": 18462,
@@ -1022,7 +1022,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T16:37:10+03:00",
+  "_meta.generated_at": "2026-09-25T17:14:42+03:00",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "08_residuals.py",
   "domain.oof_best": {
@@ -1092,7 +1092,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T16:43:30+03:00",
+  "_meta.generated_at": "2026-09-25T17:16:45+03:00",
   "_meta.run_id": null,
   "_meta.script": "09_backtest.py",
   "methodology.backtest.cumulative": {
@@ -1128,7 +1128,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T16:41:45+03:00",
+  "_meta.generated_at": "2026-09-25T17:14:52+03:00",
   "_meta.run_id": null,
   "_meta.script": "09_drift.py",
   "domain.drift.all_pairs": {
@@ -1223,7 +1223,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T16:43:31+03:00",
+  "_meta.generated_at": "2026-09-25T17:16:46+03:00",
   "_meta.run_id": null,
   "_meta.script": "10_free_text.py",
   "error_drivers.text_source.ablation_categorical": {
@@ -1256,7 +1256,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T16:49:53+03:00",
+  "_meta.generated_at": "2026-09-25T17:18:05+03:00",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "shap/02_oof_shap.py",
   "oof_shap.gate.mape_published": 6.49,
@@ -1287,7 +1287,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T16:50:00+03:00",
+  "_meta.generated_at": "2026-09-25T17:18:12+03:00",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "shap/03_what_sets_price.py",
   "shap.cohorts.en.name": "Age (years)",
@@ -1411,12 +1411,12 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T16:51:08+03:00",
+  "_meta.generated_at": "2026-09-25T17:19:25+03:00",
   "_meta.run_id": null,
   "_meta.script": "shap/04_variants.py",
   "domain.shap.catboost_native": {
    "len": 12,
-   "sha256": "1e4766d2394e4c2261669632eaad9567f78a24b4ccea25a29478893797dfcfde"
+   "sha256": "4553977365074fa50b285bdefc88dbcf6d9449dfa126a0459f2672b6b0ef3b99"
   },
   "domain.shap.catboost_tfidf_svd": {
    "len": 11,
@@ -1437,15 +1437,15 @@
   "shap_final.base_log": 14.299831654389688,
   "shap_final.catboost_native": {
    "len": 12,
-   "sha256": "1e4766d2394e4c2261669632eaad9567f78a24b4ccea25a29478893797dfcfde"
+   "sha256": "4553977365074fa50b285bdefc88dbcf6d9449dfa126a0459f2672b6b0ef3b99"
   },
   "shap_final.catboost_native_combined": {
    "len": 11,
-   "sha256": "4522c3429f11542cd972343ec793b04a0ec058a1928f36349bfea7c46210a2b0"
+   "sha256": "863705dfe9704e6fa76d8a4fea52bc70016087315c4343af95c324f0cad521b8"
   },
   "shap_final.catboost_native_separate": {
    "len": 12,
-   "sha256": "cfe82e2da4614fea5d322c7fd3f2af20f0d855ab4d16301b18765a7aeb834bb1"
+   "sha256": "9094470c4f1d6ca0ac854d56eeeb0eabaf0975dee5d98104b039ac80794dacc7"
   },
   "shap_final.catboost_tfidf_svd": {
    "len": 11,
@@ -1469,7 +1469,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-25T16:51:12+03:00",
+  "_meta.generated_at": "2026-09-25T17:19:28+03:00",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "shap/06_one_listing.py",
   "shap_case.figures": {

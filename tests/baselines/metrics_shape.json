@@ -289,9 +289,9 @@
   "error_drivers.segment_quality.mismatch.raw_known": "int",
   "error_drivers.segment_quality.multi_segment_series": "list",
   "error_drivers.segment_quality.note": "str",
-  "error_drivers.segment_quality.paths.harita": "int",
-  "error_drivers.segment_quality.paths.model_tablosu": "int",
-  "error_drivers.segment_quality.paths.temel_sinif": "int"
+  "error_drivers.segment_quality.paths.base_class": "int",
+  "error_drivers.segment_quality.paths.model_table": "int",
+  "error_drivers.segment_quality.paths.series_map": "int"
  },
  "04_target": {
   "_meta.data_until": "str",

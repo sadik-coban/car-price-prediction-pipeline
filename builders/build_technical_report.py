@@ -680,12 +680,12 @@ def section_redundancy(c):
             f"label, {num(_g_seg['mpv_n'], lang)} have an MPV body and all come from one series — a corrupt "
             f"source. Segment is therefore derived, with the MPV signal kept in body type."))
         A("")
-        A(L(f"İlanların {num(_paths['harita'], lang)} tanesi segmentini doğrudan serisinden alıyor. "
+        A(L(f"İlanların {num(_paths['series_map'], lang)} tanesi segmentini doğrudan serisinden alıyor. "
             f"Bazı ailelerde ({_families}) segment seriden değil model adından çözülüyor — örneğin "
             f"M3 → 3 Serisi, S3 → A3 — toplam {num(_n_from_name, lang)} ilan. Bu yüzden segment yalnız serinin "
             f"değil (seri, model) çiftinin fonksiyonu: U(segment | seri) = {_ug:.3f}, tam 1 değil. "
             f"Çözülemeyen seri ya da model kalırsa üreteç durur; sessiz bir varsayılan segment yok.",
-            f"{num(_paths['harita'], lang)} listings take their segment straight from the series. "
+            f"{num(_paths['series_map'], lang)} listings take their segment straight from the series. "
             f"In some families ({_families}) the segment is resolved from the model name, not the series — e.g. "
             f"M3 → 3 Series, S3 → A3 — {num(_n_from_name, lang)} listings in all. So segment is a function of "
             f"(series, model), not series alone: U(segment | series) = {_ug:.3f}, not exactly 1. If any "

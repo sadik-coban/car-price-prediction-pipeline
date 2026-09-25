@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "08_large_errors.py",
-  "generated_at": "2026-09-25T16:37:17+03:00",
+  "generated_at": "2026-09-25T17:14:49+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,13 +11,13 @@
   "run_id": "aa436e0cfd32",
   "source": {
    "script": {
-    "analysis/08_large_errors.py": "f0cbd47153b19f5ca55e2e41e2e90aa7df94f8c195251384447a40feb553cd89"
+    "analysis/08_large_errors.py": "3b6c954f6068f4e3149ba64ca4cbf02f8b9771df15042d4d7f6962a6deac1735"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
     "analysis/lib/common.py": "533eaad7a29580e93aeff01214fc024538dd6a6ab717e6b669e7e7b0a4399295",
     "analysis/lib/cv.py": "e83f615405ac012d466c9d82f698dc4145ba2df680c46ec3f529ee3ee6da56f5",
-    "analysis/lib/segment_rule.py": "2def025c05905657341f21133844b1a378be05202a67bc93b975e086448b60c1",
+    "analysis/lib/segment_rule.py": "9631086ebfe07bc7bc90bd672acbab305243b9a96bff427ee6ea0c20639defa1",
     "analysis/lib/text_flags.py": "06c9194501acc59737c478b80f17c2734e1b6b223317f7c2f7557156c429ba09"
    }
   }
@@ -3151,7 +3151,7 @@
      2547649.0,
      -56.5,
      -3302351.0,
-     "temel_sinif"
+     "base_class"
     ],
     [
      "M4",
@@ -3161,7 +3161,7 @@
      3285609.0,
      -49.5,
      -3214391.0,
-     "temel_sinif"
+     "base_class"
     ],
     [
      "M3",
@@ -3171,7 +3171,7 @@
      2785950.0,
      -53.6,
      -3213050.0,
-     "temel_sinif"
+     "base_class"
     ],
     [
      "520d xDrive M Sport",
@@ -3181,7 +3181,7 @@
      3203694.0,
      -47.0,
      -2846306.0,
-     "harita"
+     "series_map"
     ],
     [
      "M5",
@@ -3191,7 +3191,7 @@
      3069790.0,
      -45.8,
      -2599210.0,
-     "temel_sinif"
+     "base_class"
     ],
     [
      "M6",
@@ -3201,7 +3201,7 @@
      3246669.0,
      -43.5,
      -2503331.0,
-     "temel_sinif"
+     "base_class"
     ]
    ],
    "top_n": 100,

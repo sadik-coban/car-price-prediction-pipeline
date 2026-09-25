@@ -131,7 +131,7 @@ def lira_ranking(listings, price, pred, resid, path, text_flag):
     row = lambda i: [str(listings["model"].iat[i]), int(age[i]), None if np.isnan(km[i]) else int(km[i]),   # noqa: E731
                      float(price[i]), round(float(pred[i]), 0), round(float(-resid[i]), 1), round(float(dev[i]), 0),
                      str(path[i])]
-    perf = path != "harita"
+    perf = path != SR.PATH_SERIES_MAP
     return {"worst": [row(i) for i in order[:6]], "top_n": TOP_N_LIRA,
             "top_n_under": int((dev[top] < 0).sum()), "top_n_over": int((dev[top] > 0).sum()),
             "top_n_q4": int((price[top] >= q75).sum()), "top_n_perf": int(perf[top].sum()),

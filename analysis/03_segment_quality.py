@@ -45,7 +45,7 @@ def segment_quality(d):
     g = d[d["raw_segment"] == "G"]
     known = d[d["raw_segment"].notna()]
     differ = known[known["raw_segment"] != known["derived"]]
-    special = d[d["path"] != "harita"]
+    special = d[d["path"] != SR.PATH_SERIES_MAP]
     per_series = d.groupby("series_key")["derived"].nunique()
     return {"map_size": len(SR.SEGMENT_MAP),
             "g": {"n": int(len(g)), "mpv_n": int((g["kb_body_type"] == "MPV").sum()),

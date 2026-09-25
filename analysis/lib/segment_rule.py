@@ -24,28 +24,32 @@ PERF_BASE = {"M Serisi": "{} Serisi", "S": "A{}", "RS": "A{}"}
 # TR: rakam kuralının yanlış sonuç verdiği adlar (önce bakılır): i8 spor coupe, Z4 M roadster
 MODEL_SEG = {"i Serisi": {"i8": "S"}, "M Serisi": {"Z4 M": "S"}}
 PERF_RE = re.compile(r"^(?:M|S|RS)\s?(\d)")
+# EN: the path that resolved a segment (published as 03's segment_quality.paths keys)
+# TR: segmenti çözen yol (03'ün segment_quality.paths anahtarları olarak yayımlanır)
+PATH_MODEL_TABLE, PATH_SERIES_MAP, PATH_BASE_CLASS = "model_table", "series_map", "base_class"
 
 
 def resolve(series, model):
     """
     EN: The segment of one listing and the path that resolved it.
-        Returns: (segment, path); path is "model_tablosu" (model-name table), "harita" (series map),
-        "temel_sinif" (performance base series) or (None, None) if unresolved.
+        Returns: (segment, path); path is PATH_MODEL_TABLE (model-name table), PATH_SERIES_MAP (series map),
+        PATH_BASE_CLASS (performance base series) or (None, None) if unresolved.
     TR: Bir ilanın segmenti ve onu çözen yol.
-        Döndürür: (segment, yol); yol "model_tablosu", "harita", "temel_sinif" ya da çözülemezse (None, None).
+        Döndürür: (segment, yol); yol PATH_MODEL_TABLE, PATH_SERIES_MAP, PATH_BASE_CLASS ya da çözülemezse
+        (None, None).
     """
     s, m = str(series), str(model)
     for prefix, seg in MODEL_SEG.get(s, {}).items():
         if m.startswith(prefix):
-            return seg, "model_tablosu"
+            return seg, PATH_MODEL_TABLE
     if s in SEGMENT_MAP:
-        return SEGMENT_MAP[s], "harita"
+        return SEGMENT_MAP[s], PATH_SERIES_MAP
     if s in PERF_BASE:
         g = PERF_RE.match(m)
         if g:
             seg = SEGMENT_MAP.get(PERF_BASE[s].format(g.group(1)))
             if seg is not None:
-                return seg, "temel_sinif"
+                return seg, PATH_BASE_CLASS
     return None, None
 
 
