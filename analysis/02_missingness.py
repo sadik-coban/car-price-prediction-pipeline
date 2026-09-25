@@ -28,7 +28,6 @@ from scipy.spatial.distance import squareform
 
 from lib.common import DB_PATH, FEATURES, NUM, ROOT, load_clean, save_metrics
 
-MISSING_TOKENS = ["", "-", "nan", "None", "NaN"]
 MIN_RATE = 2          # columns above this missing % are listed | bu eksik yüzdesinin üstündekiler listelenir
 BLOCK_RATE = 20       # co-missing blocks among columns above this % | bu yüzdenin üstündekiler arasında bloklar
 BLOCK_DIST = 0.02     # 1 − co-missing share; 0.02 = at least 98% co-missing | en az %98 birlikte eksik
@@ -89,12 +88,14 @@ def unspecified_summary(raw, coded):
 
 def is_missing(col):
     """
-    EN: Missing mask of one raw column; empty strings, '-' and text 'nan'/'None' count as missing.
-    TR: Bir ham kolonun eksiklik maskesi; boş metin, '-' ve 'nan'/'None' yazıları da eksik sayılır.
+    EN: Missing mask of one raw column: NULL. The DB writes blanks and "-" as NULL already (db/lib/process_for_db.py)
+        and no text column of the DB holds "", "-", "nan", "None" or "NaN" (all counted 2026-09-25), so no text token
+        is guessed at.
+    TR: Bir ham kolonun eksiklik maskesi: NULL. DB boş ve "-" değerleri zaten NULL yazar (db/lib/process_for_db.py) ve
+        DB'nin hiçbir metin kolonunda "", "-", "nan", "None" ya da "NaN" yok (hepsi 2026-09-25'te sayıldı); bu yüzden
+        hiçbir metin jetonu tahmin edilmez.
     """
-    if col.dtype != object:
-        return col.isna()
-    return col.isna() | col.astype(str).str.strip().isin(MISSING_TOKENS)
+    return col.isna()
 
 
 def missing_rates(raw, min_rate):

@@ -12,11 +12,13 @@ TR: Segment kuralı — tek kaynağı. İlanın segmenti serisinden gelir; tek s
 import re
 
 # EN: series → segment | TR: seri → segment
+# EN: only series the data shows (db/observed_values.json; tests/analysis/test_observed_values_analysis.py); an
+#     unseen series stops the run instead of getting a guessed segment
+# TR: yalnız verinin gösterdiği seriler (db/observed_values.json; tests/analysis/test_observed_values_analysis.py);
+#     görülmemiş seri tahmini bir segment almaz, koşumu durdurur
 SEGMENT_MAP = {"1 Serisi": "C", "2 Serisi": "C", "3 Serisi": "D", "4 Serisi": "D", "5 Serisi": "E",
-               "6 Serisi": "E", "7 Serisi": "F", "8 Serisi": "F", "X1": "C", "X2": "C", "X3": "D", "X4": "D",
-               "X5": "E", "X6": "E", "X7": "F", "Z4": "S", "Z Serisi": "S", "A1": "B", "A3": "C", "A4": "D",
-               "A5": "D", "A6": "E", "A7": "E", "A8": "F", "Q2": "C", "Q3": "C", "Q5": "D", "Q7": "F", "Q8": "F",
-               "TT": "S", "TTS": "S", "R8": "S"}
+               "6 Serisi": "E", "7 Serisi": "F", "Z Serisi": "S", "A1": "B", "A3": "C", "A4": "D", "A5": "D",
+               "A6": "E", "A7": "E", "A8": "F", "TT": "S", "TTS": "S", "R8": "S"}
 # EN: performance families: the digit in the model name gives the base series (M3 → 3 Serisi, RS 6 → A6)
 # TR: performans aileleri: model adındaki rakam temel seriyi verir (M3 → 3 Serisi, RS 6 → A6)
 PERF_BASE = {"M Serisi": "{} Serisi", "S": "A{}", "RS": "A{}"}
