@@ -3,13 +3,15 @@ test_metric_renames.py
 EN: The translator of tools/metric_renames.py on small made-up documents — the traps the real map has to get
     right: the same word with two meanings (alt/ust as candidates vs range bounds), enum values by row position,
     data-valued subtrees, names from analysis/lib that change only with the LIB group, group gating, key order and
-    clashes — plus the real map (every metrics file has exactly one group; the map is valid against the P0 copy when
-    it exists) and snapshot_metrics' --rename-exemption on temp folders.
+    clashes — plus the real map (every metrics file has one group at most, none = a new file, always checked; the
+    map is valid against the P0 copy when it exists and docs/site-data-renames.json is current) and
+    snapshot_metrics' --rename-exemption on temp folders.
 TR: tools/metric_renames.py'nin çevirmeni küçük uydurma belgeler üzerinde — gerçek eşlemenin doğru yapması gereken
     tuzaklar: iki anlamlı aynı sözcük (aday olarak alt/ust ile aralık sınırı), satır konumuna göre değerler, veri
     değerli alt ağaçlar, yalnız LIB grubuyla değişen analysis/lib adları, grup kapısı, anahtar sırası ve çakışma —
-    ayrıca gerçek eşleme (her metrik dosyasının tek grubu var; P0 kopyası varsa eşleme ona göre geçerli) ve
-    snapshot_metrics'in --rename-exemption'ı geçici klasörlerde.
+    ayrıca gerçek eşleme (her metrik dosyasının en çok bir grubu var, hiç yoksa yeni dosyadır ve hep sınanır; P0
+    kopyası varsa eşleme ona göre geçerli ve docs/site-data-renames.json güncel) ve snapshot_metrics'in
+    --rename-exemption'ı geçici klasörlerde.
 """
 import json
 import sys
@@ -117,10 +119,23 @@ def test_guard_helpers():
 
 
 def test_every_metrics_file_has_one_group():
-    """EN: The real map assigns every metrics file to exactly one group. / TR: Her metrik dosyasının tek grubu var."""
+    """
+    EN: The real map gives every metrics file one group at most (group_of stops on two); a file with none is new.
+    TR: Gerçek eşleme her metrik dosyasına en çok bir grup verir (group_of ikide durur); hiç grubu yoksa yenidir.
+    """
     m = MR.load_map()
     for name in MR.metrics_docs(ROOT / "metrics"):
-        assert MR.group_of(name, m) in m["groups"]
+        assert MR.group_of(name, m) in set(m["groups"]) | {MR.NEW_GROUP}
+
+
+def test_new_file_is_checked():
+    """
+    EN: A metrics file no group owns (a script added later) is in the always-done "new" group.
+    TR: Hiçbir grubun sahiplenmediği metrik dosyası (sonradan eklenen betik) her zaman bitmiş "new" grubunda.
+    """
+    m = MR.load_map()
+    assert MR.group_of("11_price_history", m) == MR.NEW_GROUP
+    assert MR.NEW_GROUP in MR.done_groups(m)
 
 
 def test_real_map_is_valid():
@@ -131,6 +146,18 @@ def test_real_map_is_valid():
     if not MR.P0_DIR.exists():
         pytest.skip("no P0 copy in this clone | bu klonda P0 yok")
     assert MR.cmd_validate(MR.load_map(), MR.P0_DIR) == []
+
+
+def test_site_map_file_is_current():
+    """
+    EN: docs/site-data-renames.json is what `site-map` writes from today's map (skipped without P0).
+    TR: docs/site-data-renames.json, `site-map`'in bugünkü eşlemeden yazdığıyla aynı (P0 yoksa atlanır).
+    """
+    if not MR.P0_DIR.exists():
+        pytest.skip("no P0 copy in this clone | bu klonda P0 yok")
+    written = json.loads((ROOT / "docs" / "site-data-renames.json").read_text(encoding="utf-8"))
+    assert written == MR.cmd_site_map(MR.load_map(), MR.P0_DIR), \
+        "rerun | yeniden yaz: python tools/metric_renames.py site-map --out docs/site-data-renames.json"
 
 
 @pytest.fixture

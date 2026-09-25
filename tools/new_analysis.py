@@ -52,8 +52,10 @@ def compute(listings):
 # %% [3] Metrics assembly | Metrik derleme — naming and rounding only | yalnız adlandırma ve yuvarlama
 def to_metrics(res):
     """
-    EN: Published under report.<key> (TODO: choose the section and the key names).
-    TR: report.<anahtar> altında yayımlanır (TODO: bölümü ve anahtar adlarını seç).
+    EN: Published under report.<key> (TODO: choose the section and the key names). Keys and the values code compares
+        are English snake_case; Turkish only in text the report shows ({{"tr": ..., "en": ...}}).
+    TR: report.<anahtar> altında yayımlanır (TODO: bölümü ve anahtar adlarını seç). Anahtarlar ve kodun
+        karşılaştırdığı değerler İngilizce snake_case; Türkçe yalnız raporda görünen metinde ({{"tr": ..., "en": ...}}).
     """
     return {{"report": {{"TODO": res}}}}
 

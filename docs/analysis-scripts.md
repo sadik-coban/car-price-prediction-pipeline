@@ -48,7 +48,15 @@ Kapı yeni bir analizi kartsız ve testsiz "bitti" saymaz (`tests/analysis/test_
 - **Bayat metrik:** bir betik ya da import ettiği `analysis/lib` dosyası değişince metrik bayat sayılır; kapı
   hangi betiğin yeniden koşulacağını söyler (`tests/metrics/test_provenance.py`). `lib/common.py`'ye dokunmak
   bütün betikleri bayat yapar (tam koşum ~16 dk).
-- **Eski betikler:** kart ve testten önce yazılan 18 betik `tests/analysis/legacy.json`'da, kaynaklarının
-  sha256'sıyla. Değişen eski betik kart ve test ister; liste yalnız kısalır.
+- **Adlar:** kod düzeyinde her şey İngilizce snake_case: metrik anahtarları, kodun karşılaştırdığı değerler
+  (`"series_map"`, `"model_year"`, `"economy"`…), değişken ve fonksiyon adları. Türkçe yalnız raporda görünen
+  metinde kalır: `L("tr", "en")` yazıları ve etiket sözlüklerinin `(tr, en)` değerleri (`TIER_LABEL`,
+  `BAND_LABEL`). Kod görünen bir terimle indekslemez; terimi `HED_TERM_ID` gibi bir sözlükle kimliğe çevirir ve
+  bilinmeyen terimde durur. Eski→yeni anahtar eşlemesi `docs/metric-key-renames.json`'da, site için yol ve değer
+  eşlemesi `docs/site-data-renames.json`'da. `tests/metrics/test_metric_key_names.py` metriklerde emekli bir
+  anahtar ya da değer, kodda ya da belgede eski adlı bir noktalı yol görürse kırmızı olur; hiçbir gruba ait
+  olmayan yeni bir betiğin metriği de sınanır.
+- **Eski betikler:** kart ve testten önce yazılan 18 betiğin hepsi artık kartlı ve testli;
+  `tests/analysis/legacy.json` boş. Liste yalnız kısalabilir, yeni bir ad eklenemez.
 - **Ağır metodoloji testleri** (hızlı kapıda değil): `python -m pytest -m full tests/analysis`. Denetimler:
   fold'lar arası `ad_id` örtüşmesi yok, karıştırılmış hedefte R² ≈ 0, bit-birebir yeniden koşum.

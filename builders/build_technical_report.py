@@ -943,7 +943,7 @@ def section_hedonic(c):
     # "hepsi 5'in altinda" cumlesi oradan cikiyordu. Artik kurulan modelin kendi tasarimindan; yanina
     # ayni tasarimin ORTALANMAMIS hali konuyor ki ortalamanin neyi duzelttigi gorunsun.
     vif, vif_raw = hr["vif"], dict(hr["vif_raw"])
-    vk_t, vk_v = hr["vif_dummy"]
+    vd_term, vd_value = hr["vif_dummy"]
     vmax = max(vif, key=lambda r: r[1])
     hmax = max(hr["vif_raw"], key=lambda r: r[1])
     _nm = lambda t_: VIF_TERM.get(t_, (t_, t_))[0 if lang == "tr" else 1]
@@ -960,14 +960,14 @@ def section_hedonic(c):
         f"(**{_nm(hmax[0])} {hmax[1]:.2f}**): yaş, yaş², km, km² ve yaş×km aynı iki değişkenden türediği "
         f"için birbirine yapısal olarak bağlı. Medyan araca ortalamak bunu giderir; tahminler ve R² "
         f"değişmez, yalnız doğrusal katsayıların anlamı netleşir. Kuklalar arasında en yüksek VIF "
-        f"`{vk_t}` ({vk_v:.2f}): kukla VIF'i referans seviyesi küçük olduğunda şişer ve yalnız o kukla "
+        f"`{vd_term}` ({vd_value:.2f}): kukla VIF'i referans seviyesi küçük olduğunda şişer ve yalnız o kukla "
         f"katsayılarının standart hatasını etkiler — burada raporlanmıyor.",
         f"The values come from the fitted model's own design matrix. The highest is **{_nm(vmax[0])} "
         f"{vmax[1]:.2f}** — {_vif_level_en}. In the uncentred design the same group is far higher "
         f"(**{_nm(hmax[0])} {hmax[1]:.2f}**): age, age², km, km² and age×km are all built from two "
         f"variables, so they are structurally linked. Centring on the median car removes that; "
         f"predictions and R² do not change, only the meaning of the linear coefficients sharpens. "
-        f"Among the dummies the highest VIF is `{vk_t}` ({vk_v:.2f}): a dummy's VIF inflates when its "
+        f"Among the dummies the highest VIF is `{vd_term}` ({vd_value:.2f}): a dummy's VIF inflates when its "
         f"reference level is small and only affects that dummy's standard error, which is not "
         f"reported here."))
     A("")
@@ -1000,21 +1000,21 @@ def section_hedonic(c):
     _rl = sorted(_ks, key=lambda k: -_lf[k])
     _rs = sorted(_ks, key=lambda k: -_sh[LOFO_GROUPS.get(k, (0, 0, k))[2]])
     _nm = lambda k: lofo_name(d, k, lang)                                           # noqa: E731
-    _fark = max(_ks, key=lambda k: _rl.index(k) - _rs.index(k))
+    _most_apart = max(_ks, key=lambda k: _rl.index(k) - _rs.index(k))
     _ord = lambda i: f"{i}{'st' if i == 1 else 'nd' if i == 2 else 'rd' if i == 3 else 'th'}"   # noqa: E731
     A(L("LOFO ikinci ve bağımsız bir yöntem: her özniteliği çıkarıp CV hatasının ne kadar büyüdüğüne "
         "bakar. SHAP'tan farklı bir şeyi ölçer — öznitelik yokken geri kalanların telafi edemediği kısmı. "
         + ("İki yöntem aynı sıralamayı veriyor." if _rl == _rs else
            f"Sıralama SHAP'la örtüşmüyor: LOFO'da {' > '.join(_nm(k) for k in _rl)}; SHAP'ta "
-           f"{' > '.join(_nm(k) for k in _rs)}. En keskin fark {_nm(_fark)}: SHAP'ta {_rs.index(_fark) + 1}. "
-           f"sırada, LOFO'da {_rl.index(_fark) + 1}. (ΔRMSE {tl(_lf[_fark])}) — çıkarılınca model onu büyük "
+           f"{' > '.join(_nm(k) for k in _rs)}. En keskin fark {_nm(_most_apart)}: SHAP'ta {_rs.index(_most_apart) + 1}. "
+           f"sırada, LOFO'da {_rl.index(_most_apart) + 1}. (ΔRMSE {tl(_lf[_most_apart])}) — çıkarılınca model onu büyük "
            f"ölçüde başka özniteliklerden telafi ediyor."),
         "LOFO is a second, independent method: drop each feature and measure how much CV error grows. It "
         "measures something different from SHAP — the part the remaining features cannot make up for. "
         + ("Both methods give the same ranking." if _rl == _rs else
            f"The ranking does not match SHAP's: LOFO gives {' > '.join(_nm(k) for k in _rl)}; SHAP "
-           f"{' > '.join(_nm(k) for k in _rs)}. The sharpest gap is {_nm(_fark)}: {_ord(_rs.index(_fark) + 1)} in "
-           f"SHAP, {_ord(_rl.index(_fark) + 1)} in LOFO (ΔRMSE {tl(_lf[_fark])}) — when it is removed the model "
+           f"{' > '.join(_nm(k) for k in _rs)}. The sharpest gap is {_nm(_most_apart)}: {_ord(_rs.index(_most_apart) + 1)} in "
+           f"SHAP, {_ord(_rl.index(_most_apart) + 1)} in LOFO (ΔRMSE {tl(_lf[_most_apart])}) — when it is removed the model "
            f"largely makes it up from other features.")))
     A("")
     figs(4)
@@ -1222,13 +1222,13 @@ def section_calibration(c):
     figs(26)
     # 2026-09-23: "fazla tahmin tarafi daha kalin ... bir kismi tanimdan" — simetrik olcekte (1.2 kat) asimetri
     # kayboluyor ya da tersine donuyor. Cumle ikisini de basar; "tamami/bir kismi" veriden.
-    _ters = v["err_sym_under"] >= v["err_sym_over"]
+    _reversed = v["err_sym_under"] >= v["err_sym_over"]
     A(L(f"Tüm {num(v['err_n'], lang)} ilanın OOF hatası. Dağılım sıfırda tepe yapıyor (medyan artık "
         f"{P(v['err_median'], lang, 2)}); ±%10 içinde kalan ilan payı **{P(v['err_in10'], lang)}**. Ortalama |hata| "
         f"{P(v['err_abs_mean'], lang)} — MAPE'nin kendisi; medyan |hata| {P(v['err_abs_median'], lang)}. "
         f"Yüzde artıkta kuyruk asimetrik görünüyor: model gerçeğin %20'den fazla **üstünü** {num(v['err_over20'], lang)} ilanda, "
         f"**altını** {num(v['err_under20'], lang)} ilanda söylüyor (en uçlar {P(v['err_min'], lang)} ve "
-        f"{P(v['err_max'], lang, sign=True)}). Bunun {'tamamı' if _ters else 'bir kısmı'} tanımdan: artık gerçek "
+        f"{P(v['err_max'], lang, sign=True)}). Bunun {'tamamı' if _reversed else 'bir kısmı'} tanımdan: artık gerçek "
         f"fiyata bölündüğü için düşük tahmin en fazla %100 olabilir, fazla tahminin sınırı yoktur. Simetrik ölçekte "
         f"(bir taraf ötekinin 1.2 katından büyük) fazla tahmin {num(v['err_sym_over'], lang)}, düşük tahmin "
         f"{num(v['err_sym_under'], lang)} ilan"
@@ -1241,7 +1241,7 @@ def section_calibration(c):
         f"On the percentage residual the tails look asymmetric: the model says more than 20% **above** the actual price for "
         f"{num(v['err_over20'], lang)} listings and more than 20% **below** it for {num(v['err_under20'], lang)} "
         f"(extremes {P(v['err_min'], lang)} and {P(v['err_max'], lang, sign=True)}). "
-        f"{'All' if _ters else 'Part'} of that comes from the definition: the residual is divided by the actual "
+        f"{'All' if _reversed else 'Part'} of that comes from the definition: the residual is divided by the actual "
         f"price, so under-prediction is capped at 100% while over-prediction is unbounded. On a symmetric scale "
         f"(one side more than 1.2× the other) {num(v['err_sym_over'], lang)} listings are over-predicted and "
         f"{num(v['err_sym_under'], lang)} under-predicted"
@@ -1367,20 +1367,20 @@ def section_calibration(c):
     figs(11)
     _bk = ed["per_model_buckets"]
     _bmy = ed["by_model_year_n"]
-    _ayni_yon = bool(_bk) and (_bk[0]["median_of_medians"] > _bk[-1]["median_of_medians"]
+    _same_direction = bool(_bk) and (_bk[0]["median_of_medians"] > _bk[-1]["median_of_medians"]
                                and _bmy[0]["big_pct"] > _bmy[-1]["big_pct"])
     if _bk:
         A(L(f"Her nokta bir model; y ekseni o modelin ilanlarındaki medyan hata. Kova medyanı tek ilanlı "
             f"modellerde {P(_bk[0]['median_of_medians'], lang)}, {_bk[-1]['bin']} ilanlıda "
             f"{P(_bk[-1]['median_of_medians'], lang)}. Yukarıdaki tablo iki yönden farklı ölçer: büyük hata "
             f"**oranını** sayar ve ilanları model+**yıl** bazında gruplar."
-            + (" İkisi aynı yönü gösteriyor — emsal azaldıkça hata büyüyor." if _ayni_yon else
+            + (" İkisi aynı yönü gösteriyor — emsal azaldıkça hata büyüyor." if _same_direction else
                " İki ölçü aynı yönü göstermiyor."),
             f"Each point is a model; the y axis is the median error across that model's listings. The bucket "
             f"median is {P(_bk[0]['median_of_medians'], lang)} for single-listing models and "
             f"{P(_bk[-1]['median_of_medians'], lang)} for models with {_bk[-1]['bin']} listings. The table above "
             f"measures differently in two ways: it counts the **rate** of large errors and groups listings by "
-            f"model+**year**." + (" Both point the same way — fewer comparables, larger error." if _ayni_yon else
+            f"model+**year**." + (" Both point the same way — fewer comparables, larger error." if _same_direction else
                                    " The two measures do not point the same way.")))
         A("")
     # --- Conformal aralık nedir (metin kullanıcının yazdığı açıklamadan, 2026-09-19).

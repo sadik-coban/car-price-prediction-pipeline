@@ -11,9 +11,12 @@ EN: Applies, proves and exports the one reviewed map of metric key names (docs/m
       check-metrics   the repository metrics equal translated P0 (proves the producer edits; order and type count)
       check-outputs   the repository reports, figures and site_data equal P0 (after the rebuild)
       site-map        old -> new paths and value maps of the site tree, for the portfolio site
+                      (--out docs/site-data-renames.json writes the file the docs point to)
       mark-done G     marks a group done in the map
     A path is translated only when every script that writes it belongs to a group marked done (or named with
-    --groups); names from analysis/lib/segment_rule.py (map "lib") only with the LIB group.
+    --groups); names from analysis/lib/segment_rule.py (map "lib") only with the LIB group. A metrics file that no
+    group's prefixes match was written after the renames: it belongs to the "new" group, which always counts as
+    done, so its names are held to the map too.
 TR: İncelenmiş tek metrik anahtarı eşlemesini (docs/metric-key-renames.json: eski Türkçe adlar -> İngilizce
     snake_case) uygular, kanıtlar ve dışa verir. Ad değişikliğinin kendisi analiz betiklerinde ve derleyicilerde,
     grup grup yapılır; bu araç yalnız JSON okur ve her adımın tek bir sabit başlangıca, P0 kopyasına
@@ -26,9 +29,12 @@ TR: İncelenmiş tek metrik anahtarı eşlemesini (docs/metric-key-renames.json:
       check-metrics   depodaki metrikler çevrilmiş P0'a eşit (üretici düzenlemelerini kanıtlar; sıra ve tip sayılır)
       check-outputs   depodaki raporlar, figürler ve site_data P0'a eşit (yeniden derlemeden sonra)
       site-map        site ağacının eski -> yeni yolları ve değer eşlemeleri, portföy sitesi için
+                      (--out docs/site-data-renames.json belgelerin andığı dosyayı yazar)
       mark-done G     bir grubu eşlemede bitti diye işaretler
     Bir yol yalnız onu yazan her betik "done" işaretli (ya da --groups ile anılan) bir gruptaysa çevrilir;
-    analysis/lib/segment_rule.py'den gelen adlar (eşlemede "lib") yalnız LIB grubuyla.
+    analysis/lib/segment_rule.py'den gelen adlar (eşlemede "lib") yalnız LIB grubuyla. Hiçbir grubun önekine
+    uymayan metrik dosyası ad değişikliğinden sonra yazılmıştır: her zaman bitmiş sayılan "new" grubuna aittir,
+    adları da eşlemeye göre sınanır.
 Run / Koşum:
     python tools/metric_renames.py validate
     python tools/metric_renames.py check-builders --groups G01
@@ -55,6 +61,7 @@ SITE_SECTIONS = ("meta", "domain", "methodology")
 NAME = re.compile(r"^[a-z][a-z0-9_]*$")
 IGNORED = ("_meta.generated_at", "_meta.source")        # run stamps and code hashes | koşum damgası, kod hash'i
 SITE_IGNORED = ("_meta.generated_at", "meta.metrics_generated_at")
+NEW_GROUP = "new"      # metrics files written after the renames | ad değişikliğinden sonra yazılan metrik dosyaları
 
 
 # ── The map | Eşleme ──────────────────────────────────────────────────────────────────────────────────────────────
@@ -90,21 +97,23 @@ def pattern_re(pattern):
 
 def group_of(name, m):
     """
-    EN: The group that owns a metrics file ("01_engine_rule", "shap/02_oof_shap") by its prefixes.
-    TR: Bir metrik dosyasının sahibi grup, öneklerine göre.
+    EN: The group that owns a metrics file ("01_engine_rule", "shap/02_oof_shap") by its prefixes; NEW_GROUP when
+        no prefix matches (a script added after the renames).
+    TR: Bir metrik dosyasının sahibi grup, öneklerine göre; hiçbir önek uymazsa NEW_GROUP (ad değişikliğinden
+        sonra eklenen betik).
     """
     hits = [g for g, spec in m["groups"].items() if any(name.startswith(p) for p in spec["prefixes"])]
-    if len(hits) != 1:
+    if len(hits) > 1:
         raise SystemExit(f"{name}: belongs to {hits} groups, not one | tek grup değil")
-    return hits[0]
+    return hits[0] if hits else NEW_GROUP
 
 
 def done_groups(m, extra=()):
     """
-    EN: The groups marked done in the map, plus the ones named on the command line.
-    TR: Eşlemede bitti işaretli gruplar ile komut satırında anılanlar.
+    EN: The groups marked done in the map, plus the ones named on the command line, plus NEW_GROUP.
+    TR: Eşlemede bitti işaretli gruplar, komut satırında anılanlar ve NEW_GROUP.
     """
-    return {g for g, spec in m["groups"].items() if spec["status"] == "done"} | set(extra)
+    return {g for g, spec in m["groups"].items() if spec["status"] == "done"} | set(extra) | {NEW_GROUP}
 
 
 def under(path, roots):
@@ -570,9 +579,11 @@ def _native_only(m, p0, done):
 def cmd_site_map(m, p0):
     """
     EN: The site tree's old -> new paths (list elements as '[]') and value maps under the full map.
-        Returns: {"paths": {old: new}, "values": {new path pattern: {old: new}}}.
+        Returns: {"_about", "paths": {old: new}, "values": {new path pattern: {old: new}},
+        "prose": {new path: {old text: new text}}, "site_only": {old path: new key}}.
     TR: Tam eşlemeyle site ağacının eski -> yeni yolları (liste öğeleri '[]') ve değer eşlemeleri.
-        Döndürür: {"paths": {eski: yeni}, "values": {yeni yol kalıbı: {eski: yeni}}}.
+        Döndürür: {"_about", "paths": {eski: yeni}, "values": {yeni yol kalıbı: {eski: yeni}},
+        "prose": {yeni yol: {eski metin: yeni metin}}, "site_only": {eski yol: yeni anahtar}}.
     """
     site = read(p0 / "data" / "site_data.json")
     paths = {}
@@ -593,7 +604,21 @@ def cmd_site_map(m, p0):
 
     walk(site, "", "")
     values = {translate_pattern(p, m): v for p, v in m["values"].items() if p.split(".")[0] in SITE_SECTIONS}
-    return {"paths": dict(sorted(paths.items())), "values": values, "site_only": m["site_only"]}
+    prose = {translate_pattern(p, m): v for p, v in m.get("prose", {}).items() if p.split(".")[0] in SITE_SECTIONS}
+    about = {"en": "data/site_data.json: old (Turkish) paths -> new (English) paths, and the values that changed. "
+                   "paths: every renamed key path ('[]' = any list element); values: per new path pattern, "
+                   "old value -> new value ('[i]' = position i of a row); prose: text values that quoted an old "
+                   "path; site_only: keys that exist only in site_data. Written by "
+                   "python tools/metric_renames.py site-map --out docs/site-data-renames.json from "
+                   "docs/metric-key-renames.json.",
+             "tr": "data/site_data.json: eski (Türkçe) yollar -> yeni (İngilizce) yollar ve değişen değerler. "
+                   "paths: yeniden adlandırılan her anahtar yolu ('[]' = her liste öğesi); values: yeni yol "
+                   "kalıbı başına eski değer -> yeni değer ('[i]' = satırın i. konumu); prose: eski yolu anan metin "
+                   "değerleri; site_only: yalnız site_data'da olan anahtarlar. "
+                   "python tools/metric_renames.py site-map --out docs/site-data-renames.json ile "
+                   "docs/metric-key-renames.json'dan yazılır."}
+    return {"_about": about, "paths": dict(sorted(paths.items())), "values": values, "prose": prose,
+            "site_only": m["site_only"]}
 
 
 def cmd_mark_done(group, path=MAP_FILE):
@@ -620,6 +645,7 @@ def main(argv=None):
     ap.add_argument("group", nargs="?", help="mark-done: the group | işaretlenecek grup")
     ap.add_argument("--groups", default="", help="groups to treat as done besides the map's (comma separated)")
     ap.add_argument("--p0", default=str(P0_DIR), help="the P0 copy | P0 kopyası")
+    ap.add_argument("--out", help="site-map: write to this file instead of printing | yazdırmak yerine dosyaya yaz")
     args = ap.parse_args(argv)
     p0 = Path(args.p0)
     if args.command == "snapshot":
@@ -633,24 +659,30 @@ def main(argv=None):
         raise SystemExit(f"no P0 copy at {p0} — python tools/metric_renames.py snapshot | P0 yok")
     m = load_map()
     done = done_groups(m, [g for g in args.groups.split(",") if g])
-    unknown = done - set(m["groups"])
+    unknown = done - set(m["groups"]) - {NEW_GROUP}
     if unknown:
         raise SystemExit(f"unknown groups | bilinmeyen gruplar: {sorted(unknown)}")
     if args.command == "site-map":
-        print(json.dumps(cmd_site_map(m, p0), ensure_ascii=False, indent=1))
+        text = json.dumps(cmd_site_map(m, p0), ensure_ascii=False, indent=1) + "\n"
+        if args.out:
+            with open(args.out, "w", encoding="utf-8", newline="\n") as fh:
+                fh.write(text)
+        else:
+            print(text, end="")
         return 0
     if args.command == "check-metrics":
         diff = cmd_check_metrics(m, p0, done)
         for name, keys in diff.items():
             print(f"✗ {name}: {len(keys)} leaves · {keys[:6]}")
-        print(f"check-metrics [{','.join(sorted(done)) or '-'}]: {sum(map(len, diff.values()))} residual difference(s) "
-              f"| artık fark")
+        print(f"check-metrics [{','.join(sorted(done - {NEW_GROUP})) or '-'}]: {sum(map(len, diff.values()))} "
+              f"residual difference(s) | artık fark")
         return 1 if diff else 0
     problems = {"validate": lambda: cmd_validate(m, p0), "check-builders": lambda: cmd_check_builders(m, p0, done),
                 "check-outputs": lambda: cmd_check_outputs(m, p0, done)}[args.command]()
     for p in problems:
         print(f"✗ {p}")
-    print(f"{args.command} [{','.join(sorted(done)) or '-'}]: {'OK' if not problems else f'{len(problems)} problem(s)'}")
+    print(f"{args.command} [{','.join(sorted(done - {NEW_GROUP})) or '-'}]: "
+          f"{'OK' if not problems else f'{len(problems)} problem(s)'}")
     return 1 if problems else 0
 
 

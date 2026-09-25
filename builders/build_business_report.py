@@ -60,27 +60,27 @@ def fmt_business(v, F, lang):
     # 2026-09-23: "kilometre, hasar, motor" elle yaziliydi; motor grubu cikarilinca hata yalniz ~₺500 artiyor
     # (bilgisi model adinda). Siralama ve tutarlar LOFO'dan (methodology.lofo, karesel ortalama hata artisi).
     _lf = {r_[0]: r_[1] for r_ in v["lofo"]}
-    _kl = sorted([("gb_mileage", L("kilometre", "mileage")), ("DAMAGE_COLS", L("hasar", "damage")),
+    _levers = sorted([("gb_mileage", L("kilometre", "mileage")), ("DAMAGE_COLS", L("hasar", "damage")),
                   ("ENGINE", L("motor", "engine"))], key=lambda t_: -_lf[t_[0]])
-    _buy = [(a_, _lf[k_]) for k_, a_ in _kl if _lf[k_] >= 5000]
-    _kuc = [(a_, _lf[k_]) for k_, a_ in _kl if _lf[k_] < 5000]
-    A(L(f"Farkı kapatan, model ve yılın ötesi en çok {' ve '.join(a_ for a_, _x in _buy)}: modelden çıkarılınca "
-        f"hata (karesel ortalama) sırasıyla {' ve '.join(tl(x_) for _a, x_ in _buy)} büyüyor."
+    _big = [(a_, _lf[k_]) for k_, a_ in _levers if _lf[k_] >= 5000]
+    _small = [(a_, _lf[k_]) for k_, a_ in _levers if _lf[k_] < 5000]
+    A(L(f"Farkı kapatan, model ve yılın ötesi en çok {' ve '.join(a_ for a_, _x in _big)}: modelden çıkarılınca "
+        f"hata (karesel ortalama) sırasıyla {' ve '.join(tl(x_) for _a, x_ in _big)} büyüyor."
         + "".join(f" {a_.capitalize()} bilgisi ise büyük ölçüde model adında zaten var: ayrıca çıkarılınca hata "
-                  f"yalnız {tl(x_)} artıyor." for a_, x_ in _kuc),
-        f"Beyond model and year the gap is closed mostly by {' and '.join(a_ for a_, _x in _buy)}: removing them "
-        f"from the model grows the (root-mean-square) error by {' and '.join(tl(x_) for _a, x_ in _buy)} "
+                  f"yalnız {tl(x_)} artıyor." for a_, x_ in _small),
+        f"Beyond model and year the gap is closed mostly by {' and '.join(a_ for a_, _x in _big)}: removing them "
+        f"from the model grows the (root-mean-square) error by {' and '.join(tl(x_) for _a, x_ in _big)} "
         f"respectively."
         + "".join(f" The {a_} information is largely in the model name already: removing that group on its own adds only "
-                  f"{tl(x_)}." for a_, x_ in _kuc)))
+                  f"{tl(x_)}." for a_, x_ in _small)))
     A("")
     A(f"![{F[0][1]}](figures/{F[0][0]})")
     A("")
-    _kat = tiers[-1][4] / tiers[0][4]        # en alt basamak / en ust basamak (ort. hata)
+    _ratio = tiers[-1][4] / tiers[0][4]        # en alt basamak / en ust basamak (ort. hata)
     A(L(f"**Emsal yoksa taban çöküyor** — en alt basamakta ortalama hata, model+yıl basamağının "
-        f"**{_kat:.1f} katı**. Model de emsalsiz araçta zorlanıyor — nerede, ileride.",
+        f"**{_ratio:.1f} katı**. Model de emsalsiz araçta zorlanıyor — nerede, ileride.",
         f"**Without a comparable the baseline collapses** — mean error at the bottom tier is "
-        f"**{_kat:.1f}×** the top. The model struggles without comparables too — where, further down."))
+        f"**{_ratio:.1f}×** the top. The model struggles without comparables too — where, further down."))
     A("")
     A(L("| taban basamağı | ilan | pay | ortalama hata |",
         "| baseline tier | listings | share | mean error |"))
@@ -213,9 +213,9 @@ def fmt_business(v, F, lang):
     _flag_en = (f", and with age, mileage, price and performance family held fixed the odds of a large error are "
               f"still {_flag_ctl['or']:.2f}×" if _flag_sig else "")
     _ins = [r[1] for r in v["bt_insample"]]
-    _bir = all(a >= b for a, b in zip(_ins, _ins[1:])) and _ins[-1] < _ins[0]
-    _bir_tr = " Eski dönemleri atma: veri biriktikçe hata düşüyor." if _bir else ""
-    _bir_en = " Do not discard old snapshots: more data means less error." if _bir else ""
+    _accumulates = all(a >= b for a, b in zip(_ins, _ins[1:])) and _ins[-1] < _ins[0]
+    _acc_tr = " Eski dönemleri atma: veri biriktikçe hata düşüyor." if _accumulates else ""
+    _acc_en = " Do not discard old snapshots: more data means less error." if _accumulates else ""
     A(L("**Ne yapmalı**", "**What to do**"))
     A("")
     A(L(f"- Ucuz araçlarda aralığı genişlet — tek sayıya güvenme.\n"
@@ -233,7 +233,7 @@ def fmt_business(v, F, lang):
         + f"ama piyasa seviyesi {v['n_snapshots']} dönemde "
         f"{P(v['ed']['period_shift']['live'][-1][1], lang, 1, sign=True)} kaydı ve model zamanı görmüyor.\n"
         f"- **Fiyat rejimini değiştiren gelişmeleri takip et** (vergi/ÖTV düzenlemesi, teşvik, ani "
-        f"piyasa hareketi gibi) — eğitim planı bunlara göre yapılmalı." + _bir_tr,
+        f"piyasa hareketi gibi) — eğitim planı bunlara göre yapılmalı." + _acc_tr,
         f"- Widen the range on cheap cars — don't trust a point estimate.\n"
         f"- Price rare and edge cars by hand; the model scatters there.\n"
         + (f"- Never auto-price a listing whose text mentions a conversion, an engine swap or "
@@ -250,7 +250,7 @@ def fmt_business(v, F, lang):
         f"market level moved {P(v['ed']['period_shift']['live'][-1][1], lang, 1, sign=True)}"
         f" over {number_word(v['n_snapshots'], 'en')} snapshots and the model is time-blind.\n"
         f"- **Watch for events that reset the pricing regime** (a tax or excise change, an incentive, "
-        f"a sudden market move) — plan retraining around them." + _bir_en))
+        f"a sudden market move) — plan retraining around them." + _acc_en))
     A("")
     A(f"![{F[15][1]}](figures/{F[15][0]})")
     A("")

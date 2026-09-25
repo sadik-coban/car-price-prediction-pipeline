@@ -99,6 +99,8 @@ is refused; every accept is logged in `tests/baselines/accept_log.jsonl`. Rules:
 - [Decisions and limits](docs/decisions.en.md) — business / technical split, why the text analysis is archived, privacy, honest framing
 - [Database notes](docs/database.en.md) — semi-raw rules, safe build, **the gold step (API): read before rebuilding the DB**
 - [Reproducibility](docs/reproducibility.en.md) — determinism, the reference comparison, the known residue
+- [Metric key map](docs/metric-key-renames.json) — old Turkish keys → English (2026-09-25); the `site_data.json`
+  path and value map for the portfolio site: [docs/site-data-renames.json](docs/site-data-renames.json)
 - Reports: [technical](reports/technical.en.md) · [decision note](reports/business.en.md) · [SHAP](reports/shap.en.md) (Turkish: `*.tr.md`)
 
 ---

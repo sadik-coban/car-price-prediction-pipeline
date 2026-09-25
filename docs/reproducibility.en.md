@@ -72,3 +72,20 @@ of commit `b2395e0` on the `restructure-2026-09` branch. Rules:
   `CARDATASYS_OUT` environment variable and compares the output with the repository: the md files ignoring
   line ends, the figures byte for byte, `site_data.json` as JSON. If the reports are not rebuilt after an
   accept, this test fails.
+
+**English key names (2026-09-25).** Metric keys, the values code compares and the names in the builders were a
+Turkish/English mix; they are all English snake_case now, and the Turkish text the reports show stayed as it was.
+The old→new names are in one reviewed map: `docs/metric-key-renames.json` (path based, because the same word had two
+meanings: `alt`/`ust` meant lower/upper for a candidate and low/up for a range). The work went in nine groups, and
+each group was proven a **pure rename** against one origin taken once before the work (the P0 copy, outside git in
+`archive/backups/renames-P0-2026-09-25/p0/`), with `tools/metric_renames.py`:
+- `check-builders`: the four builders run on translated P0 metrics in a temp root; the six md files and every
+  figure are byte-identical to P0;
+- `check-metrics`: the rerun metrics equal translated P0 leaf by leaf (order and type included; the stamp, the
+  source hashes and the exempt residue left out). **0 residual differences** in every group;
+- `check-outputs`: the repository reports and figures equal P0, `site_data.json` equals translated P0.
+
+`run_id` did not change. The path and value map of `site_data.json` for the portfolio site is
+`docs/site-data-renames.json`. The key `FINAL_LGB_AGAC` in `encoders.pkl` keeps its old name on purpose: it is the
+serving/API contract, read outside the repository. `tests/metrics/test_metric_key_names.py` keeps the old names
+from coming back.

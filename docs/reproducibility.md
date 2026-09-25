@@ -68,3 +68,19 @@ commit'inin metrikleridir. Kurallar:
 - raporlar metriklerin saf fonksiyonudur. Test, derleyicileri `CARDATASYS_OUT` ortam değişkeniyle geçici bir
   klasöre koşar ve çıktıyı depodakiyle karşılaştırır: md'ler satır sonları hariç, figürler bayt bayt,
   `site_data.json` JSON olarak. Referans kabul edildikten sonra raporlar yeniden üretilmezse bu test düşer.
+
+**İngilizce anahtar adları (2026-09-25).** Metrik anahtarları, kodun karşılaştırdığı değerler ve derleyicilerdeki
+adlar Türkçe/İngilizce karışıktı; hepsi İngilizce snake_case oldu, raporda görünen Türkçe metin olduğu gibi kaldı.
+Eski→yeni adlar tek bir incelenmiş eşlemede: `docs/metric-key-renames.json` (yol bazlı, çünkü aynı sözcük iki
+anlamda geçiyordu: `alt`/`ust` adayda lower/upper, aralıkta low/up). İş dokuz grupta yapıldı ve her grup **saf ad
+değişikliği** olarak, işten önce bir kez alınan tek bir başlangıca (P0 kopyası, git dışında
+`archive/backups/renames-P0-2026-09-25/p0/`) göre kanıtlandı; araç `tools/metric_renames.py`:
+- `check-builders`: dört derleyici çevrilmiş P0 metrikleriyle geçici kökte koşar; altı md ve bütün figürler P0 ile
+  bayt bayt aynı;
+- `check-metrics`: yeniden koşulan metrikler, çevrilmiş P0'a yaprak yaprak eşit (sıra ve tip dahil; damga, kaynak
+  izi ve muaf kalıntı hariç). Her grupta **0 artık fark**;
+- `check-outputs`: depodaki raporlar ve figürler P0 ile aynı, `site_data.json` çevrilmiş P0'a eşit.
+
+`run_id` değişmedi. Portföy sitesi için `site_data.json`'un yol ve değer eşlemesi `docs/site-data-renames.json`'da.
+`encoders.pkl`'deki `FINAL_LGB_AGAC` anahtarı bilerek eski adıyla kaldı: servis/API sözleşmesi, depo dışında okunuyor.
+`tests/metrics/test_metric_key_names.py` eski adların geri gelmesini engeller.

@@ -99,6 +99,8 @@ ile kabul edilir, sonra raporlar yeniden üretilir. Gerekçesiz kabul reddedilir
 - [Kararlar ve sınırlar](docs/decisions.md) — iş / teknik ayrımı, metin analizi neden arşivde, gizlilik, dürüst çerçeve
 - [Veritabanı notları](docs/database.md) — yarı ham kurallar, güvenli kurulum, **gold adımı (API): DB'yi yeniden kurmadan önce okuyun**
 - [Yeniden üretilebilirlik](docs/reproducibility.md) — determinizm, referans karşılaştırması, bilinen kalıntı
+- [Metrik anahtarı eşlemesi](docs/metric-key-renames.json) — eski Türkçe anahtarlar → İngilizce (2026-09-25);
+  portföy sitesi için `site_data.json` yol ve değer eşlemesi: [docs/site-data-renames.json](docs/site-data-renames.json)
 - Raporlar: [teknik](reports/technical.tr.md) · [karar notu](reports/business.tr.md) · [SHAP](reports/shap.tr.md) (İngilizceleri `*.en.md`)
 
 ---

@@ -52,7 +52,15 @@ The order:
 - **Stale metrics:** when a script or an `analysis/lib` file it imports changes, its metrics count as stale and
   the gate names the script to rerun (`tests/metrics/test_provenance.py`). Touching `lib/common.py` makes every
   script stale (full run ~16 min).
-- **Legacy scripts:** the 18 scripts written before cards and tests are in `tests/analysis/legacy.json` with the
-  sha256 of their source. A legacy script that changes needs a card and a test; the list only shrinks.
+- **Names:** everything at code level is English snake_case: metric keys, the values code compares
+  (`"series_map"`, `"model_year"`, `"economy"`…), variable and function names. Turkish stays only in text the
+  report shows: `L("tr", "en")` strings and the `(tr, en)` values of label dicts (`TIER_LABEL`, `BAND_LABEL`).
+  Code does not index by a displayed term; it maps the term to an id through a dict like `HED_TERM_ID` and stops
+  on an unknown term. The old→new key map is `docs/metric-key-renames.json`, the path and value map for the site
+  `docs/site-data-renames.json`. `tests/metrics/test_metric_key_names.py` turns red on a retired key or value in
+  the metrics, or a dotted path with an old name in code or docs; the metrics of a new script that belongs to no
+  group are checked too.
+- **Legacy scripts:** all 18 scripts written before cards and tests now have both; `tests/analysis/legacy.json`
+  is empty. The list can only shrink, no name can be added.
 - **Heavy methodology tests** (not in the fast gate): `python -m pytest -m full tests/analysis`. The checks: no
   `ad_id` overlap between folds, R² ≈ 0 on a shuffled target, bit-identical reruns.
