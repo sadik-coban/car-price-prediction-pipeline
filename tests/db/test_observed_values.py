@@ -14,6 +14,7 @@ TR: Ham → DB kodu yalnız verinin gösterdiğini bekler ve gösterdiği her ş
     alanların gözlenen her biçimi (her biri UnknownValue olmadan ayrışır ve koddaki her kalıp veride kullanılıyor).
 """
 import pytest
+from conftest import raw_record
 
 import build_duckdb as BD
 from lib import observed_values as OV, process_for_db as P
@@ -86,3 +87,15 @@ def test_month_names_both_ways():
     """EN: The month table is exactly the observed months. / TR: Ay tablosu tam olarak gözlenen aylar."""
     months = {v.split()[1] for v in values("KısaBilgi - İlan Tarihi")}
     assert set(P.TR_MONTHS) == months
+
+
+def test_fake_records_hold_only_observed_values():
+    """
+    EN: A fake test record with a value the data never showed fails at once — the old fixture MTV "8.629 TL" (made
+        up; the data has 23 MTV amounts) would; an observed one passes.
+    TR: Verinin hiç göstermediği bir değer taşıyan sahte test kaydı hemen düşer — eski fixture MTV'si "8.629 TL"
+        (uydurma; veride 23 MTV tutarı var) düşerdi; gözlenen bir değer geçer.
+    """
+    with pytest.raises(AssertionError, match="8.629 TL"):
+        raw_record(**{"Genel Bakış - Yıllık MTV": "8.629 TL"})
+    assert raw_record(**{"Genel Bakış - Yıllık MTV": "1.198 TL"})["Genel Bakış - Yıllık MTV"] == "1.198 TL"

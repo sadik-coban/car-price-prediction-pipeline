@@ -2,12 +2,17 @@
 conftest.py
 EN: Shared test helpers for db/: puts db/ on the import path, a fake S3 client (boto3's methods,
     in memory), a fake store (S3Store's methods, recording the calls), a factory for small DuckDB files, and
-    fake raw arabam.com records written in the real formats (every value made up; no real listing, no ad_id
-    from the data). Nothing here touches the network, the real .env or data/.
+    fake raw arabam.com records. A fake record is not a real listing (no ad_id from the data), but every value it
+    holds is one the data showed: raw_record checks each record against the register of observed values
+    (db/observed_values.json) and stops on anything unseen, so no test rests on a case that never happened; only
+    the tests of the stop itself pass unseen=True. Nothing here touches the network, the real .env or data/.
 TR: db/ için ortak test yardımcıları: db/'yi import yoluna ekler, sahte bir S3 istemcisi (boto3'ün
     metotları, bellekte), sahte bir depo (S3Store'un metotları, çağrıları kaydeder), küçük DuckDB dosyaları
-    kuran bir fabrika ve gerçek biçimlerle yazılmış sahte ham arabam.com kayıtları (her değer uydurma; gerçek
-    ilan yok, veriden ad_id yok). Burada hiçbir şey ağa, gerçek .env'e ya da data/'ya dokunmaz.
+    kuran bir fabrika ve sahte ham arabam.com kayıtları. Sahte kayıt gerçek bir ilan değildir (veriden ad_id
+    yok), ama taşıdığı her değer verinin gösterdiği bir değerdir: raw_record her kaydı gözlenen değerler kaydıyla
+    (db/observed_values.json) karşılaştırır ve görülmemiş bir şeyde durur; böylece hiçbir test hiç yaşanmamış bir
+    duruma dayanmaz; yalnız durmanın kendisini sınayan testler unseen=True verir. Burada hiçbir şey ağa, gerçek
+    .env'e ya da data/'ya dokunmaz.
 """
 import io
 import json
@@ -20,6 +25,9 @@ from botocore.exceptions import ClientError
 
 DB_DIR = Path(__file__).resolve().parents[2] / "db"
 sys.path.insert(0, str(DB_DIR))
+from lib import observed_values as OV  # noqa: E402
+
+REGISTER = OV.load()
 
 # EN: the 13 panel labels of the site's damage diagram | TR: sitenin hasar şemasının 13 parça etiketi
 PANELS = list(json.loads((DB_DIR / "lib" / "damage_mappings.json").read_text(encoding="utf-8"))["panels"])
@@ -37,14 +45,16 @@ def damage_list(**statuses):
     return [f"{p}: {given.get(p, 'Orjinal')}" for p in PANELS]
 
 
-def raw_record(ad_no=10000001, **overrides):
+def raw_record(ad_no=10000001, unseen=False, **overrides):
     """
-    EN: One raw details.jsonl record with every key the parser reads, in the real formats (values made up).
-        Change values with a dict of raw keys: raw_record(**{"KısaBilgi - Motor Hacmi": "1401 - 1600 cm3"});
-        MISSING removes a key.
-    TR: Ayrıştırıcının okuduğu her anahtarla tek ham details.jsonl kaydı, gerçek biçimlerle (değerler uydurma).
-        Değiştirmek için ham anahtarlı dict verin: raw_record(**{"KısaBilgi - Motor Hacmi": "1401 - 1600 cm3"});
-        MISSING anahtarı çıkarır.
+    EN: One raw details.jsonl record with every key the parser reads. Change values with a dict of raw keys:
+        raw_record(**{"KısaBilgi - Motor Hacmi": "1401 - 1600 cm3"}); MISSING removes a key. Every value must be
+        one the data showed (the register's value, or its format for a many-valued field; the damage labels):
+        anything unseen fails the test at once. unseen=True is only for the tests of the stop on unseen values.
+    TR: Ayrıştırıcının okuduğu her anahtarla tek ham details.jsonl kaydı. Değiştirmek için ham anahtarlı dict
+        verin: raw_record(**{"KısaBilgi - Motor Hacmi": "1401 - 1600 cm3"}); MISSING anahtarı çıkarır. Her değer
+        verinin gösterdiği bir değer olmalı (kaydın değeri ya da çok değerli alanda biçimi; hasar etiketleri):
+        görülmemiş her şey testi hemen düşürür. unseen=True yalnız görülmemiş değerde durmayı sınayan testler için.
     """
     rec = {
         "Fiyat": "1.250.000 TL",
@@ -112,7 +122,11 @@ def raw_record(ad_no=10000001, **overrides):
         "Aciklama_HTML": "<h5>Açıklama</h5><div><p>Araç sorunsuzdur.</p></div>",
     }
     rec.update(overrides)
-    return {k: v for k, v in rec.items() if v is not MISSING}
+    rec = {k: v for k, v in rec.items() if v is not MISSING}
+    if not unseen:
+        problems = OV.unseen(OV.scan_records([("raw_record", rec)])[1], REGISTER)
+        assert not problems, "fixture value the data never showed | verinin hiç göstermediği değer:\n" + "\n".join(problems)
+    return rec
 
 
 def write_raw_tree(data_dir, snapshots):

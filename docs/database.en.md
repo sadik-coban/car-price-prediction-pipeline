@@ -53,7 +53,9 @@ derived from it (`data/cars_gold.duckdb`, below). Until 2026-09-24 this file its
     guessing. A single production year used to become "start = end", an unknown first-owner text became `False`,
     and an unknown damage label was skipped.
   - Tests check both ways: every value the code names was seen in the data, and every value in the data is handled
-    on purpose (`tests/db/test_observed_values.py`, `tests/analysis/test_observed_values_analysis.py`).
+    on purpose (`tests/db/test_observed_values.py`, `tests/analysis/test_observed_values_analysis.py`). The tests'
+    fake raw records hold observed values only too: `raw_record` in `tests/db/conftest.py` checks each record
+    against the register. Only the tests of the stop itself pass an unseen value on purpose (`unseen=True`).
 
   At the same time, three assumptions the data never showed were removed: the plate `"Yabancı plakalı"`, 14 series
   in the segment rule (`8 Serisi`, `X1`–`X7`, `Z4`, `Q2`–`Q8`), and `02_missingness`'s missing tokens such as

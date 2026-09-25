@@ -334,7 +334,8 @@ def test_unseen_value_stops_before_writing(tmp_path, overrides, expected):
         yazılmadan durdurur; mesaj onu ve ilk dosya:satırını söyler.
     """
     data_dir = write_raw_tree(tmp_path / "raw", {("audi", S1): [raw_record(10000001)],
-                                                 ("bmw", S1): [raw_record(10000002, brand="bmw", **overrides)]})
+                                                 ("bmw", S1): [raw_record(10000002, brand="bmw", unseen=True,
+                                                                          **overrides)]})
     out = tmp_path / "cars.duckdb"
     with pytest.raises(ValueError, match=re.escape(expected)) as info:
         BD.build(out, data_dir=data_dir)

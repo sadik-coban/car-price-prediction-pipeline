@@ -51,7 +51,9 @@ Bu dosya analizin girdisi. API'ye doğrudan gitmez: yayın, ondan türetilen gol
     `UnknownValue` yükseltir. Eskiden tek yıllı üretim yılı "ilk = son" oluyor, bilinmeyen ilk sahip metni `False`
     sayılıyor, bilinmeyen hasar etiketi atlanıyordu.
   - Testler iki yönde sınar: kodun andığı her değer veride görülmüş, verideki her değer kodda bilerek ele alınmış
-    (`tests/db/test_observed_values.py`, `tests/analysis/test_observed_values_analysis.py`).
+    (`tests/db/test_observed_values.py`, `tests/analysis/test_observed_values_analysis.py`). Testlerin sahte ham
+    kayıtları da yalnız gözlenen değerleri taşır: `tests/db/conftest.py`'deki `raw_record` her kaydı kayda göre
+    sınar. Yalnız durmayı sınayan testler bilerek görülmemiş değer verir (`unseen=True`).
 
   Bu sırada veride hiç görülmeyen üç varsayım kaldırıldı: plaka `"Yabancı plakalı"`, segment kuralındaki 14 seri
   (`8 Serisi`, `X1`–`X7`, `Z4`, `Q2`–`Q8`) ve `02_missingness`'in `"nan"`/`"None"` gibi eksik jetonları.

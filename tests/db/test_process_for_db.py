@@ -166,11 +166,14 @@ def test_process_record_heavy_damage(value, expected):
 
 
 def test_process_record_unknowns_stay_none():
-    """EN: Missing counts / first owner / summary stay None. / TR: Eksik sayaç / ilk sahip / özet None kalır."""
-    s = P.process_record(raw_record(**{"Degisen_Parca_Sayisi": None, "Genel Bakış - Aracın ilk sahibiyim": MISSING,
-                                       "KısaBilgi - Boya-değişen": "-"}))
-    assert (s["count_changed"], s["is_first_owner"], s["kb_paint_change_summary"]) == (None, None, None)
-    assert s["count_painted"] == 0
+    """
+    EN: A missing first-owner field stays None, not False (118 kept rows in the data have no such field). Empty
+        damage counters or a "-" paint summary are not tested: the data never shows them.
+    TR: Olmayan ilk sahip alanı False değil None kalır (verideki 118 tutulan satırda bu alan yok). Boş hasar
+        sayaçları ya da "-" boya özeti sınanmaz: veri onları hiç göstermiyor.
+    """
+    s = P.process_record(raw_record(**{"Genel Bakış - Aracın ilk sahibiyim": MISSING}))
+    assert s["is_first_owner"] is None and s["count_painted"] == 0
 
 
 @pytest.mark.parametrize("summary", ["Tamamı orjinal", "2 değişen, 3 boyalı", "Belirtilmemiş", "Tamamı boyalı"])
@@ -226,7 +229,7 @@ def test_unseen_forms_stop(parse, value):
 def test_unknown_value_names_file_and_line(tmp_path):
     """EN: The error names the file, the line and the value. / TR: Hata dosyayı, satırı ve değeri söyler."""
     path = tmp_path / "details.jsonl"
-    records = [raw_record(), raw_record(10000002, **{"Genel Bakış - Aracın ilk sahibiyim": "Belirtilmemiş"})]
+    records = [raw_record(), raw_record(10000002, unseen=True, **{"Genel Bakış - Aracın ilk sahibiyim": "Belirtilmemiş"})]
     path.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in records) + "\n", encoding="utf-8")
     with pytest.raises(P.UnknownValue, match=r"details\.jsonl:2: Genel Bakış - Aracın ilk sahibiyim: .*'Belirtilmemiş'"):
         P.jsonl_to_silver_df(path)

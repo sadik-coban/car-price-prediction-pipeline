@@ -104,16 +104,11 @@ def where(path, line_no):
     return f"{'/'.join(Path(path).parts[-3:])}:{line_no}"
 
 
-def scan_raw(files):
+def file_records(files):
     """
-    EN: Scans raw files. Returns: (register part, detail) — the part as written to the register; detail keeps the
-        full value counters and each value's first file:line for unseen().
-    TR: Ham dosyaları tarar. Döndürür: (kayıt parçası, ayrıntı) — parça kayda yazıldığı gibi; ayrıntı unseen() için
-        tam değer sayaçlarını ve her değerin ilk dosya:satır'ını tutar.
+    EN: Yields (file:line, record or None for a broken line) over raw files, read-only; blank lines skipped.
+    TR: Ham dosyalar üzerinde (dosya:satır, kayıt ya da bozuk satırsa None) üretir; salt okunur; boş satırlar atlanır.
     """
-    present, values = Counter(), defaultdict(Counter)
-    parts, states, malformed = Counter(), Counter(), Counter()
-    first, records, broken = {}, 0, 0
     for path in files:
         with open(path, "rb") as fh:
             for line_no, line in enumerate(fh, start=1):
@@ -122,30 +117,55 @@ def scan_raw(files):
                 try:
                     record = json.loads(line)
                 except ValueError:
-                    broken += 1
-                    continue
-                if not isinstance(record, dict):
-                    broken += 1
-                    continue
-                records += 1
-                for field, value in record.items():
-                    present[field] += 1
-                    first.setdefault(("field", field), where(path, line_no))
-                    if field == DAMAGE_FIELD:
-                        for item in value if isinstance(value, list) else [value]:
-                            part, sep, state = str(item).partition(":")
-                            if not sep:
-                                malformed[str(item)] += 1
-                                first.setdefault(("damage.malformed", str(item)), where(path, line_no))
-                                continue
-                            for kind, label, counter in (("damage.part", part.strip(), parts),
-                                                         ("damage.state", state.strip(), states)):
-                                counter[label] += 1
-                                first.setdefault((kind, label), where(path, line_no))
-                    elif field not in COUNT_ONLY:
-                        key = value_key(value)
-                        values[field][key] += 1
-                        first.setdefault((field, key), where(path, line_no))
+                    record = None
+                yield where(path, line_no), record if isinstance(record, dict) else None
+
+
+def scan_raw(files):
+    """
+    EN: Scans raw files (scan_records over file_records). Returns: (register part, detail).
+    TR: Ham dosyaları tarar (file_records üzerinde scan_records). Döndürür: (kayıt parçası, ayrıntı).
+    """
+    part, detail = scan_records(file_records(files))
+    part["files"] = len(files)
+    return part, detail
+
+
+def scan_records(items):
+    """
+    EN: Scans (where, record) pairs — raw file lines, or records made in memory (test fixtures). Returns: (register
+        part, detail) — the part as written to the register; detail keeps the full value counters and each value's
+        first place for unseen(). A None record counts as a broken line.
+    TR: (nerede, kayıt) çiftlerini tarar — ham dosya satırları ya da bellekte kurulan kayıtlar (test fixture'ları).
+        Döndürür: (kayıt parçası, ayrıntı) — parça kayda yazıldığı gibi; ayrıntı unseen() için tam değer sayaçlarını
+        ve her değerin ilk yerini tutar. None kayıt bozuk satır sayılır.
+    """
+    present, values = Counter(), defaultdict(Counter)
+    parts, states, malformed = Counter(), Counter(), Counter()
+    first, records, broken = {}, 0, 0
+    for place, record in items:
+        if record is None:
+            broken += 1
+            continue
+        records += 1
+        for field, value in record.items():
+            present[field] += 1
+            first.setdefault(("field", field), place)
+            if field == DAMAGE_FIELD:
+                for item in value if isinstance(value, list) else [value]:
+                    part, sep, state = str(item).partition(":")
+                    if not sep:
+                        malformed[str(item)] += 1
+                        first.setdefault(("damage.malformed", str(item)), place)
+                        continue
+                    for kind, label, counter in (("damage.part", part.strip(), parts),
+                                                 ("damage.state", state.strip(), states)):
+                        counter[label] += 1
+                        first.setdefault((kind, label), place)
+            elif field not in COUNT_ONLY:
+                key = value_key(value)
+                values[field][key] += 1
+                first.setdefault((field, key), place)
     fields = {}
     for field in sorted(present):
         entry = {"present": present[field]}
@@ -160,7 +180,7 @@ def scan_raw(files):
                     shapes[shape(v)] += n
                 entry["shapes"] = pairs(shapes)
         fields[field] = entry
-    part = {"files": len(files), "records": records, "broken_lines": broken, "fields": fields,
+    part = {"files": 0, "records": records, "broken_lines": broken, "fields": fields,
             "damage": {"parts": pairs(parts), "states": pairs(states), "malformed": pairs(malformed)}}
     return part, {"values": values, "parts": parts, "states": states, "malformed": malformed, "first": first}
 
