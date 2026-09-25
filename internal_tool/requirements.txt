@@ -1,0 +1,12 @@
+# EN: the internal tool's own environment (not the pipeline's). Install into /.venv-tool/ with the pipeline lock as
+#     constraints, so pandas / numpy / duckdb / pyarrow / plotly match the verify gate:
+#       python -m venv .venv-tool
+#       .venv-tool\Scripts\python -m pip install -r internal_tool/requirements.txt -c requirements-pipeline.lock.txt -c requirements-dev.txt
+#       .venv-tool\Scripts\python -m pip freeze > internal_tool/requirements.lock.txt
+# TR: iç aracın kendi ortamı (pipeline'ınki değil). /.venv-tool/'a, pipeline lock'u kısıt olarak kurulur; böylece
+#     pandas / numpy / duckdb / pyarrow / plotly verify kapısıyla aynı olur (komutlar yukarıda).
+streamlit
+duckdb
+pandas
+plotly
+pytest

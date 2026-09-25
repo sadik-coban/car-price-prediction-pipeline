@@ -19,6 +19,9 @@
 .env
 .venv/
 venv/
+# iç aracın ayrı ortamı (internal_tool/requirements.txt) ve Streamlit sırları
+/.venv-tool/
+.streamlit/secrets.toml
 
 # --- artıklar ----------------------------------------------------------------
 __pycache__/

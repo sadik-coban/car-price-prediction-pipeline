@@ -25,7 +25,7 @@ DOCS = MR.metrics_docs(ROOT / "metrics")
 # EN: text that may quote metric paths; the map, its tool and their tests hold old names on purpose
 # TR: metrik yolu anabilecek metinler; eşleme, aracı ve testleri eski adları bilerek taşır
 TEXT_GLOBS = ["builders/**/*.py", "analysis/**/*.py", "tests/**/*.py", "tools/*.py", "db/**/*.py",
-              "analysis/cards/*.json", "docs/*.md", "README*.md", "db_plan.md"]
+              "analysis/cards/*.json", "docs/*.md", "README*.md", "db_plan.md", "internal_tool/**/*.py"]
 ON_PURPOSE = {"tools/metric_renames.py", "tests/metrics/test_metric_renames.py", "tests/metrics/test_metric_key_names.py",
               "docs/metric-key-renames.json"}
 

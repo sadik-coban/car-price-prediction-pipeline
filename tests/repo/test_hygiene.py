@@ -18,7 +18,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-CODE_DIRS = ["analysis", "builders", "db", "tools", "tests"]
+CODE_DIRS = ["analysis", "builders", "db", "tools", "tests", "internal_tool"]
 EXTRA_CODE = ["scraper/collection.py"]
 DOC_FILES = ["README.md", "README.en.md", "db_plan.md", "docs/*.md", "reports/*.md"]
 # EN: the only code allowed to read a .py file as text, with the reason | TR: .py'yi metin olarak okuyabilen tek kod
