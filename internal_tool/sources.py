@@ -26,6 +26,7 @@ TR: İç aracın veri gezgininin üç kaynağı, pandas'a salt okunur yüklenir:
 import html
 import json
 import re
+from datetime import datetime
 from pathlib import Path
 
 import duckdb
@@ -227,6 +228,35 @@ def db_texts(path):
         return con.execute(f"SELECT {DB_TEXT} FROM {TABLE} ORDER BY id").df()[DB_TEXT]
     finally:
         con.close()
+
+
+def db_text(path, row_id):
+    """EN: description_text of one row by id (read-only). / TR: id ile tek satırın description_text'i (salt okunur)."""
+    con = duckdb.connect(str(path), read_only=True)
+    try:
+        row = con.execute(f"SELECT {DB_TEXT} FROM {TABLE} WHERE id = ?", [int(row_id)]).fetchone()
+        return row[0] if row else None
+    finally:
+        con.close()
+
+
+def file_state(data_dir):
+    """
+    EN: What is on disk for each source, without reading the data: [{"kaynak", "var", "dosya", "değişme", "MB",
+        "son tarama"}] (değişme = the newest file's modification time, local).
+    TR: Her kaynak için diskte ne olduğu, veriyi okumadan: [{"kaynak", "var", "dosya", "değişme", "MB",
+        "son tarama"}] (değişme = en yeni dosyanın değişme zamanı, yerel saat).
+    """
+    out = []
+    for source, label in SOURCES.items():
+        files = data_files(source, data_dir)
+        stats = [Path(f).stat() for f in files]
+        newest = max((s.st_mtime for s in stats), default=None)
+        out.append({"kaynak": label, "var": bool(files), "dosya": len(files),
+                    "değişme": datetime.fromtimestamp(newest).strftime("%Y-%m-%d %H:%M") if newest else None,
+                    "MB": round(sum(s.st_size for s in stats) / 1e6, 1),
+                    "son tarama": max((Path(f).parent.name for f in files), default=None) if source == "raw" else None})
+    return out
 
 
 def load(source, data_dir):

@@ -4,14 +4,16 @@ EN: The "Data explorer" page. Pick a source — raw (every scraped record, field
     row set, then add conditions on ANY column (the ad text too), joined with AND: e.g. plate = blue AND year 2024
     AND seller = dealer. Each condition shows how many rows are left after it; silver and gold share their
     conditions, and the page shows what the same conditions give in the other DB. Results: KPIs, a table with ad_id
-    and a clickable url (first 5,000 rows), the whole record of a clicked row, and charts. Local only (ui guard);
-    data is read, never written.
+    and a clickable url (first 5,000 rows) — a click on any cell opens the listing in full in a window
+    (detail_view) — and charts. Local only (ui guard); data is read, never written.
 TR: "Veri gezgini" sayfası. Kaynak — ham (kazınan her kayıt, alanlar yazıldığı gibi), silver ya da gold — ve satır
     kümesi seçilir, sonra HER kolona (ilan metni dahil) VE ile birleşen koşullar eklenir: ör. plaka = mavi VE yıl 2024
     VE satıcı = galeri. Her koşul kendisinden sonra kaç satır kaldığını gösterir; silver ile gold koşullarını paylaşır
     ve sayfa aynı koşulların öbür DB'de ne verdiğini gösterir. Sonuç: KPI'lar, ad_id ve tıklanır url'li tablo (ilk
-    5.000 satır), tıklanan satırın tüm kaydı ve grafikler. Yalnız yerel (ui koruması); veri okunur, asla yazılmaz.
+    5.000 satır) — herhangi bir hücreye tıklamak ilanı bir pencerede bütünüyle açar (detail_view) — ve grafikler.
+    Yalnız yerel (ui koruması); veri okunur, asla yazılmaz.
 """
+import hashlib
 import json
 import re
 import sys
@@ -24,7 +26,7 @@ if str(ROOT) not in sys.path:
 import pandas as pd  # noqa: E402
 import streamlit as st  # noqa: E402
 
-from internal_tool import charts, filters, sources, ui  # noqa: E402
+from internal_tool import charts, detail_view, details, filters, sources, ui  # noqa: E402
 
 TEXT_COLUMN = {"raw": sources.RAW_TEXT, "db": sources.DB_TEXT}
 SNAPSHOT = {"raw": sources.SNAPSHOT_DIR, "db": "search_date"}
@@ -280,22 +282,21 @@ def gold_rules_note():
     return "\n".join(lines)
 
 
-def show_detail(source, df, idx):
-    """EN: Every field of one row (the raw record whole). / TR: Tek satırın her alanı (ham kayıt bütünüyle)."""
-    group = group_of(source)
-    if group == "raw":
-        record = sources.read_raw_record(sources.data_files("raw", ui.data_dir()), df.loc[idx, sources.RAW_REF])
-        text = sources.html_to_text(record.pop(sources.RAW_TEXT, None))
-        fields = {k: json.dumps(v, ensure_ascii=False) if isinstance(v, (list, dict)) else v for k, v in record.items()}
-    else:
-        fields = df.loc[idx].to_dict()
-        text = load_texts(source, key_of(source))[0].iloc[idx]
-    left, right = st.columns([3, 2])
-    left.dataframe(pd.DataFrame({"alan": list(fields), "değer": ["" if pd.isna(v) else str(v) if not isinstance(
-        v, (list, dict)) else json.dumps(v, ensure_ascii=False) for v in fields.values()]}), hide_index=True,
-        height=600)
-    right.markdown("**İlan metni**")
-    right.text(text if isinstance(text, str) and text else "(metin yok)")
+@st.dialog("İlan ayrıntısı", width="large")
+def detail_dialog(source, df, idx):
+    """EN: The listing in full, in a window. / TR: İlan bütünüyle, bir pencerede."""
+    detail_view.render_detail(source, df, idx, ui.data_dir())
+
+
+def table_key(source, mode, snapshot, conds):
+    """
+    EN: The table's widget key: changes with the source, the row set and the conditions, so a selection never
+        survives a filter change (it would point at another row).
+    TR: Tablonun widget anahtarı: kaynak, satır kümesi ve koşullarla değişir; böylece seçim bir filtre değişikliğinden
+        sağ çıkmaz (başka bir satırı gösterirdi).
+    """
+    state = f"{source}|{mode}|{snapshot}|{filters.summary(conds)}"
+    return f"table_{source}_{hashlib.sha1(state.encode('utf-8')).hexdigest()[:10]}"
 
 
 ui.require_loopback()
@@ -372,14 +373,24 @@ with tab_table:
                                               default=[c for c in DEFAULT_COLUMNS[group] if c in df.columns]))
     shown = view[columns or list(df.columns)].head(TABLE_ROWS)
     config = {"url": st.column_config.LinkColumn("url")} if "url" in shown.columns else None
+    tkey = table_key(source, mode, snapshot, conds)
+    st.caption("👉 Bir ilanın **herhangi bir hücresine** tıkla: ilanın tüm ayrıntısı bir pencerede açılır.")
     event = st.dataframe(shown, hide_index=True, column_config=config, on_select="rerun",
-                         selection_mode="single-row", key=f"table_{source}")
-    st.caption(f"{len(view):,} satırdan ilk {min(len(view), TABLE_ROWS):,} gösteriliyor. "
-               "Bir satırı seçince tüm kaydı aşağıda açılır.".replace(",", "."))
-    rows = event.selection.rows if event is not None else []
-    if rows:
-        st.subheader("Satır detayı")
-        show_detail(source, df, shown.index[rows[0]])
+                         selection_mode=["single-row", "single-cell"], key=tkey)
+    st.caption(f"{len(view):,} satırdan ilk {min(len(view), TABLE_ROWS):,} gösteriliyor.".replace(",", "."))
+    picked = (event.selection.rows, event.selection.cells) if event is not None else ([], [])
+    pos = details.picked_position(*picked)
+    if pos is None or pos >= len(shown):
+        # EN: nothing selected: the next click opens the window again | TR: seçim yok: sonraki tıklama yeniden açar
+        st.session_state["opened_detail"] = None
+    else:
+        idx = shown.index[pos]
+        token = (tkey, repr(picked))
+        if st.session_state.get("opened_detail") != token:
+            st.session_state["opened_detail"] = token
+            detail_dialog(source, df, idx)
+        elif st.button("Seçili ilanı yeniden aç"):
+            detail_dialog(source, df, idx)
 with tab_charts:
     grid = st.columns(2)
     for i, build in enumerate(charts.FIGURES):

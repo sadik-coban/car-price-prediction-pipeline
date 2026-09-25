@@ -34,10 +34,45 @@ def loopback():
     st_config.set_option("server.address", old)
 
 
-def test_router_runs(loopback):
-    """EN: app.py runs its default page without an exception. / TR: app.py varsayılan sayfasını istisnasız koşar."""
+def test_router_opens_the_start_page(loopback):
+    """
+    EN: app.py opens the start page without an exception: its title, one card per page, the data state.
+    TR: app.py başlangıç sayfasını istisnasız açar: başlığı, sayfa başına bir kart, verinin durumu.
+    """
     at = AppTest.from_file(str(TOOL / "app.py"), default_timeout=TIMEOUT).run()
     assert not at.exception, [e.value for e in at.exception]
+    assert at.title[0].value == "cardatasys · iç araç"
+    assert [s.value for s in at.subheader][:3] == ["Raporlar", "Betikler", "Veri gezgini"]
+    assert any(m.value.startswith("**Analizlerin son koşumu:** 20") for m in at.markdown)
+
+
+def detail_app(root, data, source, pick):
+    """EN: A one-listing app for AppTest.from_function. / TR: AppTest.from_function için tek ilanlık uygulama."""
+    import sys
+
+    sys.path.insert(0, root)
+    from internal_tool import detail_view, sources
+
+    df, _ = sources.load(source, data)
+    detail_view.render_detail(source, df, df.index[pick], data)
+
+
+@pytest.mark.parametrize("source, pick, title, tabs", [
+    ("raw", 1, "İlan 1002", ["Tüm alanlar", "Hasar", "Taramalar", "İlan metni", "Ham kayıt (JSON)"]),
+    ("silver", 2, "(başlık yok)", ["Tüm alanlar", "Hasar", "Taramalar", "İlan metni"]),
+    ("gold", 0, "(başlık yok)", ["Tüm alanlar", "Hasar", "Taramalar", "İlan metni"])])
+def test_detail_window(tool_data, source, pick, title, tabs):
+    """
+    EN: The listing window draws for each source: its title, its tabs, the ad text, the metrics.
+    TR: İlan penceresi her kaynak için çizilir: başlığı, sekmeleri, ilan metni, ölçüler.
+    """
+    at = AppTest.from_function(detail_app, default_timeout=TIMEOUT,
+                               kwargs={"root": str(ROOT), "data": str(tool_data), "source": source, "pick": pick}).run()
+    assert not at.exception, [e.value for e in at.exception]
+    assert at.markdown[0].value == f"### {title}"
+    assert [t.label for t in at.tabs] == tabs
+    assert {m.label for m in at.metric} == {"Fiyat", "Yıl", "Km", "Tarama", "ad_id"}
+    assert at.text and at.text[0].value != "(ilan metni yok)"
 
 
 @pytest.mark.parametrize("page", PAGES)

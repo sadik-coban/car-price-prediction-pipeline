@@ -139,6 +139,26 @@ def top_cities(df, source, n=20):
     return px.bar(x=g.values, y=g.index, orientation="h", labels={"x": "satır", "y": "il"}, title=title)
 
 
+def panel_states(df, prefix):
+    """
+    EN: The damage state of one DB panel for every row: changed > painted > local painted when its flag is 1,
+        "orijinal" when all three flags are 0, UNKNOWN otherwise (a NULL flag). None if the flags are missing.
+    TR: Bir DB panelinin her satırdaki hasar durumu: bayrağı 1 ise değişen > boyalı > lokal boyalı, üç bayrak da 0
+        ise "orijinal", değilse UNKNOWN (NULL bayrak). Bayraklar yoksa None.
+    """
+    flags = [f"{prefix}_{s}" for s in STATES]
+    if not all(c in df.columns for c in flags):
+        return None
+    state = pd.Series(UNKNOWN, index=df.index, dtype="object")
+    all_zero = pd.Series(True, index=df.index)
+    for col in flags:
+        all_zero &= pd.to_numeric(df[col], errors="coerce").fillna(-1).eq(0)
+    state[all_zero] = "orijinal"
+    for col, label in reversed(list(zip(flags, STATES.values()))):
+        state[pd.to_numeric(df[col], errors="coerce").fillna(0).eq(1)] = label
+    return state
+
+
 def damage_matrix(df, source):
     """
     EN: Rows per panel × damage state (DataFrame: panels as rows, states as columns). DB state of a panel: changed
@@ -152,17 +172,9 @@ def damage_matrix(df, source):
             rows[col.removeprefix("Hasar - ")] = df[col].fillna(UNKNOWN).value_counts()
     else:
         for prefix, name in PANELS.items():
-            flags = [f"{prefix}_{s}" for s in STATES]
-            if not all(c in df.columns for c in flags):
-                continue
-            state = pd.Series(UNKNOWN, index=df.index, dtype="object")
-            all_zero = pd.Series(True, index=df.index)
-            for col in flags:
-                all_zero &= df[col].fillna(-1).eq(0)
-            state[all_zero] = "orijinal"
-            for col, label in reversed(list(zip(flags, STATES.values()))):
-                state[df[col].fillna(0).eq(1)] = label
-            rows[name] = state.value_counts()
+            state = panel_states(df, prefix)
+            if state is not None:
+                rows[name] = state.value_counts()
     return pd.DataFrame(rows).T.fillna(0).astype(int) if rows else pd.DataFrame()
 
 

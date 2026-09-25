@@ -21,6 +21,7 @@ import hashlib
 import importlib.util
 import json
 import sys
+from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -149,6 +150,25 @@ def meta_summary(metrics_doc, silver_sha=None):
             "run_id": meta.get("run_id"), "db_rows": db.get("rows"),
             "stale": coverage().stale_sources(metrics_doc),
             "db_matches": None if silver_sha is None else db.get("sha256") == silver_sha}
+
+
+def latest_run():
+    """
+    EN: The newest _meta.generated_at over the metrics of the ORDER scripts, and that script. Returns: (stamp, script)
+        or (None, None) when no metrics exist.
+    TR: ORDER betiklerinin metrikleri içinde en yeni _meta.generated_at ve o betik. Döndürür: (damga, betik); metrik
+        yoksa (None, None).
+    """
+    stamps = []
+    for script in order():
+        doc = read_json(files_of(script)["metrics"])
+        stamp_ = ((doc or {}).get("_meta") or {}).get("generated_at")
+        if stamp_:
+            stamps.append((datetime.fromisoformat(stamp_), stamp_, script))
+    if not stamps:
+        return None, None
+    _, text, script = max(stamps)
+    return text, script
 
 
 def shorten(obj, max_items=MAX_ITEMS):

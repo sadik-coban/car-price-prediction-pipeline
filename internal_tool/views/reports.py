@@ -41,8 +41,10 @@ with st.sidebar:
     lang = st.radio("Dil", rs.LANGS, format_func=str.upper, horizontal=True, key="report_lang")
     sections = rs.read_sections(report, lang)
     idx = st.selectbox("Bölüm", range(len(sections)), key=f"section_{report}",
-                       format_func=lambda i: sections[i]["title"] if i else f"Giriş · {sections[i]['title']}")
+                       format_func=lambda i: sections[i]["title"] if i else "Giriş (başlık ve özet)")
 
+st.caption("Soldan rapor, dil ve bölüm seç. Bölümün metni ve figürleri burada; altında o bölümdeki sayıları üreten "
+           "analiz betikleri ve en son ne zaman koştukları var.")
 drift = catalog.map_drift(m)
 if drift:
     st.warning("Bölüm eşlemesi şu derleyiciler değiştikten sonra gözden geçirilmedi: " + ", ".join(drift) +
@@ -56,9 +58,9 @@ for block in rs.blocks(sections[idx]["text"]):
 
 st.divider()
 scripts = m["reports"][report][idx]["scripts"]
-st.subheader(f"Bu bölümün betikleri ({len(scripts)})")
+st.subheader(f"Bu bölümdeki sayıları üreten betikler ({len(scripts)})")
 if not scripts:
-    st.caption("Bu bölüm metriklerden sayı okumuyor (sabit metin).")
+    st.caption("Bu bölüm sabit metin: hiçbir betiğin metriğinden sayı okumuyor.")
 for script in scripts:
     files = catalog.files_of(script)
     card = catalog.read_json(files["card"]) or {}

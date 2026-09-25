@@ -22,6 +22,8 @@ Adres: http://127.0.0.1:8501. Başlatıcı loopback olmayan adresi reddeder; say
 durur.
 
 ## Sayfalar · Pages
+- **Başlangıç** (ilk açılan): üç sayfanın ne yaptığı, bağlantıları ve verinin durumu (analizlerin son
+  koşumu; ham / silver / gold dosyalarının tarihi ve boyutu).
 - **Raporlar:** Rapor (teknik · karar notu · SHAP), dil ve bölüm seçilir. Bölüm figürleriyle birlikte gösterilir.
   Altında o bölümü besleyen betikler listelenir; her birinin en son ne zaman koştuğu ve kodunun o zamandan beri
   değişip değişmediği görünür.
@@ -48,7 +50,14 @@ durur.
     ve Türkçe harflere duyarsızdır.
   - **Silver ↔ gold:** Silver ile gold aynı koşulları paylaşır. Sayfa aynı koşulların öbür DB'deki sonucunu da
     gösterir.
-  - **Tablo:** `ad_id` ve tıklanır `url` içerir. Bir satır seçilince kaydın tamamı açılır.
+  - **Tablo:** `ad_id` ve tıklanır `url` içerir.
+  - **İlan penceresi:** Bir ilanın **herhangi bir hücresine** tıklayınca ilan bir pencerede bütünüyle açılır:
+    - üst bilgi ve "İlanı sitede aç";
+    - gruplanmış bütün alanlar;
+    - 13 parçalık hasar tablosu;
+    - aynı ilanın bütün taramaları ve fiyat farkı;
+    - ilan metni;
+    - ham kaynakta kaydın JSON hâli.
 
 ## Testler · Tests
 - `python tools/verify.py`: saf modüllerin testleri. AppTest burada atlanır, çünkü pipeline ortamında streamlit yok.
