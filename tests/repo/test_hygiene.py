@@ -25,6 +25,9 @@ DOC_FILES = ["README.md", "README.en.md", "db_plan.md", "docs/*.md", "reports/*.
 SOURCE_READ_ALLOWED = {
     "analysis/01_engine_rule.py": "checks that lib/common.py still applies CHOSEN (owner kept it, 2026-09-24) | "
                                   "lib/common.py'nin hâlâ CHOSEN'ı uyguladığını sınar (kullanıcı tuttu)",
+    "internal_tool/catalog.py": "shows analysis scripts and their tests to a human in the internal tool, never parses "
+                                "them (2026-09-25) | analiz betiklerini ve testlerini iç araçta insana gösterir, "
+                                "ayrıştırmaz",
 }
 SOURCE_READ = re.compile(r"""\.py["']\s*\)\s*\.read_text|open\([^)]*\.py["']|^\s*(import ast\b|from ast import)""", re.M)
 

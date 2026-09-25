@@ -1,0 +1,242 @@
+{
+ "_about": {
+  "en": "Which analysis scripts (analysis/run_all.py ORDER names) feed each section of the three reports, and which script each numbered figure comes from. Written by hand from the builders (2026-09-25): no machine-readable mapping exists. Sections are keyed by position: 0 = the part before the first '## ' heading. 'title' is the English heading. tests/internal_tool/test_tool_section_map.py checks the headings, the scripts and the figures against the reports; reviewed_against holds the sha256 of the builder files the map was read from (python internal_tool/catalog.py --stamp after a review), and the tool shows a notice when a builder changed since.",
+  "tr": "Üç raporun her bölümünü hangi analiz betiklerinin (analysis/run_all.py ORDER adları) beslediği ve her numaralı figürün hangi betikten geldiği. Derleyicilerden elle yazıldı (2026-09-25): makinece okunur bir eşleme yok. Bölümler konuma göre anahtarlanır: 0 = ilk '## ' başlığından önceki kısım. 'title' İngilizce başlıktır. tests/internal_tool/test_tool_section_map.py başlıkları, betikleri ve figürleri raporlara göre sınar; reviewed_against eşlemenin okunduğu derleyici dosyalarının sha256'sını tutar (gözden geçirdikten sonra python internal_tool/catalog.py --stamp) ve araç, o zamandan beri bir derleyici değiştiyse uyarı gösterir."
+ },
+ "reviewed_against": {
+  "builders/build_technical_report.py": "420a738c3bcbae415b4fe36aec443dda7f62e0b0aaac2b7d5919d0c983d32e18",
+  "builders/build_business_report.py": "7652a579ee2f62fc3daa6261603c647a492b22b656b40fd5427bf4ba2c28a95c",
+  "builders/build_shap_report.py": "49d0681fe7b27e3a702fc8873214e59ed84f9ad8f22841686f266f6088f1ea05",
+  "builders/report_lib/report_common.py": "777d4071a3b3d6694581b666b2296771927337dceb36271d7ee99dad4c549ada"
+ },
+ "figures": {
+  "00": "07_model_comparison.py",
+  "01": "05_segmentation.py",
+  "03": "06_hedonic.py",
+  "04": "07_lofo.py",
+  "05": "05_segmentation.py",
+  "06": "05_segmentation.py",
+  "07": "05_segmentation.py",
+  "08": "08_residuals.py",
+  "09": "08_residuals.py",
+  "10": "08_residuals.py",
+  "11": "08_large_errors.py",
+  "12": "08_conformal_coverage.py",
+  "13": "09_drift.py",
+  "14": "09_drift.py",
+  "15": "09_backtest.py",
+  "16": "02_missingness.py",
+  "17": "03_association.py",
+  "18": "03_association.py",
+  "19": "03_segment_quality.py",
+  "20": "03_association.py",
+  "21": "03_association.py",
+  "22": "05_segmentation.py",
+  "23": "05_segmentation.py",
+  "24": "05_segmentation.py",
+  "25": "04_target.py",
+  "26": "08_residuals.py",
+  "27": "08_residuals.py",
+  "28": "08_residuals.py",
+  "29": "01_engine_rule.py",
+  "30": "01_engine_rule.py",
+  "sh-01": "shap/03_what_sets_price.py",
+  "sh-02": "shap/03_what_sets_price.py",
+  "sh-03": "shap/03_what_sets_price.py",
+  "sh-04": "shap/03_what_sets_price.py",
+  "sh-05": "shap/03_what_sets_price.py",
+  "sh-06": "shap/06_one_listing.py"
+ },
+ "reports": {
+  "technical": [
+   {
+    "title": "Used Car Market Analysis — Technical Report",
+    "scripts": [
+     "01_dedup_leakage.py",
+     "07_model_comparison.py"
+    ]
+   },
+   {
+    "title": "1. Data cleaning and leakage detection",
+    "scripts": [
+     "01_dedup_leakage.py",
+     "01_engine_rule.py",
+     "01_unspecified_panels.py",
+     "01_gold_contract.py",
+     "02_missingness.py",
+     "04_target.py",
+     "07_model_comparison.py",
+     "10_free_text.py"
+    ]
+   },
+   {
+    "title": "2. Missingness isn't random",
+    "scripts": [
+     "02_missingness.py"
+    ]
+   },
+   {
+    "title": "3. Redundancy, dependence and brand",
+    "scripts": [
+     "03_association.py",
+     "03_segment_quality.py",
+     "03_brand_ablation.py",
+     "08_large_errors.py"
+    ]
+   },
+   {
+    "title": "4. Target and preprocessing",
+    "scripts": [
+     "04_target.py",
+     "05_segmentation.py"
+    ]
+   },
+   {
+    "title": "5. Market structure — segmentation (KMeans + PCA)",
+    "scripts": [
+     "05_segmentation.py"
+    ]
+   },
+   {
+    "title": "6. Hedonic model — controlled effects",
+    "scripts": [
+     "06_hedonic.py",
+     "07_lofo.py",
+     "shap/04_variants.py",
+     "02_missingness.py",
+     "08_large_errors.py",
+     "08_residuals.py"
+    ]
+   },
+   {
+    "title": "7. Model comparison and limitations",
+    "scripts": [
+     "07_model_comparison.py",
+     "07_final_model.py",
+     "07_text_flag.py",
+     "08_large_errors.py"
+    ]
+   },
+   {
+    "title": "8. Calibration, residuals and where it is weak",
+    "scripts": [
+     "08_residuals.py",
+     "08_large_errors.py",
+     "08_conformal_coverage.py",
+     "05_segmentation.py",
+     "09_drift.py",
+     "01_dedup_leakage.py"
+    ]
+   },
+   {
+    "title": "9. Time — period effect, distribution drift and backtest",
+    "scripts": [
+     "09_drift.py",
+     "09_backtest.py",
+     "01_dedup_leakage.py"
+    ]
+   },
+   {
+    "title": "10. Free text: measured, left out",
+    "scripts": [
+     "10_free_text.py",
+     "07_text_flag.py"
+    ]
+   }
+  ],
+  "business": [
+   {
+    "title": "Used Car Market Analysis — Decision Note",
+    "scripts": [
+     "08_conformal_coverage.py",
+     "07_model_comparison.py"
+    ]
+   },
+   {
+    "title": "What's it worth?",
+    "scripts": [
+     "07_model_comparison.py",
+     "07_lofo.py"
+    ]
+   },
+   {
+    "title": "How this market builds a price",
+    "scripts": [
+     "06_hedonic.py",
+     "03_brand_ablation.py",
+     "05_segmentation.py"
+    ]
+   },
+   {
+    "title": "Where not to trust the number",
+    "scripts": [
+     "08_residuals.py",
+     "08_large_errors.py",
+     "08_conformal_coverage.py",
+     "07_text_flag.py",
+     "09_backtest.py",
+     "09_drift.py"
+    ]
+   },
+   {
+    "title": "What this model does not give you",
+    "scripts": [
+     "01_dedup_leakage.py",
+     "04_target.py"
+    ]
+   }
+  ],
+  "shap": [
+   {
+    "title": "Used Car Market Analysis — SHAP Report",
+    "scripts": []
+   },
+   {
+    "title": "1. What SHAP is, and how it differs from LOFO",
+    "scripts": []
+   },
+   {
+    "title": "2. How it was computed",
+    "scripts": [
+     "shap/02_oof_shap.py",
+     "shap/03_what_sets_price.py",
+     "shap/04_variants.py",
+     "shap/06_one_listing.py"
+    ]
+   },
+   {
+    "title": "3. What sets the price",
+    "scripts": [
+     "shap/03_what_sets_price.py"
+    ]
+   },
+   {
+    "title": "4. Three variants build the same price for different reasons",
+    "scripts": [
+     "shap/04_variants.py",
+     "07_model_comparison.py"
+    ]
+   },
+   {
+    "title": "5. Why brand is next to nothing",
+    "scripts": [
+     "03_association.py",
+     "03_brand_ablation.py",
+     "shap/03_what_sets_price.py"
+    ]
+   },
+   {
+    "title": "6. How one prediction is built",
+    "scripts": [
+     "shap/06_one_listing.py"
+    ]
+   },
+   {
+    "title": "7. Limitations",
+    "scripts": [
+     "shap/03_what_sets_price.py"
+    ]
+   }
+  ]
+ }
+}
