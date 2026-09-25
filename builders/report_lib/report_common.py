@@ -69,18 +69,18 @@ def write_md(path, text):
 # yarisir). Hem figur hem de altindaki kapsam tablosu bu listeyi kullanir.
 LOFO_FLAT_KEYS = ["gb_mileage", "vehicle_age", "DAMAGE_COLS", "MODEL_SERIES", "ENGINE"]
 # Grup anahtarlarinin okunur adi + SHAP tablosundaki karsiligi (site_data.shap ayni gruplari baska adla tutuyor).
-LOFO_GRUP = {"DAMAGE_COLS": ("hasar grubu", "damage group", "DAMAGE"),
+LOFO_GROUPS = {"DAMAGE_COLS": ("hasar grubu", "damage group", "DAMAGE"),
              "MODEL_SERIES": ("model/seri adı", "model/series name", "MODEL_SERIES (text)"),
              "ENGINE": ("motor (hp + cc)", "engine (hp + cc)", "ENGINE")}
 
 
-def lofo_ad(d, k, lang):
+def lofo_name(d, k, lang):
     """
     EN: Display name of a LOFO key: group keys get their own label, single features the column label.
     TR: Bir LOFO anahtarının görünen adı: grup anahtarları kendi etiketini, tekil öznitelikler kolon etiketini
         alır.
     """
-    g = LOFO_GRUP.get(k)
+    g = LOFO_GROUPS.get(k)
     return (g[0] if lang == "tr" else g[1]) if g else col(d, k, lang)
 
 # ============================================================================
@@ -155,6 +155,9 @@ def derive(d):
 
     model_mae, base_mae = lgb["MAE"], myl["taban"]["MAE"]
     boot = {b["terim"]: b for b in hr["bootstrap"]}
+    # EN: the effects by English term id; an unknown display term stops (no silent None)
+    # TR: etkiler İngilizce terim kimliğiyle; bilinmeyen görünen terim durdurur (sessiz None yok)
+    hed_terms = {HED_TERM_ID[k]: b["yuzde_etki"] for k, b in boot.items()}
 
     v = {
         # olcek
@@ -164,7 +167,7 @@ def derive(d):
         "snapshots": meta["snapshots"],
         "n_snapshots": len(meta["snapshots"]),
         # fiyat dagilimi
-        "median": pd_["median"], "p10": pd_.get("p10"), "p90": pd_.get("p90"),
+        "median": pd_["median"], "p10": pd_["p10"], "p90": pd_["p90"],
         "skew_raw": pd_["skew_raw"], "skew_log": pd_["skew_log"],
         # model vs taban
         "model_mae": model_mae, "model_mape": lgb["MAPE"], "model_r2": lgb["R2"],
@@ -182,10 +185,9 @@ def derive(d):
         "q_bounds": rep["q_bounds"],
         # hedonik
         "hed_r2": hr["model_r2"], "hed_n": hr["n"], "hed_merkez": hr["merkez"],
-        "age_pct": boot["yaş"]["yuzde_etki"] if "yaş" in boot else None,
-        "km_pct": next((b["yuzde_etki"] for k, b in boot.items() if "km" in k), None),
+        "age_pct": hed_terms["age"], "km_pct": hed_terms["km100k"],
         # teknik §6'nin kontrollu etkileri — karar notu da bunlari basiyor
-        "hed_terms": {k: b["yuzde_etki"] for k, b in boot.items()},
+        "hed_terms": hed_terms,
         "n_boot": len(hr["bootstrap"]),
         "all_sig": all(not b["sifir_iceriyor"] for b in hr["bootstrap"]),
         # marka
@@ -208,7 +210,7 @@ def derive(d):
     v["cov_q4"] = dom["conformal"]["by_quantile"][-1][1]
     # PSI ozeti — karar notunun "bugun kayma kucuk" cumlesi buna kapili. Esik ureticinin notundan;
     # not bicimi degisirse sessizce varsayilana dusmez, durur.
-    _th = re.search(r"PSI<([\d.]+).*?>([\d.]+)", dom["drift"].get("not", ""))
+    _th = re.search(r"PSI<([\d.]+).*?>([\d.]+)", dom["drift"]["not"])
     assert _th, "drift notunda PSI esikleri bulunamadi"
     v["psi_max"] = max(r[3] for r in dom["drift"]["all_pairs"])
     v["psi_safe"], v["psi_retrain"] = float(_th.group(1)), float(_th.group(2))
@@ -290,10 +292,10 @@ def scatter(name, xs, ys, title, xlabel="", ylabel="", ref=None, logx=False, c=N
     return _save(fig, name)
 
 
-def heatmap(name, labels_y, labels_x, matrix, title, vmin=None, vmax=None, cmap="RdYlGn", isaret=()):
+def heatmap(name, labels_y, labels_x, matrix, title, vmin=None, vmax=None, cmap="RdYlGn", marks=()):
     """
-    EN: Annotated heatmap template; isaret = cells to mark with a dot. Returns: the file name.
-    TR: Değerleri yazılı ısı haritası şablonu; isaret = noktayla işaretlenecek hücreler. Döndürür: dosya adı.
+    EN: Annotated heatmap template; marks = cells to mark with a dot. Returns: the file name.
+    TR: Değerleri yazılı ısı haritası şablonu; marks = noktayla işaretlenecek hücreler. Döndürür: dosya adı.
     """
     m = np.array(matrix, dtype=float)
     fig, ax = plt.subplots(figsize=(max(5, .5 * len(labels_x) + 2.6),
@@ -306,7 +308,7 @@ def heatmap(name, labels_y, labels_x, matrix, title, vmin=None, vmax=None, cmap=
             for j in range(m.shape[1]):
                 if not np.isnan(m[i, j]):
                     ax.text(j, i, f"{m[i, j]:.2f}", ha="center", va="center", fontsize=7)
-    for i, j in isaret:                                   # or. tek ilanlik hucreler (fig 19)
+    for i, j in marks:                                   # or. tek ilanlik hucreler (fig 19)
         ax.plot(j + .32, i - .3, "o", ms=3.5, color="#111")
     ax.set_title(title)
     fig.colorbar(im, ax=ax, shrink=.8)
@@ -390,7 +392,7 @@ def build_figures(d, v, lang, only=None):
         names = [k for k in LOFO_FLAT_KEYS if k in lofo]
         t = L("LOFO — öznitelik çıkınca ΔRMSE (çakışmayan gruplar)",
               "LOFO — ΔRMSE when a feature is removed (non-overlapping groups)")
-        reg(4, bar(f"{p}-04-lofo-flat", [lofo_ad(d, k, lang) for k in names], [lofo[k] / 1000 for k in names], t,
+        reg(4, bar(f"{p}-04-lofo-flat", [lofo_name(d, k, lang) for k in names], [lofo[k] / 1000 for k in names], t,
                    L("ΔRMSE (₺bin)", "ΔRMSE (₺k)"), horizontal=True), t)
 
     # 05 yasa gore fiyat  [IS]
@@ -462,8 +464,8 @@ def build_figures(d, v, lang, only=None):
         # ve egilim cizgisi yoktu. Simdi: 1-4 ilanli modeller ICI BOS isaretle ayrilir (gizlenmez),
         # %CAP ustu noktalar ust kenarda sayisiyla gosterilir (yoksa y ekseni 100'e uzayip huniyi ezer),
         # kova medyani kalin cizgi — noktalar arka plan olur.
-        ed_ = v.get("ed") or {}
-        pme, bk = ed_.get("per_model_error") or [], ed_.get("per_model_buckets") or []
+        ed_ = v["ed"]
+        pme, bk = ed_["per_model_error"], ed_["per_model_buckets"]
         t = L("Emsali az olan modelde hata büyük — model başına medyan hata",
               "Fewer comparables, larger error — median error per model")
         CAP = 40
@@ -520,7 +522,7 @@ def build_figures(d, v, lang, only=None):
     # 13 drift histogram  [TEKNIK]
     if want(13):
         hist = dom["drift"]["hist"]
-        edges = hist.get("edges")
+        edges = hist["edges"]
         t = L("Fiyat dağılımı — dönemlere göre", "Price distribution by snapshot")
         fig, ax = plt.subplots(figsize=(7, 3.4))
         for snap, ys in hist.items():
@@ -539,7 +541,7 @@ def build_figures(d, v, lang, only=None):
         kde = dom["drift"]["kde_log"]
         t = L("Log-fiyat yoğunluğu — dönemlere göre", "Log-price density by snapshot")
         fig, ax = plt.subplots(figsize=(7, 3.4))
-        xs = kde.get("x", [])
+        xs = kde["x"]
         for snap, ys in kde.items():
             if snap == "x":
                 continue
@@ -557,7 +559,7 @@ def build_figures(d, v, lang, only=None):
         # Farki yaratan sey ILAN SAYISI (turuncu ~11 bin sabit, yesil 11→30 bin buyuyor); o yuzden
         # yesil noktalarin altina n yazilir, turuncunun aciklamasina tek donemin n araligi.
         bt = met["backtest"]
-        ps, ins = bt.get("per_snapshot") or [], bt.get("insample") or []
+        ps, ins = bt["per_snapshot"], bt["insample"]
         t = L("Daha çok veri, daha az hata — tek dönem vs biriken dönemler",
               "More data, less error — single period vs pooled periods")
         fig, ax = plt.subplots(figsize=(7, 3.4))
@@ -585,10 +587,10 @@ def build_figures(d, v, lang, only=None):
         # ayni oranda ama yalniz %48 birlikte eksik. Renk artik GERCEK blok uyeligi (sistematik_gruplar[].kolonlar).
         # gb_drivetrain de "Cekis" diye yaziliyordu — modelin %1.5 eksik kb_drivetrain'iyle ayni ad; ayni adli
         # ikizi olan kolona sekme adi eklenir.
-        _grp_renk = ["#2563eb", "#7c3aed", "#0891b2", "#d97706", "#059669", "#db2777"]
-        _uye = {c_: _grp_renk[gi % len(_grp_renk)]
+        _group_colors = ["#2563eb", "#7c3aed", "#0891b2", "#d97706", "#059669", "#db2777"]
+        _member_color = {c_: _group_colors[gi % len(_group_colors)]
                 for gi, g in enumerate(met["sistematik_missing"]["sistematik_gruplar"]) for c_ in g["kolonlar"]}
-        _lab = d.get("column_labels", {})
+        _lab = d["column_labels"]
 
         def _col16(k):
             """
@@ -597,8 +599,8 @@ def build_figures(d, v, lang, only=None):
             TR: Eksiklik grafiği için kolon etiketi; aynı etiketli gb_/kb_ ikizi varsa sekme adını ekler.
             """
             t_ = col(d, k, lang)
-            ikiz = ("kb_" + k[3:]) if k.startswith("gb_") else (("gb_" + k[3:]) if k.startswith("kb_") else None)
-            if ikiz and ikiz in _lab and col(d, ikiz, lang) == t_:
+            twin = ("kb_" + k[3:]) if k.startswith("gb_") else (("gb_" + k[3:]) if k.startswith("kb_") else None)
+            if twin and twin in _lab and col(d, twin, lang) == t_:
                 t_ += L(" (Genel Bakış)", " (Overview)") if k.startswith("gb_") else L(" (KısaBilgi)", " (Quick info)")
             return t_
         t = L("Eksiklik oranı (%) — renk = birlikte eksik blok (aşağıdaki tablo) · gri = blok dışı\n"
@@ -606,7 +608,7 @@ def build_figures(d, v, lang, only=None):
               "Missing rate (%) — colour = co-missing block (table below) · grey = outside any block\n"
               "(unlabelled ones are raw column names)")
         reg(16, bar(f"{p}-16-missing", [_col16(r[0]) for r in rows], [r[1] for r in rows], t,
-                    L("eksik %", "missing %"), horizontal=True, color=[_uye.get(r[0], "#b8bec8") for r in rows]), t)
+                    L("eksik %", "missing %"), horizontal=True, color=[_member_color.get(r[0], "#b8bec8") for r in rows]), t)
 
     # 17 Theil's U  [TEKNIK]
     if want(17):
@@ -634,16 +636,16 @@ def build_figures(d, v, lang, only=None):
             M[series.index(s_), segs.index(g_)] = med / 1e6
         # Baslik KOSULLU (2026-09-23): eskiden sabit "Her seri tek bir segmente dusuyor" yaziyordu.
         # Yeni kuralda performans aileleri model adindan cozuldugu icin birden fazla segmente yayilabilir.
-        _cok = sorted({r[0] for r in rows if sum(1 for q in rows if q[0] == r[0]) > 1})
+        _repeated = sorted({r[0] for r in rows if sum(1 for q in rows if q[0] == r[0]) > 1})
         t = (L("Her seri tek bir segmente düşüyor — medyan fiyat (₺M)",
-               "Every series lands in exactly one segment — median price (₺M)") if not _cok else
-             L(f"Seri × segment — medyan fiyat (₺M); {len(_cok)} seri birden fazla segmente düşüyor",
-               f"Series × segment — median price (₺M); {len(_cok)} series span more than one segment"))
+               "Every series lands in exactly one segment — median price (₺M)") if not _repeated else
+             L(f"Seri × segment — medyan fiyat (₺M); {len(_repeated)} seri birden fazla segmente düşüyor",
+               f"Series × segment — median price (₺M); {len(_repeated)} series span more than one segment"))
         # Tek ilanlik hucreler isaretlenir (son denetim: koyu hucrelerin bazisi n=1).
         _n19 = {(s_, g_): int(n_) for s_, g_, _m, n_ in rows}
-        _tek = [(series.index(s_), segs.index(g_)) for (s_, g_), n_ in _n19.items() if n_ == 1]
+        _single_cells = [(series.index(s_), segs.index(g_)) for (s_, g_), n_ in _n19.items() if n_ == 1]
         t = t + L(" · • = tek ilan", " · • = single listing")
-        _f19 = heatmap(f"{p}-19-series-segment", series, segs, M, t, cmap="YlGnBu", isaret=_tek)
+        _f19 = heatmap(f"{p}-19-series-segment", series, segs, M, t, cmap="YlGnBu", marks=_single_cells)
         reg(19, _f19, t)
 
     # 20/21 Pearson + Spearman  [TEKNIK]
@@ -663,7 +665,7 @@ def build_figures(d, v, lang, only=None):
         clusters = {c["cluster"]: lab for c, lab in zip(dom["kmeans"], cluster_labels(dom["kmeans"], lang))}
         for no, key, pcy in [(22, "pca_scatter", "PC2"), (23, "pca_scatter_13", "PC3")]:
             pts = np.array(dom[key], dtype=float)
-            v1 = pca.get("PC1", {}).get("var_pct", 0); v2 = pca.get(pcy, {}).get("var_pct", 0)
+            v1 = pca["PC1"]["var_pct"]; v2 = pca[pcy]["var_pct"]
             t = L(f"PCA — PC1 %{v1} × {pcy} %{v2}", f"PCA — PC1 {v1}% × {pcy} {v2}%")
             fig, ax = plt.subplots(figsize=(6.2, 4.6))
             for cid, nmc in clusters.items():
@@ -728,7 +730,7 @@ def build_figures(d, v, lang, only=None):
     # 27 fiyat ceyregine gore LIRA hatasi  [IS + TEKNIK] — figur 10'un eslikcisi (2026-09-23).
     if want(27):
         # Yuzde hata ucuz ceyrege isaret ediyor; lira hatasi pahaliya. Kaynak error_drivers.lira_ceyrek.
-        lc = (v.get("ed") or {}).get("lira_ceyrek") or []
+        lc = v["ed"]["lira_ceyrek"]
         t = L("Fiyat çeyreğine göre lira hatası", "Lira error by price quartile")
         fig, (a1, a2) = plt.subplots(1, 2, figsize=(8.4, 3.4))
         qs = [r[0] for r in lc]
@@ -740,7 +742,7 @@ def build_figures(d, v, lang, only=None):
         a1.set_title(L("hata nerede birikiyor", "where the error adds up"), fontsize=9)
         # Son denetim (2026-09-23): sapma GERCEK fiyat ceyregine gore cizilince ortalamaya donus "ucuzda fazla,
         # pahalida dusuk" deseni uretiyordu. Bir fiyatlama araci yalniz tahmini bilir -> tahmin ceyregi.
-        tc = (v.get("ed") or {}).get("tahmin_ceyrek") or []
+        tc = v["ed"]["tahmin_ceyrek"]
         # Ortalama tek basina kuyruk hatalarina bagli (medyan her ceyrekte pozitif) ve otomatik eksen kucuk farki
         # buyuk gosteriyordu: ortalama + medyan yan yana, eksen genel MAE'nin yarisinda sabit.
         _x = np.arange(len(tc))
@@ -780,7 +782,7 @@ def build_figures(d, v, lang, only=None):
         fig, axs = plt.subplots(1, 2, figsize=(8.4, 3.4))
         _ad = {"alt": L("alt sınır", "lower bound"), "orta": L("orta nokta", "midpoint"),
                "ust": L("üst sınır", "upper bound")}
-        for ax, (p_, bas) in zip(axs, (("engine_cc", L("motor hacmi", "engine size")),
+        for ax, (p_, heading) in zip(axs, (("engine_cc", L("motor hacmi", "engine size")),
                                        ("power_hp", L("motor gücü", "engine power")))):
             h_ = _hk[p_]
             ks = list(h_["adaylar"])
@@ -797,7 +799,7 @@ def build_figures(d, v, lang, only=None):
                 m_ = h_["adaylar"][k]["medyan"]
                 ax.annotate(f"{m_:g}", (i_ + .3, m_), textcoords="offset points", xytext=(3, 0), va="center",
                             fontsize=8, fontweight="bold" if k == h_["secilen"] else "normal")
-            ax.set_title(f"{bas} · " + L(f"referanslı {num(h_['referansli'], lang)} aralıklı ilan",
+            ax.set_title(f"{heading} · " + L(f"referanslı {num(h_['referansli'], lang)} aralıklı ilan",
                                            f"{num(h_['referansli'], lang)} range listings with a reference"),
                          fontsize=9)
             ax.set_ylabel(L(f"|aday − kesin değer| ({h_['birim']})", f"|candidate − exact value| ({h_['birim']})"))
@@ -818,20 +820,20 @@ def build_figures(d, v, lang, only=None):
         _hk = v["ed"]["hp_cc_kurali"]
         t = L("Sitenin verdiği değerler: alt × üst sınır", "What the site gives: lower × upper bound")
         fig, axs = plt.subplots(1, 2, figsize=(8.4, 4.2))
-        for ax, (p_, bas) in zip(axs, (("engine_cc", L("motor hacmi", "engine size")),
+        for ax, (p_, heading) in zip(axs, (("engine_cc", L("motor hacmi", "engine size")),
                                        ("power_hp", L("motor gücü", "engine power")))):
             h_ = _hk[p_]
             c_ = np.array([[lo_, up_, r_, n_] for lo_, up_, r_, n_ in h_["ciftler"]], dtype=float)
             nmax = c_[:, 3].max()
-            for is_r, col_, ad_ in ((0, C1, L("kesin değer", "exact value")), (1, C3, L("aralık", "range"))):
+            for is_r, col_, label_ in ((0, C1, L("kesin değer", "exact value")), (1, C3, L("aralık", "range"))):
                 s_ = c_[c_[:, 2] == is_r]
                 ax.scatter(s_[:, 0], s_[:, 1], s=6 + 260 * s_[:, 3] / nmax, color=col_, alpha=.55, lw=0,
-                           label=L(f"{ad_} ({num(s_[:, 3].sum(), lang)} ilan)",
-                                   f"{ad_} ({num(s_[:, 3].sum(), lang)} listings)"))
+                           label=L(f"{label_} ({num(s_[:, 3].sum(), lang)} ilan)",
+                                   f"{label_} ({num(s_[:, 3].sum(), lang)} listings)"))
             lim = [c_[:, :2].min() * .95, c_[:, :2].max() * 1.02]
             ax.plot(lim, lim, "--", color=C2, lw=.8, label="y = x")
             ax.set_xlim(lim); ax.set_ylim(lim); ax.set_aspect("equal")
-            ax.set_title(bas, fontsize=9)
+            ax.set_title(heading, fontsize=9)
             ax.set_xlabel(L(f"alt sınır ({h_['birim']})", f"lower bound ({h_['birim']})"))
             ax.set_ylabel(L(f"üst sınır ({h_['birim']})", f"upper bound ({h_['birim']})"))
             ax.legend(loc="upper left", frameon=False, fontsize=7, markerscale=.5)
@@ -898,6 +900,11 @@ def tl(x):
 
 
 # ---- EN etiket sozlukleri (kaynak: sadik-portfolio/lib/labels.ts; eksik anahtar -> ham deger) ----
+# EN: the hedonic model's display terms (06_hedonic bootstrap[].terim) -> the English ids the code indexes by
+# TR: hedonik modelin görünen terimleri (06_hedonic bootstrap[].terim) -> kodun indekslediği İngilizce kimlikler
+HED_TERM_ID = {"yaş": "age", "yaş²": "age_sq", "yaş×km": "age_x_km", "km(100K)": "km100k", "km²": "km_sq",
+               "ağır hasar": "heavy_damage", "boyalı": "painted", "değişen": "changed", "+100 HP": "hp100",
+               "+1 litre": "litre"}
 HED_TERM_EN = {"yaş": "age", "yaş²": "age²", "yaş×km": "age×km", "km(100K)": "km (100K)", "km²": "km²",
                "ağır hasar": "heavy damage", "boyalı": "painted", "değişen": "changed",
                "+100 HP": "+100 HP", "+1 litre": "+1 litre"}
@@ -927,37 +934,37 @@ VARIANTS_EN = {"LightGBM (model/seri adı TF-IDF+SVD)": "LightGBM (model/series 
 
 # Kucuk sayilar metinde rakam degil SOZCUK yazilir (kullanicinin uslubu): "iki cift", "dokuz gun".
 # Turkce buyuk harf: 'iki' -> 'Iki' DEGIL 'İki' (str.capitalize() bunu bozar).
-_SAYI_TR = {1: "bir", 2: "iki", 3: "üç", 4: "dört", 5: "beş", 6: "altı", 7: "yedi", 8: "sekiz",
+_NUMBER_WORDS_TR = {1: "bir", 2: "iki", 3: "üç", 4: "dört", 5: "beş", 6: "altı", 7: "yedi", 8: "sekiz",
             9: "dokuz", 10: "on"}
-_SAYI_EN = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight",
+_NUMBER_WORDS_EN = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight",
             9: "nine", 10: "ten"}
-AY_TR = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül",
+MONTHS_TR = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül",
          "Ekim", "Kasım", "Aralık"]
-AY_EN = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September",
+MONTHS_EN = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September",
          "October", "November", "December"]
 
 
 # "yirmide biri" gibi kesirler: Turkce locative eki unlu/unsuz uyumuna gore degisiyor (yirmi->yirmide
 # ama kirk->kirkta), kural yazmak yerine yaygin degerler burada; disinda kalan rakamla basilir.
-_KESIR_TR = {10: "onda", 20: "yirmide", 25: "yirmi beşte", 30: "otuzda", 40: "kırkta", 50: "ellide",
+_FRACTIONS_TR = {10: "onda", 20: "yirmide", 25: "yirmi beşte", 30: "otuzda", 40: "kırkta", 50: "ellide",
              60: "altmışta", 75: "yetmiş beşte", 100: "yüzde"}
 
 
-def kesir(n, lang):
+def fraction_words(n, lang):
     """
     EN: The fraction 1/n in Turkish words ('yirmide biri'); falls back to digits.
     TR: 1/n kesri Türkçe sözcükle ('yirmide biri'); yoksa rakamla.
     """
     n = int(round(n))
-    return f"{_KESIR_TR.get(n, str(n) + chr(39) + 'de')} biri"
+    return f"{_FRACTIONS_TR.get(n, str(n) + chr(39) + 'de')} biri"
 
 
-def say(n, lang, cap=False):
+def number_word(n, lang, cap=False):
     """
     EN: Numbers up to ten as words (the owner's style), otherwise digits; cap=True capitalises (TR İ).
     TR: Ona kadar sayılar sözcükle (kullanıcının üslubu), üstü rakamla; cap=True ilk harfi büyütür (TR İ).
     """
-    w = (_SAYI_TR if lang == "tr" else _SAYI_EN).get(int(n), str(int(n)))
+    w = (_NUMBER_WORDS_TR if lang == "tr" else _NUMBER_WORDS_EN).get(int(n), str(int(n)))
     if cap and w[:1].isalpha():
         w = ("İ" + w[1:]) if w[:1] == "i" else w[:1].upper() + w[1:]
     return w
@@ -1035,7 +1042,7 @@ def cluster_labels(clusters, lang):
 
 # ============================================================================
 #  TEKNIK RAPOR — bolumler ayri fonksiyonlarda, SIRA tek yerde (SECTIONS).
-#  Bolum numaralari elle yazilmaz: baslik enumerate ile, capraz referanslar secno() ile uretilir.
+#  Bolum numaralari elle yazilmaz: baslik enumerate ile, capraz referanslar section_no() ile uretilir.
 # ============================================================================
 class _Ctx:
     """

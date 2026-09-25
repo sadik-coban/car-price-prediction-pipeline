@@ -8,7 +8,7 @@ TR: Karar notunu (reports/business.{tr,en}.md) ve figürlerini yalnız metrics/*
     figürler ve biçimleyiciler report_lib/report_common.py'de.
 Run / Koşum: python builders/build_business_report.py
 """
-from report_lib.report_common import (BUSINESS_FIGS, P, REPORTS_DIR, TIER_EN, build_figures, derive, load_report_view, num, say, tl,
+from report_lib.report_common import (BUSINESS_FIGS, P, REPORTS_DIR, TIER_EN, build_figures, derive, load_report_view, num, number_word, tl,
                            tlm, tx, write_md)
 
 
@@ -93,12 +93,12 @@ def fmt_business(v, F, lang):
     A(L("## Piyasa fiyatı nasıl kuruyor", "## How this market builds a price"))
     A("")
     _ht = v["hed_terms"]
-    _hrows = [("yaş (yıl başına, tipik araçta)", "age (per year, at a typical car)", _ht["yaş"]),
-              ("kilometre (100 bin km başına, tipik araçta)", "mileage (per 100k km, at a typical car)", _ht["km(100K)"]),
-              ("ağır hasar kaydı", "heavy-damage record", _ht["ağır hasar"]),
-              ("değişen panel (her biri)", "changed panel (each)", _ht["değişen"]),
-              ("boyalı panel (her biri)", "painted panel (each)", _ht["boyalı"]),
-              ("+100 hp motor gücü", "+100 hp of engine power", _ht["+100 HP"])]
+    _hrows = [("yaş (yıl başına, tipik araçta)", "age (per year, at a typical car)", _ht["age"]),
+              ("kilometre (100 bin km başına, tipik araçta)", "mileage (per 100k km, at a typical car)", _ht["km100k"]),
+              ("ağır hasar kaydı", "heavy-damage record", _ht["heavy_damage"]),
+              ("değişen panel (her biri)", "changed panel (each)", _ht["changed"]),
+              ("boyalı panel (her biri)", "painted panel (each)", _ht["painted"]),
+              ("+100 hp motor gücü", "+100 hp of engine power", _ht["hp100"])]
     A(L("Her kalemin fiyatı ne kadar oynattığı — **diğer her şey sabitken**:",
         "How much each driver moves the price — **with everything else held fixed**:"))
     A("")
@@ -248,7 +248,7 @@ def fmt_business(v, F, lang):
            if v["psi_max"] < v["psi_safe"] else f"Drift is above the threshold (highest PSI {v['psi_max']:.3f}) and the ")
         +
         f"market level moved {P(v['ed']['donem_kaymasi']['canli'][-1][1], lang, 1, sign=True)}"
-        f" over {say(v['n_snapshots'], 'en')} snapshots and the model is time-blind.\n"
+        f" over {number_word(v['n_snapshots'], 'en')} snapshots and the model is time-blind.\n"
         f"- **Watch for events that reset the pricing regime** (a tax or excise change, an incentive, "
         f"a sudden market move) — plan retraining around them." + _bir_en))
     A("")

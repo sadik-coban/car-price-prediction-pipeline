@@ -3,10 +3,10 @@ build_technical_report.py
 EN: Writes the technical report (reports/technical.{tr,en}.md) and its figures from metrics/*.json only —
     no analysis: every number comes from the analysis scripts (python analysis/run_all.py) through the metrics
     view. One function per section; the order and the section numbers live in SECTIONS (cross-references use
-    secno()). The shared numbers, figures and formatters are in report_lib/report_common.py.
+    section_no()). The shared numbers, figures and formatters are in report_lib/report_common.py.
 TR: Teknik raporu (reports/technical.{tr,en}.md) ve figürlerini yalnız metrics/*.json'dan yazar — analiz
     yok: her sayı analiz betiklerinden (python analysis/run_all.py) metrik görünümü üzerinden gelir. Her bölüm
-    bir fonksiyon; sıra ve bölüm numaraları SECTIONS'ta (çapraz referanslar secno() ile). Ortak sayılar,
+    bir fonksiyon; sıra ve bölüm numaraları SECTIONS'ta (çapraz referanslar section_no() ile). Ortak sayılar,
     figürler ve biçimleyiciler report_lib/report_common.py'de.
 Run / Koşum: python builders/build_technical_report.py
 """
@@ -16,12 +16,12 @@ from datetime import date
 import numpy as np
 
 from report_lib.report_common import (BAND_EN, FUEL_EN, HANDWRITTEN_EXAMPLE_NOTES, HED_TERM_EN, LADDER_EN,
-                           LOFO_FLAT_KEYS, LOFO_GRUP, P, REPORTS_DIR, TECHNICAL_FIGS, TIER_EN, VARIANTS, VARIANTS_EN,
-                           VIF_TERM, _Ctx, build_figures, cluster_labels, col, derive, fp, kesir, load_report_view,
-                           lofo_ad, num, say, tl, tlm, tlx, tx, write_md)
+                           LOFO_FLAT_KEYS, LOFO_GROUPS, P, REPORTS_DIR, TECHNICAL_FIGS, TIER_EN, VARIANTS, VARIANTS_EN,
+                           VIF_TERM, _Ctx, build_figures, cluster_labels, col, derive, fp, fraction_words, load_report_view,
+                           lofo_name, num, number_word, tl, tlm, tlx, tx, write_md)
 
 
-def sec_veri(c):
+def section_data(c):
     """
     EN: §1 — data cleaning and leakage: snapshot rows → listings, price changes, plate scope, collection
         filters, feature families, unspecified panels, the hp/cc range rule, content duplicates.
@@ -33,8 +33,8 @@ def sec_veri(c):
     # B5 (2026-09-23): "veri degil, tarama artigi" fazla iddiaydi — tekrarlarin bir kismi fiyat degisikligi
     # tasiyor. Sayilar error_drivers.fiyat_degisimi'nden.
     _fd = v["ed"]["fiyat_degisimi"]
-    _don_tr = (f"; {num(_fd['donup_ayni'], lang)} ilan eski fiyatına döndü" if _fd.get("donup_ayni") else "")
-    _don_en = (f"; {num(_fd['donup_ayni'], lang)} went back to their earlier price" if _fd.get("donup_ayni") else "")
+    _don_tr = (f"; {num(_fd['donup_ayni'], lang)} ilan eski fiyatına döndü" if _fd["donup_ayni"] else "")
+    _don_en = (f"; {num(_fd['donup_ayni'], lang)} went back to their earlier price" if _fd["donup_ayni"] else "")
     A(L(f"**TR plakalı {num(v['n_raw'], lang)} tarama kaydı → {num(v['n_dedup'], lang)} ilan.** Aradaki "
         f"{num(v['n_dup_rows'], lang)} satır aynı ilanın sonraki taramalarda yeniden görülmesi; `ad_id` başına "
         f"en son kayıt alındı. Tekrarlar bilgi taşıyor ama model bunu kullanmıyor: birden çok taramada "
@@ -47,13 +47,13 @@ def sec_veri(c):
         f"changed price ({num(_fd['indirim'], lang)} cuts, {num(_fd['zam'], lang)} rises{_don_en})."))
     A("")
     A(L(f"Medyan ilan fiyatı {tl(v['median'])}"
-        + (f", {tlm(v['p10'])}–{tlm(v['p90'])} arası (P10–P90)." if v.get("p10") else "."),
+        + (f", {tlm(v['p10'])}–{tlm(v['p90'])} arası (P10–P90)." if v["p10"] else "."),
         f"Median asking price {tl(v['median'])}"
-        + (f", ranging {tlm(v['p10'])}–{tlm(v['p90'])} (P10–P90)." if v.get("p10") else ".")))
+        + (f", ranging {tlm(v['p10'])}–{tlm(v['p90'])} (P10–P90)." if v["p10"] else ".")))
     A("")
     # Kapsam cumlesi sayi tasimaz ama iddiasi VERIYLE kapili: modele giren ilanlarin tamami TR plakali
     # olmali. Kapi tutmazsa cumle sessizce yanlislasacagina uretec durur.
-    _ps = (v.get("ed") or {}).get("plaka_kapsami")
+    _ps = v["ed"]["plaka_kapsami"]
     if _ps:
         assert _ps["egitime_giren_ilan"] == v["n_dedup"], (
             f"kapsam cumlesi veriyle uyusmuyor: TR plakali {_ps['egitime_giren_ilan']} != "
@@ -71,14 +71,14 @@ def sec_veri(c):
     # okunur, karsiliklari veride sayilir (error_drivers.kapsam); ikisi de elle yazilmaz.
     _kp = v["ed"]["kapsam"]
     _ol = _kp["olculen"]
-    _MARKA = {"bmw": "BMW", "audi": "Audi"}
+    _BRAND_NAMES = {"bmw": "BMW", "audi": "Audi"}
     _yk_en = ", ".join(FUEL_EN.get(f_, f_) for f_ in _kp["yakit_filtresi"])
-    A(L(f"**Kapsam: toplama filtreleri.** Veri {' ve '.join(_MARKA.get(b_, b_) for b_ in _kp['markalar'])} "
+    A(L(f"**Kapsam: toplama filtreleri.** Veri {' ve '.join(_BRAND_NAMES.get(b_, b_) for b_ in _kp['markalar'])} "
         f"ilanlarından, sitenin `/{_kp['yol']}/` kategorisinden şu filtrelerle toplandı: fiyat "
         f"{tl(_kp['fiyat_min'])}–{tl(_kp['fiyat_max'])}, en fazla {num(_kp['max_km'], lang)} km, "
         f"{_kp['min_yil']} ve sonrası model yılı, yakıt {', '.join(_kp['yakit_filtresi'])}. Üç sonucu var:",
         f"**Scope: collection filters.** The data was collected from "
-        f"{' and '.join(_MARKA.get(b_, b_) for b_ in _kp['markalar'])} listings in the site's "
+        f"{' and '.join(_BRAND_NAMES.get(b_, b_) for b_ in _kp['markalar'])} listings in the site's "
         f"`/{_kp['yol']}/` category with these filters: price {tl(_kp['fiyat_min'])}–{tl(_kp['fiyat_max'])}, "
         f"at most {num(_kp['max_km'], lang)} km, model year {_kp['min_yil']} or later, fuel {_yk_en}. "
         f"Three consequences:"))
@@ -106,8 +106,8 @@ def sec_veri(c):
     A(L("### Ölçek", "### Scale"))
     A("")
     snaps = meta["snapshots"]
-    brands = meta.get("brands", {})
-    target = dom["final_results"].get("egitim", {}).get("hedef", "log1p(price)")
+    brands = meta["brands"]
+    target = dom["final_results"]["egitim"]["hedef"]
     T([L("kalem", "item"), L("değer", "value")], [
         [L("TR plakalı tarama kaydı (tüm taramalar)", "TR-plated snapshot rows (all snapshots)"),
          num(meta["n_raw"], lang)],
@@ -115,7 +115,7 @@ def sec_veri(c):
         [L("tarama dönemi", "snapshots"), f"{len(snaps)} ({snaps[0]} – {snaps[-1]})"],
         [L("ham kolon (besleme)", "raw columns (feed)"), v["ed"]["ham_kolon"]["ham_kolon"]],
         [L("modele giren öznitelik", "model features"), meta["n_features"]],
-        ["BMW / Audi", f"{num(brands.get('bmw', 0), lang)} / {num(brands.get('audi', 0), lang)}"],
+        ["BMW / Audi", f"{num(brands['bmw'], lang)} / {num(brands['audi'], lang)}"],
         [L("hedef", "target"), f"`{target}`"],
     ], "lr")
 
@@ -135,7 +135,7 @@ def sec_veri(c):
         "panel olduğu için **durum** (orijinal/lokal/boyalı/değişen), kapı · çamurluk · tampon ise "
         f"grup içi **sayı** (kapı 0–{_gp['door']}, çamurluk 0–{_gp['fender']}, tampon 0–{_gp['bumper']}).\n"
         f"3. **Serbest metin** — satıcı açıklaması; modelde **kullanılmıyor**. Ölçüldü: R²'ye katkısı "
-        f"{_dr2:.4f}; ayrıntısı §{secno('metin')}'da.",
+        f"{_dr2:.4f}; ayrıntısı §{section_no('text')}'da.",
         "1. **Structural** — age · km · engine power/size · body · fuel · transmission · drivetrain · segment.\n"
         f"2. **Damage / inspection** — {_y['panel']} body panels × {{changed, painted, local paint}} + the "
         f"heavy-damage record. Those {_y['bayrak']} raw flags reach the model as {_n_hoz} features: roof · hood · "
@@ -143,14 +143,14 @@ def sec_veri(c):
         f"fender · bumper carry a within-group **count** (doors 0–{_gp['door']}, fenders 0–{_gp['fender']}, "
         f"bumpers 0–{_gp['bumper']}).\n"
         f"3. **Free text** — the seller's description; **not used** by the model. It was measured: it adds "
-        f"{_dr2:.4f} to R²; the detail is in §{secno('metin')}."))
+        f"{_dr2:.4f} to R²; the detail is in §{section_no('text')}."))
     A("")
     # B7 (2026-09-23): "Belirtilmemis" panel durumu orijinal sayiliyor — bilincli karar (kullanici), ama
     # raporda yazmiyordu. Sayilar error_drivers.belirtilmemis'ten (ham JSONL, gold bayraklarla kapili).
     # 2026-09-25 (kullanici): model+yil medyanina oranla fiyat karsilastirmasi ve "Bedeli" cumlesi kaldirildi.
     _bl = v["ed"]["belirtilmemis"]
     assert _y["cevap_sayisi"] == 5, "panel cevap sayisi degisti — asagidaki bes adli liste bayat"
-    A(L(f"**\"Belirtilmemiş\" panel orijinal sayıldı.** Site her panel için {say(_y['cevap_sayisi'], lang)} "
+    A(L(f"**\"Belirtilmemiş\" panel orijinal sayıldı.** Site her panel için {number_word(_y['cevap_sayisi'], lang)} "
         f"cevaptan birini veriyor: "
         f"orijinal, belirtilmemiş, boyalı, lokal boyalı, değişmiş. Modele giren ilanlarda "
         f"{num(_bl['belirtilmemis_panel'], lang)} panel ({P(_bl['belirtilmemis_pct'], lang)}) belirtilmemiş; "
@@ -158,7 +158,7 @@ def sec_veri(c):
         f"kararla orijinal gibi kodlandı; gerekçe, satıcının hasarı yazmayı unutmuş olabileceği ama hasar "
         f"olmamasının daha olası sayılması.",
         f"**\"Unspecified\" panels were counted as original.** The site gives one of "
-        f"{say(_y['cevap_sayisi'], 'en')} answers per "
+        f"{number_word(_y['cevap_sayisi'], 'en')} answers per "
         f"panel: original, unspecified, painted, locally painted, changed. Across the listings in the model "
         f"{num(_bl['belirtilmemis_panel'], lang)} panels ({P(_bl['belirtilmemis_pct'], lang)}) are "
         f"unspecified; on {num(_bl['hepsi_belirtilmemis'], lang)} listings all {_y['panel']} are. That answer was coded as "
@@ -213,13 +213,13 @@ def sec_veri(c):
         f"başlıktan ibaret {num(_gs['aciklama_bos_satir'], lang)} satırda boş. Sonuç {_gs['gold_kolon']} kolon + "
         f"kimlik (yarı ham veritabanında {_gs['yari_ham_kolon']}); öteki her hücre yarı ham veritabanındakiyle "
         f"aynı. Buradaki sayımlar gold dosyasının tuttuğu bütün tarama satırları üzerinden; belirtilmemiş payları "
-        f"(§{secno('eksiklik')}) ise modele giren tekil ilanlar üzerinden.",
+        f"(§{section_no('missing')}) ise modele giren tekil ilanlar üzerinden.",
         f"The one column the API does not get is `kb_paint_change_summary`: the page's raw \"Boya-değişen\" line, a "
         f"coarse summary of the damage flags. The description goes as `description_text` without the page "
         f"heading; it is empty on the {num(_gs['aciklama_bos_satir'], lang)} rows that held only the heading. The "
         f"result is {_gs['gold_kolon']} columns + id ({_gs['yari_ham_kolon']} in the semi-raw database); every other "
         f"cell equals the semi-raw database. These counts are over every snapshot row the gold file holds; the "
-        f"unspecified shares in §{secno('eksiklik')} are over the unique listings in the model."))
+        f"unspecified shares in §{section_no('missing')} are over the unique listings in the model."))
     A("")
 
     # T (2026-09-23): motor gucu/hacmi araliktan tek sayiya — kullanicinin kurali, veriyle olculdu. Sayilar
@@ -448,7 +448,7 @@ def sec_veri(c):
     T([L("model", "model"), L("yıl", "year"), L("fiyat", "price"), L("tekrar", "repeats")],
       [[r["model"], r["yil"], tlx(r["fiyat"], lang), r["n_tekrar"]] for r in dup["en_cok_tekrar"]], "lrrr")
 
-def sec_eksiklik(c):
+def section_missing(c):
     """
     EN: §2 — missingness: which columns are missing together, why they were dropped, kb/gb twins.
     TR: §2 — eksiklik: hangi kolonlar birlikte eksik, neden atıldılar, kb/gb ikizleri.
@@ -470,19 +470,19 @@ def sec_eksiklik(c):
     _dis_t = " · ".join(f"{_ad_s[k_][:1].lower() + _ad_s[k_][1:]}: " + ", ".join(f"`{c_}`" for c_ in cs_)
                         for k_, cs_ in _dis_s.items())
     A(L(f"{v['n_missing_cols']} kolon %2'nin üzerinde eksik. {len(_kat)} tanesi birlikte düşen "
-        f"{say(len(_grp), lang)} blokta: bunlar \"eksik veri\" değil, katalog eşleşmesinin çöktüğü ilanlar — standart "
+        f"{number_word(len(_grp), lang)} blokta: bunlar \"eksik veri\" değil, katalog eşleşmesinin çöktüğü ilanlar — standart "
         f"modeller eşleşir, niş varyantlar eşleşmez, tüm özellik listesi birden boşalır. Sistematik olduğu için "
         f"güvenilir imputasyon yok → bu kolonlar çıkarıldı. Kalan {len(_dis)} kolonun eksikliği başka kaynaktan; "
-        f"her biri kendi sınıfında atıldı (§{secno('veri')} tablosu) — {_dis_t}.",
-        f"{v['n_missing_cols']} columns are over 2% missing. {len(_kat)} of them sit in {say(len(_grp), 'en')} "
+        f"her biri kendi sınıfında atıldı (§{section_no('data')} tablosu) — {_dis_t}.",
+        f"{v['n_missing_cols']} columns are over 2% missing. {len(_kat)} of them sit in {number_word(len(_grp), 'en')} "
         f"blocks that drop **together**: this isn't \"missing data\", it's listings where catalog matching "
         f"collapsed — standard models match, niche variants don't, and all their specs go blank at once. Because "
         f"it is systematic, reliable imputation is impossible → dropped. The other {len(_dis)} columns are missing "
-        f"for other reasons and each was dropped in its own class (§{secno('veri')} table) — {_dis_t}."))
+        f"for other reasons and each was dropped in its own class (§{section_no('data')} table) — {_dis_t}."))
     A("")
     figs(16)
 
-    _cm = met.get("column_missing") or []
+    _cm = met["column_missing"]
     if _cm:
         _wmax = max(_cm, key=lambda r: r[1])
         _zero = sum(1 for _c, _p in _cm if _p == 0)
@@ -504,7 +504,7 @@ def sec_eksiklik(c):
         f"listeye ve bloklara girmiyor. Belirtilmemiş payı ağır hasar kaydında {P(_ub['agir_hasar_pct'], lang)}, "
         f"{_ub['panel_bayrak']} panel bayrağının her birinde {P(_ub['panel_min_pct'], lang)}–"
         f"{P(_ub['panel_max_pct'], lang)}{_ilk_tr}. Model bu bilinmeyenleri bilinçli bir kararla \"yok\" okuyor: "
-        f"belirtilmemiş panel orijinal, belirtilmemiş ağır hasar kaydı ağır hasarsız sayılıyor (§{secno('veri')}). "
+        f"belirtilmemiş panel orijinal, belirtilmemiş ağır hasar kaydı ağır hasarsız sayılıyor (§{section_no('data')}). "
         f"API'ye giden veride de aynı kural uygulanıyor.",
         f"**\"Unspecified\" is not missing data.** The database is semi-raw: what the page does not say stays empty. "
         f"In {_ub['kolon']} columns that gap is not missing data but the seller's \"unspecified\" answer; these columns "
@@ -512,7 +512,7 @@ def sec_eksiklik(c):
         f"{P(_ub['agir_hasar_pct'], lang)} of the listings, and each of the {_ub['panel_bayrak']} panel flags on "
         f"{P(_ub['panel_min_pct'], lang)}–{P(_ub['panel_max_pct'], lang)}{_ilk_en}. The model reads these unknowns as "
         f"\"no\" by a deliberate decision: an unspecified panel counts as original, an unspecified heavy-damage record "
-        f"as not heavily damaged (§{secno('veri')}). The data sent to the API applies the same rule."))
+        f"as not heavily damaged (§{section_no('data')}). The data sent to the API applies the same rule."))
     A("")
 
     A(L("### Birlikte eksik bloklar", "### Co-missing blocks"))
@@ -521,14 +521,14 @@ def sec_eksiklik(c):
        L("örnek kolonlar", "example columns")],
       [[g["kolon_sayisi"], P(g["ort_eksik_pct"], lang), P(g["birliktelik_pct"], lang),
         ", ".join(f"`{c}`" for c in g["ornek_kolonlar"][:4]) + (" …" if len(g["ornek_kolonlar"]) > 4 else "")]
-       for g in sm.get("sistematik_gruplar", [])], "rrrl")
+       for g in sm["sistematik_gruplar"]], "rrrl")
     A(L("*Birlikte eksik: blok kolonlarının hepsinin eksik olduğu ilanların, en az birinin eksik olduğu "
         "ilanlara oranı.*",
         "*Missing together: listings where every column of the block is missing, as a share of listings where "
         "at least one is.*"))
     A("")
 
-    kb_missing = dict(met.get("column_missing", []))
+    kb_missing = dict(met["column_missing"])
     gb_rows = sorted([r for r in sm["column_missing_all"] if r[0].startswith("gb_") and r[1] >= 40],
                      key=lambda r: -r[1])
     A(L("### gb_ / kb_ çift kaynak", "### gb_ / kb_ dual source"))
@@ -536,7 +536,7 @@ def sec_eksiklik(c):
     rows, n_twin = [], 0
     for k, pct_ in gb_rows:
         twin = "kb_" + k[3:]
-        has = twin in kb_missing or twin in d.get("column_labels", {})
+        has = twin in kb_missing or twin in d["column_labels"]
         n_twin += has
         rows.append([f"{col(d, k, lang)} (`{k}`)", P(pct_, lang),
                      (f"`{twin}` · " + L("eksik ", "missing ") + P(kb_missing[twin], lang)) if twin in kb_missing
@@ -550,14 +550,14 @@ def sec_eksiklik(c):
     _kasa = next(r_ for r_ in ik if r_["kb"] == "kb_body_type")
     _cek = next(r_ for r_ in ik if r_["kb"] == "kb_drivetrain")
     assert _kasa["tutulan"] == "kb_body_type" and _cek["tutulan"] == "kb_drivetrain", (_kasa, _cek)
-    _yok = [k_ for k_, _p in gb_rows if not ("kb_" + k_[3:] in kb_missing or "kb_" + k_[3:] in d.get("column_labels", {}))]
+    _yok = [k_ for k_, _p in gb_rows if not ("kb_" + k_[3:] in kb_missing or "kb_" + k_[3:] in d["column_labels"])]
     _hic = [r_["kb"][3:] for r_ in ik if r_["tutulan"] is None]          # iki tarafi da modelde olmayan ciftler
     _ekik = [r_ for r_ in met["kb_gb_ikiz"] if not r_["gb"].startswith("gb_")]
     A(L(f"**kb/gb.** İlan sayfasında aynı bilgi iki sekmede yer alabiliyor: `kb` kısa bilgi, `gb` genel bakış. "
         f"{len(ik)} çiftin {_ayni} tanesinde iki sekme birebir aynı. {len(ik) - len(_hic)} çiftte bir taraf "
         f"modelde, öteki atıldı; {len(_hic)} çiftte ({', '.join(f'`{x_}`' for x_ in _hic)}) hiçbir taraf modelde "
         f"değil."
-        + "".join(f" §{secno('veri')} tablosundaki ikiz sınıfında bir kolon daha var: `{r_['kb']}`, `{r_['gb']}` "
+        + "".join(f" §{section_no('data')} tablosundaki ikiz sınıfında bir kolon daha var: `{r_['kb']}`, `{r_['gb']}` "
                   f"ile birebir aynı." for r_ in _ekik if r_["ayni_pct"] >= 99.9)
         + f" Çekişte `gb` ilanların {P(_cek['gb_eksik_pct'], lang)} kadarında boş, `kb` "
         f"{P(_cek['kb_eksik_pct'], lang)}. **Kasa tipinde `kb`, daha genel olduğu için seçildi:** "
@@ -568,7 +568,7 @@ def sec_eksiklik(c):
         f"overview. In {_ayni} of the {len(ik)} pairs the two tabs are identical. In {len(ik) - len(_hic)} pairs "
         f"one side is in the model and the other was dropped; in {len(_hic)} pairs "
         f"({', '.join(f'`{x_}`' for x_ in _hic)}) neither side is in the model."
-        + "".join(f" The twin class in the §{secno('veri')} table holds one more column: `{r_['kb']}`, identical to "
+        + "".join(f" The twin class in the §{section_no('data')} table holds one more column: `{r_['kb']}`, identical to "
                   f"`{r_['gb']}`." for r_ in _ekik if r_["ayni_pct"] >= 99.9)
         + f" For drivetrain `gb` is empty on "
         f"{P(_cek['gb_eksik_pct'], lang)} of listings, `kb` on {P(_cek['kb_eksik_pct'], lang)}. **For body type "
@@ -577,7 +577,7 @@ def sec_eksiklik(c):
         f"counterpart and over 40% empty ({', '.join(col(d, k_, lang) for k_ in _yok)}) were dropped."))
     A("")
 
-def sec_fazlalik(c):
+def section_redundancy(c):
     """
     EN: §3 — redundancy and dependence: Cramér's V / Theil's U with permutation floors, the derived segment, the
         brand ablation.
@@ -605,8 +605,8 @@ def sec_fazlalik(c):
     A("")
     # 2026-09-23: "745" elle yaziliydi; ve U, Cramer'in yanliliginin CARESI diye sunuluyordu — degil.
     # Permutasyon temeli site_data'dan: saf gurultuyle `model` karsisinda alinan deger.
-    _n_mod = len((v.get("ed") or {}).get("per_model_error") or [])
-    _cn, _tn = met.get("cramers_null"), met.get("theils_null")
+    _n_mod = len(v["ed"]["per_model_error"])
+    _cn, _tn = met["cramers_null"], met["theils_null"]
     if _cn and _tn:
         _li = _cn["labels"].index("model")
         _cv0 = max(r[_li] for k, r in enumerate(_cn["matrix"]) if k != _li)
@@ -652,16 +652,16 @@ def sec_fazlalik(c):
     A("")
 
     A(L("Sayısal öznitelikler arası korelasyon — yukarıdaki kategorik bağıntının sayısal karşılığı. "
-        f"|r|>0.5 çiftler çoklu-bağlantı için işaretlendi. §{secno('hedonik')}'nın VIF tablosu yalnız hedonik "
+        f"|r|>0.5 çiftler çoklu-bağlantı için işaretlendi. §{section_no('hedonic')}'nın VIF tablosu yalnız hedonik "
         f"modelin terimlerini sınar; kapı ve çamurluk boyaları orada ayrı değil, toplam boyalı parça sayısı olarak "
         f"girer.",
         "Correlation among numeric features — the numeric counterpart to the categorical dependence "
-        f"above. |r|>0.5 pairs are flagged for collinearity. The VIF table in §{secno('hedonik')} only covers "
+        f"above. |r|>0.5 pairs are flagged for collinearity. The VIF table in §{section_no('hedonic')} only covers "
         f"the hedonic model's terms; door and fender paint enter there as the total painted-part count, not "
         f"separately."))
     A("")
     figs(20, 21)
-    _sk = (v.get("ed") or {}).get("segment_kalite")
+    _sk = v["ed"]["segment_kalite"]
     if _sk:
         _g, _uy, _yol = _sk["g_segmenti"], _sk["uyusmazlik"], _sk["yol"]
         _md = _sk["model_adindan"]
@@ -680,12 +680,12 @@ def sec_fazlalik(c):
             f"label, {num(_g['mpv_n'], lang)} have an MPV body and all come from one series — a corrupt "
             f"source. Segment is therefore derived, with the MPV signal kept in body type."))
         A("")
-        A(L(f"İlanların {num(_yol.get('harita', 0), lang)} tanesi segmentini doğrudan serisinden alıyor. "
+        A(L(f"İlanların {num(_yol['harita'], lang)} tanesi segmentini doğrudan serisinden alıyor. "
             f"Bazı ailelerde ({_ser}) segment seriden değil model adından çözülüyor — örneğin "
             f"M3 → 3 Serisi, S3 → A3 — toplam {num(_n_md, lang)} ilan. Bu yüzden segment yalnız serinin "
             f"değil (seri, model) çiftinin fonksiyonu: U(segment | seri) = {_ug:.3f}, tam 1 değil. "
             f"Çözülemeyen seri ya da model kalırsa üreteç durur; sessiz bir varsayılan segment yok.",
-            f"{num(_yol.get('harita', 0), lang)} listings take their segment straight from the series. "
+            f"{num(_yol['harita'], lang)} listings take their segment straight from the series. "
             f"In some families ({_ser}) the segment is resolved from the model name, not the series — e.g. "
             f"M3 → 3 Series, S3 → A3 — {num(_n_md, lang)} listings in all. So segment is a function of "
             f"(series, model), not series alone: U(segment | series) = {_ug:.3f}, not exactly 1. If any "
@@ -724,8 +724,8 @@ def sec_fazlalik(c):
     _gap = ba["sadece_brand"]["MAE"] - ba["seri_model"]["MAE"]
     # 2026-09-23: iki kol lira lira ayniydi. Uretec artik bunu dogruluyor: marka CV fold modellerinde
     # hic bolme kazanmiyorsa aynilik MESRU; kazanip da aynilik varsa uretec durur (tesisat hatasi).
-    _dg = ba.get("dogrulama") or {}
-    _bs = _dg.get("brand_split_cv")
+    _dg = ba["dogrulama"]
+    _bs = _dg["brand_split_cv"]
     _tanim = U("brand", "series") >= 0.9995
     A(L(f"Tam modelde yalnız kimlik kolonları değişiyor, diğer öznitelikler sabit; aynı 5-fold OOF. \"Yalnız "
         f"marka\" kolu segmenti de dışarıda bırakıyor, çünkü segment seriden türetiliyor. Seri+model yerine yalnız "
@@ -753,7 +753,7 @@ def sec_fazlalik(c):
            f"U(brand | model) = {U('brand', 'model'):.2f} above is the dependence side of the same fact.")))
     A("")
 
-def sec_hedef(c):
+def section_target(c):
     """
     EN: §4 — the target: price skew and the log transform.
     TR: §4 — hedef: fiyat çarpıklığı ve log dönüşümü.
@@ -771,7 +771,7 @@ def sec_hedef(c):
     A("")
     figs(25, 1)
 
-def sec_segment(c):
+def section_segment(c):
     """
     EN: §5 — market structure: KMeans clusters, k selection, PCA axes.
     TR: §5 — piyasa yapısı: KMeans kümeleri, k seçimi, PCA eksenleri.
@@ -782,7 +782,7 @@ def sec_segment(c):
     sil = ks["silhouette"]
     K = ks["secilen_k"]
     best_k, best_s = max(sil, key=lambda r: r[1])
-    k_s = dict(sil).get(K)
+    k_s = dict(sil)[K]
     rank = sorted([s for _, s in sil], reverse=True).index(k_s) + 1 if k_s is not None else None
     # 2026-09-23: "hasar sinyali hedonik, PCA ve KMeans'te bagimsizca cikiyor" cumlesi kalkti — PCA ve KMeans
     # ayni standartlastirilmis matriste ve girdilerinin cogu hasar kolonu; orada hasarin cikmasi kuruluştan.
@@ -827,7 +827,7 @@ def sec_segment(c):
         f"The first {len(met['pca_axes'])} components explain {P(tot, lang)} of variance. {_ax}."))
     A("")
 
-def sec_hedonik(c):
+def section_hedonic(c):
     """
     EN: §6 — the hedonic model: bootstrap effects, VIF, assumptions, model identity, the hp–cc correlation, LOFO
         vs SHAP ranking.
@@ -845,7 +845,7 @@ def sec_hedonik(c):
         + (f"; all {v['n_boot']} terms have a 95% CI excluding zero → each driver is reliably significant."
            if v["all_sig"] else ".")))
     A("")
-    _n_model = len((v.get("ed") or {}).get("per_model_error") or [])
+    _n_model = len(v["ed"]["per_model_error"])
     # 2026-09-23: "eklenseydi katsayilari tasirdi" / "farkin bir kismi" olculmemisti ve "seri zaten onun
     # kabalastirilmis hali" regresyonda seri varmis gibi okunuyordu (yalniz segment var). Model etkili OLS bir kez
     # kuruldu (build_site_data: hedonic_reliability.model_etkili).
@@ -880,7 +880,7 @@ def sec_hedonik(c):
     A("")
     # OLS eksik deger kaldirmaz: kac ilanin neden elendigi build_error_drivers.py'de SAYILIR
     # (hedonik_eksik), burada yalnizca yazilir. Kapi: n_dedup - toplam == hedonik n.
-    _he = (v.get("ed") or {}).get("hedonik_eksik")
+    _he = v["ed"]["hedonik_eksik"]
     if _he:
         assert v["n_dedup"] - _he["toplam"] == v["hed_n"], (
             f"hedonik eleme rapordaki n ile uyusmuyor: {v['n_dedup']} - {_he['toplam']} != {v['hed_n']}")
@@ -996,10 +996,10 @@ def sec_hedonik(c):
     # bu kosumda yanlis. Iki siralama site_data'dan kurulur, cumle sonuca gore yazilir.
     _lf = {r[0]: r[1] for r in met["lofo"]}
     _sh = {r[0]: r[1] for r in dom["shap"]["lightgbm_tfidf_svd"]}
-    _ks = [k for k in LOFO_FLAT_KEYS if k in _lf and (LOFO_GRUP.get(k, (0, 0, k))[2] in _sh)]
+    _ks = [k for k in LOFO_FLAT_KEYS if k in _lf and (LOFO_GROUPS.get(k, (0, 0, k))[2] in _sh)]
     _rl = sorted(_ks, key=lambda k: -_lf[k])
-    _rs = sorted(_ks, key=lambda k: -_sh[LOFO_GRUP.get(k, (0, 0, k))[2]])
-    _nm = lambda k: lofo_ad(d, k, lang)                                           # noqa: E731
+    _rs = sorted(_ks, key=lambda k: -_sh[LOFO_GROUPS.get(k, (0, 0, k))[2]])
+    _nm = lambda k: lofo_name(d, k, lang)                                           # noqa: E731
     _fark = max(_ks, key=lambda k: _rl.index(k) - _rs.index(k))
     _ord = lambda i: f"{i}{'st' if i == 1 else 'nd' if i == 2 else 'rd' if i == 3 else 'th'}"   # noqa: E731
     A(L("LOFO ikinci ve bağımsız bir yöntem: her özniteliği çıkarıp CV hatasının ne kadar büyüdüğüne "
@@ -1048,7 +1048,7 @@ def sec_hedonik(c):
     # kategorikler orada "hic olculmedi" satirinda adlariyla listeleniyor.
 
 
-def sec_model(c):
+def section_model(c):
     """
     EN: §7 — model comparison: baselines, three variants, the text flag, limitations.
     TR: §7 — model karşılaştırma: tabanlar, üç varyant, metin bayrağı, kısıtlar.
@@ -1057,7 +1057,7 @@ def sec_model(c):
     L, A, T, figs = c.L, c.A, c.T, c.figs
     mk = dom["final_results"]["model_karsilastirma"]
     lg, cb = mk["lightgbm_tfidf_svd"], mk["catboost_tfidf_svd"]
-    win = mk.get("kazanan")
+    win = mk["kazanan"]
     win_name = next((nm for _, code, nm in VARIANTS if code == win), str(win))
     win_name = tx(VARIANTS_EN, win_name, lang)
     MET = ["MAPE", "MAE", "MedAE", "RMSE", "R2"]
@@ -1080,11 +1080,11 @@ def sec_model(c):
     A(L("**TF-IDF+SVD neye uygulanıyor.** Serbest ilan metnine değil, yalnız `model` ve `series` ad "
         "dizgilerine (\"A4 Sedan 2.0 TDI\" gibi). Amaç, nadir ad kombinasyonlarının isim benzerliği "
         "üzerinden komşularından bilgi ödünç almasıdır; target encoding'in seyrek hücrelerde zayıfladığı "
-        f"yeri kapatır. Satıcı açıklaması modele hiçbir biçimde girmez (bkz. §{secno('veri')}, üçüncü katman).",
+        f"yeri kapatır. Satıcı açıklaması modele hiçbir biçimde girmez (bkz. §{section_no('data')}, üçüncü katman).",
         "**What TF-IDF+SVD is applied to.** Not the free-text description — only the `model` and `series` "
         "name strings (e.g. \"A4 Sedan 2.0 TDI\"). The point is to let rare name combinations borrow "
         "information from their neighbours through name similarity, covering exactly where target encoding "
-        f"weakens in sparse cells. The seller's description never enters the model (see §{secno('veri')}, "
+        f"weakens in sparse cells. The seller's description never enters the model (see §{section_no('data')}, "
         "third layer)."))
     A("")
 
@@ -1146,7 +1146,7 @@ def sec_model(c):
            f"{P(_mbk['perf_icinde_pct'], lang)} kadarında geçiyor.")
         + f" Emsali olmayan ilanlarda hata belirgin şekilde büyüyor: aynı model ve yıldan "
         f"başka ilan yoksa büyük hata oranı {P(_b1['big_pct'], lang)}, {_bm['bin']} emsal varsa "
-        f"{P(_bm['big_pct'], lang)}; lira ölçeğindeki en büyük hatalar da bu uçta (§{secno('kalibrasyon')}). "
+        f"{P(_bm['big_pct'], lang)}; lira ölçeğindeki en büyük hatalar da bu uçta (§{section_no('calibration')}). "
         f"Kapsamlı bir hiperparametre optimizasyonuna bilinçli olarak gidilmedi; getirisi bu raporda ölçülmedi.",
         "**Model limitations and observations.** Information that never reaches the form fields and hides in "
         "the free text — modifications, special equipment, tax-exemption status — does not enter the model"
@@ -1161,7 +1161,7 @@ def sec_model(c):
         + f" Without comparables the error grows markedly: with no other "
         f"listing of the same model and year the large-error rate is {P(_b1['big_pct'], lang)}, with "
         f"{_bm['bin']} comparables {P(_bm['big_pct'], lang)}; the largest lira errors sit at this end too "
-        f"(§{secno('kalibrasyon')}). No extensive hyperparameter optimisation was run, by choice; its payoff was "
+        f"(§{section_no('calibration')}). No extensive hyperparameter optimisation was run, by choice; its payoff was "
         f"not measured in this report."))
     A("")
 
@@ -1181,7 +1181,7 @@ def sec_model(c):
         "(it saw the listing); the leak-free measure is \"OOF resid.\". For typical error see MAPE."))
     A("")
 
-def sec_kalibrasyon(c):
+def section_calibration(c):
     """
     EN: §8 — calibration and residuals: error bands, where the large errors come from, examples, the conformal
         interval and its coverage, best and worst predictions.
@@ -1258,7 +1258,7 @@ def sec_kalibrasyon(c):
         f"python analysis/run_all.py --from 07")
     b1, bmax = ed["by_model_year_n"][0], ed["by_model_year_n"][-1]
     fs, oth = ed["by_segment_FS"]["F_or_S"], ed["by_segment_FS"]["other"]
-    _sl = {r[0]: r[2] for r in dom.get("segment_ladder", [])}
+    _sl = {r[0]: r[2] for r in dom["segment_ladder"]}
     _seg_fs = " · ".join(f"{k} {num(_sl[k], lang)}" for k in ("F", "S") if k in _sl) or "F + S"
     a18, a17 = ed["by_age"]["age_18plus"], ed["by_age"]["age_under18"]
     sn0, sn1 = ed["by_snapshot"][0], ed["by_snapshot"][-1]
@@ -1294,7 +1294,7 @@ def sec_kalibrasyon(c):
         f"3. **Zaman ve hayatta kalma.** Medyan artık ilanın son görüldüğü taramaya göre değişiyor: "
         f"{sn0['snapshot']} {P(sn0['median_resid_pct'], lang, 2, sign=True)} → {sn1['snapshot']} "
         f"{P(sn1['median_resid_pct'], lang, 2, sign=True)}. Bunun bir kısmı dönem: model zamanı görmüyor ve piyasa bu "
-        f"aralıkta {P(_dk[-1][1], lang, 2, sign=True)} kaydı (§{secno('zaman')}). Bir kısmı hayatta kalma: son taramada "
+        f"aralıkta {P(_dk[-1][1], lang, 2, sign=True)} kaydı (§{section_no('time')}). Bir kısmı hayatta kalma: son taramada "
         f"hâlâ yayında olan {num(_kc['canli_n'], lang)} ilanın medyan artığı "
         f"{P(_kc['canli_medyan_artik'], lang, 2, sign=True)}, daha önce kalkan {num(_kc['kaybolan_n'], lang)} ilanınki "
         f"{P(_kc['kaybolan_medyan_artik'], lang, 2, sign=True)}"
@@ -1310,7 +1310,7 @@ def sec_kalibrasyon(c):
         f"3. **Time and survival.** The median residual changes with the snapshot a listing was last seen in: "
         f"{sn0['snapshot']} {P(sn0['median_resid_pct'], lang, 2, sign=True)} → {sn1['snapshot']} "
         f"{P(sn1['median_resid_pct'], lang, 2, sign=True)}. Part of this is the period: the model is time-blind "
-        f"and the market moved {P(_dk[-1][1], lang, 2, sign=True)} over the span (§{secno('zaman')}). Part is "
+        f"and the market moved {P(_dk[-1][1], lang, 2, sign=True)} over the span (§{section_no('time')}). Part is "
         f"survival: the {num(_kc['canli_n'], lang)} listings still live in the last snapshot have a median residual "
         f"of {P(_kc['canli_medyan_artik'], lang, 2, sign=True)}, the {num(_kc['kaybolan_n'], lang)} that left earlier "
         f"{P(_kc['kaybolan_medyan_artik'], lang, 2, sign=True)}"
@@ -1329,14 +1329,14 @@ def sec_kalibrasyon(c):
         + " · ".join(f"{a_} yaş {P(_yd[a_], lang, 2)}" for a_ in _cap)
         + f". En büyük bir yıllık sıçrama {_j[0]}→{_j[1]} yaş arasında ({P(_yd[_j[0]], lang, 2)} → "
         f"{P(_yd[_j[1]], lang, 2)}). Kesim {min(_yk)} ile {max(_yk)} arasında kaydırılınca yaşlı/genç oranı "
-        f"{min(_yk.values()):.1f}–{max(_yk.values()):.1f} kat arasında kalıyor; 18'de {_yk.get(18, float('nan')):.1f} "
+        f"{min(_yk.values()):.1f}–{max(_yk.values()):.1f} kat arasında kalıyor; 18'de {_yk[18]:.1f} "
         f"kat. Ayrıca en yaşlı kova toplama sınırına dayanıyor: veri {_kp['min_yil']} model yılıyla başlıyor, yani 18 "
         f"ve üstü kovada yalnız {_kp['yas_tavani'] - 18 + 1} model yılı var.",
         f"**Age 18 is not a threshold the data picked.** The large-error rate rises with age: "
         + " · ".join(f"age {a_} {P(_yd[a_], lang, 2)}" for a_ in _cap)
         + f". The largest one-year jump is between {_j[0]} and {_j[1]} ({P(_yd[_j[0]], lang, 2)} → "
         f"{P(_yd[_j[1]], lang, 2)}). Moving the cut between {min(_yk)} and {max(_yk)} keeps the old/young ratio between "
-        f"{min(_yk.values()):.1f}× and {max(_yk.values()):.1f}×; at 18 it is {_yk.get(18, float('nan')):.1f}×. "
+        f"{min(_yk.values()):.1f}× and {max(_yk.values()):.1f}×; at 18 it is {_yk[18]:.1f}×. "
         f"The oldest bucket also runs into the collection limit: data starts at model year {_kp['min_yil']}, "
         f"so the 18-and-over bucket holds only {_kp['yas_tavani'] - 18 + 1} model years."))
     A("")
@@ -1365,7 +1365,7 @@ def sec_kalibrasyon(c):
     A("")
     figs(9)
     figs(11)
-    _bk = ed.get("per_model_buckets") or []
+    _bk = ed["per_model_buckets"]
     _bmy = ed["by_model_year_n"]
     _ayni_yon = bool(_bk) and (_bk[0]["median_of_medians"] > _bk[-1]["median_of_medians"]
                                and _bmy[0]["big_pct"] > _bmy[-1]["big_pct"])
@@ -1400,11 +1400,11 @@ def sec_kalibrasyon(c):
     A(L(f"- **Dağılım varsayımı yapmaz:** Hataların bir formüle (çan eğrisi vb.) uyduğu varsayılmaz. "
         f"Modelin daha önce hiç görmediği araçlardaki gerçek hataları sıralanır, en kötü %10'u dışarıda "
         f"bırakılır ve pay doğrudan veriden okunur. Tek varsayım, yeni ilanların eskilere benzemesidir — "
-        f"piyasa kaydıkça (§{secno('zaman')}) bu varsayım zayıflar.",
+        f"piyasa kaydıkça (§{section_no('time')}) bu varsayım zayıflar.",
         f"- **No distributional assumption:** Errors are not assumed to follow a formula (a bell curve, "
         f"etc.). The model's real errors on cars it has never seen are sorted, the worst 10% are set "
         f"aside, and the margin is read directly from the data. The one assumption is that new listings "
-        f"resemble past ones — as the market drifts (§{secno('zaman')}), that assumption weakens."))
+        f"resemble past ones — as the market drifts (§{section_no('time')}), that assumption weakens."))
     A(L(f"- **Oransaldır:** Hata payı lira değil yüzde olarak uygulanır (tahminin yaklaşık %{_dn} altı ile "
         f"%{_up} üstü). Bu yüzden pahalı araçta lira bandı geniş, ucuz araçta dar çıkar.",
         f"- **Proportional:** The margin is applied as a percentage, not in lira (roughly {_dn}% below to "
@@ -1499,13 +1499,13 @@ def sec_kalibrasyon(c):
     assert _so["min_grup"] > 2, "kategoriler ortusebilir: min_grup <= 2"
     _dig = len(worst) - _boz - _tek
     _kor = _so["kor_nokta"]
-    A(L((f"En kötü {say(len(worst), lang)} ilanın hepsinde" if n_over == len(worst) else
-         f"En kötü {say(len(worst), lang)} ilanın {say(n_over, lang)} tanesinde")
+    A(L((f"En kötü {number_word(len(worst), lang)} ilanın hepsinde" if n_over == len(worst) else
+         f"En kötü {number_word(len(worst), lang)} ilanın {number_word(n_over, lang)} tanesinde")
         + f" model gerçek fiyatın **üstünü** söylüyor; medyan yaş "
         f"{med_age:g}. Bu yön büyük ölçüde sıralamanın kendisinden geliyor: model düşük söylediğinde yüzde hata "
         f"%100'ü geçemez (bu veride en yüksek {P(_to['dusuk_ape_max'], lang)}), bu listenin ilk 10'una girmek için "
         f"ise {P(_to['ape_10_esik'], lang)} gerekiyor. Lira ölçeğindeki sıralama aşağıda.",
-        (f"In all {say(len(worst), 'en')} of the worst" if n_over == len(worst) else
+        (f"In all {number_word(len(worst), 'en')} of the worst" if n_over == len(worst) else
          f"In {n_over} of the worst {len(worst)}")
         + f" the model says **more** than the actual price; median age "
         f"{med_age:g}. That direction comes largely from the ranking itself: when the model says too little the "
@@ -1516,7 +1516,7 @@ def sec_kalibrasyon(c):
     if _boz:
         _pahali = _so["medyan_hata_pct"] > _so["diger_medyan_hata_pct"]
         _par_tr.append(
-            f"**{say(_boz, lang, cap=True)} ilanda sebep veri:** motor gücü ya da hacmi kendi emsal grubunun "
+            f"**{number_word(_boz, lang, cap=True)} ilanda sebep veri:** motor gücü ya da hacmi kendi emsal grubunun "
             f"medyanından {_so['esik']} kattan fazla sapıyor — katalog eşleşmesi çökmüş, model olmayan bir motoru "
             f"fiyatlıyor. Veride böyle {num(_so['n'], lang)} ilan var ({P(_so['pct'], lang, 2)})"
             + (f" ve pahalıya mal oluyorlar: medyan hataları {P(_so['medyan_hata_pct'], lang)}, geri kalanınki "
@@ -1535,13 +1535,13 @@ def sec_kalibrasyon(c):
             f"{num(_kor['ilan'], lang)} listings ({P(_kor['pct'], lang, 2)}) of the {num(_kor['model'], lang)} "
             f"smaller models are its blind spot — exactly where comparables are scarcest.")
     if _tek:
-        _par_tr.append(f"**{say(_tek, lang, cap=True)} ilanda sebep emsalsizlik:** aynı modelden veride en fazla "
+        _par_tr.append(f"**{number_word(_tek, lang, cap=True)} ilanda sebep emsalsizlik:** aynı modelden veride en fazla "
                        f"iki ilan var.")
         _par_en.append(f"**In {_tek} the cause is having no comparables:** at most two listings of that model "
                        f"exist.")
     if _dig:
-        _par_tr.append(f"Kalan {say(_dig, lang)} ilan iki açıklamaya da girmiyor.")
-        _par_en.append(f"The remaining {say(_dig, 'en')} {'fits' if _dig == 1 else 'fit'} neither explanation.")
+        _par_tr.append(f"Kalan {number_word(_dig, lang)} ilan iki açıklamaya da girmiyor.")
+        _par_en.append(f"The remaining {number_word(_dig, 'en')} {'fits' if _dig == 1 else 'fit'} neither explanation.")
     _par_tr.append("Tüm tahminler OOF; ilan kimliği (`ad_id`) bilerek yazılmadı.")
     _par_en.append("All predictions are OOF; the listing id (`ad_id`) is deliberately not published.")
     A(L(" ".join(_par_tr), " ".join(_par_en)))
@@ -1556,7 +1556,7 @@ def sec_kalibrasyon(c):
         ("−" if r[6] < 0 else "+") + tl(abs(r[6]))] for r in _to["en_kotu"]], "lrrrrr")
     _n6d = sum(1 for r in _to["en_kotu"] if r[6] < 0)
     _perf_kat = (_to["ilk_n_perf"] / _to["ilk_n"] * 100) / _to["perf_genel_pct"] if _to["perf_genel_pct"] else 0
-    A(L(f"Lira ölçeğinde liste tersine dönüyor: ilk altının {say(_n6d, lang)} tanesinde model **düşük** söylüyor. "
+    A(L(f"Lira ölçeğinde liste tersine dönüyor: ilk altının {number_word(_n6d, lang)} tanesinde model **düşük** söylüyor. "
         f"İlk {_to['ilk_n']} lira hatasından {num(_to['ilk_n_dusuk'], lang)} tanesi düşük, "
         f"{num(_to['ilk_n_fazla'], lang)} tanesi fazla tahmin; {num(_to['ilk_n_q4'], lang)} tanesi en pahalı "
         f"çeyrekte. Segmentini model adından alan seriler ({', '.join(_to['perf_seriler'])}) verinin "
@@ -1578,7 +1578,7 @@ def sec_kalibrasyon(c):
     A("")
     figs(28)
 
-def sec_zaman(c):
+def section_time(c):
     """
     EN: §9 — time: period effect, temporal backtest, per-snapshot OOF, distribution drift, when to retrain.
     TR: §9 — zaman: dönem etkisi, zamansal backtest, dönem başına OOF, dağılım kayması, ne zaman yeniden
@@ -1678,12 +1678,12 @@ def sec_zaman(c):
     A(L("Bu tablonun iki kolu da ana modelden hafif bir kurulumla ölçülür: model ve seri adı TF-IDF/SVD'den "
         f"geçmeden ham kategorik girer, {_ag_bt.group(1)} ağaç, erken durdurma yok. Mutlak düzey manşet MAPE ile değil, "
         "satırlar birbiriyle karşılaştırılmalı."
-        + (f" Kümülatif kolun ilk {say(len(_ilk), lang)} satırı tek dönem koluyla aynı deneydir (ilk taramaya "
+        + (f" Kümülatif kolun ilk {number_word(len(_ilk), lang)} satırı tek dönem koluyla aynı deneydir (ilk taramaya "
            f"kadar birikim tek bir taramadır); bağımsız ikinci bir ölçüm sayılmamalı." if _ayni else ""),
         "Both arms of this table use a lighter setup than the main model: model and series names enter as raw "
         f"categoricals without TF-IDF/SVD, {_ag_bt.group(1)} trees, no early stopping. Compare rows with each other, not the "
         "absolute level with the headline MAPE."
-        + (f" The first {say(len(_ilk), 'en')} rows of the cumulative arm are the same experiment as the single "
+        + (f" The first {number_word(len(_ilk), 'en')} rows of the cumulative arm are the same experiment as the single "
            f"arm (accumulating up to the first snapshot is one snapshot); they are not a second, independent "
            f"measurement." if _ayni else "")))
     A("")
@@ -1715,18 +1715,19 @@ def sec_zaman(c):
 
     A(L("### Dağılım kayması", "### Distribution drift"))
     A("")
-    pairs = dr.get("all_pairs") or dr.get("table") or []
+    pairs = dr["all_pairs"]
     T([L("dönem çifti", "snapshot pair"), "KS", "KS p", "PSI", "EMD (₺)"],
       [[pr, f"{ks:.4f}", fp(p_), f"{psi:.4f}", tlx(emd, lang)] for pr, ks, p_, psi, emd in pairs], "lrrrr")
     # Dort olcunun ne isе yaradigi + tablonun okunusu. Esikler ureticinin notundan (regex), sayilarin
     # tamami all_pairs / per_snapshot / medyan fiyattan; hicbiri elle yazilmadi.
-    th = re.search(r"PSI<([\d.]+).*?>([\d.]+)", dr.get("not", ""))
-    _safe, _retrain = (float(th.group(1)), float(th.group(2))) if th else (0.10, 0.25)
+    th = re.search(r"PSI<([\d.]+).*?>([\d.]+)", dr["not"])
+    assert th, "drift notunda PSI esikleri bulunamadi | PSI thresholds missing from the drift note"
+    _safe, _retrain = float(th.group(1)), float(th.group(2))
     psi_max = max(r[3] for r in pairs)
     ks_max = max(r[1] for r in pairs)
     # 2026-09-23: taramalar ayni ilanlari tasiyor, ks_2samp bagimsizlik varsayiyor. Anlamlilik sayisi
     # artik ORTAK ILANLAR CIKARILMIS (ayrik) alt kumeden; ortusme orani ayrica yayimlaniyor.
-    _ort = dr.get("ortusme") or []
+    _ort = dr["ortusme"]
     # EN: significance of the disjoint pairs and the Holm correction come from 09_drift
     # TR: ayrık çiftlerin anlamlılığı ve Holm düzeltmesi 09_drift'ten
     _hm_ = d["report"]["drift_holm"]
@@ -1793,23 +1794,23 @@ def sec_zaman(c):
            L("EMD (ayrık, ₺)", "EMD (disjoint, ₺)")],
           [[r[0], P(r[1], lang), f"{r[2]:.4f}", fp(r[3]), tlx(r[5], lang)] for r in _ort], "lrrrr")
     _ayr_tr, _ayr_en = (" (ayrık)", " (disjoint)") if _ort else ("", "")
-    A(L(f"**Kayma tablosunun söylediği.** {say(n_sig, lang, cap=True)} çiftte ayrık KS p 0.05'in altında "
-        f"({say(n_tests, lang)} test için Holm düzeltmesiyle {say(n_holm, lang)}"
+    A(L(f"**Kayma tablosunun söylediği.** {number_word(n_sig, lang, cap=True)} çiftte ayrık KS p 0.05'in altında "
+        f"({number_word(n_tests, lang)} test için Holm düzeltmesiyle {number_word(n_holm, lang)}"
         + (f": {_holm_c}) — bu çiftlerde taramalar arasında kalkan ilanlarla sonradan gelen ilanların fiyat "
            f"dağılımı farklı. " if n_holm else "): düzeltmeden sonra anlamlı fark kalmıyor. ")
         + "Tam taramalar arasındaki fark ise küçük: "
-        + (f"en yüksek PSI {psi_max:.4f}, \"kayma yok\" eşiğinin ({_safe:.2f}) {kesir(_safe / psi_max, lang)}. "
+        + (f"en yüksek PSI {psi_max:.4f}, \"kayma yok\" eşiğinin ({_safe:.2f}) {fraction_words(_safe / psi_max, lang)}. "
            if psi_max < _safe else f"en yüksek PSI {psi_max:.4f}, \"kayma yok\" eşiğinin ({_safe:.2f}) üstünde. ")
-        + f"EMD bunu liraya çeviriyor (tam taramalar, ortak ilanlar dahil): {say(_gap(_short[0]), lang)} günde "
-        f"~₺{_emd_k(_short)} bin, {say(round(_gap(_long[0]) / 30), lang)} ayda ~₺{_emd_k(_long)} bin — medyan ilan "
+        + f"EMD bunu liraya çeviriyor (tam taramalar, ortak ilanlar dahil): {number_word(_gap(_short[0]), lang)} günde "
+        f"~₺{_emd_k(_short)} bin, {number_word(round(_gap(_long[0]) / 30), lang)} ayda ~₺{_emd_k(_long)} bin — medyan ilan "
         f"fiyatının ({tlm(v['median'])}) yaklaşık %{_long_pct:.0f} kadarı."
         + (f" En yakın iki taramada ilkindeki ilanların {P(_ort_kisa[1], lang)} kadarı ikincisinde de var, bu "
            f"yüzden aralarındaki "
            f"mesafe küçük çıkıyor." if _ort_kisa[1] > 50 else "")
         + (" Ayrık alt kümelerde EMD aralıkla düzenli büyümüyor." if not _emd_duz else
            " Ayrık alt kümelerde de EMD aralıkla büyüyor."),
-        f"**What the drift table says.** {say(n_sig, lang, cap=True)} pairs have a disjoint KS p below 0.05 "
-        f"({say(n_holm, lang)} after a Holm correction for {say(n_tests, 'en')} tests"
+        f"**What the drift table says.** {number_word(n_sig, lang, cap=True)} pairs have a disjoint KS p below 0.05 "
+        f"({number_word(n_holm, lang)} after a Holm correction for {number_word(n_tests, 'en')} tests"
         + (f": {_holm_c}) — in those pairs the price distribution of listings that left between snapshots "
            f"differs from that of listings that arrived later. " if n_holm else
            "): after the correction no significant difference remains. ")
@@ -1818,7 +1819,7 @@ def sec_zaman(c):
            f"({_safe:.2f}). " if psi_max < _safe else
            f"the highest PSI, {psi_max:.4f}, is above the \"no drift\" threshold ({_safe:.2f}). ")
         + f"EMD puts it in lira (full snapshots, shared listings included): ~₺{_emd_k(_short)}k over "
-        f"{say(_gap(_short[0]), lang)} days, ~₺{_emd_k(_long)}k over {say(round(_gap(_long[0]) / 30), lang)} months "
+        f"{number_word(_gap(_short[0]), lang)} days, ~₺{_emd_k(_long)}k over {number_word(round(_gap(_long[0]) / 30), lang)} months "
         f"— about {_long_pct:.0f}% of the median asking price ({tlm(v['median'])})."
         + (f" Of the listings in the first of the two closest snapshots, {P(_ort_kisa[1], lang)} are still in "
            f"the second, so their distance comes "
@@ -1875,7 +1876,7 @@ def sec_zaman(c):
     A("")
 
 
-def sec_metin(c):
+def section_text(c):
     """
     EN: §10 — the measured contribution of free text, and why the LLM extraction was left out. The ablation
         is a frozen measurement (analysis/frozen/text_ablation.json, published by 10_free_text).
@@ -1898,7 +1899,7 @@ def sec_metin(c):
         f"Bu iki sayı ayrı bir koşumdan geliyor ve kurulumu bu raporunkinden farklı: taban modelde "
         + ("model ve seri adı yok, " if not _mk["ablasyon_model_seri"] else "")
         + f"{_mk['ablasyon_agac']} ağaç, {len(_mk['ablasyon_kategorik'])} kategorik ve "
-        f"{len(_mk['ablasyon_sayisal'])} sayısal öznitelik; o yüzden taban R², §{secno('model')}'deki "
+        f"{len(_mk['ablasyon_sayisal'])} sayısal öznitelik; o yüzden taban R², §{section_no('model')}'deki "
         f"{v['model_r2']} ile karşılaştırılmamalı. "
         f"Anlamlı olan mutlak seviye değil, **iki kol arasındaki fark**.",
         f"The seller's description does **not** enter the model. That is a measurement, not an "
@@ -1910,7 +1911,7 @@ def sec_metin(c):
         + f"{_mk['ablasyon_agac']} trees, {len(_mk['ablasyon_kategorik'])} categorical and "
         f"{len(_mk['ablasyon_sayisal'])} numeric features; so the baseline R² should not be read against the "
         f"{v['model_r2']} in "
-        f"§{secno('model')}. What matters is the **gap between the two arms**, not the level."))
+        f"§{section_no('model')}. What matters is the **gap between the two arms**, not the level."))
     A("")
     A(L(f"Metinden yapılandırılmış bilgi çıkarmak ayrıca denendi: **{llm['kutuphane']}** "
         f"kütüphanesi ve **{llm['model']}** ile {num(_mk['llm_metin'], lang)} ilan metnindeki {_sin} ifadeleri "
@@ -1922,7 +1923,7 @@ def sec_metin(c):
         f"listings in the model ({P(_mk['llm_kapsam_pct'], lang)} of the model's listings)."))
     A("")
     A(L("Bu çıkarımların kendisi ne modele ne rapora girdi, çünkü **doğrulukları ölçülemedi**. Tek dolaylı "
-        f"bağ: §{secno('model')}'deki metin bayrağının ve §{secno('kalibrasyon')}'deki örnek gerekçelerinin "
+        f"bağ: §{section_no('model')}'deki metin bayrağının ve §{section_no('calibration')}'deki örnek gerekçelerinin "
         "modifiye kelime listesi (dönüşüm kalıbı değil) bu çıkarımların sözcük dağarcığından damıtıldı; bayrak "
         "ilan metnine uygulanan düz bir kelime kuralı. "
         "Ölçmek için "
@@ -1931,7 +1932,7 @@ def sec_metin(c):
         "üstüne karar kurulmadı.",
         "The extractions themselves entered neither the model nor this report, because **their accuracy "
         f"could not be measured**. The one indirect link: the modification word list (not the conversion "
-        f"pattern) behind the text flag in §{secno('model')} and the example reasons in §{secno('kalibrasyon')} was "
+        f"pattern) behind the text flag in §{section_no('model')} and the example reasons in §{section_no('calibration')} was "
         "distilled from their vocabulary; the flag itself is a plain word rule applied to the ad text. Measuring it needs a balanced validation set of easy, medium and hard "
         "listings, labelled by hand; without that work there is no way to know when the "
         "extraction is wrong. We did not build decisions on a signal we could not measure."))
@@ -1957,30 +1958,30 @@ def sec_metin(c):
 
 # Bolum SIRASI burada; degistirmek icin satirlari yer degistirmek yeter.
 SECTIONS = [
-    ("veri", "Veri temizleme ve sızıntı tespiti", "Data cleaning and leakage detection", sec_veri),
-    ("eksiklik", "Eksiklik rastgele değil", "Missingness isn't random", sec_eksiklik),
-    ("fazlalik", "Fazlalık, bağıntı ve marka", "Redundancy, dependence and brand", sec_fazlalik),
-    ("hedef", "Hedef ve önişleme", "Target and preprocessing", sec_hedef),
-    ("segment", "Piyasa yapısı — segmentasyon (KMeans + PCA)", "Market structure — segmentation (KMeans + PCA)", sec_segment),
-    ("hedonik", "Hedonik model — kontrollü etkiler", "Hedonic model — controlled effects", sec_hedonik),
-    ("model", "Model karşılaştırma ve kısıtlar", "Model comparison and limitations", sec_model),
-    ("kalibrasyon", "Kalibrasyon, artıklar ve zayıflık", "Calibration, residuals and where it is weak", sec_kalibrasyon),
-    ("zaman", "Zaman — dönem etkisi, dağılım kayması ve backtest", "Time — period effect, distribution drift and backtest", sec_zaman),
-    ("metin", "Serbest metin: ölçüldü, dahil edilmedi", "Free text: measured, left out", sec_metin),
+    ("data", "Veri temizleme ve sızıntı tespiti", "Data cleaning and leakage detection", section_data),
+    ("missing", "Eksiklik rastgele değil", "Missingness isn't random", section_missing),
+    ("redundancy", "Fazlalık, bağıntı ve marka", "Redundancy, dependence and brand", section_redundancy),
+    ("target", "Hedef ve önişleme", "Target and preprocessing", section_target),
+    ("segment", "Piyasa yapısı — segmentasyon (KMeans + PCA)", "Market structure — segmentation (KMeans + PCA)", section_segment),
+    ("hedonic", "Hedonik model — kontrollü etkiler", "Hedonic model — controlled effects", section_hedonic),
+    ("model", "Model karşılaştırma ve kısıtlar", "Model comparison and limitations", section_model),
+    ("calibration", "Kalibrasyon, artıklar ve zayıflık", "Calibration, residuals and where it is weak", section_calibration),
+    ("time", "Zaman — dönem etkisi, dağılım kayması ve backtest", "Time — period effect, distribution drift and backtest", section_time),
+    ("text", "Serbest metin: ölçüldü, dahil edilmedi", "Free text: measured, left out", section_text),
     # "repro" bolumu 2026-09-20'de kullanici karariyla rapordan cikarildi (once TR'den silinmisti,
-    # iki dil senkron olsun diye EN'den de). sec_repro asagida DURUYOR: geri istenirse bu listeye
-    # ("repro", "Yeniden üretilebilirlik", "Reproducibility", sec_repro) satirini eklemek yeter.
+    # iki dil senkron olsun diye EN'den de); fonksiyonu da artik yok. Geri istenirse bir section_repro yazilip
+    # bu listeye ("repro", "Yeniden üretilebilirlik", "Reproducibility", section_repro) satiri eklenir.
     # Kosum parametreleri (seed, satir sirasi, cihaz) site_data.json -> meta.repro'da ve docs/reproducibility.md'de.
 ]
-SECNO = {k: i for i, (k, *_rest) in enumerate(SECTIONS, 1)}
+SECTION_NO = {k: i for i, (k, *_rest) in enumerate(SECTIONS, 1)}
 
 
-def secno(key):
+def section_no(key):
     """
     EN: Section number of a key — cross-references are never written by hand.
     TR: Bir anahtarın bölüm numarası — çapraz referanslar elle yazılmaz.
     """
-    return SECNO[key]
+    return SECTION_NO[key]
 
 
 def fmt_technical(v, F, lang, d):
