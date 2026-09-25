@@ -3,12 +3,14 @@ test_generated_stamps.py
 EN: Every JSON the pipeline generates says when it was written, in one format: a top-level _meta.generated_at
     with local time, its UTC offset and second precision (e.g. 2026-09-25T04:03:29+03:00). Covered: every
     metrics file (analysis/lib/common.py), the OOF info (analysis/lib/cv.py), site_data.json and
-    column_labels.json (builders/build_site_data.py). The S3 manifest's stamp is checked in
+    column_labels.json (builders/build_site_data.py), the observed-values register (tools/observed_values.py).
+    The S3 manifest's stamp is checked in
     tests/db/test_publish_data_to_s3.py. data/ is not in git, so its files are skipped in a clone without them.
 TR: Boru hattının ürettiği her JSON ne zaman yazıldığını tek biçimde söyler: üst düzeyde _meta.generated_at,
     yerel saat, UTC farkı ve saniye hassasiyeti (ör. 2026-09-25T04:03:29+03:00). Kapsam: her metrik dosyası
     (analysis/lib/common.py), OOF bilgisi (analysis/lib/cv.py), site_data.json ve column_labels.json
-    (builders/build_site_data.py). S3 manifest'inin damgası tests/db/test_publish_data_to_s3.py'de sınanır.
+    (builders/build_site_data.py), gözlenen değerler kaydı (tools/observed_values.py). S3 manifest'inin damgası
+    tests/db/test_publish_data_to_s3.py'de sınanır.
     data/ git'te değil; o dosyalar olmayan bir klonda atlanır.
 """
 import json
@@ -26,7 +28,7 @@ from report_lib import metrics_view as MV  # noqa: E402
 STAMP = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$")
 METRICS = sorted((ROOT / "metrics").rglob("*.json"))
 DATA = [ROOT / "data" / "site_data.json", ROOT / "data" / "serving" / "column_labels.json",
-        ROOT / "data" / "analysis" / "oof_info.json"]
+        ROOT / "data" / "analysis" / "oof_info.json", ROOT / "db" / "observed_values.json"]
 
 
 def check(stamp):
