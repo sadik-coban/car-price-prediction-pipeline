@@ -1,0 +1,50 @@
+{
+ "script": "analysis/01_unspecified_panels.py",
+ "question": {
+  "tr": "Kaç panel ve kaç ilan \"Belirtilmemiş\" (orijinal sayılan) hasar cevabı taşıyor?",
+  "en": "How many panels and listings carry the \"Belirtilmemiş\" damage answer (counted as original)?"
+ },
+ "data": {
+  "tr": "load_clean() (29.988 ilan) + data/raw altındaki ham details.jsonl'lerin Hasar_Listesi alanı (salt okunur).",
+  "en": "load_clean() (29,988 listings) + the Hasar_Listesi field of the raw details.jsonl files under data/raw (read-only)."
+ },
+ "method": {
+  "tr": "Ham panel cevapları ilanlara (ad_id + tarama) bire bir bağlanır; yeniden kurulan bayraklar veritabanının bayraklarıyla satır satır aynı değilse betik durur. Sonra belirtilmemiş panel ve ilan sayılır. Fiyat karşılaştırması yok (2026-09-25'te kaldırıldı).",
+  "en": "The raw panel answers are joined one-to-one to the listings (ad_id + snapshot); the script stops unless the rebuilt flags equal the database's flags row by row. Then unspecified panels and listings are counted. No price comparison (removed on 2026-09-25)."
+ },
+ "split": "none",
+ "leakage": {
+  "duplicate_ad_id": {
+   "status": "n/a",
+   "note": null
+  },
+  "target_in_features": {
+   "status": "n/a",
+   "note": null
+  },
+  "fit_on_full_data": {
+   "status": "n/a",
+   "note": null
+  },
+  "temporal": {
+   "status": "n/a",
+   "note": null
+  }
+ },
+ "evidence": {
+  "tests": [
+   "tests/analysis/test_01_unspecified_panels.py::test_counts_nest",
+   "tests/analysis/test_01_unspecified_panels.py::test_panels_per_listing",
+   "tests/analysis/test_01_unspecified_panels.py::test_share_is_the_ratio",
+   "tests/analysis/test_01_unspecified_panels.py::test_structure_is_consistent",
+   "tests/analysis/test_01_unspecified_panels.py::test_share_matches_the_database"
+  ],
+  "report_keys": [
+   "error_drivers.belirtilmemis.belirtilmemis_panel",
+   "error_drivers.belirtilmemis.belirtilmemis_pct",
+   "error_drivers.belirtilmemis.hepsi_belirtilmemis",
+   "error_drivers.belirtilmemis.yapi"
+  ]
+ },
+ "status": "complete"
+}

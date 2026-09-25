@@ -1,0 +1,58 @@
+{
+ "script": "analysis/01_engine_rule.py",
+ "question": {
+  "tr": "Site hacmi ve gücü aralık olarak verdiğinde model hangi tek sayıyı kullanmalı: alt sınır, orta nokta mı, üst sınır mı?",
+  "en": "When the site gives size and power as a range, which one number should the model use: the lower bound, the midpoint or the upper bound?"
+ },
+ "data": {
+  "tr": "load_clean() (29.988 ilan): engine_cc_* ve power_hp_* sınırları, aralık bayrağı ve model adı. Fiyat kullanılmıyor.",
+  "en": "load_clean() (29,988 listings): the engine_cc_* and power_hp_* bounds, the range flag and the model name. Price is not used."
+ },
+ "method": {
+  "tr": "Aralıklı her ilanın üç adayı (alt, orta, üst), aynı modelin kesin değerli ilanlarının medyanıyla karşılaştırılır; kullanıcının seçtiği aday (hacim = üst, güç = orta) en küçük medyan farkı vermezse ya da lib/common.py kuralı değişmişse betik durur. Ayrıca sitenin verdiği bütün (alt, üst) çiftleri ilan sayısıyla yazılır (Figür 30).",
+  "en": "Each range listing's three candidates (lower, midpoint, upper) are compared with the median of the same model's exact-value listings; the script stops if the owner's choice (size = upper, power = midpoint) does not have the smallest median gap or if the rule in lib/common.py changed. It also writes every (lower, upper) pair the site gives with its listing count (figure 30)."
+ },
+ "split": "none",
+ "leakage": {
+  "duplicate_ad_id": {
+   "status": "none",
+   "note": {
+    "tr": "load_clean() ad_id başına son kaydı veriyor; her ilan bir kez sayılır.",
+    "en": "load_clean() gives the latest record per ad_id; every listing is counted once."
+   }
+  },
+  "target_in_features": {
+   "status": "n/a",
+   "note": null
+  },
+  "fit_on_full_data": {
+   "status": "none",
+   "note": {
+    "tr": "Model referans medyanları bütün veriden, ama yalnız motor kolonlarından; fiyat hiç okunmuyor, kural fiyattan bilgi taşıyamaz.",
+    "en": "The per-model reference medians use all the data, but only the engine columns; price is never read, so the rule cannot carry price information."
+   }
+  },
+  "temporal": {
+   "status": "n/a",
+   "note": null
+  }
+ },
+ "evidence": {
+  "tests": [
+   "tests/analysis/test_01_engine_rule.py::test_listings_split",
+   "tests/analysis/test_01_engine_rule.py::test_pairs_add_up",
+   "tests/analysis/test_01_engine_rule.py::test_reference_is_a_subset",
+   "tests/analysis/test_01_engine_rule.py::test_quoted_ranges_are_pairs",
+   "tests/analysis/test_01_engine_rule.py::test_chosen_is_best",
+   "tests/analysis/test_01_engine_rule.py::test_position_is_ordered"
+  ],
+  "report_keys": [
+   "error_drivers.hp_cc_kurali.engine_cc",
+   "error_drivers.hp_cc_kurali.power_hp",
+   "error_drivers.hp_cc_kurali.engine_cc.ciftler",
+   "error_drivers.hp_cc_kurali.power_hp.ciftler",
+   "error_drivers.hp_cc_kurali.engine_cc.ornek_kova"
+  ]
+ },
+ "status": "complete"
+}

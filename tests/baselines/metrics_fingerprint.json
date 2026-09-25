@@ -4,7 +4,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T16:50:13",
+  "_meta.generated_at": "2026-09-24T18:34:52",
   "_meta.run_id": null,
   "_meta.script": "01_dedup_leakage.py",
   "error_drivers.fiyat_degisimi.coklu": 10831,
@@ -81,7 +81,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T16:50:15",
+  "_meta.generated_at": "2026-09-25T04:03:29",
   "_meta.run_id": null,
   "_meta.script": "01_engine_rule.py",
   "error_drivers.hp_cc_kurali.engine_cc.acik_uclu": 38,
@@ -105,8 +105,14 @@
   },
   "error_drivers.hp_cc_kurali.engine_cc.aralikli": 7865,
   "error_drivers.hp_cc_kurali.engine_cc.birim": "cc",
+  "error_drivers.hp_cc_kurali.engine_cc.ciftler": {
+   "len": 60,
+   "sha256": "4524f5db5309b8af6c4e3b827761871426bfaad90dff89a9cebd97b7c3fcf4e3"
+  },
   "error_drivers.hp_cc_kurali.engine_cc.degersiz": 356,
   "error_drivers.hp_cc_kurali.engine_cc.icinde_pct": 97.9,
+  "error_drivers.hp_cc_kurali.engine_cc.ilan": 29988,
+  "error_drivers.hp_cc_kurali.engine_cc.kesin": 21767,
   "error_drivers.hp_cc_kurali.engine_cc.konum_ceyrek": {
    "len": 2,
    "sha256": "5165c7e9a810bb04cf1b96c2584b6e162dc0f94665691c373d61a891d471bcf1"
@@ -146,8 +152,14 @@
   },
   "error_drivers.hp_cc_kurali.power_hp.aralikli": 7797,
   "error_drivers.hp_cc_kurali.power_hp.birim": "hp",
+  "error_drivers.hp_cc_kurali.power_hp.ciftler": {
+   "len": 96,
+   "sha256": "70c3d33b250eec0531010607ef86ef2c9728427cda4bf14e97a334f08ab9eb81"
+  },
   "error_drivers.hp_cc_kurali.power_hp.degersiz": 426,
   "error_drivers.hp_cc_kurali.power_hp.icinde_pct": 84.2,
+  "error_drivers.hp_cc_kurali.power_hp.ilan": 29988,
+  "error_drivers.hp_cc_kurali.power_hp.kesin": 21765,
   "error_drivers.hp_cc_kurali.power_hp.konum_ceyrek": {
    "len": 2,
    "sha256": "287f2813bc7d4cb9cf655aa763523682a9db3a34ff51b1d0adba1e6c3d31d9bd"
@@ -166,14 +178,14 @@
   "error_drivers.hp_cc_kurali.power_hp.referans_model": 337,
   "error_drivers.hp_cc_kurali.power_hp.referansli": 7148,
   "error_drivers.hp_cc_kurali.power_hp.secilen": "orta",
-  "error_drivers.hp_cc_kurali.tanim": "referans = ayni modelin kesin (kovasiz) degerli ilanlarinin medyani; fark = |aday − referans|; yalniz iki siniri da bilinen kovalar ve referansi olan modeller; yuzdelikler 5/25/50/75/95; konum = (referans − alt) / (ust − alt)"
+  "error_drivers.hp_cc_kurali.tanim": "referans = ayni modelin kesin (kovasiz) degerli ilanlarinin medyani; fark = |aday − referans|; yalniz iki siniri da bilinen kovalar ve referansi olan modeller; yuzdelikler 5/25/50/75/95; konum = (referans − alt) / (ust − alt); ciftler = [alt, ust, aralik mi, ilan], iki siniri da olan ilanlar (kesin degerde alt = ust)"
  },
  "01_gold_contract": {
   "_meta.data_until": "2026-06-27",
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T17:40:51",
+  "_meta.generated_at": "2026-09-24T18:34:58",
   "_meta.run_id": null,
   "_meta.script": "01_gold_contract.py",
   "error_drivers.gold_sozlesme.aciklama_bos_satir": 114,
@@ -196,7 +208,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T16:50:18",
+  "_meta.generated_at": "2026-09-25T00:10:15",
   "_meta.run_id": null,
   "_meta.script": "01_unspecified_panels.py",
   "error_drivers.belirtilmemis.belirtilmemis_panel": 59651,
@@ -205,17 +217,7 @@
   "error_drivers.belirtilmemis.en_az_bir": 6236,
   "error_drivers.belirtilmemis.eslesen_ilan": 29988,
   "error_drivers.belirtilmemis.hepsi_belirtilmemis": 1235,
-  "error_drivers.belirtilmemis.hucre_min_n": 5,
   "error_drivers.belirtilmemis.ilan": 29988,
-  "error_drivers.belirtilmemis.kanit.belirtilmemis.ilan": 1144,
-  "error_drivers.belirtilmemis.kanit.belirtilmemis.medyan_oran": 1.0111,
-  "error_drivers.belirtilmemis.kanit.hafif_hasarli.ilan": 4968,
-  "error_drivers.belirtilmemis.kanit.hafif_hasarli.medyan_oran": 1.0108,
-  "error_drivers.belirtilmemis.kanit.hafif_hasarli.tanim": "1-2 boyali/lokal panel, degisen yok",
-  "error_drivers.belirtilmemis.kanit.hasarli.ilan": 17571,
-  "error_drivers.belirtilmemis.kanit.hasarli.medyan_oran": 0.9789,
-  "error_drivers.belirtilmemis.kanit.orijinal.ilan": 9079,
-  "error_drivers.belirtilmemis.kanit.orijinal.medyan_oran": 1.0341,
   "error_drivers.belirtilmemis.panel_sayisi": 389844,
   "error_drivers.belirtilmemis.yapi.bayrak": 39,
   "error_drivers.belirtilmemis.yapi.cevap_sayisi": 5,
@@ -230,7 +232,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T17:22:51",
+  "_meta.generated_at": "2026-09-24T18:35:00",
   "_meta.run_id": null,
   "_meta.script": "02_missingness.py",
   "error_drivers.ham_kolon.ham_kolon": 117,
@@ -334,7 +336,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T16:50:38",
+  "_meta.generated_at": "2026-09-24T18:35:15",
   "_meta.run_id": null,
   "_meta.script": "03_association.py",
   "domain.numeric_correlation.labels": {
@@ -396,7 +398,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T16:51:50",
+  "_meta.generated_at": "2026-09-24T18:36:34",
   "_meta.run_id": null,
   "_meta.script": "03_brand_ablation.py",
   "domain.brand_ablation.brand_seri_model.MAE": 109776.0,
@@ -424,7 +426,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T16:50:39",
+  "_meta.generated_at": "2026-09-24T18:35:17",
   "_meta.run_id": null,
   "_meta.script": "03_segment_quality.py",
   "domain.series_segment_matrix": {
@@ -467,7 +469,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T16:51:52",
+  "_meta.generated_at": "2026-09-24T18:36:36",
   "_meta.run_id": null,
   "_meta.script": "04_target.py",
   "domain.price_dist.median": 1545000.0,
@@ -485,7 +487,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T16:51:55",
+  "_meta.generated_at": "2026-09-24T18:36:40",
   "_meta.run_id": null,
   "_meta.script": "05_segmentation.py",
   "domain.age_depreciation": {
@@ -548,7 +550,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T16:53:48",
+  "_meta.generated_at": "2026-09-24T18:38:56",
   "_meta.run_id": null,
   "_meta.script": "06_hedonic.py",
   "domain.hedonic.age_pct": -6.64,
@@ -567,7 +569,7 @@
   "domain.hedonic_reliability.bootstrap_ayar.n_boot": 1000,
   "domain.hedonic_reliability.bootstrap_ayar.n_istenen": 1000,
   "domain.hedonic_reliability.bootstrap_ayar.n_jobs": 16,
-  "domain.hedonic_reliability.bootstrap_ayar.sure_sn": 106.5,
+  "domain.hedonic_reliability.bootstrap_ayar.sure_sn": 127.9,
   "domain.hedonic_reliability.genel_korelasyon": 0.73,
   "domain.hedonic_reliability.merkez.km": 181000.0,
   "domain.hedonic_reliability.merkez.yas": 11.0,
@@ -636,7 +638,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T16:59:53",
+  "_meta.generated_at": "2026-09-24T18:46:15",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "07_final_model.py",
   "domain.final_results.ornek_tahmin.arac": "116i Comfort",
@@ -661,7 +663,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T17:10:59",
+  "_meta.generated_at": "2026-09-24T18:56:49",
   "_meta.run_id": null,
   "_meta.script": "07_lofo.py",
   "methodology.lofo": {
@@ -766,7 +768,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T16:58:44",
+  "_meta.generated_at": "2026-09-24T18:45:03",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "07_model_comparison.py",
   "domain.dealer_coverage.comped_pct": 92.68,
@@ -873,7 +875,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T17:11:05",
+  "_meta.generated_at": "2026-09-24T18:56:54",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "07_text_flag.py",
   "error_drivers.metin_bayrak.big_pct": 4.9,
@@ -894,7 +896,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T17:11:20",
+  "_meta.generated_at": "2026-09-24T18:56:57",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "08_conformal_coverage.py",
   "domain.conformal.by_quantile": {
@@ -919,7 +921,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T17:11:28",
+  "_meta.generated_at": "2026-09-24T18:57:06",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "08_large_errors.py",
   "error_drivers.by_age.age_18plus.big_pct": 12.04,
@@ -1020,7 +1022,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T17:11:22",
+  "_meta.generated_at": "2026-09-24T18:56:59",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "08_residuals.py",
   "domain.oof_best": {
@@ -1090,7 +1092,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T17:12:50",
+  "_meta.generated_at": "2026-09-24T18:58:48",
   "_meta.run_id": null,
   "_meta.script": "09_backtest.py",
   "methodology.backtest.cumulative": {
@@ -1126,7 +1128,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T17:11:31",
+  "_meta.generated_at": "2026-09-24T18:57:09",
   "_meta.run_id": null,
   "_meta.script": "09_drift.py",
   "domain.drift.all_pairs": {
@@ -1221,7 +1223,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T17:12:52",
+  "_meta.generated_at": "2026-09-24T18:58:50",
   "_meta.run_id": null,
   "_meta.script": "10_free_text.py",
   "error_drivers.metin_kaynak.ablasyon_agac": 300,
@@ -1254,7 +1256,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T17:14:09",
+  "_meta.generated_at": "2026-09-24T19:00:04",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "shap/02_oof_shap.py",
   "oof_shap.gruplama_kurali": "kuresel = mean|sum phi| (grup ici isaretli toplam, sonra mutlak ortalama); kuresel_ayri = sum mean|phi| (her uye ayri, iptal yok). Tek uyeli gruplarda ayni.",
@@ -1285,7 +1287,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T17:14:17",
+  "_meta.generated_at": "2026-09-24T19:00:11",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "shap/03_what_sets_price.py",
   "shap.cohorts.en.name": "Age (years)",
@@ -1409,12 +1411,12 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T17:15:29",
+  "_meta.generated_at": "2026-09-24T19:01:25",
   "_meta.run_id": null,
   "_meta.script": "shap/04_variants.py",
   "domain.shap.catboost_native": {
    "len": 12,
-   "sha256": "1e4766d2394e4c2261669632eaad9567f78a24b4ccea25a29478893797dfcfde"
+   "sha256": "4553977365074fa50b285bdefc88dbcf6d9449dfa126a0459f2672b6b0ef3b99"
   },
   "domain.shap.catboost_tfidf_svd": {
    "len": 11,
@@ -1435,15 +1437,15 @@
   "shap_final.base_log": 14.299831654389688,
   "shap_final.catboost_native": {
    "len": 12,
-   "sha256": "1e4766d2394e4c2261669632eaad9567f78a24b4ccea25a29478893797dfcfde"
+   "sha256": "4553977365074fa50b285bdefc88dbcf6d9449dfa126a0459f2672b6b0ef3b99"
   },
   "shap_final.catboost_native_ayri": {
    "len": 12,
-   "sha256": "cfe82e2da4614fea5d322c7fd3f2af20f0d855ab4d16301b18765a7aeb834bb1"
+   "sha256": "9094470c4f1d6ca0ac854d56eeeb0eabaf0975dee5d98104b039ac80794dacc7"
   },
   "shap_final.catboost_native_birlesik": {
    "len": 11,
-   "sha256": "4522c3429f11542cd972343ec793b04a0ec058a1928f36349bfea7c46210a2b0"
+   "sha256": "863705dfe9704e6fa76d8a4fea52bc70016087315c4343af95c324f0cad521b8"
   },
   "shap_final.catboost_tfidf_svd": {
    "len": 11,
@@ -1467,7 +1469,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45277,
   "_meta.db.sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
-  "_meta.generated_at": "2026-09-24T17:15:32",
+  "_meta.generated_at": "2026-09-24T19:01:29",
   "_meta.run_id": "aa436e0cfd32",
   "_meta.script": "shap/06_one_listing.py",
   "shap_case.figures": {

@@ -37,7 +37,9 @@ Bu dosya analizin girdisi. API'ye doğrudan gitmez: yayın, ondan türetilen gol
   yanına yazılır.
 - **`engine_cc_val` iki yerde iki anlamda.** DB'de kovanın orta noktası (açık uçlu kovada bilinen sınır);
   modelin aynı adlı özniteliği `engine_cc_up` (üst sınır, gerekçe teknik rapor §1). DB kolonunun adı,
-  onu okuyan bir API kırılmasın diye değiştirilmedi.
+  onu okuyan bir API kırılmasın diye değiştirilmedi. API'nin drift ekranı bu kolonu okuyor, yani orta noktayı
+  gösteriyor; model üst sınırı kullanıyor (kovalı 7.827 ilanda fark, medyan 99,5 cc; 2026-09-25 ölçümü). Drift iki
+  taramayı aynı tanımla kıyasladığı için sonuç bozulmuyor; kullanıcı kararıyla böyle bırakıldı.
 - **`dashboard_cache` / `options_cache`** bu depodaki hiçbir üretecin tablosu değil (arşivdeki
   `build_aggregates.py`); içerikleri bayat (2026-07-14, TR plaka filtresi yok). `build_duckdb.py` yeniden
   kurulumda onları eski DB'den aynen taşır: ne silinir ne güncellenir.
@@ -91,8 +93,12 @@ data/raw ──build_duckdb──► data/cars.duckdb (yarı ham, analiz) ──
   - `duplicate_ad_ids`, `price_history` ve iki önbellek birebir aynı;
   - gold'un doldurduğu hücre: 59.402 (ağır hasar ×2 + ilk sahip), 293.988 (panel bayrakları), 0 (sayaçlar);
   - `publish --dry-run`: gold geçti; yarı ham DB ve bugünkü eski DB reddedildi.
-- **API'nin göreceği fark:** yalnız açıklama. `description_clean` kolonu yok; API onu okuyorsa
-  `description_text`'e geçmeli (778 satır dışında aynı metin).
+- **API'nin göreceği fark: yok** (2026-09-25'te API kodundan ve API'nin kendi fonksiyonlarıyla doğrulandı,
+  `sadik-portfolio/api`). API yalnız `car_listings`'ten 55 kolon okuyor; `description_clean`, `description_text`,
+  `kb_paint_change_summary`, `kb_is_heavy_damaged`, `gb_is_first_owner` ve öteki dört tablo hiç okunmuyor. API'de
+  fix gerekmiyor. API yarı ham (silver) dosyayla da birebir aynı çıktıyı veriyor (pano satırları, tarama listesi,
+  drift). NULL'ları kodunda örtük olarak 0 sayıyor. Yine de yayına gold gidiyor: API'nin bu örtük davranışına
+  güvenmemek için açık sözleşme (kullanıcı kararı).
 - **Gerçek dosyalar (2026-09-24):** `data/cars.duckdb` yarı ham olarak yeniden kuruldu, `data/cars_gold.duckdb`
   ondan türetildi. Kanıt gerçek dosyalarla tekrarlandı: gold, yedeklenen eski DB ile açıklama dışında hücre hücre
   aynı (778 / 114 satır, öteki tablolar birebir). S3'e hiçbir şey yüklenmedi; yayın kullanıcının kararı.

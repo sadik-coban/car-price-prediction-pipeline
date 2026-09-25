@@ -2,7 +2,9 @@
 
 > **Durum (2026-09-24): üç parça da yapıldı.** Parça 3: `analysis/01_gold_contract.py` → teknik rapor §1 "API'ye
 > giden veri (gold)" (tablo + açıklama, tr/en); testi `tests/analysis/test_01_gold_contract.py`. Kalan tek iş
-> kullanıcının: gold'u S3'e yayımlamak (`python db/publish_data_to_s3.py --dry-run`, sonra `--dry-run`'sız).
+> kullanıcının: gold'u S3'e yayımlamak (`python db/publish_data_to_s3.py --dry-run`, sonra `--dry-run`'sız) ve
+> API'nin yeni dosyayı alması (kullanıcıda). API açıklama kolonlarını hiç okumuyor, API'de fix gerekmiyor
+> (2026-09-25 incelemesi, `docs/database.md` → "Gold adımı").
 >
 > Parça 1 ve Parça 2 yapıldı. Parça 2: gerçek DB yarı ham olarak yeniden kuruldu (eski
 > dosya `archive/backups/cars-duckdb-eski-sozlesme-2026-09-24/`), gold türetildi, kanıt gerçek dosyalarla tuttu;
@@ -74,7 +76,7 @@ Satırlar: aynı 45.277 satır, aynı `id`, aynı sıra. Süzme, tekilleştirme,
 Yalnız açıklama değişir; geri kalan her hücre, kolon, tip ve sıra aynıdır (kanıt aşağıda):
 - `description_text`: başındaki sayfa başlığı "Açıklama " yok (45.163 satır); yalnız başlıktan ibaret 114 satır
   NULL;
-- `description_clean` kolonu yok. API bu kolonu okuyorsa kullanıcı API'de `description_text`'e geçer. Yeni
+- `description_clean` kolonu yok. (2026-09-25: API bu kolonu hiç okumuyor; geçiş gerekmiyor.) Yeni
   `description_text`, eski `description_clean` ile 778 satır dışında aynı; o satırlarda satıcının baştaki
   "-" / ":" işareti görünür.
 

@@ -1,0 +1,62 @@
+{
+ "script": "analysis/07_model_comparison.py",
+ "question": {
+  "tr": "Hangi model fiyatı en iyi tahmin ediyor ve basit bir tabanı ne kadar geçiyor?",
+  "en": "Which model predicts price best, and by how much does it beat a simple baseline?"
+ },
+ "data": {
+  "tr": "load_clean(): TR plakalı, fiyatı > 0, ad_id başına son kayıt (29.988 ilan).",
+  "en": "load_clean(): TR-plated, price > 0, latest record per ad_id (29,988 listings)."
+ },
+ "method": {
+  "tr": "LightGBM (model/seri TF-IDF + SVD, fold içinde kurulur) ve üç CatBoost varyantı, aynı 5-fold OOF; iki medyan tabanı (seri + yıl; model + yıl) aynı fold'larda. OOF artefaktını sonraki betikler için yazar.",
+  "en": "LightGBM (model/series TF-IDF + SVD fitted per fold) and three CatBoost variants on the same 5-fold OOF; two median baselines (series + year; model + year) on the same folds. Writes the OOF artefact the later scripts read."
+ },
+ "split": "kfold_oof",
+ "leakage": {
+  "duplicate_ad_id": {
+   "status": "present",
+   "note": {
+    "tr": "Farklı ad_id ile yeniden ilan edilen aynı araç fold'lar arasına düşebilir: 01_dedup_leakage katı tanımda %0,46, fiyatsız tanımda %4,26 ölçüyor; etkisi ölçülmedi.",
+    "en": "The same car re-listed under a new ad_id can span folds: 01_dedup_leakage measures 0.46% (strict) to 4.26% (without price); its effect was not measured."
+   }
+  },
+  "target_in_features": {
+   "status": "none",
+   "note": {
+    "tr": "Öznitelik listesinde (lib/common.FEATURES) fiyat ya da fiyattan türeyen bir alan yok.",
+    "en": "No price or price-derived field in the feature list (lib/common.FEATURES)."
+   }
+  },
+  "fit_on_full_data": {
+   "status": "present",
+   "note": {
+    "tr": "Kategori kodları, TF-IDF/SVD ve tabanlar yalnız eğitim fold'unda kurulur (lib/cv.fold_matrices). Ama LightGBM'in erken durdurması her fold'un kendi doğrulama kısmında (lib/cv.fit_lgb_fold): ağaç sayısı skorlanan veriyle seçiliyor, OOF hatası hafifçe iyimser olabilir. Etkisi ölçülmedi (iç içe bölmeyle ölçülebilir).",
+    "en": "Category codes, TF-IDF/SVD and the baselines are fitted on the training fold only (lib/cv.fold_matrices). But LightGBM's early stopping uses each fold's own validation part (lib/cv.fit_lgb_fold): the tree count is chosen on the scored data, so the OOF error may be slightly optimistic. Not measured (a nested split would measure it)."
+   }
+  },
+  "temporal": {
+   "status": "present",
+   "note": {
+    "tr": "KFold dönemleri karıştırır; model zamanı görmez. Medyan artık dönemlere göre kayıyor (08_residuals); ileriye dönük hata 09_backtest'te ayrıca ölçülüyor.",
+    "en": "KFold mixes the snapshots; the model does not see time. The median residual shifts by snapshot (08_residuals); the forward error is measured separately in 09_backtest."
+   }
+  }
+ },
+ "evidence": {
+  "tests": [
+   "tests/analysis/test_07_model_comparison.py::test_every_model_has_every_measure",
+   "tests/analysis/test_07_model_comparison.py::test_error_measures_are_ordered",
+   "tests/analysis/test_07_model_comparison.py::test_one_tree_count_per_fold",
+   "tests/analysis/test_07_model_comparison.py::test_comparable_shares_add_up",
+   "tests/analysis/test_07_model_comparison.py::test_baseline_gap_is_consistent"
+  ],
+  "report_keys": [
+   "domain.model_compare.lightgbm.MAPE",
+   "domain.model_compare.lightgbm.R2",
+   "error_drivers.taban_esit_kosul.iyilesme_pct",
+   "meta.repro.cv_agac"
+  ]
+ },
+ "status": "complete"
+}

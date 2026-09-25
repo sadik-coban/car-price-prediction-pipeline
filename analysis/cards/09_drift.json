@@ -1,0 +1,51 @@
+{
+ "script": "analysis/09_drift.py",
+ "question": {
+  "tr": "Piyasa taramalar arasında kaydı mı?",
+  "en": "Did the market move between snapshots?"
+ },
+ "data": {
+  "tr": "load_clean(all_snapshots=True) (her taramanın o gün yayındaki bütün ilanları) + load_clean().",
+  "en": "load_clean(all_snapshots=True) (every listing live on each snapshot day) + load_clean()."
+ },
+ "method": {
+  "tr": "Fiyat dağılımları KS, PSI, EMD ile karşılaştırılır; ardışık taramalar ilanların çoğunu paylaştığı için anlamlılık ayrık kısımda KS + Holm ile. (model, yıl) hücre medyanlarının değişimi.",
+  "en": "Price distributions compared with KS, PSI, EMD; consecutive snapshots share most listings, so significance uses KS + Holm on the disjoint part. Change of (model, year) cell medians."
+ },
+ "split": "none",
+ "leakage": {
+  "duplicate_ad_id": {
+   "status": "present",
+   "note": {
+    "tr": "Aynı ilan birden çok taramada: KS bağımsız örnek varsayar. Anlamlılık bu yüzden yalnız ayrık kısımda sınanıyor (ortusme).",
+    "en": "The same listing appears in several snapshots and KS assumes independent samples, so significance is tested on the disjoint part only (ortusme)."
+   }
+  },
+  "target_in_features": {
+   "status": "n/a",
+   "note": null
+  },
+  "fit_on_full_data": {
+   "status": "n/a",
+   "note": null
+  },
+  "temporal": {
+   "status": "n/a",
+   "note": null
+  }
+ },
+ "evidence": {
+  "tests": [
+   "tests/analysis/test_09_drift.py::test_every_pair_once",
+   "tests/analysis/test_09_drift.py::test_distances_in_range",
+   "tests/analysis/test_09_drift.py::test_holm_follows_from_p_values",
+   "tests/analysis/test_09_drift.py::test_overlap_shares_in_range"
+  ],
+  "report_keys": [
+   "report.drift_holm.n_holm",
+   "domain.drift.table",
+   "error_drivers.donem_kaymasi.canli"
+  ]
+ },
+ "status": "complete"
+}

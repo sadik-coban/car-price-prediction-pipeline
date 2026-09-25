@@ -1,0 +1,60 @@
+{
+ "script": "analysis/08_conformal_coverage.py",
+ "question": {
+  "tr": "%90 conformal aralık gerçekten ilanların %90'ını kapsıyor mu, fiyat düzeyine göre nasıl değişiyor?",
+  "en": "Does the 90% conformal interval cover 90% of listings, and how does that change with price level?"
+ },
+ "data": {
+  "tr": "load_clean() + 07_model_comparison'ın OOF tahminleri.",
+  "en": "load_clean() + 07_model_comparison's OOF predictions."
+ },
+ "method": {
+  "tr": "q = OOF log hatalarının 90. yüzdeliği; aralık expm1(tahmin_log ± q). Kapsama genel ve tahmin edilen fiyatın çeyreklerine göre (gerçek fiyata göre gruplamak ortalamaya dönüş üretir).",
+  "en": "q = 90th percentile of the OOF log errors; interval expm1(pred_log ± q). Coverage overall and by predicted-price quartile (grouping by actual price produces regression to the mean)."
+ },
+ "split": "oof_input",
+ "leakage": {
+  "duplicate_ad_id": {
+   "status": "none",
+   "note": {
+    "tr": "Tekilleştirme (ad_id başına son kayıt, ORDER BY ad_id) fold'lardan önce; aynı ad_id iki fold'a düşemez.",
+    "en": "Dedup (latest record per ad_id, ORDER BY ad_id) runs before the folds; one ad_id cannot land in two folds."
+   }
+  },
+  "target_in_features": {
+   "status": "none",
+   "note": {
+    "tr": "Öznitelik listesinde (lib/common.FEATURES) fiyat ya da fiyattan türeyen bir alan yok.",
+    "en": "No price or price-derived field in the feature list (lib/common.FEATURES)."
+   }
+  },
+  "fit_on_full_data": {
+   "status": "present",
+   "note": {
+    "tr": "q ve kapsama aynı OOF hatalarında: genel %90 kapsama tanım gereği tutar, kanıt değildir. Bilgi taşıyan çeyrek kapsamaları (Q1 ~%81). Ayrıca OOF hataları 07'nin erken durdurması yüzünden hafifçe iyimser olabilir; yeni veride kapsama biraz daha düşük çıkabilir.",
+    "en": "q and the coverage come from the same OOF errors: the overall 90% holds by construction and is not evidence. The quartile coverages carry the information (Q1 ~81%). The OOF errors may also be slightly optimistic because of 07's early stopping, so coverage on new data may come out a little lower."
+   }
+  },
+  "temporal": {
+   "status": "present",
+   "note": {
+    "tr": "KFold dönemleri karıştırır; model zamanı görmez. Medyan artık dönemlere göre kayıyor (08_residuals); ileriye dönük hata 09_backtest'te ayrıca ölçülüyor.",
+    "en": "KFold mixes the snapshots; the model does not see time. The median residual shifts by snapshot (08_residuals); the forward error is measured separately in 09_backtest."
+   }
+  }
+ },
+ "evidence": {
+  "tests": [
+   "tests/analysis/test_08_conformal_coverage.py::test_overall_coverage_at_target",
+   "tests/analysis/test_08_conformal_coverage.py::test_quartile_coverages_average_to_overall",
+   "tests/analysis/test_08_conformal_coverage.py::test_quartile_bounds_increase",
+   "tests/analysis/test_08_conformal_coverage.py::test_q_is_positive"
+  ],
+  "report_keys": [
+   "report.conformal_all",
+   "report.conformal_by_pred",
+   "report.conformal_q"
+  ]
+ },
+ "status": "complete"
+}

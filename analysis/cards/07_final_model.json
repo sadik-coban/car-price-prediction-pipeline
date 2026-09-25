@@ -1,0 +1,52 @@
+{
+ "script": "analysis/07_final_model.py",
+ "question": {
+  "tr": "Serviste kullanılan son modeller hangileri ve örnek ilanlarda ne tahmin ediyorlar?",
+  "en": "Which final models are served, and what do they predict on sample listings?"
+ },
+ "data": {
+  "tr": "load_clean() (29.988 ilan) + 07_model_comparison'ın OOF artefaktı (ağaç sayıları, OOF artıkları).",
+  "en": "load_clean() (29,988 listings) + 07_model_comparison's OOF artefact (tree counts, OOF residuals)."
+ },
+ "method": {
+  "tr": "LightGBM (ağaç = CV medyanı), CatBoost ve native CatBoost bütün ilanlarda eğitilir; servis dosyaları yazılır. Örnekler: her fiyat üçte birinde OOF artığı ±%5 içindeki hasarsız ilanlardan biri.",
+  "en": "LightGBM (trees = CV median), CatBoost and native CatBoost are trained on all listings; the serving files are written. Samples: per price third, one undamaged listing with OOF residual within ±5%."
+ },
+ "split": "none",
+ "leakage": {
+  "duplicate_ad_id": {
+   "status": "n/a",
+   "note": null
+  },
+  "target_in_features": {
+   "status": "none",
+   "note": {
+    "tr": "Öznitelik listesinde (lib/common.FEATURES) fiyat ya da fiyattan türeyen bir alan yok.",
+    "en": "No price or price-derived field in the feature list (lib/common.FEATURES)."
+   }
+  },
+  "fit_on_full_data": {
+   "status": "present",
+   "note": {
+    "tr": "Bilerek: servis modeli bütün veride eğitilir. Örnek tahminler eğitim verisinde (içeriden) tahmin; rapor örnekleri 'en iyi durum' diye sunar, tipik hata OOF MAPE'dir.",
+    "en": "By design: the served model is trained on all data. The sample predictions are in-sample; the report presents them as best cases, the typical error is the OOF MAPE."
+   }
+  },
+  "temporal": {
+   "status": "n/a",
+   "note": null
+  }
+ },
+ "evidence": {
+  "tests": [
+   "tests/analysis/test_07_final_model.py::test_tree_count_is_cv_median",
+   "tests/analysis/test_07_final_model.py::test_sample_deviation_matches_prediction",
+   "tests/analysis/test_07_final_model.py::test_samples_keep_the_oof_promise"
+  ],
+  "report_keys": [
+   "meta.repro.final_lgb_agac",
+   "domain.final_results.ornek_tahminler"
+  ]
+ },
+ "status": "complete"
+}

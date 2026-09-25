@@ -1,14 +1,25 @@
 {
  "_meta": {
   "script": "08_residuals.py",
-  "generated_at": "2026-09-24T17:11:22",
+  "generated_at": "2026-09-24T18:56:59",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
    "sha256": "52e99cb66a6f5b6b1fd23bd9985b704746cd3f90b34c743bdc636ad0731d2975",
    "rows": 45277
   },
-  "run_id": "aa436e0cfd32"
+  "run_id": "aa436e0cfd32",
+  "source": {
+   "script": {
+    "analysis/08_residuals.py": "513748b5b36b16b6f5036850a3ceaedfbbd39915d0fc4a02c014a11f4215951a"
+   },
+   "lib": {
+    "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
+    "analysis/lib/common.py": "be9c9808091cc07f65c96ea4751b6e256e0ca4f59570ee029cc7b0f27429e2e4",
+    "analysis/lib/cv.py": "1013cd796e2afd96985b1bc22fcb2ec64264f1d9580c5f2ddb01d6612ba5ce95",
+    "analysis/lib/segment_rule.py": "2def025c05905657341f21133844b1a378be05202a67bc93b975e086448b60c1"
+   }
+  }
  },
  "domain": {
   "quantile_error": [

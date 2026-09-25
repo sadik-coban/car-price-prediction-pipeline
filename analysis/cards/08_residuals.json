@@ -1,0 +1,61 @@
+{
+ "script": "analysis/08_residuals.py",
+ "question": {
+  "tr": "OOF hataları nasıl dağılıyor; fiyat düzeyine göre yanlılık var mı?",
+  "en": "How are the OOF errors distributed; is there bias by price level?"
+ },
+ "data": {
+  "tr": "load_clean() + 07_model_comparison'ın OOF tahminleri.",
+  "en": "load_clean() + 07_model_comparison's OOF predictions."
+ },
+ "method": {
+  "tr": "Hata bantları, fiyat ve tahmin çeyreklerine göre medyan hata, kalibrasyon eğimi, tahmin-gerçek ve artık figürlerinin noktaları. Yanlılık tahmin edilen fiyata göre gruplanır.",
+  "en": "Error bands, median error by price and predicted-price quartile, calibration slope, the points of the predicted-vs-actual and residual figures. Bias is grouped by predicted price."
+ },
+ "split": "oof_input",
+ "leakage": {
+  "duplicate_ad_id": {
+   "status": "none",
+   "note": {
+    "tr": "Tekilleştirme (ad_id başına son kayıt, ORDER BY ad_id) fold'lardan önce; aynı ad_id iki fold'a düşemez.",
+    "en": "Dedup (latest record per ad_id, ORDER BY ad_id) runs before the folds; one ad_id cannot land in two folds."
+   }
+  },
+  "target_in_features": {
+   "status": "none",
+   "note": {
+    "tr": "Öznitelik listesinde (lib/common.FEATURES) fiyat ya da fiyattan türeyen bir alan yok.",
+    "en": "No price or price-derived field in the feature list (lib/common.FEATURES)."
+   }
+  },
+  "fit_on_full_data": {
+   "status": "present",
+   "note": {
+    "tr": "Kendisi model kurmaz; ama okuduğu OOF tahminleri 07'nin erken durdurmasını taşır (fold'un kendi doğrulama kısmında): hatalar hafifçe iyimser olabilir. Etkisi ölçülmedi.",
+    "en": "Fits no model, but the OOF predictions it reads carry 07's early stopping (on the fold's own validation part): the errors may be slightly optimistic. Not measured."
+   }
+  },
+  "temporal": {
+   "status": "present",
+   "note": {
+    "tr": "KFold dönemleri karıştırır; model zamanı görmez. Medyan artık dönemlere göre kayıyor (08_residuals); ileriye dönük hata 09_backtest'te ayrıca ölçülüyor.",
+    "en": "KFold mixes the snapshots; the model does not see time. The median residual shifts by snapshot (08_residuals); the forward error is measured separately in 09_backtest."
+   }
+  }
+ },
+ "evidence": {
+  "tests": [
+   "tests/analysis/test_08_residuals.py::test_every_count_is_the_listings",
+   "tests/analysis/test_08_residuals.py::test_r2_is_the_model_comparison_r2",
+   "tests/analysis/test_08_residuals.py::test_error_bands_partition_the_listings",
+   "tests/analysis/test_08_residuals.py::test_quartile_groups_partition_the_listings"
+  ],
+  "report_keys": [
+   "report.err_abs_median",
+   "report.err_bands",
+   "domain.pred_vs_true.r2",
+   "error_drivers.kalibrasyon.egim"
+  ]
+ },
+ "status": "complete"
+}

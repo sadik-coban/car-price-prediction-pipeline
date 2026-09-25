@@ -1,0 +1,59 @@
+{
+ "script": "analysis/09_backtest.py",
+ "question": {
+  "tr": "Geçmişte eğitilen model sonraki taramayı ne kadar iyi fiyatlıyor?",
+  "en": "How well does a model trained on the past price the next snapshot?"
+ },
+ "data": {
+  "tr": "load_clean(all_snapshots=True): her taramanın her satırı; testte yalnız eğitimde görülmemiş ad_id'ler.",
+  "en": "load_clean(all_snapshots=True): every row of every snapshot; the test uses only ad_ids unseen in training."
+ },
+ "method": {
+  "tr": "Dört kol: single (bir taramada eğit, sonrakilerin yeni ilanlarında test), cumulative (t'ye kadar hepsinde eğit), insample ve per_snapshot (düz 5-fold, karşılaştırma için). Hafif model: TF-IDF/SVD yok.",
+  "en": "Four arms: single (train on one snapshot, test on the new listings of later ones), cumulative (train on all up to t), insample and per_snapshot (plain 5-fold, for comparison). Light model: no TF-IDF/SVD."
+ },
+ "split": "temporal",
+ "leakage": {
+  "duplicate_ad_id": {
+   "status": "none",
+   "note": {
+    "tr": "İleriye dönük kollarda test yalnız eğitimde hiç görülmemiş ad_id'ler.",
+    "en": "In the forward arms the test holds only ad_ids never seen in training."
+   }
+  },
+  "target_in_features": {
+   "status": "none",
+   "note": {
+    "tr": "Öznitelik listesinde (lib/common.FEATURES) fiyat ya da fiyattan türeyen bir alan yok.",
+    "en": "No price or price-derived field in the feature list (lib/common.FEATURES)."
+   }
+  },
+  "fit_on_full_data": {
+   "status": "none",
+   "note": {
+    "tr": "Her kol yalnız kendi eğitim bloğunda kurulur.",
+    "en": "Each arm is fitted on its own training block only."
+   }
+  },
+  "temporal": {
+   "status": "none",
+   "note": {
+    "tr": "single/cumulative zaman sırasını korur; insample/per_snapshot bilerek düz KFold ve protokolde öyle etiketli.",
+    "en": "single/cumulative keep time order; insample/per_snapshot are plain KFold on purpose and labelled so in the protocol."
+   }
+  }
+ },
+ "evidence": {
+  "tests": [
+   "tests/analysis/test_09_backtest.py::test_train_before_test",
+   "tests/analysis/test_09_backtest.py::test_cumulative_first_block_is_single",
+   "tests/analysis/test_09_backtest.py::test_insample_ends_on_all_listings"
+  ],
+  "report_keys": [
+   "methodology.backtest.single",
+   "methodology.backtest.cumulative",
+   "methodology.backtest.insample"
+  ]
+ },
+ "status": "complete"
+}

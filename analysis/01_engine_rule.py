@@ -1,14 +1,14 @@
 """
 01_engine_rule.py
-EN: Technical report §1 — engine power and size: from a bucket to one number (the owner's rule).
+EN: Technical report §1 — engine power and size: from a range to one number (the owner's rule).
     On many listings the site gives power/size as a bucket (e.g. 1401–1600 cc). The model uses
     hp = mean(lower, upper) and cc = upper bound. Each candidate (lower / midpoint / upper) is compared
     with the median exact value of the same model; the chosen candidate must have the smallest median
-    gap, otherwise the script stops.
-TR: Teknik rapor §1 — motor gücü ve hacmi: kovadan tek sayıya (kullanıcının kuralı).
+    gap, otherwise the script stops. The (lower, upper) pairs the site gives feed figure 30.
+TR: Teknik rapor §1 — motor gücü ve hacmi: aralıktan tek sayıya (kullanıcının kuralı).
     Site gücü/hacmi birçok ilanda kova olarak veriyor (ör. 1401–1600 cc). Model hp = ort(alt, üst),
     cc = üst sınır kullanır. Her aday (alt / orta / üst) aynı modelin kesin değer medyanıyla karşılaştırılır;
-    seçilen aday en küçük medyan farkı vermezse betik durur.
+    seçilen aday en küçük medyan farkı vermezse betik durur. Sitenin verdiği (alt, üst) çiftleri Figür 30'u besler.
 Output / Çıktı: metrics/01_engine_rule.json
 """
 
@@ -127,6 +127,22 @@ def most_common_bucket(bucketed, exact, p):
             "en_sik_kesin": int(values.index[0]), "en_sik_kesin_n": int(values.iloc[0])}
 
 
+def bound_pairs(listings, p):
+    """
+    EN: Every (lower, upper) pair the site gives for one measure, with its listing count (figure 30). An exact
+        value has lower = upper; open-ended and no-value listings have no pair.
+        Returns: [[low, up, is_range, n], ...], sorted by (is_range, low, up).
+    TR: Sitenin bir ölçü için verdiği her (alt, üst) çifti ve ilan sayısı (Figür 30). Kesin değerde alt = üst;
+        açık uçlu ve değersiz ilanların çifti yok.
+        Döndürür: [[alt, üst, aralık mı, n], ...], (aralık mı, alt, üst) sırasıyla.
+    """
+    lo, up = listings[f"{p}_low"], listings[f"{p}_up"]
+    both = lo.notna() & up.notna()
+    is_range = listings[f"{p}_is_range"].fillna(False).astype(bool)
+    counts = pd.DataFrame({"r": is_range[both], "lo": lo[both], "up": up[both]}).groupby(["r", "lo", "up"]).size()
+    return [[int(a), int(b), bool(r), int(n)] for (r, a, b), n in counts.items()]
+
+
 def measure(listings, p, chosen):
     """
     EN: Everything published for one measure (engine_cc or power_hp), raw values.
@@ -140,7 +156,8 @@ def measure(listings, p, chosen):
     inside = (bucketed["ref"] >= bucketed[f"{p}_low"]) & (bucketed["ref"] <= bucketed[f"{p}_up"])
     n_exact = exact.groupby("model")[f"{p}_up"].nunique()
     position = position_in_bucket(bucketed, p)
-    return {"chosen": chosen, "bucketed": int(is_bucket.sum()),
+    return {"chosen": chosen, "listings": int(len(listings)), "exact": int(len(exact)),
+            "bucketed": int(is_bucket.sum()),
             "open_ended": int((is_bucket & (lo.isna() ^ up.isna())).sum()),
             "no_value": int((lo.isna() & up.isna()).sum()),
             "with_reference": int(len(bucketed)), "reference_models": int(bucketed["model"].nunique()),
@@ -151,7 +168,8 @@ def measure(listings, p, chosen):
             "bucket_winners": bucket_winners(bucketed, gaps, p, MIN_BUCKET_N),
             "outside_multi_value_share": (float((bucketed.loc[~inside, "model"].map(n_exact) > 1).mean())
                                           if (~inside).any() else None),
-            "most_common_bucket": most_common_bucket(bucketed, exact, p)}
+            "most_common_bucket": most_common_bucket(bucketed, exact, p),
+            "pairs": bound_pairs(listings, p)}
 
 
 # %% [3] Metrics assembly | Metrik derleme — naming and rounding only | yalnız adlandırma ve yuvarlama
@@ -162,9 +180,10 @@ def to_metrics(res):
     """
     out = {"tanim": ("referans = ayni modelin kesin (kovasiz) degerli ilanlarinin medyani; fark = |aday − "
                      "referans|; yalniz iki siniri da bilinen kovalar ve referansi olan modeller; "
-                     "yuzdelikler 5/25/50/75/95; konum = (referans − alt) / (ust − alt)")}
+                     "yuzdelikler 5/25/50/75/95; konum = (referans − alt) / (ust − alt); ciftler = [alt, ust, "
+                     "aralik mi, ilan], iki siniri da olan ilanlar (kesin degerde alt = ust)")}
     for p, m in res.items():
-        out[p] = {"birim": UNITS[p], "secilen": m["chosen"],
+        out[p] = {"birim": UNITS[p], "secilen": m["chosen"], "ilan": m["listings"], "kesin": m["exact"],
                   "aralikli": m["bucketed"], "acik_uclu": m["open_ended"], "degersiz": m["no_value"],
                   "referansli": m["with_reference"], "referans_model": m["reference_models"],
                   "icinde_pct": round(100 * m["inside_share"], 1),
@@ -176,7 +195,7 @@ def to_metrics(res):
                                    for lo, up, n, w, med in m["bucket_winners"]],
                   "kova_disi_coklu_pct": (round(100 * m["outside_multi_value_share"], 1)
                                           if m["outside_multi_value_share"] is not None else None),
-                  "ornek_kova": m["most_common_bucket"]}
+                  "ornek_kova": m["most_common_bucket"], "ciftler": m["pairs"]}
     return {"error_drivers": {"hp_cc_kurali": out}}
 
 

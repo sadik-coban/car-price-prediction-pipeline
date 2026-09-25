@@ -4,12 +4,16 @@ EN: The Claude Code hooks in .claude/hooks/ are part of the gate, so they are te
     must deny every protected folder (in every path spelling Windows and Git Bash produce) and let everything
     else through. The Stop gate is run against a throwaway project whose tools/verify.py is a stub, so its
     decisions (block, skip when nothing changed, give up after 3 attempts, recover) are checked without running
-    the real suite inside itself. .claude/ is not in git: in a clone without the hooks these tests skip.
+    the real suite inside itself. The plan guard must deny every change of a locked pre-registered plan except
+    hypothesis status and evidence, and the Stop gate must warn (not block) on untested hypotheses. .claude/ is
+    not in git: in a clone without the hooks these tests skip.
 TR: .claude/hooks/ içindeki Claude Code hook'ları kapının parçası, bu yüzden kod gibi sınanır. Yol koruması her
     korunan klasörü (Windows'un ve Git Bash'in ürettiği her yol yazımında) reddetmeli, geri kalan her şeyi
     geçirmeli. Stop kapısı, tools/verify.py'si sahte olan geçici bir projede koşulur; böylece kararları (engelle,
     değişiklik yoksa atla, 3 denemeden sonra bırak, toparlan) gerçek test takımını kendi içinde koşmadan sınanır.
-    .claude/ git'te yok: hook'ların olmadığı bir klonda bu testler atlanır.
+    Plan koruması kilitli bir ön kayıt planında hipotez durumu ve kanıt dışındaki her değişikliği reddetmeli;
+    Stop kapısı sınanmamış hipotezde uyarmalı (engellememeli). .claude/ git'te yok: hook'ların olmadığı bir
+    klonda bu testler atlanır.
 """
 import json
 import os
@@ -161,3 +165,81 @@ def test_stop_blocks_when_verify_does_not_report(project):
     change(project, "garbage")
     out = stop(project)
     assert out["decision"] == "block" and "did not report" in out["reason"]
+
+
+# ---- pre-registered plans | ön kayıtlı planlar ----
+
+LOCKED = {"id": "demo", "question": {"tr": "Soru?", "en": "Question?"}, "data_slice": "load_clean()",
+          "split": "kfold_oof", "target": "OOF error", "comparisons": {"count": 1, "correction": "none"},
+          "hypotheses": [{"id": "H1", "statement": {"tr": "Hata %10 altında", "en": "Error below 10%"},
+                          "accept_if": "median < 10", "reject_if": "median >= 10",
+                          "required_checks": ["metric:08_residuals:report.err_n"], "status": "untested",
+                          "evidence": []}],
+          "out_of_scope": [], "status": "locked", "approved_by": "owner", "approved_at": "2026-09-24"}
+
+
+def write_plan(root, plan):
+    """EN: Writes plans/demo/analysis_plan.json under root. / TR: root altında planı yazar."""
+    path = root / "plans" / "demo" / "analysis_plan.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(plan, ensure_ascii=False, indent=1), encoding="utf-8")
+    return path
+
+
+def plan_decision(root, tool, **tool_input):
+    """EN: guard_plan's decision for a tool call. / TR: guard_plan'ın bir araç çağrısı için kararı."""
+    out = run_hook("guard_plan.py", {"tool_name": tool, "tool_input": tool_input}, root)
+    return out.get("hookSpecificOutput", {}).get("permissionDecision", "allow")
+
+
+def test_locked_plan_question_edit_denied(tmp_path):
+    """EN: Editing the question of a locked plan is denied. / TR: Kilitli planın sorusunu düzenlemek reddedilir."""
+    path = write_plan(tmp_path, LOCKED)
+    assert plan_decision(tmp_path, "Edit", file_path=str(path), old_string="Question?", new_string="Other?") == "deny"
+
+
+def test_locked_plan_criterion_rewrite_denied(tmp_path):
+    """EN: A Write that changes a criterion is denied. / TR: Bir ölçütü değiştiren Write reddedilir."""
+    path = write_plan(tmp_path, LOCKED)
+    plan = json.loads(json.dumps(LOCKED))
+    plan["hypotheses"][0]["accept_if"] = "median < 20"
+    assert plan_decision(tmp_path, "Write", file_path=str(path), content=json.dumps(plan)) == "deny"
+
+
+def test_locked_plan_unlock_denied(tmp_path):
+    """EN: Setting a locked plan back to draft is denied. / TR: Kilitli planı taslağa döndürmek reddedilir."""
+    path = write_plan(tmp_path, LOCKED)
+    assert plan_decision(tmp_path, "Edit", file_path=str(path), old_string='"status": "locked"',
+                         new_string='"status": "draft"') == "deny"
+
+
+def test_locked_plan_status_and_evidence_allowed(tmp_path):
+    """EN: Recording a result and its evidence passes. / TR: Sonucu ve kanıtını yazmak geçer."""
+    path = write_plan(tmp_path, LOCKED)
+    plan = json.loads(json.dumps(LOCKED))
+    plan["hypotheses"][0].update(status="confirmed", evidence=["metric:08_residuals:report.err_n"])
+    assert plan_decision(tmp_path, "Write", file_path=str(path), content=json.dumps(plan)) == "allow"
+    assert plan_decision(tmp_path, "MultiEdit", file_path=str(path), edits=[
+        {"old_string": '"status": "untested"', "new_string": '"status": "refuted"'}]) == "allow"
+
+
+def test_draft_plan_is_free(tmp_path):
+    """EN: A draft may change anything. / TR: Taslakta her şey değişebilir."""
+    path = write_plan(tmp_path, {**LOCKED, "status": "draft"})
+    assert plan_decision(tmp_path, "Edit", file_path=str(path), old_string="Question?", new_string="Other?") == "allow"
+
+
+def test_plan_warning_without_blocking(project):
+    """
+    EN: A locked plan with an untested hypothesis gives a warning, not a block — also when verify is skipped.
+    TR: Sınanmamış hipotezli kilitli plan engel değil uyarı verir — verify atlandığında da.
+    """
+    write_plan(project, LOCKED)
+    first = stop(project)
+    assert "decision" not in first and "demo (H1)" in first["systemMessage"]
+    second = stop(project)
+    assert calls(project) == 1 and "demo (H1)" in second["systemMessage"]
+    done = json.loads(json.dumps(LOCKED))
+    done["hypotheses"][0].update(status="inconclusive", evidence=["metric:08_residuals:report.err_n"])
+    write_plan(project, done)
+    assert "systemMessage" not in stop(project)

@@ -23,3 +23,36 @@ four pattern flags read from the ad text (no LLM).
 everything model-derived the same `run_id`; no report is written from mixed or stale output, and the message
 says which script to rerun. A script that depends on 07's artefact stops if the artefact is missing or comes
 from another DB.
+
+## How to add a new analysis
+
+The gate does not count a new analysis as done without a card and a test (`tests/analysis/test_coverage.py`).
+The order:
+
+1. **Plan (for a new question):** `python tools/new_plan.py new <id> "soru" "question"`. Fill it in, show it to the
+   owner, and only after their explicit approval `python tools/new_plan.py lock <id> --by "<approver>"`. A locked
+   plan only changes hypothesis status and evidence (`plans/README.md`).
+2. **Scaffold:** `python tools/new_analysis.py NN_name "soru" "question"`. Writes the three-layer script, a stub
+   test that fails on purpose, and a card with status `todo`.
+3. **`ORDER`:** add the script to the list in `analysis/run_all.py`, in numeric order.
+4. **Analysis:** write and run the script (`python analysis/NN_name.py`). `save_metrics` records the provenance
+   (sha256 of the script and of the `analysis/lib` files it loaded) in the metrics.
+5. **Test:** replace the stub with at least one real invariant. Examples: a range, a total, a count that must
+   match another script, a report claim that must follow from the numbers next to it. It reads the metrics JSON
+   only.
+6. **Card:** `analysis/cards/NN_name.json`:
+   - question, data, method, split;
+   - the four leakage types (a note is required for `present` / `unknown`);
+   - evidence: collected test ids + report keys in the metrics;
+   - `status: complete`.
+7. **Baseline:** `python tools/snapshot_metrics.py --diff`, then, with the owner's approval,
+   `--accept "<reason>"`.
+8. **Done:** `python tools/verify.py` → PASS. `python tools/analysis_coverage.py` shows what is left.
+
+- **Stale metrics:** when a script or an `analysis/lib` file it imports changes, its metrics count as stale and
+  the gate names the script to rerun (`tests/metrics/test_provenance.py`). Touching `lib/common.py` makes every
+  script stale (full run ~16 min).
+- **Legacy scripts:** the 18 scripts written before cards and tests are in `tests/analysis/legacy.json` with the
+  sha256 of their source. A legacy script that changes needs a card and a test; the list only shrinks.
+- **Heavy methodology tests** (not in the fast gate): `python -m pytest -m full tests/analysis`. The checks: no
+  `ad_id` overlap between folds, R² ≈ 0 on a shuffled target, bit-identical reruns.

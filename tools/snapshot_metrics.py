@@ -35,6 +35,11 @@ SHAPE_FILE = BASELINE_DIR / "metrics_shape.json"
 FINGERPRINT_FILE = BASELINE_DIR / "metrics_fingerprint.json"
 EXEMPTIONS_FILE = BASELINE_DIR / "exemptions.json"
 LOG_FILE = BASELINE_DIR / "accept_log.jsonl"
+# EN: the provenance block (hashes of the code that wrote the file) is left out of the baseline: a code edit must
+#     not look like a changed result. tests/metrics/test_provenance.py checks it instead (stale metrics).
+# TR: kaynak izi bloğu (dosyayı yazan kodun hash'leri) referansa girmez: kod değişikliği sonuç değişikliği gibi
+#     görünmemeli. Onu tests/metrics/test_provenance.py sınar (bayat metrik).
+PROVENANCE = "_meta.source"
 
 
 def metric_files(metrics_dir=METRICS_DIR):
@@ -90,7 +95,8 @@ def snapshot(metrics_dir=METRICS_DIR):
     """
     shape, fingerprint = {}, {}
     for name, path in metric_files(metrics_dir).items():
-        flat = leaves(json.loads(path.read_text(encoding="utf-8")))
+        flat = {k: v for k, v in leaves(json.loads(path.read_text(encoding="utf-8"))).items()
+                if k != PROVENANCE and not k.startswith(PROVENANCE + ".")}
         shape[name] = {k: t for k, (t, _) in flat.items()}
         fingerprint[name] = {k: f for k, (_, f) in flat.items()}
     return shape, fingerprint

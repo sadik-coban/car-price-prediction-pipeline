@@ -12,6 +12,7 @@ TR: Bütün analiz betiklerinin ortak girişi. Dışarıya açık tam iki fonksi
 import hashlib
 import json
 import math
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -83,12 +84,14 @@ def load_clean(all_snapshots=False, derived=True):
 def save_metrics(name, values, run_id=None):
     """
     EN: Writes one script's results to metrics/<name>.json with a _meta block: script name, run time,
-        last snapshot date in the data, DB fingerprint and (for model-derived metrics) run_id.
+        last snapshot date in the data, DB fingerprint, (for model-derived metrics) run_id, and the source
+        hashes of the code that produced them (_source_hashes; the gate uses them to spot stale metrics).
         Written to a temporary file first and then renamed, so a half-written JSON never exists.
         name: script name without .py, e.g. "01_dedup_leakage" or "shap/02_oof_shap".
         Returns: the Path written.
     TR: Bir betiğin sonuçlarını _meta bloğuyla metrics/<name>.json'a yazar: betik adı, koşum zamanı,
-        verideki son tarama tarihi, DB parmak izi ve (modelden türeyen metriklerde) run_id.
+        verideki son tarama tarihi, DB parmak izi, (modelden türeyen metriklerde) run_id ve onları üreten kodun
+        kaynak hash'leri (_source_hashes; kapı bayat metriği bunlarla yakalar).
         Önce geçici dosyaya yazılıp yeniden adlandırılır; yarım yazılmış bir JSON hiç oluşmaz.
         name: .py'siz betik adı, ör. "01_dedup_leakage" ya da "shap/02_oof_shap".
         Döndürür: yazılan Path.
@@ -99,7 +102,8 @@ def save_metrics(name, values, run_id=None):
                      "generated_at": datetime.now().isoformat(timespec="seconds"),
                      "data_until": _last_snapshot_date(),
                      "db": _db_fingerprint(),
-                     "run_id": run_id},
+                     "run_id": run_id,
+                     "source": _source_hashes(name)},
            **values}
     text = json.dumps(_to_jsonable(doc), ensure_ascii=False, indent=1)
     tmp = path.with_suffix(".tmp")
@@ -109,6 +113,34 @@ def save_metrics(name, values, run_id=None):
 
 
 # ── Private helpers | Özel yardımcılar ─────────────────────────────────────────────────────────────
+def _file_sha(path):
+    """
+    EN: sha256 of a file's bytes with CRLF folded to LF (the same file hashes the same after any git checkout).
+    TR: CRLF'i LF'e indirilmiş dosya baytlarının sha256'sı (aynı dosya her git çıkarımında aynı hash'i verir).
+    """
+    return hashlib.sha256(Path(path).read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+
+
+def _source_hashes(name):
+    """
+    EN: Provenance of a metrics file: the sha256 of the script (analysis/<name>.py) and of every analysis/lib
+        module loaded at save time. Only the bytes are hashed; the code is not parsed. The gate
+        (tests/metrics/test_provenance.py) compares them with the files to find stale metrics.
+        Returns: {"script": {path: sha}, "lib": {path: sha}} with repository-relative paths.
+    TR: Bir metrik dosyasının kaynak izi: betiğin (analysis/<name>.py) ve kayıt anında yüklü her analysis/lib
+        modülünün sha256'sı. Yalnız baytlar hash'lenir; kod ayrıştırılmaz. Kapı (tests/metrics/test_provenance.py)
+        bayat metriği bulmak için bunları dosyalarla karşılaştırır.
+        Döndürür: depoya göreli yollarla {"script": {yol: sha}, "lib": {yol: sha}}.
+    """
+    lib_dir = Path(__file__).resolve().parent
+    script = ROOT / "analysis" / f"{name}.py"
+    libs = sorted({Path(m.__file__).resolve() for m in list(sys.modules.values())
+                   if getattr(m, "__file__", None) and Path(m.__file__).suffix == ".py"
+                   and Path(m.__file__).resolve().parent == lib_dir})
+    rel = lambda p: p.relative_to(ROOT).as_posix()  # noqa: E731
+    return {"script": {rel(script): _file_sha(script)}, "lib": {rel(p): _file_sha(p) for p in libs}}
+
+
 def _prepare(raw):
     """
     EN: Adds the derived features to raw DB rows (the same rules the model is trained with).

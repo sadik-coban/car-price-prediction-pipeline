@@ -34,9 +34,9 @@ Medyan ilan fiyatı ₺1.55M, ₺0.85M–₺3.43M arası (P10–P90).
 2. **Hasar / ekspertiz** — 13 kaporta paneli × {değişen, boyalı, lokal boya} + ağır hasar kaydı. Bu 39 ham bayrak modele 12 öznitelik olarak giriyor: tavan · kaput · bagaj tek panel olduğu için **durum** (orijinal/lokal/boyalı/değişen), kapı · çamurluk · tampon ise grup içi **sayı** (kapı 0–4, çamurluk 0–4, tampon 0–2).
 3. **Serbest metin** — satıcı açıklaması; modelde **kullanılmıyor**. Ölçüldü: R²'ye katkısı 0.0015; ayrıntısı §10'da.
 
-**"Belirtilmemiş" panel orijinal sayıldı.** Site her panel için beş cevaptan birini veriyor: orijinal, belirtilmemiş, boyalı, lokal boyalı, değişmiş. Modele giren ilanlarda 59.651 panel (%15.3) belirtilmemiş; 1.235 ilanda 13 panelin hiçbiri belirtilmemiş. Bu cevap bilinçli bir kararla orijinal gibi kodlandı; gerekçe, satıcının hasarı yazmayı unutmuş olabileceği ama hasar olmamasının daha olası sayılması. Aynı model ve yılın medyanına oranla medyan fiyat orijinal ilanlarda 1.034, belirtilmemişte 1.011, hafif hasarlıda (1–2 boyalı ya da lokal panel, değişen yok) 1.011, bütün hasarlılarda 0.979 — belirtilmemiş, orijinalden çok hafif hasarlıya benziyor; fiyat bu gerekçeyi desteklemiyor ve belirtilmemiş ilanların bir kısmı hafif hasarlı olabilir. Bedeli: hasarlı ilanların bir kısmı orijinal sayıldığı için hasar etkileri hafifçe sıfıra çekilir.
+**"Belirtilmemiş" panel orijinal sayıldı.** Site her panel için beş cevaptan birini veriyor: orijinal, belirtilmemiş, boyalı, lokal boyalı, değişmiş. Modele giren ilanlarda 59.651 panel (%15.3) belirtilmemiş; 1.235 ilanda 13 panelin hiçbiri belirtilmemiş. Bu cevap bilinçli bir kararla orijinal gibi kodlandı; gerekçe, satıcının hasarı yazmayı unutmuş olabileceği ama hasar olmamasının daha olası sayılması.
 
-**Ağır hasar kaydında da aynı kural.** Modele giren ilanlarda sayfanın ağır hasar bilgisi vermediği ("Belirtilmemiş" ya da alan yok) ilanların payı %68.2; bunlar ağır hasarsız sayıldı. Ağır hasarlı olup bunu belirtmeyen bir ilan modelde hasarsız görünür.
+**Ağır hasar kaydında da aynı kural.** Modele giren ilanlarda sayfanın ağır hasar bilgisi vermediği ("Belirtilmemiş" ya da alan yok) ilanların payı %68.2; bunlar ağır hasarsız sayıldı. Ağır hasarlı olup bunu belirtmeyen bir ilan modelde ağır hasarsız görünür.
 
 ### API'ye giden veri (gold)
 
@@ -51,9 +51,13 @@ Analiz yarı ham veritabanını okuyor: sayfanın söylemediği bilgi boş kalı
 
 API'ye gitmeyen tek kolon `kb_paint_change_summary`: sayfanın ham "Boya-değişen" satırı, hasar bayraklarının kaba özeti. Açıklama sayfa başlığı olmadan `description_text` olarak gidiyor; yalnız başlıktan ibaret 114 satırda boş. Sonuç 116 kolon + kimlik (yarı ham veritabanında 117); öteki her hücre yarı ham veritabanındakiyle aynı. Buradaki sayımlar gold dosyasının tuttuğu bütün tarama satırları üzerinden; belirtilmemiş payları (§2) ise modele giren tekil ilanlar üzerinden.
 
-### Motor gücü ve hacmi: kovadan tek sayıya
+### Motor gücü ve hacmi: aralıktan tek sayıya
 
-Site motor hacmini ve gücünü ilanların bir kısmında kesin değer, bir kısmında **kova** olarak veriyor: modele giren ilanlardan 7.865 tanesinde hacim, 7.797 tanesinde güç kova (en sık kovalar 1401–1600 cc ve 151–175 hp). Model tek sayı kullanıyor. Kural: **hacim = kovanın üst sınırı, güç = alt ve üst sınırın ortalaması** (açık uçlu kovada bilinen sınır). Kural veriyle sınandı: kovalı ilanın üç adayı, aynı modelin kovasız (kesin değerli) ilanlarının medyanıyla karşılaştırıldı — hacimde 7.176, güçte 7.148 ilan (kesin değerli ilanı olan modellerde).
+Site motor hacmini ve gücünü ilanların bir kısmında kesin değer, bir kısmında **aralık** olarak veriyor: modele giren ilanlardan 7.865 tanesinde hacim, 7.797 tanesinde güç aralıklı (en sık aralıklar 1401–1600 cc ve 151–175 hp). Model tek sayı kullanıyor. Kural: **hacim = aralığın üst sınırı, güç = alt ve üst sınırın ortalaması** (açık uçlu aralıkta bilinen sınır). Kural veriyle sınandı: aralıklı ilanın üç adayı, aynı modelin kesin değerli ilanlarının medyanıyla karşılaştırıldı — hacimde 7.176, güçte 7.148 ilan (kesin değerli ilanı olan modellerde).
+
+![Sitenin verdiği değerler: alt × üst sınır](figures/tr-30-engine-bounds.png)
+
+Örnek: 1401–1600 cc aralığı verilen bir ilanın aynı modeli, hacmi tek sayı verilen ilanlarında en çok 1598 cc yazıyor; bu ilan için adaylar alt sınır 1401 (197 cc uzak), orta nokta 1500.5 (97.5 cc), üst sınır 1600 (2 cc). Aşağıdaki tablodaki sayı, bu uzaklıkların bütün aralıklı ilanlar üzerindeki medyanı; her modelin referansı, kendi tek sayılı ilanlarının medyanı.
 
 | aday | hacim: medyan mutlak fark | güç: medyan mutlak fark |
 |---|---:|---:|
@@ -61,9 +65,11 @@ Site motor hacmini ve gücünü ilanların bir kısmında kesin değer, bir kıs
 | orta nokta | 95.5 cc | **7 hp** |
 | üst sınır | **5 cc** | 14 hp |
 
-Hacimde kesin değer kovanın üst ucunda duruyor (kova içindeki medyan konumu %97.5, alt çeyrek %83.9; en sık kovayı paylaşan modellerin en sık kesin değeri 1598 cc), bu yüzden üst sınır neredeyse tam isabet ediyor; en az 100 ilanlı kovaların hepsinde (5/5) en yakın aday üst sınır. Güçte en yakın aday güç düzeyine göre değişiyor (en az 100 ilanlı kovalar): 101–125 hp orta nokta; 126–175 hp üst sınır; 176–225 hp alt sınır; 226–250 hp alt sınır ile orta nokta berabere; 251–275 hp alt sınır. Kesin değerin kova içindeki konumu da bu yüzden dağınık (çeyrekler %29.2–%79.2). Tek bir kural olarak orta nokta, bütün kovalı ilanlarda medyan farkı en küçük aday. Aynı modelin kesin değer medyanı kovanın içine düşüyor: hacimde %97.9, güçte %84.2 ilanda; güçte dışarıda kalanlarda birden çok kesin güç değeri olan modellerin payı %90.3 — aynı model adı farklı motor seçenekleri taşıyor, yani bu oran sitenin kovasının değil referansın kabalığını gösteriyor. Kural veriyle çelişirse (seçilen aday en küçük medyan farkı vermezse) üreteç durur.
+Hacimde kesin değer aralığın üst sınırına çok yakın (aralık içindeki medyan konumu %97.5, alt çeyrek %83.9; en sık aralığı paylaşan modellerin en sık kesin değeri 1598 cc), bu yüzden üst sınır neredeyse tam isabet ediyor; en az 100 ilanlı aralıkların hepsinde (5/5) en yakın aday üst sınır. Güçte en yakın aday güç düzeyine göre değişiyor (en az 100 ilanlı aralıklar): 101–125 hp orta nokta; 126–175 hp üst sınır; 176–225 hp alt sınır; 226–250 hp alt sınır ile orta nokta berabere; 251–275 hp alt sınır. Kesin değerin aralık içindeki konumu da bu yüzden dağınık (çeyrekler %29.2–%79.2). Tek bir kural olarak orta nokta, bütün aralıklı ilanlarda medyan farkı en küçük aday. Aynı modelin kesin değer medyanı aralığın içine düşüyor: hacimde %97.9, güçte %84.2 ilanda; güçte dışarıda kalanlarda birden çok kesin güç değeri olan modellerin payı %90.3 — aynı model adı farklı motor seçenekleri taşıyor, yani bu oran sitenin aralığının değil referansın kabalığını gösteriyor. Kural veriyle çelişirse (seçilen aday en küçük medyan farkı vermezse) üreteç durur.
 
-![Kovadan tek sayıya: adayın aynı modelin kesin değerinden uzaklığı](figures/tr-29-hp-cc-rule.png)
+Sebep motorların litre etiketi: "1.6" diye satılan bir motorun gerçek hacmi 1598 cc gibi, etiketin birkaç cc altında. Sitenin aralıkları da bu etiket değerlerinde bitiyor (1401–1600 cc), bu yüzden gerçek hacim neredeyse her zaman aralığın üst sınırına çok yakın. Güçte böyle bir etiket yok; gerçek değerler aralığın içine dağılıyor, orada ortalama daha iyi tutuyor.
+
+![Aralıktan tek sayıya: adayın aynı modelin kesin değerinden uzaklığı](figures/tr-29-hp-cc-rule.png)
 
 ### Tutulan öznitelikler (25)
 
@@ -83,7 +89,7 @@ Model (`model`) · Seri (`series`) · Marka (`brand`) · Kasa Tipi (`kb_body_typ
 | E | Katalog bloğu (birlikte eksik) | 22 | `kb_fuel_cons_avg`, `kb_fuel_tank`, `gb_segment`, `torque_nm`, `cylinder_count`, `max_speed_kmh` … |
 | G | Modele alınmadı, gerekçe kayıtlı değil | 4 | `kb_color`, `kb_trade_available`, `kb_seller_type`, `gb_warranty_status` |
 
-*`engine_cc_val`, `power_hp_val`: veritabanındaki kolonlar (aralığın orta noktası). Model ikisini de alt ve üst sınırlardan yeniden türetiyor (yukarıdaki motor kuralı): güçte alt–üst ortalaması, yani veritabanı kolonuyla aynı değer; hacimde üst sınır, yani kovalı ilanlarda veritabanındakinden farklı.*
+*`engine_cc_val`, `power_hp_val`: veritabanındaki kolonlar (aralığın orta noktası). Model ikisini de alt ve üst sınırlardan yeniden türetiyor (yukarıdaki motor kuralı): güçte alt–üst ortalaması, yani veritabanı kolonuyla aynı değer; hacimde üst sınır, yani aralıklı ilanlarda veritabanındakinden farklı.*
 
 Sayısal özniteliklerde doldurma yapılmadı: eksik değerler LightGBM ve CatBoost'a boş (NaN) olarak girer ve kütüphanenin kendi eksik-değer yönlendirmesi kullanılır; kategorik boşluklar ayrı bir `missing` kategorisi olur. Yalnız KMeans/PCA için genel medyanla dolduruldu; %27.6 eksik olan `torque_nm` ise analiz dışı bırakıldı.
 

@@ -40,6 +40,9 @@ derived from it (`data/cars_gold.duckdb`, below). Until 2026-09-24 this file its
 - **`engine_cc_val` means two things in two places.** In the DB it is the bucket's midpoint (the known
   bound for an open-ended bucket); the model's feature of the same name is `engine_cc_up` (the upper bound,
   reasoning in technical report §1). The DB column was not renamed, so an API reading it does not break.
+  The API's drift screen reads this column, so it shows the midpoint while the model uses the upper bound (7,827
+  bucketed listings differ, median 99.5 cc; measured 2026-09-25). Drift compares two snapshots on the same
+  definition, so the result holds; left as is by the owner's decision.
 - **`dashboard_cache` / `options_cache`** belong to no generator in this repo (the archived
   `build_aggregates.py`); their content is stale (2026-07-14, no TR plate filter). On a rebuild
   `build_duckdb.py` carries them over from the old DB unchanged: they are neither dropped nor refreshed.
@@ -97,8 +100,12 @@ data/raw ──build_duckdb──► data/cars.duckdb (semi-raw, analysis) ─�
   - `duplicate_ad_ids`, `price_history` and both caches identical;
   - cells gold fills: 59,402 (heavy damage ×2 + first owner), 293,988 (panel flags), 0 (counters);
   - `publish --dry-run`: gold passed; the semi-raw DB and today's old DB were refused.
-- **What the API will see:** only the description changes. There is no `description_clean` column; if the API
-  reads it, it should switch to `description_text` (the same text except in 778 rows).
+- **What the API will see: nothing different** (checked 2026-09-25 in the API code and with the API's own
+  functions, `sadik-portfolio/api`). The API reads 55 columns of `car_listings` only; `description_clean`,
+  `description_text`, `kb_paint_change_summary`, `kb_is_heavy_damaged`, `gb_is_first_owner` and the four other
+  tables are never read, so no API fix is needed. The API also gives identical output on the semi-raw (silver)
+  file (dashboard rows, snapshot list, drift), since its code implicitly counts NULL as 0. Gold is still what gets
+  published: an explicit contract instead of relying on that implicit behaviour (owner's decision).
 - **The real files (2026-09-24):** `data/cars.duckdb` was rebuilt semi-raw and `data/cars_gold.duckdb` derived
   from it. The proof was repeated on the real files: gold equals the backed-up old DB cell for cell except the
   description (778 / 114 rows, the other tables identical). Nothing was uploaded to S3; publishing is the

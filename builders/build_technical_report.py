@@ -24,9 +24,9 @@ from report_lib.report_common import (BAND_EN, FUEL_EN, HANDWRITTEN_EXAMPLE_NOTE
 def sec_veri(c):
     """
     EN: §1 — data cleaning and leakage: snapshot rows → listings, price changes, plate scope, collection
-        filters, feature families, unspecified panels, the hp/cc bucket rule, content duplicates.
+        filters, feature families, unspecified panels, the hp/cc range rule, content duplicates.
     TR: §1 — veri temizleme ve sızıntı: tarama satırı → ilan, fiyat değişimi, plaka kapsamı, toplama filtreleri,
-        öznitelik aileleri, belirtilmemiş paneller, hp/cc kova kuralı, içerik ikizleri.
+        öznitelik aileleri, belirtilmemiş paneller, hp/cc aralık kuralı, içerik ikizleri.
     """
     v, d, dom, met, meta, hr, lang = c.v, c.d, c.dom, c.met, c.meta, c.hr, c.lang
     L, A, T, figs = c.L, c.A, c.T, c.figs
@@ -146,14 +146,9 @@ def sec_veri(c):
         f"{_dr2:.4f} to R²; the detail is in §{secno('metin')}."))
     A("")
     # B7 (2026-09-23): "Belirtilmemis" panel durumu orijinal sayiliyor — bilincli karar (kullanici), ama
-    # raporda yazmiyordu. Olcu ve kanit error_drivers.belirtilmemis'ten (ham JSONL, gold bayraklarla kapili).
+    # raporda yazmiyordu. Sayilar error_drivers.belirtilmemis'ten (ham JSONL, gold bayraklarla kapili).
+    # 2026-09-25 (kullanici): model+yil medyanina oranla fiyat karsilastirmasi ve "Bedeli" cumlesi kaldirildi.
     _bl = v["ed"]["belirtilmemis"]
-    _kn = _bl["kanit"]
-    _o, _b, _h = _kn["orijinal"]["medyan_oran"], _kn["belirtilmemis"]["medyan_oran"], _kn["hasarli"]["medyan_oran"]
-    _hf = _kn["hafif_hasarli"]["medyan_oran"]
-    # Son denetim (2026-09-23): karsilastirma karma "hasarli" grupla yapiliyordu; hafif hasarli (1-2 boyali/
-    # lokal panel, degisen yok) grupla yapilinca belirtilmemis onunla ayni duzeyde cikiyor.
-    _yakin = abs(_b - _o) < abs(_b - _hf)
     assert _y["cevap_sayisi"] == 5, "panel cevap sayisi degisti — asagidaki bes adli liste bayat"
     A(L(f"**\"Belirtilmemiş\" panel orijinal sayıldı.** Site her panel için {say(_y['cevap_sayisi'], lang)} "
         f"cevaptan birini veriyor: "
@@ -161,36 +156,25 @@ def sec_veri(c):
         f"{num(_bl['belirtilmemis_panel'], lang)} panel ({P(_bl['belirtilmemis_pct'], lang)}) belirtilmemiş; "
         f"{num(_bl['hepsi_belirtilmemis'], lang)} ilanda {_y['panel']} panelin hiçbiri belirtilmemiş. Bu cevap bilinçli bir "
         f"kararla orijinal gibi kodlandı; gerekçe, satıcının hasarı yazmayı unutmuş olabileceği ama hasar "
-        f"olmamasının daha olası sayılması. Aynı model ve yılın medyanına oranla medyan fiyat orijinal ilanlarda "
-        f"{_o:.3f}, belirtilmemişte {_b:.3f}, hafif hasarlıda (1–2 boyalı ya da lokal panel, değişen yok) "
-        f"{_hf:.3f}, bütün hasarlılarda {_h:.3f}"
-        + (" — belirtilmemiş orijinale daha yakın ama tam örtüşmüyor. " if _yakin else
-           " — belirtilmemiş, orijinalden çok hafif hasarlıya benziyor; fiyat bu gerekçeyi desteklemiyor ve "
-           "belirtilmemiş ilanların bir kısmı hafif hasarlı olabilir. ")
-        + "Bedeli: hasarlı ilanların bir kısmı orijinal sayıldığı için hasar etkileri hafifçe sıfıra çekilir.",
+        f"olmamasının daha olası sayılması.",
         f"**\"Unspecified\" panels were counted as original.** The site gives one of "
         f"{say(_y['cevap_sayisi'], 'en')} answers per "
         f"panel: original, unspecified, painted, locally painted, changed. Across the listings in the model "
         f"{num(_bl['belirtilmemis_panel'], lang)} panels ({P(_bl['belirtilmemis_pct'], lang)}) are "
         f"unspecified; on {num(_bl['hepsi_belirtilmemis'], lang)} listings all {_y['panel']} are. That answer was coded as "
         f"original by a deliberate decision, on the reasoning that the seller may have forgotten to list damage "
-        f"but no damage is the likelier case. Relative to the same model-and-year median, the median price is "
-        f"{_o:.3f} for original listings, {_b:.3f} for unspecified, {_hf:.3f} for lightly damaged ones (1–2 "
-        f"painted or locally painted panels, nothing changed) and {_h:.3f} for all damaged ones"
-        + (" — unspecified sits closer to original but does not match it. " if _yakin else
-           " — unspecified looks more like lightly damaged than original; price does not back the reasoning, "
-           "and some unspecified listings may be lightly damaged. ")
-        + "The cost: some damaged listings count as original, so damage effects are pulled slightly toward zero."))
+        f"but no damage is the likelier case."))
     A("")
     # 2026-09-24 (yari ham DB): agir hasar kaydi da "Belirtilmemis" olabiliyor ve ayni kuralla "yok" okunuyor;
     # rapor bunu hic yazmiyordu. Oran 02_missingness.belirtilmemis'ten.
     _ub = met["sistematik_missing"]["belirtilmemis"]
     A(L(f"**Ağır hasar kaydında da aynı kural.** Modele giren ilanlarda sayfanın ağır hasar bilgisi vermediği "
         f"(\"Belirtilmemiş\" ya da alan yok) ilanların payı {P(_ub['agir_hasar_pct'], lang)}; bunlar ağır hasarsız sayıldı. "
-        f"Ağır hasarlı olup bunu belirtmeyen bir ilan modelde hasarsız görünür.",
+        f"Ağır hasarlı olup bunu belirtmeyen bir ilan modelde ağır hasarsız görünür.",
         f"**The heavy-damage record follows the same rule.** On {P(_ub['agir_hasar_pct'], lang)} of the listings in "
         f"the model the page gives no heavy-damage answer (\"Belirtilmemiş\" or no field); those listings count as "
-        f"not heavily damaged. A heavily damaged car whose listing does not say so looks undamaged to the model."))
+        f"not heavily damaged. A heavily damaged car whose listing does not say so looks free of heavy damage to the "
+        f"model."))
     A("")
 
     # 2026-09-24 (kullanici: "gold dbye gecen taraflari da rapora yazmam gerekiyor"): API'ye giden gold dosyasi
@@ -238,32 +222,33 @@ def sec_veri(c):
         f"unspecified shares in §{secno('eksiklik')} are over the unique listings in the model."))
     A("")
 
-    # T (2026-09-23): motor gucu/hacmi kovadan tek sayiya — kullanicinin kurali, veriyle olculdu. Sayilar
+    # T (2026-09-23): motor gucu/hacmi araliktan tek sayiya — kullanicinin kurali, veriyle olculdu. Sayilar
     # error_drivers.hp_cc_kurali'dan; secilen adayin en iyi oldugu uretecte assert ediliyor.
     _hk = v["ed"]["hp_cc_kurali"]
     _cc, _hp = _hk["engine_cc"], _hk["power_hp"]
     _ad = {"alt": L("alt sınır", "lower bound"), "orta": L("orta nokta", "midpoint"), "ust": L("üst sınır", "upper bound")}
-    A(L("### Motor gücü ve hacmi: kovadan tek sayıya", "### Engine power and size: from bucket to one number"))
+    A(L("### Motor gücü ve hacmi: aralıktan tek sayıya", "### Engine power and size: from a range to one number"))
     A("")
     _okc, _okh = _cc["ornek_kova"], _hp["ornek_kova"]
-    A(L(f"Site motor hacmini ve gücünü ilanların bir kısmında kesin değer, bir kısmında **kova** olarak veriyor: "
+    A(L(f"Site motor hacmini ve gücünü ilanların bir kısmında kesin değer, bir kısmında **aralık** olarak veriyor: "
         f"modele giren ilanlardan {num(_cc['aralikli'], lang)} tanesinde hacim, {num(_hp['aralikli'], lang)} "
-        f"tanesinde güç kova (en sık kovalar {_okc['alt']}–{_okc['ust']} cc ve "
-        f"{_okh['alt']}–{_okh['ust']} hp). Model tek sayı kullanıyor. Kural: **hacim = kovanın üst sınırı, "
-        f"güç = alt ve üst sınırın ortalaması** (açık uçlu kovada bilinen sınır). Kural veriyle sınandı: kovalı "
-        f"ilanın üç adayı, aynı modelin kovasız (kesin değerli) ilanlarının medyanıyla karşılaştırıldı — hacimde "
+        f"tanesinde güç aralıklı (en sık aralıklar {_okc['alt']}–{_okc['ust']} cc ve "
+        f"{_okh['alt']}–{_okh['ust']} hp). Model tek sayı kullanıyor. Kural: **hacim = aralığın üst sınırı, "
+        f"güç = alt ve üst sınırın ortalaması** (açık uçlu aralıkta bilinen sınır). Kural veriyle sınandı: aralıklı "
+        f"ilanın üç adayı, aynı modelin kesin değerli ilanlarının medyanıyla karşılaştırıldı — hacimde "
         f"{num(_cc['referansli'], lang)}, güçte {num(_hp['referansli'], lang)} ilan (kesin değerli ilanı olan "
         f"modellerde).",
-        f"On some listings the site gives engine size and power as an exact value, on others as a **bucket**: "
+        f"On some listings the site gives engine size and power as an exact value, on others as a **range**: "
         f"among the listings in the model, {num(_cc['aralikli'], lang)} have engine size and "
-        f"{num(_hp['aralikli'], lang)} have power as a bucket (the most common are {_okc['alt']}–"
+        f"{num(_hp['aralikli'], lang)} have power as a range (the most common are {_okc['alt']}–"
         f"{_okc['ust']} cc and {_okh['alt']}–{_okh['ust']} hp). The model uses one number. The rule: "
-        f"**size = the bucket's upper bound, power = the mean of the lower and upper bounds** (the known bound "
-        f"for an open-ended bucket). The rule was checked against the data: each bucketed listing's three candidates "
-        f"were compared with the median of the same model's un-bucketed (exact) listings — "
+        f"**size = the range's upper bound, power = the mean of the lower and upper bounds** (the known bound "
+        f"for an open-ended range). The rule was checked against the data: each range listing's three candidates "
+        f"were compared with the median of the same model's exact-value listings — "
         f"{num(_cc['referansli'], lang)} listings for size, {num(_hp['referansli'], lang)} for power (models "
         f"that have at least one exact listing)."))
     A("")
+    figs(30)
 
     def _hk_h(h_, k):
         """
@@ -272,6 +257,21 @@ def sec_veri(c):
         """
         m_ = f"{h_['adaylar'][k]['medyan']:g} {h_['birim']}"
         return f"**{m_}**" if k == h_["secilen"] else m_
+    # 2026-09-25 (kullanici: "medyani neye gore aldin anlamadim"): yontem tek bir ornekle, sayilar ornek_kova'dan.
+    _lo, _up, _ref = _okc["alt"], _okc["ust"], _okc["en_sik_kesin"]
+    assert _lo < _ref <= _up, ("ornek kovanin kesin degeri araligin disinda", _okc)
+    _mid = (_lo + _up) / 2
+    _d1 = lambda x: f"{x:.1f}"  # noqa: E731 — the report writes decimals with a dot in tr too (95.5 cc, %97.5)
+    A(L(f"Örnek: {_lo}–{_up} cc aralığı verilen bir ilanın aynı modeli, hacmi tek sayı verilen ilanlarında en çok "
+        f"{_ref} cc yazıyor; bu ilan için adaylar alt sınır {_lo} ({_ref - _lo} cc uzak), orta nokta {_d1(_mid)} "
+        f"({_d1(_ref - _mid)} cc), üst sınır {_up} ({_up - _ref} cc). Aşağıdaki tablodaki sayı, bu uzaklıkların bütün "
+        f"aralıklı ilanlar üzerindeki medyanı; her modelin referansı, kendi tek sayılı ilanlarının medyanı.",
+        f"Example: a listing given as {_lo}–{_up} cc belongs to a model whose exact-value listings most often say "
+        f"{_ref} cc; for this listing the candidates are the lower bound {_lo} ({_ref - _lo} cc away), the midpoint "
+        f"{_d1(_mid)} ({_d1(_ref - _mid)} cc) and the upper bound {_up} ({_up - _ref} cc). The number in the table "
+        f"below is the median of these gaps over all range listings; each model's reference is the median of its own "
+        f"exact-value listings."))
+    A("")
     T([L("aday", "candidate"), L("hacim: medyan mutlak fark", "size: median absolute gap"),
        L("güç: medyan mutlak fark", "power: median absolute gap")],
       [[_ad[k], _hk_h(_cc, k), _hk_h(_hp, k)] for k in ("alt", "orta", "ust")], "lrr")
@@ -293,53 +293,65 @@ def sec_veri(c):
 
     def _kz_ad(k):
         """
-        EN: Name of a per-bucket winner; ties are written as 'A and B tied'.
-        TR: Kova başına kazananın adı; beraberlik 'A ile B berabere' diye yazılır.
+        EN: Name of a per-range winner; ties are written as 'A and B tied'.
+        TR: Aralık başına kazananın adı; beraberlik 'A ile B berabere' diye yazılır.
         """
         p_ = [_ad[x_] for x_ in k.split("+")]
         return p_[0] if len(p_) == 1 else L(" ile ".join(p_) + " berabere", " and ".join(p_) + " tied")
     _hp_seri = "; ".join(f"{lo_}–{up_} hp {_kz_ad(k_)}" for lo_, up_, k_ in _runs)
     _q1h, _q3h = _hp["konum_ceyrek"]
     _nkc, _nkh = len(_kz["cc"]), len(_kz["hp"])
-    A(L((f"Hacimde kesin değer kovanın üst ucunda duruyor (kova içindeki medyan konumu {P(100 * _kc, lang)}, "
-         f"alt çeyrek {P(100 * _cc['konum_ceyrek'][0], lang)}; en sık kovayı paylaşan modellerin en sık kesin "
+    A(L((f"Hacimde kesin değer aralığın üst sınırına çok yakın (aralık içindeki medyan konumu {P(100 * _kc, lang)}, "
+         f"alt çeyrek {P(100 * _cc['konum_ceyrek'][0], lang)}; en sık aralığı paylaşan modellerin en sık kesin "
          f"değeri {_okc['en_sik_kesin']} cc), bu yüzden üst sınır neredeyse tam isabet ediyor"
-         + (f"; en az 100 ilanlı kovaların hepsinde ({_nkc}/{_nkc}) en yakın aday üst sınır. " if _cc_hepsi else ". ")
+         + (f"; en az 100 ilanlı aralıkların hepsinde ({_nkc}/{_nkc}) en yakın aday üst sınır. " if _cc_hepsi else ". ")
          if _cc_ust else
-         f"Hacimde kesin değerin kova içindeki medyan konumu {P(100 * _kc, lang)}. ")
-        + (f"Güçte en yakın aday güç düzeyine göre değişiyor (en az 100 ilanlı kovalar): {_hp_seri}. Kesin "
-           f"değerin kova içindeki konumu da bu yüzden dağınık (çeyrekler {P(100 * _q1h, lang)}–"
-           f"{P(100 * _q3h, lang)}). Tek bir kural olarak orta nokta, bütün kovalı ilanlarda medyan farkı en küçük "
+         f"Hacimde kesin değerin aralık içindeki medyan konumu {P(100 * _kc, lang)}. ")
+        + (f"Güçte en yakın aday güç düzeyine göre değişiyor (en az 100 ilanlı aralıklar): {_hp_seri}. Kesin "
+           f"değerin aralık içindeki konumu da bu yüzden dağınık (çeyrekler {P(100 * _q1h, lang)}–"
+           f"{P(100 * _q3h, lang)}). Tek bir kural olarak orta nokta, bütün aralıklı ilanlarda medyan farkı en küçük "
            f"aday. " if _hp_karisik else
-           f"Güçte en az 100 ilanlı {_nkh} kovanın hepsinde en yakın aday aynı. ")
-        + f"Aynı modelin kesin değer medyanı kovanın içine düşüyor: hacimde {P(_cc['icinde_pct'], lang)}, güçte "
+           f"Güçte en az 100 ilanlı {_nkh} aralığın hepsinde en yakın aday aynı. ")
+        + f"Aynı modelin kesin değer medyanı aralığın içine düşüyor: hacimde {P(_cc['icinde_pct'], lang)}, güçte "
           f"{P(_hp['icinde_pct'], lang)} ilanda"
         + (f"; güçte dışarıda kalanlarda birden çok kesin güç değeri olan modellerin payı "
            f"{P(_hp['kova_disi_coklu_pct'], lang)} — aynı model adı farklı motor seçenekleri taşıyor, yani bu "
-           f"oran sitenin kovasının değil referansın kabalığını gösteriyor. "
+           f"oran sitenin aralığının değil referansın kabalığını gösteriyor. "
            if (_hp["kova_disi_coklu_pct"] or 0) > 50 else ". ")
         + "Kural veriyle çelişirse (seçilen aday en küçük medyan farkı vermezse) üreteç durur.",
-        (f"For size the exact value sits at the top of the bucket (median position within the bucket "
+        (f"For size the exact value sits right at the top of the range (median position within the range "
          f"{P(100 * _kc, lang)}, lower quartile {P(100 * _cc['konum_ceyrek'][0], lang)}; the most common exact "
-         f"value among the models in the most common bucket is {_okc['en_sik_kesin']} cc), so the upper bound is "
+         f"value among the models in the most common range is {_okc['en_sik_kesin']} cc), so the upper bound is "
          f"almost a direct hit"
-         + (f"; in every bucket with at least 100 listings ({_nkc}/{_nkc}) the upper bound is the closest "
+         + (f"; in every range with at least 100 listings ({_nkc}/{_nkc}) the upper bound is the closest "
             f"candidate. " if _cc_hepsi else ". ")
          if _cc_ust else
-         f"For size the exact value's median position within the bucket is {P(100 * _kc, lang)}. ")
-        + (f"For power the closest candidate changes with the power level (buckets with at least 100 "
-           f"listings): {_hp_seri}. So the exact value's position within the bucket is spread out (quartiles "
+         f"For size the exact value's median position within the range is {P(100 * _kc, lang)}. ")
+        + (f"For power the closest candidate changes with the power level (ranges with at least 100 "
+           f"listings): {_hp_seri}. So the exact value's position within the range is spread out (quartiles "
            f"{P(100 * _q1h, lang)}–{P(100 * _q3h, lang)}). As a single rule the midpoint has the smallest median "
-           f"gap over all bucketed listings. " if _hp_karisik else
-           f"For power the closest candidate is the same in all {_nkh} buckets with at least 100 listings. ")
-        + f"The same model's median exact value falls inside the bucket for {P(_cc['icinde_pct'], lang)} of "
+           f"gap over all range listings. " if _hp_karisik else
+           f"For power the closest candidate is the same in all {_nkh} ranges with at least 100 listings. ")
+        + f"The same model's median exact value falls inside the range for {P(_cc['icinde_pct'], lang)} of "
           f"listings on size and {P(_hp['icinde_pct'], lang)} on power"
         + (f"; among the power listings outside it, models with more than one exact power value make up "
            f"{P(_hp['kova_disi_coklu_pct'], lang)} — one model name covers several engine options, so this "
-           f"share reflects a coarse reference, not wrong buckets on the site. "
+           f"share reflects a coarse reference, not wrong ranges on the site. "
            if (_hp["kova_disi_coklu_pct"] or 0) > 50 else ". ")
         + "If the rule stops matching the data (the chosen candidate no longer has the smallest median gap), "
           "the generator stops."))
+    A("")
+    # 2026-09-25: hacimde neden ust sinir — litre etiketi. Iliski bozulursa (en sik kesin deger ust sinirin 50 cc
+    # altindan uzak) cumle yanlislasacagina uretec durur.
+    assert 0 <= _up - _ref < 50, ("litre etiketi cumlesi veriyle uyusmuyor", _okc)
+    A(L(f"Sebep motorların litre etiketi: \"{_up / 1000:.1f}\" diye satılan bir motorun gerçek hacmi {_ref} cc gibi, "
+        f"etiketin birkaç cc altında. Sitenin aralıkları da bu etiket değerlerinde bitiyor ({_lo}–{_up} cc), bu yüzden "
+        f"gerçek hacim neredeyse her zaman aralığın üst sınırına çok yakın. Güçte böyle bir etiket yok; gerçek "
+        f"değerler aralığın içine dağılıyor, orada ortalama daha iyi tutuyor.",
+        f"The reason is the engine's litre label: an engine sold as \"{_up / 1000:.1f}\" really displaces about "
+        f"{_ref} cc, a few cc below the label. The site's ranges end at those label values ({_lo}–{_up} cc), so the "
+        f"real size almost always sits very close to the range's upper bound. Power has no such label; the real "
+        f"values spread across the range, and there the midpoint fits better."))
     A("")
     figs(29)
 
@@ -374,10 +386,10 @@ def sec_veri(c):
         assert set(_ayni_ad) == {"engine_cc_val", "power_hp_val"}, _ayni_ad
         A(L("*`engine_cc_val`, `power_hp_val`: veritabanındaki kolonlar (aralığın orta noktası). Model ikisini de alt ve "
             "üst sınırlardan yeniden türetiyor (yukarıdaki motor kuralı): güçte alt–üst ortalaması, yani veritabanı "
-            "kolonuyla aynı değer; hacimde üst sınır, yani kovalı ilanlarda veritabanındakinden farklı.*",
-            "*`engine_cc_val`, `power_hp_val`: the database columns (the bucket midpoint). The model re-derives both "
+            "kolonuyla aynı değer; hacimde üst sınır, yani aralıklı ilanlarda veritabanındakinden farklı.*",
+            "*`engine_cc_val`, `power_hp_val`: the database columns (the range midpoint). The model re-derives both "
             "from the lower and upper bounds (engine rule above): for power the mean of the bounds, i.e. the same "
-            "value as the database column; for size the upper bound, i.e. different from the database on bucketed "
+            "value as the database column; for size the upper bound, i.e. different from the database on range "
             "listings.*"))
         A("")
     torque = next((r[1] for r in met["sistematik_missing"]["column_missing_all"] if r[0] == "torque_nm"), None)

@@ -1,15 +1,15 @@
 """
 01_unspecified_panels.py
 EN: Technical report §1 — "Belirtilmemiş" (unspecified) panels are counted as original (the owner's decision).
-    The gold schema codes "unspecified" the same as "original" (0, 0, 0). Here the decision is measured:
-    how many panels are unspecified, how many listings have all 13 unspecified, and how their price compares
-    with original, lightly damaged and damaged listings (relative to the same model-and-year median).
-    Read from the raw JSONL (read-only) and checked row by row against the database's damage flags.
+    The gold schema codes "unspecified" the same as "original" (0, 0, 0). Here the decision's reach is
+    counted: how many panels are unspecified, how many listings have at least one and how many have all 13
+    unspecified. (The price comparison with original / damaged listings was removed on 2026-09-25, owner's
+    decision.) Read from the raw JSONL (read-only) and checked row by row against the database's damage flags.
 TR: Teknik rapor §1 — "Belirtilmemiş" paneller orijinal sayılıyor (kullanıcının kararı).
-    Gold şema "belirtilmemiş"i "orijinal" ile aynı kodluyor (0, 0, 0). Burada karar ölçülür: kaç panel
-    belirtilmemiş, kaç ilanda 13 panelin hepsi belirtilmemiş, fiyatları orijinal, hafif hasarlı ve hasarlı
-    ilanlara göre nerede (aynı model ve yılın medyanına oranla). Ham JSONL'den okunur (salt okunur) ve
-    veritabanının hasar bayraklarıyla satır satır sınanır.
+    Gold şema "belirtilmemiş"i "orijinal" ile aynı kodluyor (0, 0, 0). Burada kararın kapsamı sayılır: kaç
+    panel belirtilmemiş, kaç ilanda en az biri ve kaçında 13 panelin hepsi belirtilmemiş. (Orijinal / hasarlı
+    ilanlarla fiyat karşılaştırması 2026-09-25'te kaldırıldı, kullanıcının kararı.) Ham JSONL'den okunur (salt
+    okunur) ve veritabanının hasar bayraklarıyla satır satır sınanır.
 Output / Çıktı: metrics/01_unspecified_panels.json
 """
 
@@ -22,7 +22,6 @@ import pandas as pd
 
 from lib.common import ROOT, load_clean, save_metrics
 
-CELL_MIN_N = 5          # (model, year) cells with at least this many listings | en az bu kadar ilanlı hücreler
 GOLD_PANEL = {"roof_status": "tavan", "engine_hood_status": "kaput", "trunk_lid_status": "bagaj",
               "bumper_front_status": "bumper_front", "bumper_rear_status": "bumper_rear"}
 
@@ -97,28 +96,12 @@ def panel_structure(panel_cols, statuses):
             "grup_panel": groups, "tek_panel": len(panel_cols) - sum(groups.values())}
 
 
-def price_evidence(m, panel_cols, min_n):
+def unspecified_per_listing(m, panel_cols):
     """
-    EN: Median price relative to the (model, year) median, for original / unspecified / lightly damaged /
-        damaged listings. Only cells with at least min_n listings.
-    TR: (model, yıl) medyanına oranla medyan fiyat: orijinal / belirtilmemiş / hafif hasarlı / hasarlı ilanlar.
-        Yalnız en az min_n ilanlı hücreler.
+    EN: How many of each listing's panels are "Belirtilmemiş". Returns: Series (one count per matched listing).
+    TR: Her ilanın kaç paneli "Belirtilmemiş". Döndürür: Series (eşleşen ilan başına bir sayı).
     """
-    st = m[panel_cols]
-    n_unspec = (st == "unspecified").sum(axis=1)
-    n_damage = st.isin(["painted", "local_painted", "changed"]).sum(axis=1)
-    n_orig = (st == "original").sum(axis=1)
-    n_changed = (st == "changed").sum(axis=1)
-    group = np.select([n_damage > 0, n_unspec > 0, n_orig == len(panel_cols)], ["hasarli", "belirtilmemis", "orijinal"], "diger")
-    light = ((n_damage > 0) & (n_damage <= 2) & (n_changed == 0)).values
-    cell = m.groupby(["model", "gb_year"])["price"]
-    ok = (cell.transform("size") >= min_n).values
-    ratio = (m["price"] / cell.transform("median")).values
-    ev = {g: {"ilan": int(((group == g) & ok).sum()), "medyan_oran": float(np.median(ratio[(group == g) & ok]))}
-          for g in ("orijinal", "belirtilmemis", "hasarli")}
-    ev["hafif_hasarli"] = {"ilan": int((light & ok).sum()), "medyan_oran": float(np.median(ratio[light & ok])),
-                           "tanim": "1-2 boyali/lokal panel, degisen yok"}
-    return ev, n_unspec
+    return (m[panel_cols] == "unspecified").sum(axis=1)
 
 
 # %% [3] Metrics assembly | Metrik derleme — naming and rounding only | yalnız adlandırma ve yuvarlama
@@ -130,13 +113,12 @@ def to_metrics(res):
     st, n_unspec = res["statuses"], res["n_unspec"]
     known = int(st.notna().sum().sum())
     unspec = int((st == "unspecified").sum().sum())
-    ev = {g: {**v, "medyan_oran": round(v["medyan_oran"], 4)} for g, v in res["evidence"].items()}
     return {"error_drivers": {"belirtilmemis": {
         "yapi": res["structure"], "eslesen_ilan": res["matched"], "ilan": res["n_listings"],
         "cift_kayit_atlanan": res["dropped"], "panel_sayisi": known, "belirtilmemis_panel": unspec,
         "belirtilmemis_pct": round(100 * unspec / known, 1),
         "hepsi_belirtilmemis": int((n_unspec == res["structure"]["panel"]).sum()),
-        "en_az_bir": int((n_unspec > 0).sum()), "hucre_min_n": CELL_MIN_N, "kanit": ev}}}
+        "en_az_bir": int((n_unspec > 0).sum())}}}
 
 
 # %% [4] Load | Yükle — the only cells that read files | dosya okuyan tek hücreler
@@ -156,10 +138,10 @@ panels, statuses = damage_maps(mappings_text)
 panel_cols = list(panels.values())
 h, dropped = parse_damage_records(raw_records, panels, statuses)
 m = match_to_listings(listings, h, panel_cols)
-evidence, n_unspec = price_evidence(m, panel_cols, CELL_MIN_N)
+n_unspec = unspecified_per_listing(m, panel_cols)
 res = {"structure": panel_structure(panel_cols, statuses), "matched": len(m), "n_listings": len(listings),
-       "dropped": dropped, "statuses": m[panel_cols], "n_unspec": n_unspec, "evidence": evidence}
-print({g: round(v["medyan_oran"], 4) for g, v in evidence.items()})
+       "dropped": dropped, "statuses": m[panel_cols], "n_unspec": n_unspec}
+print({"eslesen": len(m), "en_az_bir": int((n_unspec > 0).sum()), "hepsi": int((n_unspec == len(panel_cols)).sum())})
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
 print("written | yazıldı:", save_metrics("01_unspecified_panels", to_metrics(res)))

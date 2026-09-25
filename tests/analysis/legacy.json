@@ -1,0 +1,24 @@
+{
+ "_about": {
+  "en": "Scripts written before the analysis cards and tests (2026-09-24), exempt from the card and test cells of the coverage matrix while their source keeps this sha256 (CRLF folded to LF). When a listed script changes, it needs a card (analysis/cards/) and a real test (tests/analysis/), then its line is removed here. The list only shrinks: tests/analysis/test_coverage.py refuses a name that was not on the first list.",
+  "tr": "Analiz kartları ve testlerinden önce yazılmış betikler (2026-09-24); kaynakları bu sha256'yı taşıdıkça (CRLF → LF) kapsam matrisinin kart ve test hücrelerinden muaf. Listedeki bir betik değişince kart (analysis/cards/) ve gerçek test (tests/analysis/) ister, sonra satırı buradan silinir. Liste yalnız kısalır: tests/analysis/test_coverage.py ilk listede olmayan bir adı reddeder."
+ },
+ "scripts": {
+  "01_dedup_leakage.py": "cd5739ca674c95dd5ec6588ccfc4edc3d0f5b685a2c9eadc49dd5b9ac893d095",
+  "02_missingness.py": "d842f720a129327bccdf147585d09a91cd2d86e9772cc153e7a31bf9ba679e5a",
+  "03_association.py": "234548759ae55c2ba447257ef47af161fdd93651ab08b83c4f1f4873548fdf68",
+  "03_segment_quality.py": "1a44c7dbe455a56a75f76775b5bb0ff62a18af5921379c2e70d15eea2898abae",
+  "03_brand_ablation.py": "568fbf14fddb6a591b1b08943b409397700344d2610d718323793a924318f1bd",
+  "04_target.py": "e239c7fcd6f38a400fdaa9594fc5aae4bf3a1b709bde7b82d13f984eade6dc94",
+  "05_segmentation.py": "123346d65ae28c821a2c502538b634cb1ab20dbfe8440c7f4bafd25febe0b33f",
+  "06_hedonic.py": "2f58d02b092ea4a0c33e44af4cd4b3e559c802cb68d09ff4b79e77783960a3c6",
+  "07_lofo.py": "59f065db32764874886a81822e36333f1136bafc24b798dfc69bdb841900d62d",
+  "07_text_flag.py": "876fcdbe75612495cc69db1017f66595da02d41e8362d184f387ca0423925b57",
+  "08_large_errors.py": "87bbfac45775195c272cba63083c15d7ea2a565af51ef430cb8fd010f4917024",
+  "10_free_text.py": "6a84fdada75323f9bb0970d21b1941a235d8a3e7ee1a6de67174bca26f9dd04c",
+  "shap/02_oof_shap.py": "d8f125636f1da475e5097f48dc6f21546493caf5833a94858cb1277c867a677b",
+  "shap/03_what_sets_price.py": "e5e5f979794ee156b981cbb49e4b79812e5e97e992b05b809e4338bb951efef8",
+  "shap/04_variants.py": "d39ed47de16e68e898456fe01439d8c37554e5521bc31490b1937cce3cb28927",
+  "shap/06_one_listing.py": "a714f09a17817a7992d773ec9ea05cc8e9b5415eb5a3e09831b8f732482da31f"
+ }
+}

@@ -771,12 +771,12 @@ def build_figures(d, v, lang, only=None):
                         L("tahmin − gerçek (₺M; eksi = düşük tahmin)", "predicted − actual (₺M; negative = under)"),
                         ref=([0, float(_pp[:, 1].max()) / 1e6], [0, 0])), t)
 
-    # 29 motor gucu/hacmi: kovadan tek sayiya  [TEKNIK] — kullanicinin kurali (2026-09-23).
+    # 29 motor gucu/hacmi: araliktan tek sayiya  [TEKNIK] — kullanicinin kurali (2026-09-23).
     if want(29):
         # Kutu = ceyrekler, cizgi = medyan, biyik = %5–%95 (ham dizi JSON'da yok; error_drivers.hp_cc_kurali).
         _hk = v["ed"]["hp_cc_kurali"]
-        t = L("Kovadan tek sayıya: adayın aynı modelin kesin değerinden uzaklığı",
-              "From bucket to one number: each candidate's distance from the model's exact value")
+        t = L("Aralıktan tek sayıya: adayın aynı modelin kesin değerinden uzaklığı",
+              "From a range to one number: each candidate's distance from the model's exact value")
         fig, axs = plt.subplots(1, 2, figsize=(8.4, 3.4))
         _ad = {"alt": L("alt sınır", "lower bound"), "orta": L("orta nokta", "midpoint"),
                "ust": L("üst sınır", "upper bound")}
@@ -797,20 +797,56 @@ def build_figures(d, v, lang, only=None):
                 m_ = h_["adaylar"][k]["medyan"]
                 ax.annotate(f"{m_:g}", (i_ + .3, m_), textcoords="offset points", xytext=(3, 0), va="center",
                             fontsize=8, fontweight="bold" if k == h_["secilen"] else "normal")
-            ax.set_title(f"{bas} · " + L(f"referanslı {num(h_['referansli'], lang)} kovalı ilan",
-                                           f"{num(h_['referansli'], lang)} bucketed listings with a reference"),
+            ax.set_title(f"{bas} · " + L(f"referanslı {num(h_['referansli'], lang)} aralıklı ilan",
+                                           f"{num(h_['referansli'], lang)} range listings with a reference"),
                          fontsize=9)
             ax.set_ylabel(L(f"|aday − kesin değer| ({h_['birim']})", f"|candidate − exact value| ({h_['birim']})"))
             ax.set_ylim(bottom=0)
             ax.grid(axis="y", color=GRID, lw=.7); ax.set_axisbelow(True)
         fig.suptitle(t)
         fig.text(.5, .005, L("kutu = çeyrekler · çizgi ve sayı = medyan · bıyık = %5–%95 · kesin değer = aynı modelin "
-                             "kovasız ilanlarının medyanı",
+                             "kesin değerli ilanlarının medyanı",
                              "box = quartiles · line and number = median · whiskers = 5th–95th percentile · exact "
-                             "value = median of the same model's un-bucketed listings"),
+                             "value = median of the same model's exact-value listings"),
                  ha="center", fontsize=7, color=C2)
         fig.tight_layout(rect=(0, .04, 1, 1))
         reg(29, _save(fig, f"{p}-29-hp-cc-rule"), t)
+
+    # 30 sitenin verdigi alt x ust sinir  [TEKNIK] — deneysel scatter'dan rapora (2026-09-25).
+    if want(30):
+        # Kesin deger kosegende (alt = ust), aralik kosegenin ustunde; nokta = (alt, ust) cifti, buyuklugu ilan sayisi.
+        _hk = v["ed"]["hp_cc_kurali"]
+        t = L("Sitenin verdiği değerler: alt × üst sınır", "What the site gives: lower × upper bound")
+        fig, axs = plt.subplots(1, 2, figsize=(8.4, 4.2))
+        for ax, (p_, bas) in zip(axs, (("engine_cc", L("motor hacmi", "engine size")),
+                                       ("power_hp", L("motor gücü", "engine power")))):
+            h_ = _hk[p_]
+            c_ = np.array([[lo_, up_, r_, n_] for lo_, up_, r_, n_ in h_["ciftler"]], dtype=float)
+            nmax = c_[:, 3].max()
+            for is_r, col_, ad_ in ((0, C1, L("kesin değer", "exact value")), (1, C3, L("aralık", "range"))):
+                s_ = c_[c_[:, 2] == is_r]
+                ax.scatter(s_[:, 0], s_[:, 1], s=6 + 260 * s_[:, 3] / nmax, color=col_, alpha=.55, lw=0,
+                           label=L(f"{ad_} ({num(s_[:, 3].sum(), lang)} ilan)",
+                                   f"{ad_} ({num(s_[:, 3].sum(), lang)} listings)"))
+            lim = [c_[:, :2].min() * .95, c_[:, :2].max() * 1.02]
+            ax.plot(lim, lim, "--", color=C2, lw=.8, label="y = x")
+            ax.set_xlim(lim); ax.set_ylim(lim); ax.set_aspect("equal")
+            ax.set_title(bas, fontsize=9)
+            ax.set_xlabel(L(f"alt sınır ({h_['birim']})", f"lower bound ({h_['birim']})"))
+            ax.set_ylabel(L(f"üst sınır ({h_['birim']})", f"upper bound ({h_['birim']})"))
+            ax.legend(loc="upper left", frameon=False, fontsize=7, markerscale=.5)
+            ax.grid(color=GRID, lw=.7); ax.set_axisbelow(True)
+        fig.suptitle(t)
+        _c, _h = _hk["engine_cc"], _hk["power_hp"]
+        fig.text(.5, .005, L(f"nokta büyüklüğü = ilan sayısı · kesin değer köşegende (alt = üst) · çizilemeyen: açık "
+                             f"uçlu aralık {num(_c['acik_uclu'], lang)}/{num(_h['acik_uclu'], lang)}, değersiz "
+                             f"{num(_c['degersiz'], lang)}/{num(_h['degersiz'], lang)} ilan (hacim/güç)",
+                             f"point size = listings · exact values on the diagonal (lower = upper) · not drawn: "
+                             f"open-ended range {num(_c['acik_uclu'], lang)}/{num(_h['acik_uclu'], lang)}, no value "
+                             f"{num(_c['degersiz'], lang)}/{num(_h['degersiz'], lang)} listings (size/power)"),
+                 ha="center", fontsize=7, color=C2)
+        fig.tight_layout(rect=(0, .04, 1, 1))
+        reg(30, _save(fig, f"{p}-30-engine-bounds"), t)
 
     return F
 
@@ -820,7 +856,7 @@ def build_figures(d, v, lang, only=None):
 # ============================================================================
 BUSINESS_FIGS = [0, 5, 6, 7, 10, 12, 15, 27]        # 2 (segment medyani) 2026-09-22'de cikti
 # 10/12/15 iki raporda da: karar notunda karar icin, teknik raporda kanit olarak (bilincli tekrar).
-TECHNICAL_FIGS = [1, 3, 4, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+TECHNICAL_FIGS = [1, 3, 4, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
 
 
 def num(x, lang="tr"):

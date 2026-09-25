@@ -34,9 +34,9 @@ Median asking price ₺1.55M, ranging ₺0.85M–₺3.43M (P10–P90).
 2. **Damage / inspection** — 13 body panels × {changed, painted, local paint} + the heavy-damage record. Those 39 raw flags reach the model as 12 features: roof · hood · trunk are single panels, so they carry a **state** (original/local/painted/changed), while door · fender · bumper carry a within-group **count** (doors 0–4, fenders 0–4, bumpers 0–2).
 3. **Free text** — the seller's description; **not used** by the model. It was measured: it adds 0.0015 to R²; the detail is in §10.
 
-**"Unspecified" panels were counted as original.** The site gives one of five answers per panel: original, unspecified, painted, locally painted, changed. Across the listings in the model 59,651 panels (15.3%) are unspecified; on 1,235 listings all 13 are. That answer was coded as original by a deliberate decision, on the reasoning that the seller may have forgotten to list damage but no damage is the likelier case. Relative to the same model-and-year median, the median price is 1.034 for original listings, 1.011 for unspecified, 1.011 for lightly damaged ones (1–2 painted or locally painted panels, nothing changed) and 0.979 for all damaged ones — unspecified looks more like lightly damaged than original; price does not back the reasoning, and some unspecified listings may be lightly damaged. The cost: some damaged listings count as original, so damage effects are pulled slightly toward zero.
+**"Unspecified" panels were counted as original.** The site gives one of five answers per panel: original, unspecified, painted, locally painted, changed. Across the listings in the model 59,651 panels (15.3%) are unspecified; on 1,235 listings all 13 are. That answer was coded as original by a deliberate decision, on the reasoning that the seller may have forgotten to list damage but no damage is the likelier case.
 
-**The heavy-damage record follows the same rule.** On 68.2% of the listings in the model the page gives no heavy-damage answer ("Belirtilmemiş" or no field); those listings count as not heavily damaged. A heavily damaged car whose listing does not say so looks undamaged to the model.
+**The heavy-damage record follows the same rule.** On 68.2% of the listings in the model the page gives no heavy-damage answer ("Belirtilmemiş" or no field); those listings count as not heavily damaged. A heavily damaged car whose listing does not say so looks free of heavy damage to the model.
 
 ### The data the API gets (gold)
 
@@ -51,9 +51,13 @@ The analysis reads the semi-raw database: what the page does not say stays empty
 
 The one column the API does not get is `kb_paint_change_summary`: the page's raw "Boya-değişen" line, a coarse summary of the damage flags. The description goes as `description_text` without the page heading; it is empty on the 114 rows that held only the heading. The result is 116 columns + id (117 in the semi-raw database); every other cell equals the semi-raw database. These counts are over every snapshot row the gold file holds; the unspecified shares in §2 are over the unique listings in the model.
 
-### Engine power and size: from bucket to one number
+### Engine power and size: from a range to one number
 
-On some listings the site gives engine size and power as an exact value, on others as a **bucket**: among the listings in the model, 7,865 have engine size and 7,797 have power as a bucket (the most common are 1401–1600 cc and 151–175 hp). The model uses one number. The rule: **size = the bucket's upper bound, power = the mean of the lower and upper bounds** (the known bound for an open-ended bucket). The rule was checked against the data: each bucketed listing's three candidates were compared with the median of the same model's un-bucketed (exact) listings — 7,176 listings for size, 7,148 for power (models that have at least one exact listing).
+On some listings the site gives engine size and power as an exact value, on others as a **range**: among the listings in the model, 7,865 have engine size and 7,797 have power as a range (the most common are 1401–1600 cc and 151–175 hp). The model uses one number. The rule: **size = the range's upper bound, power = the mean of the lower and upper bounds** (the known bound for an open-ended range). The rule was checked against the data: each range listing's three candidates were compared with the median of the same model's exact-value listings — 7,176 listings for size, 7,148 for power (models that have at least one exact listing).
+
+![What the site gives: lower × upper bound](figures/en-30-engine-bounds.png)
+
+Example: a listing given as 1401–1600 cc belongs to a model whose exact-value listings most often say 1598 cc; for this listing the candidates are the lower bound 1401 (197 cc away), the midpoint 1500.5 (97.5 cc) and the upper bound 1600 (2 cc). The number in the table below is the median of these gaps over all range listings; each model's reference is the median of its own exact-value listings.
 
 | candidate | size: median absolute gap | power: median absolute gap |
 |---|---:|---:|
@@ -61,9 +65,11 @@ On some listings the site gives engine size and power as an exact value, on othe
 | midpoint | 95.5 cc | **7 hp** |
 | upper bound | **5 cc** | 14 hp |
 
-For size the exact value sits at the top of the bucket (median position within the bucket 97.5%, lower quartile 83.9%; the most common exact value among the models in the most common bucket is 1598 cc), so the upper bound is almost a direct hit; in every bucket with at least 100 listings (5/5) the upper bound is the closest candidate. For power the closest candidate changes with the power level (buckets with at least 100 listings): 101–125 hp midpoint; 126–175 hp upper bound; 176–225 hp lower bound; 226–250 hp lower bound and midpoint tied; 251–275 hp lower bound. So the exact value's position within the bucket is spread out (quartiles 29.2%–79.2%). As a single rule the midpoint has the smallest median gap over all bucketed listings. The same model's median exact value falls inside the bucket for 97.9% of listings on size and 84.2% on power; among the power listings outside it, models with more than one exact power value make up 90.3% — one model name covers several engine options, so this share reflects a coarse reference, not wrong buckets on the site. If the rule stops matching the data (the chosen candidate no longer has the smallest median gap), the generator stops.
+For size the exact value sits right at the top of the range (median position within the range 97.5%, lower quartile 83.9%; the most common exact value among the models in the most common range is 1598 cc), so the upper bound is almost a direct hit; in every range with at least 100 listings (5/5) the upper bound is the closest candidate. For power the closest candidate changes with the power level (ranges with at least 100 listings): 101–125 hp midpoint; 126–175 hp upper bound; 176–225 hp lower bound; 226–250 hp lower bound and midpoint tied; 251–275 hp lower bound. So the exact value's position within the range is spread out (quartiles 29.2%–79.2%). As a single rule the midpoint has the smallest median gap over all range listings. The same model's median exact value falls inside the range for 97.9% of listings on size and 84.2% on power; among the power listings outside it, models with more than one exact power value make up 90.3% — one model name covers several engine options, so this share reflects a coarse reference, not wrong ranges on the site. If the rule stops matching the data (the chosen candidate no longer has the smallest median gap), the generator stops.
 
-![From bucket to one number: each candidate's distance from the model's exact value](figures/en-29-hp-cc-rule.png)
+The reason is the engine's litre label: an engine sold as "1.6" really displaces about 1598 cc, a few cc below the label. The site's ranges end at those label values (1401–1600 cc), so the real size almost always sits very close to the range's upper bound. Power has no such label; the real values spread across the range, and there the midpoint fits better.
+
+![From a range to one number: each candidate's distance from the model's exact value](figures/en-29-hp-cc-rule.png)
 
 ### Kept features (25)
 
@@ -83,7 +89,7 @@ Of the 117 raw columns, 53 reach the model directly or derived (39 of them damag
 | E | Catalogue block (co-missing) | 22 | `kb_fuel_cons_avg`, `kb_fuel_tank`, `gb_segment`, `torque_nm`, `cylinder_count`, `max_speed_kmh` … |
 | G | Not in the model, no recorded reason | 4 | `kb_color`, `kb_trade_available`, `kb_seller_type`, `gb_warranty_status` |
 
-*`engine_cc_val`, `power_hp_val`: the database columns (the bucket midpoint). The model re-derives both from the lower and upper bounds (engine rule above): for power the mean of the bounds, i.e. the same value as the database column; for size the upper bound, i.e. different from the database on bucketed listings.*
+*`engine_cc_val`, `power_hp_val`: the database columns (the range midpoint). The model re-derives both from the lower and upper bounds (engine rule above): for power the mean of the bounds, i.e. the same value as the database column; for size the upper bound, i.e. different from the database on range listings.*
 
 Numeric features are not imputed: missing values reach LightGBM and CatBoost as NaN and the libraries' own missing-value routing handles them; missing categoricals become their own `missing` level. Only KMeans/PCA use a global-median fill; `torque_nm`, missing in 27.6% of listings, was dropped.
 
