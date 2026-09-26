@@ -209,7 +209,7 @@ Raw price is right-skewed (skew 1.62); a log transform pulls it toward symmetry 
 
 ![Price histogram — all data (dashed line = median)](figures/en-25-price-hist.png)
 
-![Median price by body style (types with 80+ listings; 101 listings left out)](figures/en-01-body-median.png)
+![Median price by body style (types with 80+ listings; the 291 listings with no body style and the 101 in smaller types left out)](figures/en-01-body-median.png)
 
 ## 5. Market structure — segmentation (KMeans + PCA)
 

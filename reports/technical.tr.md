@@ -209,7 +209,7 @@ Ham fiyat sağa çarpık (çarpıklık 1.62); log dönüşümü simetriğe yakla
 
 ![Fiyat histogramı — tüm veri (kesikli çizgi = medyan)](figures/tr-25-price-hist.png)
 
-![Kasa tipine göre medyan fiyat (en az 80 ilanlı tipler; 101 ilan dışarıda)](figures/tr-01-body-median.png)
+![Kasa tipine göre medyan fiyat (en az 80 ilanlı tipler; kasa tipi verilmeyen 291 ve daha az ilanlı tiplerdeki 101 ilan dışarıda)](figures/tr-01-body-median.png)
 
 ## 5. Piyasa yapısı — segmentasyon (KMeans + PCA)
 

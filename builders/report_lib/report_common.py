@@ -363,15 +363,24 @@ def build_figures(d, v, lang, only=None):
 
     # 01 kasa tipine gore medyan  [TEKNIK]
     if want(1):
-        rows = dom["body_median"]
         # Ureticide en az 80 ilanli kasa tipleri tutuluyor; disarida kalan sayi ve her cubugun n'i yazilir.
-        _n01 = v["n_dedup"] - sum(int(r[2]) for r in rows)
-        t = L(f"Kasa tipine göre medyan fiyat (en az 80 ilanlı tipler; {num(_n01, lang)} ilan dışarıda)",
-              f"Median price by body style (types with 80+ listings; {num(_n01, lang)} listings left out)")
-        reg(1, bar(f"{p}-01-body-median", [(L("bilinmiyor", "unknown") if r[0] == "missing" else r[0])
-                                           + f" · {num(int(r[2]), lang)}" for r in rows],
+        # 2026-09-26 (kullanici): sitenin kasa tipi vermedigi ilanlar (missing) cubuk degil, basliktaki sayi:
+        # gercek bir kasa tipi degiller, karisik modellerden gelip "en pahali tip" gibi okunuyorlardi.
+        _unk01 = [r for r in dom["body_median"] if r[0] == "missing"]
+        assert len(_unk01) == 1, f"baslik kasa tipi verilmeyen ilanlari sayiyor: {len(_unk01)} satir"
+        rows = [r for r in dom["body_median"] if r[0] != "missing"]
+        _nu01 = int(_unk01[0][2])
+        _n01 = v["n_dedup"] - _nu01 - sum(int(r[2]) for r in rows)
+        _head01 = L("Kasa tipine göre medyan fiyat", "Median price by body style")
+        _note01 = L(f"en az 80 ilanlı tipler; kasa tipi verilmeyen {num(_nu01, lang)} ve daha az ilanlı tiplerdeki "
+                    f"{num(_n01, lang)} ilan dışarıda",
+                    f"types with 80+ listings; the {num(_nu01, lang)} listings with no body style and the "
+                    f"{num(_n01, lang)} in smaller types left out")
+        t = f"{_head01} ({_note01})"
+        # Grafigin icinde baslik iki satir (uzun not gorseli genisletiyordu); rapordaki gorsel adi tek satir.
+        reg(1, bar(f"{p}-01-body-median", [r[0] + f" · {num(int(r[2]), lang)}" for r in rows],
                    [r[1] / 1e6 for r in rows],
-                   t, L("medyan fiyat (₺M)", "median price (₺M)"), horizontal=True), t)
+                   f"{_head01}\n({_note01})", L("medyan fiyat (₺M)", "median price (₺M)"), horizontal=True), t)
 
     # 02 (segmente gore medyan) 2026-09-22'de cikti: karar notundaki kume bolumuyle birlikte
     # gitti, teknik rapor onu hic kullanmiyordu. Segment kirilimi teknik §5'te duruyor.
