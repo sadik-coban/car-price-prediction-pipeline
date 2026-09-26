@@ -514,7 +514,7 @@ The two columns answer two different questions. **Live market**: how the median 
 | 01-27 → 06-27 | 7.30% | 10,313 | ≤01-27 → 06-27 | 7.36% | 10,257 |
 | 03-21 → 06-27 | 7.06% | 9,099 | ≤03-21 → 06-27 | 6.94% | 8,889 |
 
-Single = train on one snapshot, predict a later one. Cumulative = train on every snapshot up to t. The test set holds only `ad_id`s never seen in training (leak-free), so cumulative n is at most the single n. From the same training snapshot, error grows as the test horizon lengthens.
+Single = train on one snapshot, predict a later one. Cumulative = train on every snapshot up to t. The test set holds only `ad_id`s never seen in training (leak-free); **n** is the number of those listings and MAPE is over them. E.g. of the 11,254 listings in the 01-27 snapshot, 8,294 were already live in the 01-18 snapshot; the other 2,960 were tested. Cumulative drops every listing seen in any snapshot up to t, so its n is at most the single n. From the same training snapshot, error grows as the test horizon lengthens.
 
 Both arms of this table use a lighter setup than the main model: model and series names enter as raw categoricals without TF-IDF/SVD, 800 trees, no early stopping. Compare rows with each other, not the absolute level with the headline MAPE. The first three rows of the cumulative arm are the same experiment as the single arm (accumulating up to the first snapshot is one snapshot); they are not a second, independent measurement.
 

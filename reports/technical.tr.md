@@ -514,7 +514,7 @@ Lira ölçeğinde liste tersine dönüyor: ilk altının altı tanesinde model *
 | 01-27 → 06-27 | %7.30 | 10.313 | ≤01-27 → 06-27 | %7.36 | 10.257 |
 | 03-21 → 06-27 | %7.06 | 9.099 | ≤03-21 → 06-27 | %6.94 | 8.889 |
 
-Tek dönem = yalnız bir taramada eğit, sonrakini tahmin et. Kümülatif = t'ye kadarki tüm taramalarda eğit. Test kümesi yalnız eğitimde hiç görülmemiş `ad_id`'ler (sızıntısız); bu yüzden kümülatif n tek dönemden küçük ya da eşit. Aynı eğitim döneminden test ufku uzadıkça hata büyüyor.
+Tek dönem = yalnız bir taramada eğit, sonrakini tahmin et. Kümülatif = t'ye kadarki tüm taramalarda eğit. Test kümesi yalnız eğitimde hiç görülmemiş `ad_id`'ler (sızıntısız); **n** bu ilanların sayısı ve MAPE bu ilanlarda. Ör. 01-27 taramasındaki 11.254 ilanın 8.294 tanesi 01-18 taramasında da yayındaydı; test edilen kalan 2.960 ilan. Kümülatifte t'ye kadarki her taramada görülen ilan çıktığı için n tek dönemden küçük ya da eşit. Aynı eğitim döneminden test ufku uzadıkça hata büyüyor.
 
 Bu tablonun iki kolu da ana modelden hafif bir kurulumla ölçülür: model ve seri adı TF-IDF/SVD'den geçmeden ham kategorik girer, 800 ağaç, erken durdurma yok. Mutlak düzey manşet MAPE ile değil, satırlar birbiriyle karşılaştırılmalı. Kümülatif kolun ilk üç satırı tek dönem koluyla aynı deneydir (ilk taramaya kadar birikim tek bir taramadır); bağımsız ikinci bir ölçüm sayılmamalı.
 

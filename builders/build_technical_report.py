@@ -1686,11 +1686,22 @@ def section_time(c):
     for s in bt["single"]:
         _by_train.setdefault(s[0], []).append(s[2])
     _grows = all(all(a <= b for a, b in zip(xs, xs[1:])) for xs in _by_train.values() if len(xs) > 1)
+    # 2026-09-27 (kullanici: "buradaki n'ler neyi gosteriyor"): n'in tanimi ve ilk satirdan bir ornek. Test
+    # taramasinin butun ilanlari per_snapshot'tan; fark = egitim taramasinda da yayinda olanlar.
+    _ex = bt["single"][0]
+    _ex_all = {r_[0]: r_[2] for r_ in bt["per_snapshot"]}[_ex[1]]
+    assert _ex_all > _ex[3], f"ornek satir tutarsiz: test taramasi {_ex_all}, test n {_ex[3]}"
     A(L("Tek dönem = yalnız bir taramada eğit, sonrakini tahmin et. Kümülatif = t'ye kadarki tüm taramalarda "
-        "eğit. Test kümesi yalnız eğitimde hiç görülmemiş `ad_id`'ler (sızıntısız); bu yüzden kümülatif n tek "
-        "dönemden küçük ya da eşit." + (" Aynı eğitim döneminden test ufku uzadıkça hata büyüyor." if _grows else ""),
+        "eğit. Test kümesi yalnız eğitimde hiç görülmemiş `ad_id`'ler (sızıntısız); **n** bu ilanların sayısı ve "
+        f"MAPE bu ilanlarda. Ör. {_ex[1]} taramasındaki {num(_ex_all, lang)} ilanın {num(_ex_all - _ex[3], lang)} "
+        f"tanesi {_ex[0]} taramasında da yayındaydı; test edilen kalan {num(_ex[3], lang)} ilan. Kümülatifte t'ye "
+        "kadarki her taramada görülen ilan çıktığı için n tek dönemden küçük ya da eşit."
+        + (" Aynı eğitim döneminden test ufku uzadıkça hata büyüyor." if _grows else ""),
         "Single = train on one snapshot, predict a later one. Cumulative = train on every snapshot up to t. The test "
-        "set holds only `ad_id`s never seen in training (leak-free), so cumulative n is at most the single n."
+        "set holds only `ad_id`s never seen in training (leak-free); **n** is the number of those listings and MAPE "
+        f"is over them. E.g. of the {num(_ex_all, lang)} listings in the {_ex[1]} snapshot, "
+        f"{num(_ex_all - _ex[3], lang)} were already live in the {_ex[0]} snapshot; the other {num(_ex[3], lang)} "
+        "were tested. Cumulative drops every listing seen in any snapshot up to t, so its n is at most the single n."
         + (" From the same training snapshot, error grows as the test horizon lengthens." if _grows else "")))
     # 2026-09-23: kumulatif sutunun ilk blogu (<= ilk tarama) tek donemle AYNI deneydir; veriden sinanir.
     # 2026-09-23: "800 / 500 agac" elle yaziliydi; protocol metninden (JSON) okunur.
