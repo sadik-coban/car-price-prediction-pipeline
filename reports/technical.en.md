@@ -548,7 +548,7 @@ This table is not temporal: every row is plain 5-fold OOF with no new-listings-o
 |---|---|
 | **KS** | The point where the two distributions differ most; 0–1. How different is "the share of listings below this price" at worst? 0.031 = 3.1 points apart at the widest point. |
 | **KS p** | Could the difference be chance? Below 0.05 → it is real. But it says **nothing about size**: with samples of ~11k listings even a tiny difference comes out significant. |
-| **PSI** | Is the difference practically large? The first snapshot's prices are cut into 10 bins; how much did those bin shares move in the second? < 0.10 no drift · 0.10–0.25 moderate · > 0.25 large, retrain the model. |
+| **PSI** | Is the difference practically large? The first snapshot's prices are cut into 10 bins; how much did those bin shares move in the second? < 0.10 no drift · 0.10–0.25 moderate · > 0.25 large. |
 | **EMD (₺)** | How many lira is the difference? How far prices must move on average to turn one snapshot's distribution into the other's. The only measure in lira, so the most directly readable one. |
 
 **The snapshots are not independent samples.** The same listing shows up in several of them: up to 76.1% of the first snapshot's listings (01-18→01-27) are still there in the second. KS assumes two independent samples, so the p-values above are not valid. Below, the listings seen in both snapshots are removed from each pair and KS is recomputed. That disjoint comparison restores independence but measures something else: listings that left after the first snapshot against listings that arrived later.
@@ -570,9 +570,8 @@ This table is not temporal: every row is plain 5-fold OOF with no new-listings-o
 
 ### When to retrain
 
-- **A threshold, not a calendar.** Run a **drift service** in production that watches PSI · KS · EMD and triggers retraining when PSI crosses 0.10. Today's highest PSI is 0.0049 — far below it, so scheduled retraining buys nothing right now.
-- **Events that reset the pricing regime.** A tax or excise change, an incentive, an import rule, a currency move or a sudden market anomaly can shift the distribution before a monitoring window closes; treat those as **triggers** regardless of the threshold and plan retraining around them.
-- **What the threshold triggers.** Even below the distribution threshold, a model trained on a single old snapshot decays: in the backtest above MAPE rises from 6.53% to 7.56% as the test horizon lengthens from the same training snapshot. Per-snapshot standalone OOF is flat, so that is pure time. The threshold therefore triggers a **rebuild**, not merely a data refresh.
+- **Watch drift, retrain the model.** Run a **drift service** in production that watches PSI · KS · EMD, and retrain the model on new snapshots. A fixed PSI threshold is not enough: today's highest PSI is 0.0049, yet in the backtest above MAPE rises 6.53% → 7.56% as the test horizon lengthens from the same training snapshot. Per-snapshot standalone OOF is flat, so that is pure time: the model ages even while the distribution barely moves.
+- **Events that reset the pricing regime.** A tax or excise change, an incentive, an import rule, a currency move or a sudden market anomaly can shift the distribution before a monitoring window closes; treat those as **triggers** as well and plan retraining around them.
 - **Accumulated data pays.** Per-snapshot OOF stays flat at 6.99%–7.25% while the cumulative figure falls 7.07% → 6.53% (n 10,901 → 29,988). Retrain by **adding** snapshots, not by discarding the old ones.
 
 ## 10. Free text: measured, left out

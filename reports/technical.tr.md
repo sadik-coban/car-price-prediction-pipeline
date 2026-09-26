@@ -548,7 +548,7 @@ Bu tablo zamansal değil: her satır düz 5-fold OOF, yalnız yeni ilan kuralı 
 |---|---|
 | **KS** | İki dağılımın en çok ayrıldığı nokta; 0–1 arası. "Şu fiyatın altında kalan ilan payı" iki dönemde en fazla ne kadar farklı? 0.031 = en ayrık noktada 3.1 puan fark. |
 | **KS p** | Bu fark şans eseri olabilir mi? 0.05'in altı → fark gerçek. Ama **büyüklüğünü söylemez**: ~11 bin ilanlık örneklemlerde çok küçük bir fark bile anlamlı çıkar. |
-| **PSI** | Fark pratikte büyük mü? İlk dönemin fiyatları 10 dilime bölünür; ikinci dönemde bu dilimlerin payı ne kadar kaymış? < 0.10 kayma yok · 0.10–0.25 orta · > 0.25 büyük, model yeniden eğitilmeli. |
+| **PSI** | Fark pratikte büyük mü? İlk dönemin fiyatları 10 dilime bölünür; ikinci dönemde bu dilimlerin payı ne kadar kaymış? < 0.10 kayma yok · 0.10–0.25 orta · > 0.25 büyük. |
 | **EMD (₺)** | Fark kaç lira? Bir dönemin fiyat dağılımını ötekine çevirmek için fiyatların ortalama kaç lira kaydırılması gerektiği. Lira cinsinden tek ölçü olduğu için en doğrudan okunanı bu. |
 
 **Taramalar bağımsız örneklem değil.** Aynı ilan birkaç taramada birden görülüyor: ilk taramadaki ilanların %76.1 kadarı (01-18→01-27) ikinci taramada da var. KS iki örneklemin bağımsız olduğunu varsayar, bu yüzden yukarıdaki p-değerleri geçerli değil. Aşağıda her çift için iki taramada da görülen ilanlar çıkarılıp KS yeniden hesaplandı. Bu ayrık karşılaştırma bağımsızlığı sağlar ama başka bir şeyi ölçer: ilk taramadan sonra kalkan ilanlarla sonradan gelen ilanları.
@@ -570,9 +570,8 @@ Bu tablo zamansal değil: her satır düz 5-fold OOF, yalnız yeni ilan kuralı 
 
 ### Yeniden eğitim ne zaman
 
-- **Takvim değil, eşik.** Canlıda bir **kayma servisi** PSI · KS · EMD'yi izlesin; PSI 0.10 eşiğini aşınca yeniden eğitim tetiklensin. Bugünkü en yüksek PSI 0.0049 — eşiğin çok altında, yani takvime bağlı düzenli eğitim bugün gereksiz.
-- **Fiyat rejimini değiştiren gelişmeler.** Vergi/ÖTV düzenlemesi, teşvik, ithalat kuralı, kur hareketi ya da ani piyasa anomalisi gibi dışsal olaylar kaymayı bir ölçüm penceresi dolmadan yaratabilir; bunlar eşikten bağımsız **tetikleyici** sayılmalı ve eğitim planı bunlara göre yapılmalı.
-- **Eşik neyi tetikler.** Dağılım eşiği aşılmasa da tek ve eski bir taramada eğitilmiş model zamanla kötüleşiyor: yukarıdaki backtest'te aynı eğitim döneminden test ufku uzadıkça MAPE %6.53'ten %7.56'e çıkıyor. Dönem başına bağımsız OOF sabit kaldığına göre bu saf zaman etkisi. Yani eşik **veriyi tazelemenin** değil, modeli **baştan kurmanın** tetikleyicisi.
+- **Kaymayı izle, modeli yeniden eğit.** Canlıda bir **kayma servisi** PSI · KS · EMD'yi izlesin ve model yeni taramalarla yeniden eğitilsin. Sabit bir PSI eşiği yetmez: bugünkü en yüksek PSI 0.0049, ama yukarıdaki backtest'te aynı eğitim döneminden test ufku uzadıkça MAPE %6.53 → %7.56 artıyor. Dönem başına bağımsız OOF sabit kaldığına göre bu saf zaman etkisi: dağılım neredeyse kıpırdamazken bile model eskiyor.
+- **Fiyat rejimini değiştiren gelişmeler.** Vergi/ÖTV düzenlemesi, teşvik, ithalat kuralı, kur hareketi ya da ani piyasa anomalisi gibi dışsal olaylar kaymayı bir ölçüm penceresi dolmadan yaratabilir; bunlar ayrıca **tetikleyici** sayılmalı ve eğitim planı bunlara göre yapılmalı.
 - **Veri biriktikçe kazanç.** Dönem başına bağımsız OOF %6.99–%7.25 bandında sabit kalırken kümülatif %7.07 → %6.53 (n 10.901 → 29.988). Yeniden eğitim eski dönemleri atarak değil, **üstüne ekleyerek** yapılmalı.
 
 ## 10. Serbest metin: ölçüldü, dahil edilmedi

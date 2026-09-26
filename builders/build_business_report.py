@@ -226,10 +226,11 @@ def fmt_business(v, F, lang):
            f"bu bilgi formda yok. Araç özellikleri sabitken bu ilanlarda hata oranında anlamlı bir fark ölçülmedi; gözden "
            f"geçirme model hatasına değil, formun göremediği bilgiye karşı.\n")
         +
-        f"- Takvimle değil, **kaymayı izleyerek** yenile: canlıda fiyat dağılımını izleyen bir "
-        f"servis kur, eşik aşılınca yeniden eğit. "
-        + (f"Bugün kayma küçük (en yüksek PSI {v['psi_max']:.3f}, eşik {v['psi_safe']:.2f}); " if v["psi_max"] < v["psi_safe"]
-           else f"Kayma eşiği aşıyor (en yüksek PSI {v['psi_max']:.3f}); ")
+        # 2026-09-27 (kullanici): oneri sabit bir PSI esigine baglanmiyor; "az kayiyor" yargisi yine esikle kapili.
+        f"- **Kaymayı izle ve modeli yeniden eğit:** canlıda fiyat dağılımını izleyen bir servis kur, model yeni "
+        f"verilerle yeniden eğitilsin. "
+        + (f"Fiyat dağılımı bugün az kayıyor (en yüksek PSI {v['psi_max']:.3f}), " if v["psi_max"] < v["psi_safe"]
+           else f"Fiyat dağılımı belirgin kayıyor (en yüksek PSI {v['psi_max']:.3f}); ")
         + f"ama piyasa seviyesi {v['n_snapshots']} dönemde "
         f"{P(v['ed']['period_shift']['live'][-1][1], lang, 1, sign=True)} kaydı ve model zamanı görmüyor.\n"
         f"- **Fiyat rejimini değiştiren gelişmeleri takip et** (vergi/ÖTV düzenlemesi, teşvik, ani "
@@ -242,10 +243,10 @@ def fmt_business(v, F, lang):
            f"live: that information is not in the form. With vehicle attributes held fixed no significant difference "
            f"in its error rate was measured; the review guards against what the form cannot see, not against model error.\n")
         +
-        f"- Renew by **watching drift**, not by the calendar: run a service that tracks the price "
-        f"distribution and retrain when it crosses the threshold. "
-        + (f"Drift is small today (highest PSI {v['psi_max']:.3f}, threshold {v['psi_safe']:.2f}), but the "
-           if v["psi_max"] < v["psi_safe"] else f"Drift is above the threshold (highest PSI {v['psi_max']:.3f}) and the ")
+        f"- **Watch drift and retrain the model:** run a service that tracks the price distribution, and "
+        f"retrain the model on new data. "
+        + (f"The price distribution moves little today (highest PSI {v['psi_max']:.3f}), but the "
+           if v["psi_max"] < v["psi_safe"] else f"The price distribution moves clearly (highest PSI {v['psi_max']:.3f}) and the ")
         +
         f"market level moved {P(v['ed']['period_shift']['live'][-1][1], lang, 1, sign=True)}"
         f" over {number_word(v['n_snapshots'], 'en')} snapshots and the model is time-blind.\n"

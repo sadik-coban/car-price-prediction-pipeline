@@ -1787,10 +1787,10 @@ def section_time(c):
         ["**PSI**",
          L(f"Fark pratikte büyük mü? İlk dönemin fiyatları 10 dilime bölünür; ikinci dönemde bu dilimlerin "
            f"payı ne kadar kaymış? < {_safe:.2f} kayma yok · {_safe:.2f}–{_retrain:.2f} orta · > {_retrain:.2f} "
-           f"büyük, model yeniden eğitilmeli.",
+           f"büyük.",
            f"Is the difference practically large? The first snapshot's prices are cut into 10 bins; how much did "
            f"those bin shares move in the second? < {_safe:.2f} no drift · {_safe:.2f}–{_retrain:.2f} moderate · "
-           f"> {_retrain:.2f} large, retrain the model.")],
+           f"> {_retrain:.2f} large.")],
         [L("**EMD (₺)**", "**EMD (₺)**"),
          L("Fark kaç lira? Bir dönemin fiyat dağılımını ötekine çevirmek için fiyatların ortalama kaç lira "
            "kaydırılması gerektiği. Lira cinsinden tek ölçü olduğu için en doğrudan okunanı bu.",
@@ -1865,36 +1865,34 @@ def section_time(c):
     _same = [r for r in bt["single"] if r[0] == _s0]
     _bt0, _bt2 = _same[0], _same[-1]
     _c0, _cN = bt["insample"][0], bt["insample"][-1]
+    # 2026-09-27 (kullanici: "0.10 esigi yerine drift izlensin ve egitilsin"): oneri sabit bir PSI esigine
+    # baglanmiyor. Gerekce veride: PSI esigin cok altindayken bile hata ufukla buyuyor; kapi tutmazsa uretec durur.
+    assert psi_max < _safe and _bt2[2] > _bt0[2], (
+        f"'sabit esik yetmez' maddesi bayat: PSI {psi_max} (esik {_safe}), MAPE {_bt0[2]} -> {_bt2[2]}")
     A(L("### Yeniden eğitim ne zaman", "### When to retrain"))
     A("")
-    A(L(f"- **Takvim değil, eşik.** Canlıda bir **kayma servisi** PSI · KS · EMD'yi izlesin; "
-        f"PSI {_safe:.2f} eşiğini aşınca yeniden eğitim tetiklensin. Bugünkü en yüksek PSI "
-        f"{psi_max:.4f} — eşiğin çok altında, yani takvime bağlı düzenli eğitim bugün gereksiz.\n"
+    A(L(f"- **Kaymayı izle, modeli yeniden eğit.** Canlıda bir **kayma servisi** PSI · KS · EMD'yi izlesin ve "
+        f"model yeni taramalarla yeniden eğitilsin. Sabit bir PSI eşiği yetmez: bugünkü en yüksek PSI "
+        f"{psi_max:.4f}, ama yukarıdaki backtest'te aynı eğitim döneminden test ufku uzadıkça MAPE "
+        f"%{_bt0[2]:.2f} → %{_bt2[2]:.2f} artıyor. Dönem başına bağımsız OOF sabit kaldığına göre bu saf zaman "
+        f"etkisi: dağılım neredeyse kıpırdamazken bile model eskiyor.\n"
         f"- **Fiyat rejimini değiştiren gelişmeler.** Vergi/ÖTV düzenlemesi, teşvik, ithalat "
         f"kuralı, kur hareketi ya da ani piyasa anomalisi gibi dışsal olaylar kaymayı bir ölçüm "
-        f"penceresi dolmadan yaratabilir; bunlar eşikten bağımsız **tetikleyici** sayılmalı ve "
+        f"penceresi dolmadan yaratabilir; bunlar ayrıca **tetikleyici** sayılmalı ve "
         f"eğitim planı bunlara göre yapılmalı.\n"
-        f"- **Eşik neyi tetikler.** Dağılım eşiği aşılmasa da tek ve eski bir taramada eğitilmiş "
-        f"model zamanla kötüleşiyor: yukarıdaki backtest'te aynı eğitim döneminden test ufku "
-        f"uzadıkça MAPE %{_bt0[2]:.2f}'ten %{_bt2[2]:.2f}'e çıkıyor. Dönem "
-        f"başına bağımsız OOF sabit kaldığına göre bu saf zaman etkisi. Yani eşik **veriyi "
-        f"tazelemenin** değil, modeli **baştan kurmanın** tetikleyicisi.\n"
         f"- **Veri biriktikçe kazanç.** Dönem başına bağımsız OOF %{_pmin:.2f}–%{_pmax:.2f} "
         f"bandında sabit kalırken kümülatif %{_c0[1]:.2f} → %{_cN[1]:.2f} "
         f"(n {num(_c0[2], lang)} → {num(_cN[2], lang)}). Yeniden eğitim eski dönemleri atarak "
         f"değil, **üstüne ekleyerek** yapılmalı.",
-        f"- **A threshold, not a calendar.** Run a **drift service** in production that watches "
-        f"PSI · KS · EMD and triggers retraining when PSI crosses {_safe:.2f}. Today's highest "
-        f"PSI is {psi_max:.4f} — far below it, so scheduled retraining buys nothing right now.\n"
+        f"- **Watch drift, retrain the model.** Run a **drift service** in production that watches "
+        f"PSI · KS · EMD, and retrain the model on new snapshots. A fixed PSI threshold is not enough: today's "
+        f"highest PSI is {psi_max:.4f}, yet in the backtest above MAPE rises {_bt0[2]:.2f}% → {_bt2[2]:.2f}% as "
+        f"the test horizon lengthens from the same training snapshot. Per-snapshot standalone OOF is flat, so "
+        f"that is pure time: the model ages even while the distribution barely moves.\n"
         f"- **Events that reset the pricing regime.** A tax or excise change, an incentive, an "
         f"import rule, a currency move or a sudden market anomaly can shift the distribution "
-        f"before a monitoring window closes; treat those as **triggers** regardless of the "
-        f"threshold and plan retraining around them.\n"
-        f"- **What the threshold triggers.** Even below the distribution threshold, a model "
-        f"trained on a single old snapshot decays: in the backtest above MAPE rises from "
-        f"{_bt0[2]:.2f}% to {_bt2[2]:.2f}% as the test horizon lengthens from "
-        f"the same training snapshot. Per-snapshot standalone OOF is flat, so that is pure time. The "
-        f"threshold therefore triggers a **rebuild**, not merely a data refresh.\n"
+        f"before a monitoring window closes; treat those as **triggers** as well and plan "
+        f"retraining around them.\n"
         f"- **Accumulated data pays.** Per-snapshot OOF stays flat at {_pmin:.2f}%–{_pmax:.2f}% "
         f"while the cumulative figure falls {_c0[1]:.2f}% → {_cN[1]:.2f}% "
         f"(n {num(_c0[2], lang)} → {num(_cN[2], lang)}). Retrain by **adding** snapshots, not by "
