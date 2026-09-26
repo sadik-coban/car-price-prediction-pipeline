@@ -152,7 +152,12 @@ Geriye kalan 25 öznitelikte eksiklik sorun değil: en yükseği `kb_drivetrain`
 
 Cramér's V ilişkinin gücünü (simetrik), Theil's U yönünü (asimetrik) verir. Asimetri bulgunun kendisi: `model` `brand`, `segment`, `series` değerini neredeyse tam belirliyor (U ≥ 0.99) ama tersi değil — yani `seri`, `model`in kabalaştırılmış hâli, bağımsız bilgi değil. Öteki kolonlarda U daha düşük; en düşüğü Kaput Durumu (0.10).
 
-İkisi de yüksek kardinalitede **üste yanlı**: `model` 745 ayrı değer taşıyor ve onunla eşleşen herhangi bir alan, sütun rastgele karıştırıldığında bile Cramér's V'de ~0.16, Theil's U'da alana göre 0.02–0.15 alıyor (permütasyon temeli). `model` sütunundaki değerler bu tabanla birlikte okunmalı; Theil's U yönü verir ama bu yanlılığın çaresi değildir. Hasar sayaçları ile motor (hp/cc) sayısal olduğu için bu iki matriste yok — onların karşılığı aşağıdaki korelasyon tablosu.
+**Neden tabanla okunmalı?** `model` 745 farklı değer taşıyor ve çoğunun yalnız birkaç ilanı var. Birkaç ilanlık bir grupta başka bir alanın değerleri şans eseri aynı çıkabilir (ör. iki ilanın ikisinin de kaputu orijinal); ölçü bunu "model kaputu belirliyor" diye sayar. Bu yüzden `model`le eşleşen her alan, gerçek bir ilişki olmasa da yüksek görünür: iki ölçü de yüksek kardinalitede **üste yanlı**. Bu şişmenin boyunu görmek için `model` sütunu ilanlar arasında rastgele karıştırıldı ve ölçü yeniden hesaplandı; karıştırma her değerin sayısını korur ama gerçek ilişkiyi yok eder. 5 karıştırmanın ortalaması permütasyon tabanı: Cramér's V'de ~0.16, Theil's U'da alana göre 0.02–0.15. `model` sütunundaki değer bu tabanın üstünde kalan kadar anlam taşır:
+
+- Kaput Durumu: Theil's U 0.10, tabanı 0.04.
+- Tavan Durumu: Cramér's V 0.18, tabanı 0.16; farkın neredeyse tamamı şans.
+
+Theil's U'nun yön vermesi bu şişmeyi gidermez, onun da kendi tabanı var. Hasar sayaçları ile motor (hp/cc) sayısal olduğu için bu iki matriste yok — onların karşılığı aşağıdaki korelasyon tablosu.
 
 ![Theil's U (satır | sütun): sütun bilinince satır ne kadar belli](figures/tr-17-theils-u.png)
 

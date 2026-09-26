@@ -610,19 +610,46 @@ def section_redundancy(c):
         _li = _cn["labels"].index("model")
         _cv0 = max(r[_li] for k, r in enumerate(_cn["matrix"]) if k != _li)
         _tu = [r[_li] for k, r in enumerate(_tn["matrix"]) if k != _li]
-        A(L(f"İkisi de yüksek kardinalitede **üste yanlı**: `model` {num(_n_mod, lang)} ayrı değer taşıyor ve "
-            f"onunla eşleşen herhangi bir alan, sütun rastgele karıştırıldığında bile Cramér's V'de "
-            f"~{_cv0:.2f}, Theil's U'da alana göre {min(_tu):.2f}–{max(_tu):.2f} alıyor (permütasyon temeli). `model` sütunundaki değerler "
-            f"bu tabanla birlikte okunmalı; Theil's U yönü verir ama bu yanlılığın çaresi değildir. Hasar "
-            f"sayaçları ile motor (hp/cc) sayısal olduğu için bu iki matriste yok — onların karşılığı aşağıdaki "
-            f"korelasyon tablosu.",
-            f"Both are **biased upward** at high cardinality: `model` has {num(_n_mod, lang)} distinct values, and "
-            f"any field paired with it scores ~{_cv0:.2f} on Cramér's V and {min(_tu):.2f}–{max(_tu):.2f} on "
-            f"Theil's U (depending on the field) even when the "
-            f"column is shuffled at random (permutation baseline). Values in the `model` column must be read "
-            f"against that floor; Theil's U gives direction but does not cure the bias. The damage counts and "
-            f"the engine fields (hp/cc) are numeric, so they are absent from these matrices — the correlation "
-            f"table below covers them."))
+        # 2026-09-27 (kullanici: "bias kismini cok anlamadim"): yanliligin nedeni, tabanin nasil kuruldugu ve iki
+        # ornek. U ornegi yukaridaki en dusuk U alani; V ornegi temeline en yakin alan. Ikisi de metrikten.
+        assert _tn["labels"] == _cn["labels"] == _lb_ == met["cramers_matrix"]["labels"], "matris etiketleri farkli"
+        _cm_ = met["cramers_matrix"]["matrix"]
+        _u_ex = (_lowest, _Um[_lowest], _tn["matrix"][_lb_.index(_lowest)][_li])
+        _v_key = min((x_ for x_ in _lb_ if x_ != "model"),
+                     key=lambda x_: _cm_[_lb_.index(x_)][_li] - _cn["matrix"][_lb_.index(x_)][_li])
+        _v_ex = (_v_key, _cm_[_lb_.index(_v_key)][_li], _cn["matrix"][_lb_.index(_v_key)][_li])
+        assert _v_ex[1] - _v_ex[2] < .05, f"'farkin neredeyse tamami sans' cumlesi bayat: {_v_ex}"
+        A(L(f"**Neden tabanla okunmalı?** `model` {num(_n_mod, lang)} farklı değer taşıyor ve çoğunun yalnız birkaç "
+            f"ilanı var. Birkaç ilanlık bir grupta başka bir alanın değerleri şans eseri aynı çıkabilir (ör. iki ilanın "
+            f"ikisinin de kaputu orijinal); ölçü bunu \"model kaputu belirliyor\" diye sayar. Bu yüzden `model`le "
+            f"eşleşen her alan, gerçek bir ilişki olmasa da yüksek görünür: iki ölçü de yüksek kardinalitede "
+            f"**üste yanlı**. Bu şişmenin boyunu görmek için `model` sütunu ilanlar arasında rastgele karıştırıldı ve "
+            f"ölçü yeniden hesaplandı; karıştırma her değerin sayısını korur ama gerçek ilişkiyi yok eder. "
+            f"{_tn['P']} karıştırmanın ortalaması permütasyon tabanı: Cramér's V'de ~{_cv0:.2f}, Theil's U'da alana "
+            f"göre {min(_tu):.2f}–{max(_tu):.2f}. `model` sütunundaki değer bu tabanın üstünde kalan kadar anlam "
+            f"taşır:",
+            f"**Why read against a floor?** `model` has {num(_n_mod, lang)} distinct values and most of them have only a "
+            f"few listings. In a group of a few listings another field's values can match by chance (e.g. both of two "
+            f"listings have an original hood), and the measure counts that as \"model determines the hood\". So any "
+            f"field paired with `model` looks high even without a real relationship: both measures are **biased "
+            f"upward** at high cardinality. To see how large that inflation is, the `model` column was shuffled at "
+            f"random across listings and the measure recomputed; shuffling keeps every value's count but destroys "
+            f"any real relationship. The mean of {_tn['P']} shuffles is the permutation floor: ~{_cv0:.2f} on "
+            f"Cramér's V and {min(_tu):.2f}–{max(_tu):.2f} on Theil's U, depending on the field. A value in the "
+            f"`model` column means only as much as it rises above that floor:"))
+        A("")
+        A(L(f"- {col(d, _u_ex[0], lang)}: Theil's U {_u_ex[1]:.2f}, tabanı {_u_ex[2]:.2f}.\n"
+            f"- {col(d, _v_ex[0], lang)}: Cramér's V {_v_ex[1]:.2f}, tabanı {_v_ex[2]:.2f}; farkın neredeyse tamamı "
+            f"şans.",
+            f"- {col(d, _u_ex[0], lang)}: Theil's U {_u_ex[1]:.2f}, floor {_u_ex[2]:.2f}.\n"
+            f"- {col(d, _v_ex[0], lang)}: Cramér's V {_v_ex[1]:.2f}, floor {_v_ex[2]:.2f}; almost all of the gap is "
+            f"chance."))
+        A("")
+        A(L("Theil's U'nun yön vermesi bu şişmeyi gidermez, onun da kendi tabanı var. Hasar sayaçları ile motor "
+            "(hp/cc) sayısal olduğu için bu iki matriste yok — onların karşılığı aşağıdaki korelasyon tablosu.",
+            "Theil's U giving direction does not remove this inflation; it has its own floor. The damage counts and "
+            "the engine fields (hp/cc) are numeric, so they are absent from these matrices — the correlation table "
+            "below covers them."))
     A("")
     figs(17, 18, 19)
 

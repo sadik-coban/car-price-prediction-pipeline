@@ -152,7 +152,12 @@ Missingness is not an issue in the 25 features that remain: the worst is `kb_dri
 
 Cramér's V gives association strength (symmetric); Theil's U its direction (asymmetric). The asymmetry is the finding: `model` almost fully determines `brand`, `segment`, `series` (U ≥ 0.99) but not vice-versa — `series` is a coarsened view of `model`, not independent information. For the other columns U is lower; the lowest is Hood State (0.10).
 
-Both are **biased upward** at high cardinality: `model` has 745 distinct values, and any field paired with it scores ~0.16 on Cramér's V and 0.02–0.15 on Theil's U (depending on the field) even when the column is shuffled at random (permutation baseline). Values in the `model` column must be read against that floor; Theil's U gives direction but does not cure the bias. The damage counts and the engine fields (hp/cc) are numeric, so they are absent from these matrices — the correlation table below covers them.
+**Why read against a floor?** `model` has 745 distinct values and most of them have only a few listings. In a group of a few listings another field's values can match by chance (e.g. both of two listings have an original hood), and the measure counts that as "model determines the hood". So any field paired with `model` looks high even without a real relationship: both measures are **biased upward** at high cardinality. To see how large that inflation is, the `model` column was shuffled at random across listings and the measure recomputed; shuffling keeps every value's count but destroys any real relationship. The mean of 5 shuffles is the permutation floor: ~0.16 on Cramér's V and 0.02–0.15 on Theil's U, depending on the field. A value in the `model` column means only as much as it rises above that floor:
+
+- Hood State: Theil's U 0.10, floor 0.04.
+- Roof State: Cramér's V 0.18, floor 0.16; almost all of the gap is chance.
+
+Theil's U giving direction does not remove this inflation; it has its own floor. The damage counts and the engine fields (hp/cc) are numeric, so they are absent from these matrices — the correlation table below covers them.
 
 ![Theil's U (row | column): how much the column pins down the row](figures/en-17-theils-u.png)
 
