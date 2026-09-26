@@ -78,12 +78,12 @@ def section_data(c):
     _BRAND_NAMES = {"bmw": "BMW", "audi": "Audi"}
     _fuels_en = ", ".join(FUEL_EN.get(f_, f_) for f_ in _scope["fuel_filter"])
     A(L(f"**Kapsam: toplama filtreleri.** Veri {' ve '.join(_BRAND_NAMES.get(b_, b_) for b_ in _scope['brands'])} "
-        f"ilanlarından, sitenin `/{_scope['category']}/` kategorisinden şu filtrelerle toplandı: fiyat "
+        f"ilanlarından, sitenin {_scope['category']} kategorisinden şu filtrelerle toplandı: fiyat "
         f"{tl(_scope['price_min'])}–{tl(_scope['price_max'])}, en fazla {num(_scope['max_km'], lang)} km, "
         f"{_scope['min_year']} ve sonrası model yılı, yakıt {', '.join(_scope['fuel_filter'])}. Üç sonucu var:",
         f"**Scope: collection filters.** The data was collected from "
         f"{' and '.join(_BRAND_NAMES.get(b_, b_) for b_ in _scope['brands'])} listings in the site's "
-        f"`/{_scope['category']}/` category with these filters: price {tl(_scope['price_min'])}–{tl(_scope['price_max'])}, "
+        f"\"{_scope['category']}\" category with these filters: price {tl(_scope['price_min'])}–{tl(_scope['price_max'])}, "
         f"at most {num(_scope['max_km'], lang)} km, model year {_scope['min_year']} or later, fuel {_fuels_en}. "
         f"Three consequences:"))
     A("")
@@ -92,7 +92,7 @@ def section_data(c):
         f"en pahalı uçtaki tahminler bu sınırla birlikte okunmalı.\n"
         f"- **Yaş en fazla {_scope['max_age']}.** {_scope['min_year']} model yılında {num(_measured['in_min_year'], lang)} "
         f"ilan var; daha eski araçlar toplanmadı, yani en yaşlı kova toplama sınırına dayanıyor.\n"
-        f"- **Gövde ve yakıt.** `/{_scope['category']}/` dışındaki kategoriler toplanmadı: veride "
+        f"- **Gövde ve yakıt.** Yalnız {_scope['category']} kategorisi toplandı, öteki kategoriler toplanmadı: veride "
         f"{num(_measured['suv'], lang)} SUV var. Yakıt filtresi elektrikliyi dışarıda bırakıyor: "
         f"{num(_measured['electric'], lang)} elektrikli ilan.",
         f"- **Price is right-truncated.** The most expensive listing sits exactly at the cap "
@@ -102,7 +102,7 @@ def section_data(c):
         f"- **Age is at most {_scope['max_age']}.** Model year {_scope['min_year']} holds "
         f"{num(_measured['in_min_year'], lang)} listings; older cars were not collected, so the oldest bucket "
         f"runs into the collection limit.\n"
-        f"- **Body and fuel.** Categories outside `/{_scope['category']}/` were not collected: the data holds "
+        f"- **Body and fuel.** Only the \"{_scope['category']}\" category was collected, not the others: the data holds "
         f"{num(_measured['suv'], lang)} SUVs. The fuel filter leaves electric cars out: "
         f"{num(_measured['electric'], lang)} electric listings."))
     A("")

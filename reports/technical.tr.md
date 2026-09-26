@@ -10,11 +10,11 @@ Medyan ilan fiyatı ₺1.55M, ₺0.85M–₺3.43M arası (P10–P90).
 
 **Kapsam: yalnız TR plakalı araçlar.** 22 mavi plakalı ilan (Türkiye'de oturan yabancıların aracı) modele ve analize alınmadı: vergilendirme rejimleri farklı, modeli ve analizi yanıltır. Plaka bilgisi boş olan 54 ilan da, hangi rejime girdiği bilinmediği için alınmadı.
 
-**Kapsam: toplama filtreleri.** Veri Audi ve BMW ilanlarından, sitenin `/otomobil/` kategorisinden şu filtrelerle toplandı: fiyat ₺300K–₺6.50M, en fazla 700.000 km, 2005 ve sonrası model yılı, yakıt Benzin, Dizel, Hibrit, LPG. Üç sonucu var:
+**Kapsam: toplama filtreleri.** Veri Audi ve BMW ilanlarından, sitenin otomobil kategorisinden şu filtrelerle toplandı: fiyat ₺300K–₺6.50M, en fazla 700.000 km, 2005 ve sonrası model yılı, yakıt Benzin, Dizel, Hibrit, LPG. Üç sonucu var:
 
 - **Fiyat sağdan kesik.** En pahalı ilan tam tavanda (₺6.50M); tavanda 10 ilan var, üstünde hiç yok. Tavanın üstündeki araçlar veride değil; en pahalı uçtaki tahminler bu sınırla birlikte okunmalı.
 - **Yaş en fazla 21.** 2005 model yılında 541 ilan var; daha eski araçlar toplanmadı, yani en yaşlı kova toplama sınırına dayanıyor.
-- **Gövde ve yakıt.** `/otomobil/` dışındaki kategoriler toplanmadı: veride 6 SUV var. Yakıt filtresi elektrikliyi dışarıda bırakıyor: 0 elektrikli ilan.
+- **Gövde ve yakıt.** Yalnız otomobil kategorisi toplandı, öteki kategoriler toplanmadı: veride 6 SUV var. Yakıt filtresi elektrikliyi dışarıda bırakıyor: 0 elektrikli ilan.
 
 ### Ön işleme ve filtreler
 

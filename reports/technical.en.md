@@ -10,11 +10,11 @@ Median asking price ₺1.55M, ranging ₺0.85M–₺3.43M (P10–P90).
 
 **Scope: Turkish-plated vehicles only.** 22 blue-plate listings (cars of foreign residents) were not taken into the model or the analysis: their tax regime differs and would mislead the model and the analysis. The 54 listings with an empty plate field were not taken in either, since their regime is unknown.
 
-**Scope: collection filters.** The data was collected from Audi and BMW listings in the site's `/otomobil/` category with these filters: price ₺300K–₺6.50M, at most 700,000 km, model year 2005 or later, fuel Petrol, Diesel, Hybrid, LPG. Three consequences:
+**Scope: collection filters.** The data was collected from Audi and BMW listings in the site's "otomobil" category with these filters: price ₺300K–₺6.50M, at most 700,000 km, model year 2005 or later, fuel Petrol, Diesel, Hybrid, LPG. Three consequences:
 
 - **Price is right-truncated.** The most expensive listing sits exactly at the cap (₺6.50M); 10 listings are at the cap and none above it. Cars above the cap are not in the data; predictions at the expensive end should be read with that limit in mind.
 - **Age is at most 21.** Model year 2005 holds 541 listings; older cars were not collected, so the oldest bucket runs into the collection limit.
-- **Body and fuel.** Categories outside `/otomobil/` were not collected: the data holds 6 SUVs. The fuel filter leaves electric cars out: 0 electric listings.
+- **Body and fuel.** Only the "otomobil" category was collected, not the others: the data holds 6 SUVs. The fuel filter leaves electric cars out: 0 electric listings.
 
 ### Preprocessing and filters
 
