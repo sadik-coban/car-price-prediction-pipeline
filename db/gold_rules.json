@@ -1,7 +1,7 @@
 {
  "_about": {
-  "en": "Silver → gold: the API contract applied to the semi-raw DB by db/build_gold_db.py. Rows, row order, ids and every other column stay as they are. Kept as data (not code): analysis/01_gold_contract.py reads the same rules for the technical report (§1) without importing db/ code, so the rule lives in one place.",
-  "tr": "Silver → gold: db/build_gold_db.py'nin yarı ham DB'ye uyguladığı API sözleşmesi. Satırlar, sıraları, id'ler ve öteki her kolon olduğu gibi kalır. Kod değil veri olarak tutulur: analysis/01_gold_contract.py teknik rapor (§1) için aynı kuralları db/ kodunu import etmeden okur; kural tek yerde durur."
+  "en": "Silver → gold: the API contract applied to the semi-raw DB by db/build_gold_db.py. Rows, row order, ids and every other column stay as they are. Kept as data (not code): analysis/02_missingness.py reads the fill columns (NULL = 'Belirtilmemiş') without importing db/ code, so the list lives in one place.",
+  "tr": "Silver → gold: db/build_gold_db.py'nin yarı ham DB'ye uyguladığı API sözleşmesi. Satırlar, sıraları, id'ler ve öteki her kolon olduğu gibi kalır. Kod değil veri olarak tutulur: analysis/02_missingness.py doldurulan kolonları (NULL = 'Belirtilmemiş') db/ kodunu import etmeden okur; liste tek yerde durur."
  },
  "fill": [
   {

@@ -184,34 +184,6 @@
   "error_drivers.engine_rule.power_hp.unit": "hp",
   "error_drivers.engine_rule.power_hp.with_reference": 7148
  },
- "01_gold_contract": {
-  "_meta.data_until": "2026-06-27",
-  "_meta.db.path": "data/cars.duckdb",
-  "_meta.db.rows": 45315,
-  "_meta.db.sha256": "ebf8cea3c520c50f26cad748932acaee15d53444c3bb0490e1561dc77116d15e",
-  "_meta.generated_at": "2026-09-26T00:34:36+03:00",
-  "_meta.run_id": null,
-  "_meta.script": "01_gold_contract.py",
-  "error_drivers.gold_contract.dropped": {
-   "len": 1,
-   "sha256": "5918395faaac733e766006479800e6b33a371b4cf8da4a01a2c6a8718fbe5b03"
-  },
-  "error_drivers.gold_contract.dropped_rows": {
-   "len": 1,
-   "sha256": "74c50b73becf7148134cfcaa3eb4e2592bf472f562b905fe27d0007af359e737"
-  },
-  "error_drivers.gold_contract.empty_description_rows": 114,
-  "error_drivers.gold_contract.gold_columns": 116,
-  "error_drivers.gold_contract.groups": {
-   "len": 3,
-   "sha256": "052e540b8cdf02a0aab3a60adb160b0e67b13f34db15557051ec558044c29d8d"
-  },
-  "error_drivers.gold_contract.note": "Sayımlar gold'un aldığı car_listings satırlarında (satır kuralının düşürdükleri dışında her taramanın her satırı). Kurallar db/gold_rules.json'dan; gold'u db/build_gold_db.py kurar.",
-  "error_drivers.gold_contract.semi_raw_columns": 117,
-  "error_drivers.gold_contract.semi_raw_rows": 45315,
-  "error_drivers.gold_contract.table_rows": 45277,
-  "error_drivers.gold_contract.total_cells": 353390
- },
  "01_unspecified_panels": {
   "_meta.data_until": "2026-06-27",
   "_meta.db.path": "data/cars.duckdb",

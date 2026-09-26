@@ -94,7 +94,7 @@ data/raw ──build_duckdb──► data/cars.duckdb (yarı ham, analiz) ──
 - **`db/build_gold_db.py`** yarı ham DB'yi yalnız okur, `data/cars_gold.duckdb`'yi güvenli yazar (`.tmp` + yer
   değiştirme, `.wal` kontrolü). Önce girdinin gerçekten yarı ham DB olduğunu sınar (kolonlar `id` +
   `DB_COLUMNS`); eski sözleşmeli ya da gold bir dosya reddedilir. Kurallar gerekçeleriyle
-  **`db/gold_rules.json`**'da (teknik raporun gold bölümü de aynı dosyayı okuyacak):
+  **`db/gold_rules.json`**'da:
   - `is_heavy_damaged`, `kb_is_heavy_damaged`, `gb_is_first_owner`: `NULL` → `false`;
   - 39 panel bayrağı ve 3 hasar sayacı: `NULL` → `0` ("Belirtilmemiş" panel, analizdeki gibi orijinal sayılır);
   - `kb_paint_change_summary` alınmaz;
@@ -135,6 +135,8 @@ data/raw ──build_duckdb──► data/cars.duckdb (yarı ham, analiz) ──
 - **Gerçek dosyalar (2026-09-24):** `data/cars.duckdb` yarı ham olarak yeniden kuruldu, `data/cars_gold.duckdb`
   ondan türetildi. Kanıt gerçek dosyalarla tekrarlandı: gold, yedeklenen eski DB ile açıklama dışında hücre hücre
   aynı (778 / 114 satır, öteki tablolar birebir). S3'e hiçbir şey yüklenmedi; yayın kullanıcının kararı.
-- **Raporda (2026-09-24):** teknik rapor §1 → "API'ye giden veri (gold)". Sayıları `analysis/01_gold_contract.py`
-  sayar (bütün tarama satırları üzerinden, kurallar `db/gold_rules.json`'dan): 353.390 hücre doldurulur
-  (59.402 ağır hasar + ilk sahip, 293.988 panel bayrağı), `kb_paint_change_summary` gitmez, 114 açıklama boş.
+- **Raporda yok (2026-09-26, kullanıcı kararı):** teknik rapor veri katmanlarını (yarı ham, gold, API'ye giden
+  veri) anlatmıyor; §1 analizin uyguladığı ön işleme ve filtreleri sırasıyla anlatıyor. 2026-09-24'ten beri §1'de
+  duran "API'ye giden veri (gold)" alt bölümü ve onu besleyen `analysis/01_gold_contract.py` kalktı (arşivde:
+  `archive/obsolete/gold-contract-2026-09-26/`). Gold'u `db/build_gold_db.py`'nin sözleşme denetimi, `tests/db/`
+  ve yayın denetimi sınamaya devam ediyor.

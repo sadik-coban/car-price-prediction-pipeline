@@ -57,6 +57,12 @@ durdurmanın seçtiği ağaç sayılarının medyanı (`meta.repro.final_lgb_tre
 kuralını (`PERF_RE` dahil) ve %90 aralık için `CONFORMAL_Q`'yu taşır. LOFO'da taban ve çıkarma modelleri
 aynı ağaç sınırıyla kurulur, durdukları tur `methodology.lofo_trees`'te.
 
+**Rapor veri katmanlarını değil, ön işlemeyi anlatır (2026-09-26, kullanıcı kararı).** Teknik rapor yarı ham
+veritabanından, gold'dan ve API'ye giden veriden bahsetmez; §1 toplanan veriye modelden önce uygulanan adımları
+sırasıyla, düz bir listeyle verir (plaka, tekilleştirme, "belirtilmemiş" = yok, motor aralığı, hasar
+bayrakları, eksik değer, aykırı değer, hedef). Gold yalnız `db/` tarafında ve `docs/database.md`'de anlatılır;
+§1'in eski gold alt bölümünü besleyen `analysis/01_gold_contract.py` arşivde.
+
 ## İş / teknik ayrımı
 
 **İş notu** = ne yapmalı, ne kadar para. Yöntem adı geçmez (MAPE, R², conformal, OOF hepsi

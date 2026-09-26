@@ -63,6 +63,12 @@ the median of the tree counts early stopping picked in CV (`meta.repro.final_lgb
 LOFO the base and the drop models use the same tree limit; where each stopped is in
 `methodology.lofo_trees`.
 
+**The report describes the preprocessing, not the data layers (2026-09-26, owner's decision).** The technical
+report does not talk about the semi-raw database, gold or the data the API gets; §1 lists the steps applied to
+the collected data before the model, in order and plainly (plate, deduplication, "unspecified" = none, engine
+range, damage flags, missing values, outliers, target). Gold is described only on the `db/` side and in
+`docs/database.en.md`; `analysis/01_gold_contract.py`, which fed §1's former gold subsection, is archived.
+
 ## Business / technical split
 
 The **business note** = what to do, how much money. No method names (MAPE, R², conformal, OOF all

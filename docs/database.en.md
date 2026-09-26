@@ -97,8 +97,7 @@ data/raw ──build_duckdb──► data/cars.duckdb (semi-raw, analysis) ─�
 
 - **`db/build_gold_db.py`** only reads the semi-raw DB and writes `data/cars_gold.duckdb` safely (`.tmp` + move,
   `.wal` check). It first checks that the input really is the semi-raw DB (columns `id` + `DB_COLUMNS`); an
-  old-contract or a gold file is refused. The rules, with their reasons, are in **`db/gold_rules.json`** (the
-  technical report's gold section will read the same file):
+  old-contract or a gold file is refused. The rules, with their reasons, are in **`db/gold_rules.json`**:
   - `is_heavy_damaged`, `kb_is_heavy_damaged`, `gb_is_first_owner`: `NULL` → `false`;
   - the 39 panel flags and the 3 damage counters: `NULL` → `0` (a "Belirtilmemiş" panel counts as original, as in
     the analysis);
@@ -143,7 +142,8 @@ data/raw ──build_duckdb──► data/cars.duckdb (semi-raw, analysis) ─�
   from it. The proof was repeated on the real files: gold equals the backed-up old DB cell for cell except the
   description (778 / 114 rows, the other tables identical). Nothing was uploaded to S3; publishing is the
   owner's call.
-- **In the report (2026-09-24):** technical report §1 → "The data the API gets (gold)". Its numbers are counted
-  by `analysis/01_gold_contract.py` (over every snapshot row, rules from `db/gold_rules.json`): 353,390 cells are
-  filled (59,402 heavy damage + first owner, 293,988 panel flags), `kb_paint_change_summary` is not sent, 114
-  descriptions are empty.
+- **Not in the report (2026-09-26, owner's decision):** the technical report does not describe the data layers
+  (semi-raw, gold, the data the API gets); §1 describes the preprocessing and filters the analysis applies, in
+  order. The "The data the API gets (gold)" subsection that §1 carried since 2026-09-24 and the script that fed it,
+  `analysis/01_gold_contract.py`, were removed (archived in `archive/obsolete/gold-contract-2026-09-26/`). Gold
+  is still checked by `db/build_gold_db.py`'s contract check, `tests/db/` and the publish check.
