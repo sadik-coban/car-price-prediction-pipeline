@@ -8,13 +8,26 @@ This report answers two questions: what sets a used-car price, and how accuratel
 
 Median asking price ₺1.55M, ranging ₺0.85M–₺3.43M (P10–P90).
 
-**Scope: Turkish-plated vehicles only.** 22 blue-plate listings (cars of foreign residents) stay in the semi-raw database but were not taken into gold or the model: their tax regime differs and would mislead the model and the analysis. The 54 listings with an empty plate field were not taken into the model either, since their regime is unknown.
+**Scope: Turkish-plated vehicles only.** 22 blue-plate listings (cars of foreign residents) were not taken into the model or the analysis: their tax regime differs and would mislead the model and the analysis. The 54 listings with an empty plate field were not taken in either, since their regime is unknown.
 
 **Scope: collection filters.** The data was collected from Audi and BMW listings in the site's `/otomobil/` category with these filters: price ₺300K–₺6.50M, at most 700,000 km, model year 2005 or later, fuel Petrol, Diesel, Hybrid, LPG. Three consequences:
 
 - **Price is right-truncated.** The most expensive listing sits exactly at the cap (₺6.50M); 10 listings are at the cap and none above it. Cars above the cap are not in the data; predictions at the expensive end should be read with that limit in mind.
 - **Age is at most 21.** Model year 2005 holds 541 listings; older cars were not collected, so the oldest bucket runs into the collection limit.
 - **Body and fuel.** Categories outside `/otomobil/` were not collected: the data holds 6 SUVs. The fuel filter leaves electric cars out: 0 electric listings.
+
+### Preprocessing and filters
+
+Before the model, these steps were applied to the collected data, in this order:
+
+1. **Plate:** only Turkish-plated rows were taken: 45,159 of 45,315 snapshot rows. 22 blue-plate listings and 54 with an empty plate field were left out entirely (reason above).
+2. **Deduplication:** the latest snapshot per `ad_id`: 45,159 rows → 29,988 listings.
+3. **"Unspecified" = none:** an unspecified panel counts as original, an unspecified heavy-damage record as not heavily damaged (below).
+4. **Engine range → one number:** size is the range's upper bound, power the mean of the lower and upper bounds (below).
+5. **Damage:** 39 raw panel flags were reduced to 12 features (below).
+6. **Missing values:** no filling in the numeric features, an empty value reaches the model empty; an empty category becomes its own `missing` category (below).
+7. **No outliers removed:** price, km and age were not trimmed; every Turkish-plated listing is in the model.
+8. **Target:** `log1p(price)`.
 
 ### Scale
 
@@ -37,19 +50,6 @@ Median asking price ₺1.55M, ranging ₺0.85M–₺3.43M (P10–P90).
 **"Unspecified" panels were counted as original.** The site gives one of five answers per panel: original, unspecified, painted, locally painted, changed. Across the listings in the model 59,651 panels (15.3%) are unspecified; on 1,235 listings all 13 are. That answer was coded as original by a deliberate decision, on the reasoning that the seller may have forgotten to list damage but no damage is the likelier case.
 
 **The heavy-damage record follows the same rule.** On 68.2% of the listings in the model the page gives no heavy-damage answer ("Belirtilmemiş" or no field); those listings count as not heavily damaged. A heavily damaged car whose listing does not say so looks free of heavy damage to the model.
-
-### The data the API gets (gold)
-
-The analysis reads the semi-raw database: what the page does not say stays empty, and the analysis decides how to read it. The live price API expects the old contract, where an unknown reads as "no" or 0. So the API gets a separate file: of the semi-raw database's 45,315 rows, the 38 blue-plate rows (22 listings) are left out; the other 45,277 rows go in the same order with the same ids, only the gaps below are filled and one column is left out. The filling rule is the analysis' rule: an unspecified panel counts as original, an unspecified heavy-damage record as not heavily damaged.
-
-| group | columns | value written | cells filled | rows affected |
-|---|---:|---|---:|---:|
-| heavy-damage record (2 columns) and first owner | 3 | no | 59,402 | 29,733 |
-| panel flags (13 panels × changed / painted / local) | 39 | 0 | 293,988 | 10,328 |
-| damage counters | 3 | 0 | 0 | 0 |
-| **total** | 45 |  | 353,390 |  |
-
-The one column the API does not get is `kb_paint_change_summary`: the page's raw "Boya-değişen" line, a coarse summary of the damage flags. The description goes as `description_text` without the page heading; it is empty on the 114 rows that held only the heading. The result is 116 columns + id (117 in the semi-raw database); every other cell equals the semi-raw database. These counts are over every snapshot row the gold file holds; the unspecified shares in §2 are over the unique listings in the model.
 
 ### Engine power and size: from a range to one number
 
@@ -124,7 +124,7 @@ Most repeated listings:
 
 Missingness is not an issue in the 25 features that remain: the worst is `kb_drivetrain` at 1.5% and 21 have none at all. The chart above covers only the dropped columns.
 
-**"Unspecified" is not missing data.** The database is semi-raw: what the page does not say stays empty. In 45 columns that gap is not missing data but the seller's "unspecified" answer; these columns are kept out of the list and the blocks above. The heavy-damage record is unspecified on 68.2% of the listings, and each of the 39 panel flags on 12.2%–19.1%. The model reads these unknowns as "no" by a deliberate decision: an unspecified panel counts as original, an unspecified heavy-damage record as not heavily damaged (§1). The data sent to the API applies the same rule.
+**"Unspecified" is not missing data.** What the page does not say stays empty in the data. In 45 columns that gap is not missing data but the seller's "unspecified" answer; these columns are kept out of the list and the blocks above. The heavy-damage record is unspecified on 68.2% of the listings, and each of the 39 panel flags on 12.2%–19.1%. The model reads these unknowns as "no" by a deliberate decision: an unspecified panel counts as original, an unspecified heavy-damage record as not heavily damaged (§1).
 
 ### Co-missing blocks
 

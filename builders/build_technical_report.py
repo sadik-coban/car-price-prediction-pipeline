@@ -52,26 +52,25 @@ def section_data(c):
         + (f", ranging {tlm(v['p10'])}–{tlm(v['p90'])} (P10–P90)." if v["p10"] else ".")))
     A("")
     # Kapsam cumlesi sayi tasimaz ama iddiasi VERIYLE kapili: modele giren ilanlarin tamami TR plakali
-    # olmali. Kapi tutmazsa cumle sessizce yanlislasacagina uretec durur.
+    # olmali. Kapi tutmazsa cumle sessizce yanlislasacagina uretec durur. Asagidaki "aykiri deger atilmadi"
+    # maddesi de bu kapiya dayanir: TR plakali her ilan modelde.
     _plates = v["ed"]["plate_scope"]
-    if _plates:
-        assert _plates["in_training"] == v["n_dedup"], (
-            f"kapsam cumlesi veriyle uyusmuyor: TR plakali {_plates['in_training']} != "
-            f"modele giren {v['n_dedup']} (plaka dagilimi: {_plates['distribution']})")
-        # 2026-09-23: vergi gerekcesi plakasi BOS ilanlara da uygulaniyordu; iki gerekce ayrildi.
-        # 2026-09-26: mavi plakalilar yari ham DB'de duruyor, gold ve model almiyor; veride yabanci plaka yok.
-        _left = {r["plate"]: r["listings"] for r in _plates["dropped_by_plate"]}
-        assert set(_left) <= {"Mavi plakalı", "(bilinmiyor)"}, f"metin yalniz mavi ve bos plakayi anlatiyor: {_left}"
-        A(L(f"**Kapsam: yalnız TR plakalı araçlar.** {num(_left.get('Mavi plakalı', 0), lang)} mavi plakalı ilan "
-            f"(Türkiye'de oturan yabancıların aracı) yarı ham veritabanında duruyor ama gold'a ve modele alınmadı: "
-            f"vergilendirme rejimleri farklı, modeli ve analizi yanıltır. Plaka bilgisi boş olan "
-            f"{num(_left.get('(bilinmiyor)', 0), lang)} ilan da, hangi rejime girdiği bilinmediği için modele alınmadı.",
-            f"**Scope: Turkish-plated vehicles only.** {num(_left.get('Mavi plakalı', 0), lang)} blue-plate listings "
-            f"(cars of foreign residents) stay in the semi-raw database but were not taken into gold or the model: "
-            f"their tax regime differs and would mislead the model and the analysis. The "
-            f"{num(_left.get('(bilinmiyor)', 0), lang)} listings with an empty plate field were not taken into the model "
-            f"either, since their regime is unknown."))
-        A("")
+    assert _plates["in_training"] == v["n_dedup"], (
+        f"kapsam cumlesi veriyle uyusmuyor: TR plakali {_plates['in_training']} != "
+        f"modele giren {v['n_dedup']} (plaka dagilimi: {_plates['distribution']})")
+    # 2026-09-23: vergi gerekcesi plakasi BOS ilanlara da uygulaniyordu; iki gerekce ayrildi.
+    # 2026-09-26 (kullanici): rapor veri katmanlarini (gold, API) anlatmaz; yalniz uygulanan filtreyi anlatir.
+    _left = {r["plate"]: r["listings"] for r in _plates["dropped_by_plate"]}
+    assert set(_left) <= {"Mavi plakalı", "(bilinmiyor)"}, f"metin yalniz mavi ve bos plakayi anlatiyor: {_left}"
+    A(L(f"**Kapsam: yalnız TR plakalı araçlar.** {num(_left.get('Mavi plakalı', 0), lang)} mavi plakalı ilan "
+        f"(Türkiye'de oturan yabancıların aracı) modele ve analize alınmadı: vergilendirme rejimleri farklı, modeli "
+        f"ve analizi yanıltır. Plaka bilgisi boş olan {num(_left.get('(bilinmiyor)', 0), lang)} ilan da, hangi "
+        f"rejime girdiği bilinmediği için alınmadı.",
+        f"**Scope: Turkish-plated vehicles only.** {num(_left.get('Mavi plakalı', 0), lang)} blue-plate listings "
+        f"(cars of foreign residents) were not taken into the model or the analysis: their tax regime differs and "
+        f"would mislead the model and the analysis. The {num(_left.get('(bilinmiyor)', 0), lang)} listings with an "
+        f"empty plate field were not taken in either, since their regime is unknown."))
+    A("")
     # B4 (2026-09-23): toplama filtreleri raporda hic yazmiyordu. Filtre degerleri SCRAPER KODUNDAN
     # okunur, karsiliklari veride sayilir (error_drivers.scope); ikisi de elle yazilmaz.
     _scope = v["ed"]["scope"]
@@ -108,11 +107,56 @@ def section_data(c):
         f"{num(_measured['electric'], lang)} electric listings."))
     A("")
 
+    # 2026-09-26 (kullanici: "direk onislemeleri ve filtrelerden bahsedelim"): toplanan veriden modele giden
+    # adimlar sirasiyla, tek satirda. Ayrintilari asagidaki paragraflarda; sayilar zaten okunan metriklerden.
+    # Panel/bayrak/oznitelik sayilari esleme sabitlerinden (error_drivers) ve feature_kept'ten okunur.
+    _struct = v["ed"]["unspecified"]["structure"]
+    _grouped = _struct["grouped_panels"]
+    _n_damage_features = sum(1 for k_ in met["feature_kept"]
+                 if k_.startswith(("roof_", "hood_", "trunk_", "door_", "fender_", "bumper_")))
+    assert _struct["single_panels"] == 3, f"tek panel sayisi degisti ({_struct['single_panels']}): metin tavan/kaput/bagaj diyor"
+    target = dom["final_results"]["training"]["target"]
+    _plate_rows = sum(r["rows"] for r in _plates["distribution"])
+    A(L("### Ön işleme ve filtreler", "### Preprocessing and filters"))
+    A("")
+    A(L("Toplanan veriye modelden önce sırasıyla şunlar uygulandı:",
+        "Before the model, these steps were applied to the collected data, in this order:"))
+    A("")
+    A(L(f"1. **Plaka:** yalnız TR plakalı satırlar alındı: {num(_plate_rows, lang)} tarama satırından "
+        f"{num(v['n_raw'], lang)} satır. {num(_left.get('Mavi plakalı', 0), lang)} mavi plakalı ve plaka bilgisi boş "
+        f"{num(_left.get('(bilinmiyor)', 0), lang)} ilan tümden dışarıda kaldı (gerekçesi yukarıda).\n"
+        f"2. **Tekilleştirme:** `ad_id` başına en son tarama: {num(v['n_raw'], lang)} satır → "
+        f"{num(v['n_dedup'], lang)} ilan.\n"
+        f"3. **\"Belirtilmemiş\" = yok:** belirtilmemiş panel orijinal, belirtilmemiş ağır hasar kaydı ağır hasarsız "
+        f"sayıldı (aşağıda).\n"
+        f"4. **Motor aralığı → tek sayı:** hacim aralığın üst sınırı, güç alt ve üst sınırın ortalaması (aşağıda).\n"
+        f"5. **Hasar:** {_struct['flags']} ham panel bayrağı {_n_damage_features} özniteliğe indirildi (aşağıda).\n"
+        f"6. **Eksik değer:** sayısal özniteliklerde doldurma yok, boş değer modele boş gidiyor; kategorik boşluk "
+        f"ayrı bir `missing` kategorisi (aşağıda).\n"
+        f"7. **Aykırı değer atılmadı:** fiyat, km ve yaş kırpılmadı; TR plakalı her ilan modelde.\n"
+        f"8. **Hedef:** `{target}`.",
+        f"1. **Plate:** only Turkish-plated rows were taken: {num(v['n_raw'], lang)} of "
+        f"{num(_plate_rows, lang)} snapshot rows. {num(_left.get('Mavi plakalı', 0), lang)} blue-plate listings and "
+        f"{num(_left.get('(bilinmiyor)', 0), lang)} with an empty plate field were left out entirely (reason "
+        f"above).\n"
+        f"2. **Deduplication:** the latest snapshot per `ad_id`: {num(v['n_raw'], lang)} rows → "
+        f"{num(v['n_dedup'], lang)} listings.\n"
+        f"3. **\"Unspecified\" = none:** an unspecified panel counts as original, an unspecified heavy-damage record "
+        f"as not heavily damaged (below).\n"
+        f"4. **Engine range → one number:** size is the range's upper bound, power the mean of the lower and upper "
+        f"bounds (below).\n"
+        f"5. **Damage:** {_struct['flags']} raw panel flags were reduced to {_n_damage_features} features (below).\n"
+        f"6. **Missing values:** no filling in the numeric features, an empty value reaches the model empty; an "
+        f"empty category becomes its own `missing` category (below).\n"
+        f"7. **No outliers removed:** price, km and age were not trimmed; every Turkish-plated listing is in the "
+        f"model.\n"
+        f"8. **Target:** `{target}`."))
+    A("")
+
     A(L("### Ölçek", "### Scale"))
     A("")
     snaps = meta["snapshots"]
     brands = meta["brands"]
-    target = dom["final_results"]["training"]["target"]
     T([L("kalem", "item"), L("değer", "value")], [
         [L("TR plakalı tarama kaydı (tüm taramalar)", "TR-plated snapshot rows (all snapshots)"),
          num(meta["n_raw"], lang)],
@@ -126,13 +170,8 @@ def section_data(c):
 
     A(L("### Üç veri katmanı", "### Three data layers"))
     A("")
-    # 2026-09-23: panel/bayrak/oznitelik sayilari ELLE yaziliydi; esleme sabitlerinden (error_drivers) ve
-    # feature_kept'ten okunur. Metin katkisi "cikmadi" yerine olculen ΔR².
-    _struct = v["ed"]["unspecified"]["structure"]
-    _grouped = _struct["grouped_panels"]
-    _n_damage_features = sum(1 for k_ in met["feature_kept"]
-                 if k_.startswith(("roof_", "hood_", "trunk_", "door_", "fender_", "bumper_")))
-    assert _struct["single_panels"] == 3, f"tek panel sayisi degisti ({_struct['single_panels']}): metin tavan/kaput/bagaj diyor"
+    # 2026-09-23: panel/bayrak/oznitelik sayilari ELLE yaziliydi; esleme sabitlerinden okunur (_struct,
+    # _n_damage_features: yukarida, on isleme listesinde). Metin katkisi "cikmadi" yerine olculen ΔR².
     _dr2 = d["report"]["text_ablation"]["ablation"]["delta_r2"]
     A(L("1. **Yapısal** — yaş · km · motor gücü/hacmi · kasa · yakıt · vites · çekiş · segment.\n"
         f"2. **Hasar / ekspertiz** — {_struct['panel']} kaporta paneli × {{değişen, boyalı, lokal boya}} + ağır hasar "
@@ -180,57 +219,6 @@ def section_data(c):
         f"the model the page gives no heavy-damage answer (\"Belirtilmemiş\" or no field); those listings count as "
         f"not heavily damaged. A heavily damaged car whose listing does not say so looks free of heavy damage to the "
         f"model."))
-    A("")
-
-    # 2026-09-24 (kullanici: "gold dbye gecen taraflari da rapora yazmam gerekiyor"): API'ye giden gold dosyasi
-    # yari ham DB'den neyle ayrisiyor. Sayilar 01_gold_contract'tan; kurallar db/gold_rules.json'dan.
-    _gold = v["ed"]["gold_contract"]
-    _gold_names = {"heavy_damage_first_owner": ("ağır hasar kaydı (2 kolon) ve ilk sahip",
-                                         "heavy-damage record (2 columns) and first owner"),
-            "panel_flags": (f"panel bayrakları ({_struct['panel']} panel × değişen / boyalı / lokal)",
-                            f"panel flags ({_struct['panel']} panels × changed / painted / local)"),
-            "damage_counts": ("hasar sayaçları", "damage counters")}
-    assert _gold["dropped"] == ["kb_paint_change_summary"], f"metin tek alinmayan kolonu anlatiyor: {_gold['dropped']}"
-    assert [r["values"] for r in _gold["dropped_rows"]] == [["Mavi plakalı"]], f"metin yalniz mavi plakayi anlatiyor"
-    _dr = _gold["dropped_rows"][0]
-    _dropped_tr = f"mavi plakalı {num(_dr['rows'], lang)} satır ({num(_dr['listings'], lang)} ilan)"
-    _dropped_en = f"the {num(_dr['rows'], lang)} blue-plate rows ({num(_dr['listings'], lang)} listings)"
-    A(L("### API'ye giden veri (gold)", "### The data the API gets (gold)"))
-    A("")
-    A(L(f"Analiz yarı ham veritabanını okuyor: sayfanın söylemediği bilgi boş kalıyor, nasıl okunacağına analiz "
-        f"karar veriyor. Canlı fiyat API'si ise bilinmeyenin \"hayır\" ya da 0 olduğu eski sözleşmeyi bekliyor. Bu "
-        f"yüzden API'ye ayrı bir dosya gidiyor: yarı ham veritabanının {num(_gold['semi_raw_rows'], lang)} "
-        f"satırından {_dropped_tr} çıkarılıyor; kalan {num(_gold['table_rows'], lang)} satır aynı sırada ve aynı "
-        f"kimliklerle gidiyor, yalnız aşağıdaki boşluklar dolduruluyor ve bir kolon çıkarılıyor. "
-        f"Doldurma kuralı analizin kuralıyla aynı: belirtilmemiş panel orijinal, belirtilmemiş ağır hasar kaydı "
-        f"ağır hasarsız sayılıyor.",
-        f"The analysis reads the semi-raw database: what the page does not say stays empty, and the analysis "
-        f"decides how to read it. The live price API expects the old contract, where an unknown reads as \"no\" "
-        f"or 0. So the API gets a separate file: of the semi-raw database's {num(_gold['semi_raw_rows'], lang)} rows, "
-        f"{_dropped_en} are left out; the other {num(_gold['table_rows'], lang)} rows go in the same order with the same "
-        f"ids, only the gaps below are filled and one column is left out. "
-        f"The filling rule is the analysis' rule: an unspecified panel counts as original, an unspecified "
-        f"heavy-damage record as not heavily damaged."))
-    A("")
-    T([L("grup", "group"), L("kolon", "columns"), L("yazılan değer", "value written"),
-       L("doldurulan hücre", "cells filled"), L("etkilenen satır", "rows affected")],
-      [[(_gold_names[g["name"]][0] if lang == "tr" else _gold_names[g["name"]][1]), g["n_columns"],
-        (L("hayır", "no") if g["value"] is False else str(g["value"])),
-        num(g["filled_cells"], lang), num(g["affected_rows"], lang)] for g in _gold["groups"]]
-      + [[L("**toplam**", "**total**"), sum(g["n_columns"] for g in _gold["groups"]), "", num(_gold["total_cells"], lang), ""]],
-      "lrlrr")
-    A(L(f"API'ye gitmeyen tek kolon `kb_paint_change_summary`: sayfanın ham \"Boya-değişen\" satırı, hasar "
-        f"bayraklarının kaba özeti. Açıklama sayfa başlığı olmadan `description_text` olarak gidiyor; yalnız "
-        f"başlıktan ibaret {num(_gold['empty_description_rows'], lang)} satırda boş. Sonuç {_gold['gold_columns']} kolon + "
-        f"kimlik (yarı ham veritabanında {_gold['semi_raw_columns']}); öteki her hücre yarı ham veritabanındakiyle "
-        f"aynı. Buradaki sayımlar gold dosyasının tuttuğu bütün tarama satırları üzerinden; belirtilmemiş payları "
-        f"(§{section_no('missing')}) ise modele giren tekil ilanlar üzerinden.",
-        f"The one column the API does not get is `kb_paint_change_summary`: the page's raw \"Boya-değişen\" line, a "
-        f"coarse summary of the damage flags. The description goes as `description_text` without the page "
-        f"heading; it is empty on the {num(_gold['empty_description_rows'], lang)} rows that held only the heading. The "
-        f"result is {_gold['gold_columns']} columns + id ({_gold['semi_raw_columns']} in the semi-raw database); every other "
-        f"cell equals the semi-raw database. These counts are over every snapshot row the gold file holds; the "
-        f"unspecified shares in §{section_no('missing')} are over the unique listings in the model."))
     A("")
 
     # T (2026-09-23): motor gucu/hacmi araliktan tek sayiya — kullanicinin kurali, veriyle olculdu. Sayilar
@@ -510,20 +498,20 @@ def section_missing(c):
     _missing_unspec = sm["unspecified"]
     _owner_tr = (f", ilk sahip bilgisinde {P(_missing_unspec['first_owner_pct'], lang)}" if _missing_unspec["first_owner_pct"] else "")
     _owner_en = (f"; the first-owner field is absent on {P(_missing_unspec['first_owner_pct'], lang)}" if _missing_unspec["first_owner_pct"] else "")
-    A(L(f"**\"Belirtilmemiş\", eksik veri değil.** Veritabanı yarı ham: sayfanın söylemediği bilgi boş kalıyor. "
+    # 2026-09-26 (kullanici): rapor veri katmanlarini (yari ham DB, API'ye giden veri) anlatmaz.
+    A(L(f"**\"Belirtilmemiş\", eksik veri değil.** Sayfanın söylemediği bilgi veride boş duruyor. "
         f"{_missing_unspec['n_columns']} kolonda bu boşluk eksik veri değil, satıcının \"belirtilmemiş\" cevabı; bu kolonlar yukarıdaki "
         f"listeye ve bloklara girmiyor. Belirtilmemiş payı ağır hasar kaydında {P(_missing_unspec['heavy_damage_pct'], lang)}, "
         f"{_missing_unspec['panel_flags']} panel bayrağının her birinde {P(_missing_unspec['panel_min_pct'], lang)}–"
         f"{P(_missing_unspec['panel_max_pct'], lang)}{_owner_tr}. Model bu bilinmeyenleri bilinçli bir kararla \"yok\" okuyor: "
-        f"belirtilmemiş panel orijinal, belirtilmemiş ağır hasar kaydı ağır hasarsız sayılıyor (§{section_no('data')}). "
-        f"API'ye giden veride de aynı kural uygulanıyor.",
-        f"**\"Unspecified\" is not missing data.** The database is semi-raw: what the page does not say stays empty. "
+        f"belirtilmemiş panel orijinal, belirtilmemiş ağır hasar kaydı ağır hasarsız sayılıyor (§{section_no('data')}).",
+        f"**\"Unspecified\" is not missing data.** What the page does not say stays empty in the data. "
         f"In {_missing_unspec['n_columns']} columns that gap is not missing data but the seller's \"unspecified\" answer; these columns "
         f"are kept out of the list and the blocks above. The heavy-damage record is unspecified on "
         f"{P(_missing_unspec['heavy_damage_pct'], lang)} of the listings, and each of the {_missing_unspec['panel_flags']} panel flags on "
         f"{P(_missing_unspec['panel_min_pct'], lang)}–{P(_missing_unspec['panel_max_pct'], lang)}{_owner_en}. The model reads these unknowns as "
         f"\"no\" by a deliberate decision: an unspecified panel counts as original, an unspecified heavy-damage record "
-        f"as not heavily damaged (§{section_no('data')}). The data sent to the API applies the same rule."))
+        f"as not heavily damaged (§{section_no('data')})."))
     A("")
 
     A(L("### Birlikte eksik bloklar", "### Co-missing blocks"))

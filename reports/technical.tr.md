@@ -8,13 +8,26 @@ Bu rapor iki soruya yanıt arar: İkinci el araç fiyatını ne belirler ve mode
 
 Medyan ilan fiyatı ₺1.55M, ₺0.85M–₺3.43M arası (P10–P90).
 
-**Kapsam: yalnız TR plakalı araçlar.** 22 mavi plakalı ilan (Türkiye'de oturan yabancıların aracı) yarı ham veritabanında duruyor ama gold'a ve modele alınmadı: vergilendirme rejimleri farklı, modeli ve analizi yanıltır. Plaka bilgisi boş olan 54 ilan da, hangi rejime girdiği bilinmediği için modele alınmadı.
+**Kapsam: yalnız TR plakalı araçlar.** 22 mavi plakalı ilan (Türkiye'de oturan yabancıların aracı) modele ve analize alınmadı: vergilendirme rejimleri farklı, modeli ve analizi yanıltır. Plaka bilgisi boş olan 54 ilan da, hangi rejime girdiği bilinmediği için alınmadı.
 
 **Kapsam: toplama filtreleri.** Veri Audi ve BMW ilanlarından, sitenin `/otomobil/` kategorisinden şu filtrelerle toplandı: fiyat ₺300K–₺6.50M, en fazla 700.000 km, 2005 ve sonrası model yılı, yakıt Benzin, Dizel, Hibrit, LPG. Üç sonucu var:
 
 - **Fiyat sağdan kesik.** En pahalı ilan tam tavanda (₺6.50M); tavanda 10 ilan var, üstünde hiç yok. Tavanın üstündeki araçlar veride değil; en pahalı uçtaki tahminler bu sınırla birlikte okunmalı.
 - **Yaş en fazla 21.** 2005 model yılında 541 ilan var; daha eski araçlar toplanmadı, yani en yaşlı kova toplama sınırına dayanıyor.
 - **Gövde ve yakıt.** `/otomobil/` dışındaki kategoriler toplanmadı: veride 6 SUV var. Yakıt filtresi elektrikliyi dışarıda bırakıyor: 0 elektrikli ilan.
+
+### Ön işleme ve filtreler
+
+Toplanan veriye modelden önce sırasıyla şunlar uygulandı:
+
+1. **Plaka:** yalnız TR plakalı satırlar alındı: 45.315 tarama satırından 45.159 satır. 22 mavi plakalı ve plaka bilgisi boş 54 ilan tümden dışarıda kaldı (gerekçesi yukarıda).
+2. **Tekilleştirme:** `ad_id` başına en son tarama: 45.159 satır → 29.988 ilan.
+3. **"Belirtilmemiş" = yok:** belirtilmemiş panel orijinal, belirtilmemiş ağır hasar kaydı ağır hasarsız sayıldı (aşağıda).
+4. **Motor aralığı → tek sayı:** hacim aralığın üst sınırı, güç alt ve üst sınırın ortalaması (aşağıda).
+5. **Hasar:** 39 ham panel bayrağı 12 özniteliğe indirildi (aşağıda).
+6. **Eksik değer:** sayısal özniteliklerde doldurma yok, boş değer modele boş gidiyor; kategorik boşluk ayrı bir `missing` kategorisi (aşağıda).
+7. **Aykırı değer atılmadı:** fiyat, km ve yaş kırpılmadı; TR plakalı her ilan modelde.
+8. **Hedef:** `log1p(price)`.
 
 ### Ölçek
 
@@ -37,19 +50,6 @@ Medyan ilan fiyatı ₺1.55M, ₺0.85M–₺3.43M arası (P10–P90).
 **"Belirtilmemiş" panel orijinal sayıldı.** Site her panel için beş cevaptan birini veriyor: orijinal, belirtilmemiş, boyalı, lokal boyalı, değişmiş. Modele giren ilanlarda 59.651 panel (%15.3) belirtilmemiş; 1.235 ilanda 13 panelin hiçbiri belirtilmemiş. Bu cevap bilinçli bir kararla orijinal gibi kodlandı; gerekçe, satıcının hasarı yazmayı unutmuş olabileceği ama hasar olmamasının daha olası sayılması.
 
 **Ağır hasar kaydında da aynı kural.** Modele giren ilanlarda sayfanın ağır hasar bilgisi vermediği ("Belirtilmemiş" ya da alan yok) ilanların payı %68.2; bunlar ağır hasarsız sayıldı. Ağır hasarlı olup bunu belirtmeyen bir ilan modelde ağır hasarsız görünür.
-
-### API'ye giden veri (gold)
-
-Analiz yarı ham veritabanını okuyor: sayfanın söylemediği bilgi boş kalıyor, nasıl okunacağına analiz karar veriyor. Canlı fiyat API'si ise bilinmeyenin "hayır" ya da 0 olduğu eski sözleşmeyi bekliyor. Bu yüzden API'ye ayrı bir dosya gidiyor: yarı ham veritabanının 45.315 satırından mavi plakalı 38 satır (22 ilan) çıkarılıyor; kalan 45.277 satır aynı sırada ve aynı kimliklerle gidiyor, yalnız aşağıdaki boşluklar dolduruluyor ve bir kolon çıkarılıyor. Doldurma kuralı analizin kuralıyla aynı: belirtilmemiş panel orijinal, belirtilmemiş ağır hasar kaydı ağır hasarsız sayılıyor.
-
-| grup | kolon | yazılan değer | doldurulan hücre | etkilenen satır |
-|---|---:|---|---:|---:|
-| ağır hasar kaydı (2 kolon) ve ilk sahip | 3 | hayır | 59.402 | 29.733 |
-| panel bayrakları (13 panel × değişen / boyalı / lokal) | 39 | 0 | 293.988 | 10.328 |
-| hasar sayaçları | 3 | 0 | 0 | 0 |
-| **toplam** | 45 |  | 353.390 |  |
-
-API'ye gitmeyen tek kolon `kb_paint_change_summary`: sayfanın ham "Boya-değişen" satırı, hasar bayraklarının kaba özeti. Açıklama sayfa başlığı olmadan `description_text` olarak gidiyor; yalnız başlıktan ibaret 114 satırda boş. Sonuç 116 kolon + kimlik (yarı ham veritabanında 117); öteki her hücre yarı ham veritabanındakiyle aynı. Buradaki sayımlar gold dosyasının tuttuğu bütün tarama satırları üzerinden; belirtilmemiş payları (§2) ise modele giren tekil ilanlar üzerinden.
 
 ### Motor gücü ve hacmi: aralıktan tek sayıya
 
@@ -124,7 +124,7 @@ En çok tekrar eden ilanlar:
 
 Geriye kalan 25 öznitelikte eksiklik sorun değil: en yükseği `kb_drivetrain` ile %1.5, 21'inde hiç eksik yok. Yukarıdaki grafik yalnız atılan kolonları gösteriyor.
 
-**"Belirtilmemiş", eksik veri değil.** Veritabanı yarı ham: sayfanın söylemediği bilgi boş kalıyor. 45 kolonda bu boşluk eksik veri değil, satıcının "belirtilmemiş" cevabı; bu kolonlar yukarıdaki listeye ve bloklara girmiyor. Belirtilmemiş payı ağır hasar kaydında %68.2, 39 panel bayrağının her birinde %12.2–%19.1. Model bu bilinmeyenleri bilinçli bir kararla "yok" okuyor: belirtilmemiş panel orijinal, belirtilmemiş ağır hasar kaydı ağır hasarsız sayılıyor (§1). API'ye giden veride de aynı kural uygulanıyor.
+**"Belirtilmemiş", eksik veri değil.** Sayfanın söylemediği bilgi veride boş duruyor. 45 kolonda bu boşluk eksik veri değil, satıcının "belirtilmemiş" cevabı; bu kolonlar yukarıdaki listeye ve bloklara girmiyor. Belirtilmemiş payı ağır hasar kaydında %68.2, 39 panel bayrağının her birinde %12.2–%19.1. Model bu bilinmeyenleri bilinçli bir kararla "yok" okuyor: belirtilmemiş panel orijinal, belirtilmemiş ağır hasar kaydı ağır hasarsız sayılıyor (§1).
 
 ### Birlikte eksik bloklar
 
