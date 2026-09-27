@@ -202,10 +202,11 @@ def make_duckdb(tmp_path):
     """
     EN: Factory: make_duckdb(rows=3, table="car_listings", gold=True) builds a small DuckDB file in a temp folder.
         gold=True: car_listings in the gold contract (id + GOLD_COLUMNS, every gold rule column filled, the other
-        columns NULL except ad_id and price); gold=False: a bare (ad_id, price) table.
+        columns NULL except ad_id and price) and the two copied tables, empty; gold=False: a bare (ad_id, price)
+        table.
     TR: Fabrika: make_duckdb(rows=3, table="car_listings", gold=True) geçici klasörde küçük bir DuckDB dosyası kurar.
         gold=True: gold sözleşmesinde car_listings (id + GOLD_COLUMNS, her kural kolonu dolu, ad_id ve fiyat
-        dışındaki öteki kolonlar NULL); gold=False: yalın bir (ad_id, price) tablosu.
+        dışındaki öteki kolonlar NULL) ve kopyalanan iki tablo, boş; gold=False: yalın bir (ad_id, price) tablosu.
     """
     from build_gold_db import GOLD_COLUMNS, RULES
 
@@ -222,6 +223,8 @@ def make_duckdb(tmp_path):
                 names = ["id", "ad_id", "price"] + filled
                 con.execute(f"INSERT INTO {table} ({', '.join(names)}) VALUES ({', '.join('?' * len(names))})",
                             [values[n] for n in names])
+            con.execute("CREATE TABLE duplicate_ad_ids (ad_id BIGINT, occurrence_count BIGINT)")
+            con.execute("CREATE TABLE price_history (ad_id BIGINT, search_date DATE, price DOUBLE)")
         else:
             con.execute(f"CREATE TABLE {table} (ad_id BIGINT, price DOUBLE)")
             for i in range(rows):

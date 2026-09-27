@@ -11,9 +11,10 @@ EN: Builds the SEMI-RAW database data/cars.duckdb from data/raw/{audi,bmw}/<snap
         kb_paint_change_summary is the raw "Boya-değişen" summary line;
       - duplicate_ad_ids (+ duplicate_ad_ids.csv next to the DB): ad_ids seen in more than one snapshot (no
         ad_id repeats inside one snapshot);
-      - price_history: price and km per ad_id and snapshot, with the change from the previous snapshot;
-      - dashboard_cache / options_cache: copied unchanged from the previous DB (their producer is archived;
-        the contents are stale — docs/database.md).
+      - price_history: price and km per ad_id and snapshot, with the change from the previous snapshot.
+    Nothing is carried over from the previous DB: the dashboard_cache / options_cache tables it used to copy
+    forward (stale output of an archived producer that nothing read) were dropped on 2026-09-27 — nothing from
+    the archive reaches the live chain.
     HOW, safely: the new DB is built in <out>.tmp and moved over the old one only when complete, so a failure
     leaves the old DB untouched. It stops before touching anything when <out>.wal exists (the old DB was not
     closed cleanly), when the old DB is open in another program, or when the raw data is incomplete (a missing
@@ -37,9 +38,9 @@ TR: data/raw/{audi,bmw}/<tarama>/details.jsonl'den YARI HAM veritabanı data/car
         başlığı "Açıklama" olmadan satıcının metni; kb_paint_change_summary ham "Boya-değişen" özet satırı;
       - duplicate_ad_ids (+ DB'nin yanında duplicate_ad_ids.csv): birden çok taramada görülen ad_id'ler (tek
         tarama içinde tekrar yok);
-      - price_history: ad_id ve tarama başına fiyat ve km, önceki taramaya göre değişimle;
-      - dashboard_cache / options_cache: eski DB'den aynen taşınır (üreticileri arşivde; içerikleri bayat —
-        docs/database.md).
+      - price_history: ad_id ve tarama başına fiyat ve km, önceki taramaya göre değişimle.
+    Eski DB'den hiçbir şey taşınmaz: eskiden aynen taşınan dashboard_cache / options_cache tabloları (arşivdeki
+    bir üretecin bayat çıktısı, okuyan yoktu) 2026-09-27'de kaldırıldı — arşivden canlı zincire hiçbir şey girmez.
     NASIL, güvenle: yeni DB <out>.tmp'de kurulur ve yalnız tamamlanınca eskisinin yerine konur; düşerse eski DB
     dokunulmadan kalır. <out>.wal varsa (eski DB düzgün kapanmamış), eski DB başka programda açıksa ya da ham
     veri eksikse (marka klasörü yok, details.jsonl'suz tarama klasörü, okunamayan satır) hiçbir şeye dokunmadan
@@ -73,7 +74,6 @@ DATA_DIR = ROOT / "data" / "raw"
 DEFAULT_OUT = ROOT / "data" / "cars.duckdb"
 BRANDS = ("audi", "bmw")
 TABLE = "car_listings"
-CACHE_TABLES = ("dashboard_cache", "options_cache")
 CSV_NAME = "duplicate_ad_ids.csv"
 
 # EN: DB column prefix of a panel → silver status column; all 13 panels (the first 11 in the old S3 order,
@@ -268,36 +268,29 @@ def duplicate_report(df):
     return dups.reset_index(drop=True)
 
 
-def read_caches(path):
+def assert_not_open(path):
     """
-    EN: The archived cache tables of the existing DB at path, to carry them over ({} when there is no DB).
-        Opens read-only; a DB that cannot be opened (e.g. open in another program) stops with RuntimeError.
-    TR: path'teki mevcut DB'nin arşiv önbellek tabloları, taşınmak üzere (DB yoksa {}). Salt okunur açar;
-        açılamayan DB (ör. başka programda açık) RuntimeError ile durdurur.
+    EN: Stops with RuntimeError if the existing DB at path cannot be opened (e.g. it is open in another program),
+        before any work is done. Nothing to check when there is no DB yet.
+    TR: path'teki mevcut DB açılamıyorsa (ör. başka bir programda açık), hiçbir iş yapılmadan RuntimeError ile
+        durdurur. Henüz DB yoksa sınanacak bir şey yok.
     """
     path = Path(path)
     if not path.exists():
-        return {}
+        return
     try:
-        con = duckdb.connect(str(path), read_only=True)
+        duckdb.connect(str(path), read_only=True).close()
     except duckdb.Error as e:
         raise RuntimeError(f"{path} cannot be opened — is it open in another program? | açılamıyor — "
                            f"başka bir programda açık mı? ({e})") from e
-    try:
-        names = {r[0] for r in con.execute("SHOW TABLES").fetchall()}
-        return {t: con.execute(f"SELECT * FROM {t}").df() for t in CACHE_TABLES if t in names}
-    finally:
-        con.close()
 
 
-def write_duckdb(df, dups, path, caches):
+def write_duckdb(df, dups, path):
     """
-    EN: Writes car_listings, duplicate_ad_ids, price_history and the carried-over caches into a NEW DuckDB file
-        at path (TRY_CAST: a value that does not fit its type becomes NULL; none does in the real data).
-        Returns: the price_history row count.
-    TR: car_listings, duplicate_ad_ids, price_history ve taşınan önbellekleri path'teki YENİ bir DuckDB dosyasına
-        yazar (TRY_CAST: tipine uymayan değer NULL olur; gerçek veride hiç yok). Döndürür: price_history satır
-        sayısı.
+    EN: Writes car_listings, duplicate_ad_ids and price_history into a NEW DuckDB file at path (TRY_CAST: a value
+        that does not fit its type becomes NULL; none does in the real data). Returns: the price_history row count.
+    TR: car_listings, duplicate_ad_ids ve price_history'yi path'teki YENİ bir DuckDB dosyasına yazar (TRY_CAST:
+        tipine uymayan değer NULL olur; gerçek veride hiç yok). Döndürür: price_history satır sayısı.
     """
     col_defs = ",\n    ".join(f"{name} {dtype}" for name, dtype, _ in DB_COLUMNS)
     col_names = ", ".join(name for name, _, _ in DB_COLUMNS)
@@ -326,10 +319,6 @@ def write_duckdb(df, dups, path, caches):
             WINDOW w AS (PARTITION BY ad_id ORDER BY search_date, scraped_at)
             ORDER BY ad_id, search_date, scraped_at;
         """)
-        for name, table in caches.items():
-            con.register("cache_df", table)
-            con.execute(f"CREATE TABLE {name} AS SELECT * FROM cache_df")
-            con.unregister("cache_df")
         ph_rows = con.execute("SELECT count(*) FROM price_history").fetchone()[0]
         con.execute("CHECKPOINT")
     finally:
@@ -371,12 +360,12 @@ def build(out_path=DEFAULT_OUT, data_dir=DATA_DIR, brands=BRANDS, register=None)
     EN: Builds the DB at out_path from data_dir (steps in the module header) and writes duplicate_ad_ids.csv
         next to it. First checks the raw files against the register of observed values (check_observed; register
         None = db/observed_values.json) and stops before anything is written on an unseen value.
-        Returns: {"out", "csv", "rows", "columns", "duplicate_ad_ids", "price_history", "caches"}.
+        Returns: {"out", "csv", "rows", "columns", "duplicate_ad_ids", "price_history"}.
         Raises SystemExit when there is no data at all.
     TR: data_dir'den out_path'e DB'yi kurar (adımlar modül başlığında) ve yanına duplicate_ad_ids.csv yazar. Önce
         ham dosyaları gözlenen değerler kaydına göre sınar (check_observed; register None = db/observed_values.json)
         ve görülmemiş bir değerde hiçbir şey yazmadan durur.
-        Döndürür: {"out", "csv", "rows", "columns", "duplicate_ad_ids", "price_history", "caches"}.
+        Döndürür: {"out", "csv", "rows", "columns", "duplicate_ad_ids", "price_history"}.
         Hiç veri yoksa SystemExit.
     """
     out_path = Path(out_path)
@@ -391,14 +380,14 @@ def build(out_path=DEFAULT_OUT, data_dir=DATA_DIR, brands=BRANDS, register=None)
     if df.empty:
         raise SystemExit("no data to load | yüklenecek veri yok")
     dups = duplicate_report(df)
-    caches = read_caches(out_path)
+    assert_not_open(out_path)
 
     tmp = Path(f"{out_path}.tmp")
     tmp_wal = Path(f"{tmp}.wal")
     tmp.unlink(missing_ok=True)                        # a leftover of an earlier failed run | önceki düşen koşudan
     tmp_wal.unlink(missing_ok=True)
     try:
-        ph_rows = write_duckdb(df, dups, tmp, caches)
+        ph_rows = write_duckdb(df, dups, tmp)
         if tmp_wal.exists():
             raise RuntimeError(f"{tmp_wal} left after closing | kapatınca geride kaldı")
         try:
@@ -413,12 +402,10 @@ def build(out_path=DEFAULT_OUT, data_dir=DATA_DIR, brands=BRANDS, register=None)
     csv_path = out_path.parent / CSV_NAME
     write_csv(dups, csv_path)
     summary = {"out": out_path, "csv": csv_path, "rows": len(df), "columns": len(DB_COLUMNS),
-               "duplicate_ad_ids": len(dups), "price_history": ph_rows, "caches": {k: len(v) for k, v in caches.items()}}
+               "duplicate_ad_ids": len(dups), "price_history": ph_rows}
     print(f"\nWritten | yazıldı: {out_path}")
     print(f"  - {TABLE}: {summary['rows']} rows | satır, {summary['columns']} columns + id | kolon + id")
     print(f"  - duplicate_ad_ids: {summary['duplicate_ad_ids']} · price_history: {ph_rows}")
-    for name, n in summary["caches"].items():
-        print(f"  - {name}: {n} rows carried over | satır taşındı")
     print(f"  - {csv_path}")
     return summary
 

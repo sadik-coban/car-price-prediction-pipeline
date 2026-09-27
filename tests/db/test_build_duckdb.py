@@ -164,13 +164,18 @@ def test_duplicates_price_history_ids(built):
     assert query(out, "SELECT min(id), max(id), count(DISTINCT id) FROM car_listings") == [(1, 7, 7)]
 
 
-def test_csv_next_to_db_and_caches(built):
-    """EN: The CSV lands beside the DB; caches are carried over. / TR: CSV DB'nin yanında; önbellekler taşınır."""
+def test_csv_next_to_db_and_nothing_carried(built):
+    """
+    EN: The CSV lands beside the DB; nothing is carried over from the previous DB (it held the two archived cache
+        tables): the new DB has exactly its three tables.
+    TR: CSV DB'nin yanında; önceki DB'den hiçbir şey taşınmaz (iki arşiv önbellek tablosunu tutuyordu): yeni DB tam
+        kendi üç tablosunu tutar.
+    """
     summary, _, out = built
     assert summary["csv"] == out.parent / "duplicate_ad_ids.csv"
     assert "10000001,2" in summary["csv"].read_text(encoding="utf-8-sig")
-    assert summary["caches"] == {"dashboard_cache": 2, "options_cache": 1}
-    assert query(out, "SELECT count(*) FROM dashboard_cache") == [(2,)]
+    assert "caches" not in summary
+    assert {t for (t,) in query(out, "SHOW TABLES")} == {"car_listings", "duplicate_ad_ids", "price_history"}
     assert not list(out.parent.glob("*.tmp"))
 
 
@@ -196,7 +201,7 @@ def test_failure_leaves_old_db(tree_and_db, monkeypatch):
     data_dir, out = tree_and_db
     before = sha(out)
 
-    def half_write(df, dups, path, caches):
+    def half_write(df, dups, path):
         """EN: Starts the file, then fails. / TR: Dosyayı başlatır, sonra düşer."""
         path.write_bytes(b"half")
         raise RuntimeError("disk full")

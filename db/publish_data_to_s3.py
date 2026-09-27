@@ -39,11 +39,12 @@ from lib import s3_publish
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DUCKDB = ROOT / "data" / "cars_gold.duckdb"
-# EN: tables that must exist before publishing. dashboard_cache / options_cache left the list in 2026-09: their
-#     producer (build_aggregates.py) is archived and no live code reads them; keeping them would make a fresh DB
-#     fail to publish.
-# TR: yayından önce bulunması ZORUNLU tablolar. dashboard_cache / options_cache 2026-09'da listeden çıktı: üreticileri
-#     (build_aggregates.py) arşivde ve canlı kodda okuyan yok; listede kalsalardı taze bir DB yayımlanamazdı.
+# EN: tables that must exist before publishing; the full table set is gold's contract (build_gold_db.GOLD_TABLES,
+#     checked in contract_problems). dashboard_cache / options_cache were dropped from the DBs on 2026-09-27: stale
+#     output of an archived producer that no live code read; a file that still has them is refused.
+# TR: yayından önce bulunması ZORUNLU tablolar; tablo kümesinin tamamı gold'un sözleşmesi (build_gold_db.GOLD_TABLES,
+#     contract_problems'te sınanır). dashboard_cache / options_cache 2026-09-27'de DB'lerden kaldırıldı: arşivdeki bir
+#     üretecin bayat çıktısıydı, canlı kodda okuyan yoktu; hâlâ onları taşıyan dosya reddedilir.
 REQUIRED_TABLES = ("car_listings",)
 # EN: object names on S3 (paths inside the bucket, not secrets); the poll looks for exactly these
 # TR: S3'teki nesne adları (bucket içindeki yollar, sır değil); yoklama tam bu adlara bakar

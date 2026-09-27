@@ -187,16 +187,41 @@ def test_other_columns_identical(built):
     pd.testing.assert_frame_equal(frame(gold)[["id"] + OTHER], kept(semi)[["id"] + OTHER])
 
 
-@pytest.mark.parametrize("table, order", [("duplicate_ad_ids", "ad_id"), ("price_history", "ad_id, snapshot_idx"),
-                                          ("dashboard_cache", "scope_brand"), ("options_cache", "scope_brand")])
+@pytest.mark.parametrize("table, order", [("duplicate_ad_ids", "ad_id"), ("price_history", "ad_id, snapshot_idx")])
 def test_other_tables_copied(built, table, order):
     """
-    EN: The four other tables are copied unchanged, without the listings the row rule drops.
-    TR: Öteki dört tablo aynen kopyalanır; satır kuralının düşürdüğü ilanlar olmadan.
+    EN: The two other tables are copied unchanged, without the listings the row rule drops.
+    TR: Öteki iki tablo aynen kopyalanır; satır kuralının düşürdüğü ilanlar olmadan.
     """
     _, semi, gold = built
-    source = kept(semi, table, order) if table in G.COPIED_TABLES else frame(semi, table, order)
-    pd.testing.assert_frame_equal(frame(gold, table, order), source)
+    pd.testing.assert_frame_equal(frame(gold, table, order), kept(semi, table, order))
+
+
+def test_gold_holds_exactly_its_tables(built):
+    """
+    EN: Gold holds car_listings and the two copied tables, nothing else.
+    TR: Gold car_listings'i ve kopyalanan iki tabloyu tutar, başka hiçbir şey.
+    """
+    con = duckdb.connect(str(built[2]), read_only=True)
+    try:
+        assert {t for (t,) in con.execute("SHOW TABLES").fetchall()} == set(G.GOLD_TABLES)
+    finally:
+        con.close()
+
+
+def test_contract_catches_an_extra_table(built, tmp_path):
+    """
+    EN: A gold file with a table outside the contract (e.g. an old cache table) breaks it; publish would refuse it.
+    TR: Sözleşme dışı bir tablosu olan gold dosya (ör. eski bir önbellek tablosu) onu bozar; yayın reddederdi.
+    """
+    copy = tmp_path / "gold.duckdb"
+    copy.write_bytes(built[2].read_bytes())
+    con = duckdb.connect(str(copy))
+    try:
+        con.execute("CREATE TABLE dashboard_cache (scope_brand VARCHAR, payload VARCHAR)")
+        assert any("tables are not the gold ones" in p for p in G.contract_problems(con))
+    finally:
+        con.close()
 
 
 def test_blue_plate_in_semi_raw_not_in_gold(built):

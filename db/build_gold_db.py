@@ -11,7 +11,8 @@ EN: Builds the GOLD database data/cars_gold.duckdb (what the API gets) from the 
         2026-09-24);
       - duplicate_ad_ids, price_history: copied without the dropped listings' ad_ids. If one listing had both a
         dropped and a kept row (blue in one snapshot, TR in another) the build stops — the data never showed it;
-      - dashboard_cache, options_cache: copied unchanged.
+      - nothing else: gold holds exactly these three tables (contract_problems stops on any other, e.g. the
+        dashboard_cache / options_cache an older file carried; they were dropped on 2026-09-27).
     It first checks that the input really is the semi-raw DB (its columns are id + build_duckdb.DB_COLUMNS), so
     an old-contract or unrelated file is never turned into gold.
     HOW, safely: the input is opened read-only; the gold DB is built in <out>.tmp and moved over the old one only
@@ -27,7 +28,8 @@ TR: Yarı ham data/cars.duckdb'den (analizin okuduğu) GOLD veritabanı data/car
         description_text olarak kalır; description_clean yok — kullanıcı kararı 2026-09-24);
       - duplicate_ad_ids, price_history: düşen ilanların ad_id'leri olmadan kopyalanır. Bir ilanın hem düşen hem
         tutulan satırı varsa (bir taramada mavi, ötekinde TR) kurulum durur — veri bunu hiç göstermedi;
-      - dashboard_cache, options_cache: aynen kopyalanır.
+      - başka hiçbir şey: gold tam bu üç tabloyu tutar (contract_problems başka her tabloda durur, ör. eski bir
+        dosyanın taşıdığı dashboard_cache / options_cache; 2026-09-27'de kaldırıldılar).
     Önce girdinin gerçekten yarı ham DB olduğunu sınar (kolonları id + build_duckdb.DB_COLUMNS); eski
     sözleşmeli ya da ilgisiz bir dosya gold'a çevrilmez.
     NASIL, güvenle: girdi salt okunur açılır; gold DB <out>.tmp'de kurulur ve yalnız tamamlanınca eskisinin
@@ -54,7 +56,7 @@ RULES_PATH = Path(__file__).resolve().parent / "gold_rules.json"
 # EN: tables copied as they are (the caches are optional: a fresh DB may not have them)
 # TR: olduğu gibi kopyalanan tablolar (önbellekler isteğe bağlı: taze bir DB'de olmayabilir)
 COPIED_TABLES = ("duplicate_ad_ids", "price_history")
-OPTIONAL_TABLES = ("dashboard_cache", "options_cache")
+GOLD_TABLES = (TABLE,) + COPIED_TABLES
 
 
 def load_rules(path=RULES_PATH):
@@ -149,16 +151,23 @@ def check_input(con, table=f"src.{TABLE}"):
 
 def contract_problems(con, table=TABLE):
     """
-    EN: What breaks the gold (API) contract in a connected DB: the car_listings columns are not id + GOLD_COLUMNS,
-        a gold rule column still holds NULL, or a row gold must leave out (drop_rows) is there. Used on the built
-        file and by publish_data_to_s3.py. Returns: list of problems ([] = the contract holds).
-    TR: Bağlı bir DB'de gold (API) sözleşmesini bozan şeyler: car_listings kolonları id + GOLD_COLUMNS değil, bir
-        kural kolonunda hâlâ NULL var ya da gold'un almaması gereken bir satır (drop_rows) duruyor. Kurulan dosyada
-        ve publish_data_to_s3.py'de kullanılır. Döndürür: sorun listesi ([] = sözleşme tutuyor).
+    EN: What breaks the gold (API) contract in a connected DB: its tables are not exactly GOLD_TABLES, the
+        car_listings columns are not id + GOLD_COLUMNS, a gold rule column still holds NULL, or a row gold must leave
+        out (drop_rows) is there. Used on the built file and by publish_data_to_s3.py. Returns: list of problems
+        ([] = the contract holds).
+    TR: Bağlı bir DB'de gold (API) sözleşmesini bozan şeyler: tabloları tam GOLD_TABLES değil, car_listings
+        kolonları id + GOLD_COLUMNS değil, bir kural kolonunda hâlâ NULL var ya da gold'un almaması gereken bir satır
+        (drop_rows) duruyor. Kurulan dosyada ve publish_data_to_s3.py'de kullanılır. Döndürür: sorun listesi
+        ([] = sözleşme tutuyor).
     """
     have, want = table_columns(con, table), ["id"] + [n for n, _ in GOLD_COLUMNS]
     if have != want:
         return [f"columns are not the gold contract | kolonlar gold sözleşmesi değil — {column_diff(have, want)}"]
+    tables = {r[0] for r in con.execute("SELECT table_name FROM duckdb_tables() "
+                                        "WHERE database_name = current_database()").fetchall()}
+    if table == TABLE and tables != set(GOLD_TABLES):
+        return [f"tables are not the gold ones | tablolar gold'unkiler değil — extra | fazla: "
+                f"{sorted(tables - set(GOLD_TABLES))}, missing | eksik: {sorted(set(GOLD_TABLES) - tables)}"]
     nulls = con.execute(f"SELECT {', '.join(f'count(*) - count({c})' for c in RULES['fill'])} FROM {table}").fetchone()
     bad = [c for c, n in zip(RULES["fill"], nulls) if n]
     problems = [f"NULL left in {len(bad)} gold rule columns | {len(bad)} kural kolonunda NULL var: {bad[:5]}"] if bad else []
@@ -203,7 +212,7 @@ def write_gold(src_path, path):
         missing = [t for t in COPIED_TABLES if t not in present]
         if missing:
             raise ValueError(f"input lacks tables | girdide tablo yok: {missing}")
-        tables = [t for t in COPIED_TABLES + OPTIONAL_TABLES if t in present]
+        tables = list(COPIED_TABLES)
         for t in tables:
             where = (f" WHERE ad_id NOT IN (SELECT ad_id FROM src.{TABLE} WHERE {drop_if})"
                      if t in COPIED_TABLES else "")
