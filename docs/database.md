@@ -65,9 +65,12 @@ Bu dosya analizin girdisi. API'ye doğrudan gitmez: yayın, ondan türetilen gol
   onu okuyan bir API kırılmasın diye değiştirilmedi. API'nin drift ekranı bu kolonu okuyor, yani orta noktayı
   gösteriyor; model üst sınırı kullanıyor (kovalı 7.827 ilanda fark, medyan 99,5 cc; 2026-09-25 ölçümü). Drift iki
   taramayı aynı tanımla kıyasladığı için sonuç bozulmuyor; kullanıcı kararıyla böyle bırakıldı.
-- **`dashboard_cache` / `options_cache`** bu depodaki hiçbir üretecin tablosu değil (arşivdeki
-  `build_aggregates.py`); içerikleri bayat (2026-07-14, TR plaka filtresi yok). `build_duckdb.py` yeniden
-  kurulumda onları eski DB'den aynen taşır: ne silinir ne güncellenir.
+- **`dashboard_cache` / `options_cache` artık yok (2026-09-27, kullanıcı kararı).** Arşivdeki
+  `build_aggregates.py`'nin bayat çıktısıydılar ve `build_duckdb.py` onları her kurulumda eski DB'den aynen
+  taşıyordu; canlı API okumuyordu (panosunu `car_listings`'ten bellekte kuruyor). "Arşivden canlıya hiçbir şey"
+  kararıyla silver ve gold'dan kaldırıldılar: DB'de yalnız `car_listings`, `duplicate_ad_ids`, `price_history` var;
+  gold sözleşmesi (`build_gold_db.GOLD_TABLES`) başka bir tabloyu reddeder. Kaldırmadan önceki DB'ler
+  `archive/backups/before-cache-removal-2026-09-27/`'de; üç tablo yeni DB'lerle `id` dahil birebir aynı.
 - **`gb_body_type`** satırların bir kısmında kasa tipini koltuk sayısıyla birleşik taşır; model
   `kb_body_type`'ı kullanır.
 - **`duplicate_ad_ids`** birden çok satırı olan `ad_id`'ler, yani sonraki taramalarda yeniden görülen
@@ -109,13 +112,13 @@ data/raw ──build_duckdb──► data/cars.duckdb (yarı ham, analiz) ──
   - açıklama yarı ham DB'deki gibi: yalnız başlıksız `description_text`, **`description_clean` yok** (kullanıcı
     kararı 2026-09-24: "açıklama metni aynı kalsın, description_text olsun; API yapısına dokunuyorsa API'de fix
     atarım");
-  - sonuç 116 kolon + `id`; satırlar, sıra, id'ler, tipler ve öteki her hücre aynı; öteki dört tablo aynen.
+  - sonuç 116 kolon + `id`; satırlar, sıra, id'ler, tipler ve öteki her hücre aynı; öteki iki tablo aynen.
 - **`publish_data_to_s3.py`**: varsayılan girdi `data/cars_gold.duckdb`, S3 nesne adı aynı (`data/cars.duckdb`).
   Yüklemeden önce gold sözleşmesini sınar (kolonlar = `id` + gold kolonları, kural kolonlarında `NULL` yok);
   yarı ham ya da eski sözleşmeli bir dosya API'ye gidemez.
 - **Koşum sırası:** `build_duckdb.py` → `build_gold_db.py` → (kullanıcı) `publish_data_to_s3.py`.
 - **Testler** (`tests/db/test_build_gold_db.py` + yayın testleri): kural dosyası DB kolonlarıyla uyumlu; kural
-  kolonlarında `NULL` → false/0, bilinen değer değişmiyor; kural dışı kolonlar ve dört tablo hücre hücre aynı;
+  kolonlarında `NULL` → false/0, bilinen değer değişmiyor; kural dışı kolonlar ve iki tablo hücre hücre aynı;
   şema ve tipler; girdi denetimi; güvenli yazma; yayının gold olmayan dosyayı ve kural kolonundaki `NULL`'u
   reddetmesi.
 - **Kanıt (2026-09-24, gerçek ham veriyle, geçici klasörde):** yeni kodla kurulan yarı ham DB → gold, bugünkü
@@ -128,7 +131,7 @@ data/raw ──build_duckdb──► data/cars.duckdb (yarı ham, analiz) ──
   - `publish --dry-run`: gold geçti; yarı ham DB ve bugünkü eski DB reddedildi.
 - **API'nin göreceği fark: yok** (2026-09-25'te API kodundan ve API'nin kendi fonksiyonlarıyla doğrulandı,
   `sadik-portfolio/api`). API yalnız `car_listings`'ten 55 kolon okuyor; `description_clean`, `description_text`,
-  `kb_paint_change_summary`, `kb_is_heavy_damaged`, `gb_is_first_owner` ve öteki dört tablo hiç okunmuyor. API'de
+  `kb_paint_change_summary`, `kb_is_heavy_damaged`, `gb_is_first_owner` ve öteki tablolar hiç okunmuyor. API'de
   fix gerekmiyor. API yarı ham (silver) dosyayla da birebir aynı çıktıyı veriyor (pano satırları, tarama listesi,
   drift). NULL'ları kodunda örtük olarak 0 sayıyor. Yine de yayına gold gidiyor: API'nin bu örtük davranışına
   güvenmemek için açık sözleşme (kullanıcı kararı).

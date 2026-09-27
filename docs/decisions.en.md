@@ -26,10 +26,14 @@ published work.
 1. ~~`HP_SEARCH_TL = 5000`~~ — removed on 2026-09-20 together with the noise-floor paragraph it
    belonged to; it appears nowhere now. The only hand-written content left is the example notes below
    (`feature_drop` has been computed since 2026-09-23).
-2. `HANDWRITTEN_EXAMPLE_NOTES` (2026-09-17, user decision) — the explanations under the examples in the
-   technical report's "Where the large errors come from", written by reading the ads. The table above them
-   and its **automatic reasons** column come from `analysis/08_large_errors.py`. Each note is tied to an example
-   by `(model, year, price)`; if the data changes and the example is not found, the generator **stops** —
+2. `EXAMPLE_NOTES` (2026-09-17, user decision; formerly `HANDWRITTEN_EXAMPLE_NOTES`) — the explanations under
+   the examples in the technical report's "Where the large errors come from", written by reading the ads. The table
+   above them comes from `analysis/08_large_errors.py`. **Since 2026-09-27 the notes hold no hand-typed number:**
+   the comparison each note rests on (series count, the name's other listings, the comparison group's n and median)
+   is computed by 08 on every run (`examples[].compare`) and enters the note from there; the note's claim (e.g.
+   "the only R8 in the data", "in line with same-year 730ds") is gated on the data. Each note is tied to an example
+   by `(model, year, price)`; if the data changes and the example is not found or the claim no longer holds, the
+   generator **stops** —
    a note cannot silently go stale.
 
 **Derived values.** Every number that needs the data is computed in an analysis script (the ones only the
@@ -83,12 +87,33 @@ in the technical report as evidence — a deliberate repeat.
 
 `archive/analysis-history/text_analysis/` — code, metrics, figures and reports are on disk but **not part of
 the published work** (listed in `.gitignore`). Two reasons: its headline result was negative
-(adding text features to the structured model produced no measurable gain, ΔR² ≈ 0.0015 — stated
-in §10 of the car price report), and the detectors behind its price claims carried defects found by
-audit (`archive/experiments/regex_audit/`). Nothing imports from the archive any more (2026-09-23): the four
-pattern detectors behind the example reasons and the text flag were moved unchanged to
-`analysis/lib/text_flags.py` (identical results to the archive on all 29,988 listings), and the ablation measure
-and its setup were frozen in `analysis/frozen/text_ablation.json`.
+(adding text features to the structured model produced no measurable gain), and the detectors behind its
+price claims carried defects found by audit (`archive/experiments/regex_audit/`). Since 2026-09-27 that result is
+not taken from the archive: §10 of the technical report measures the text's contribution live on every run with
+`analysis/10_free_text.py` (pre-registered as `plans/10-text-contribution`; the model's OOF against the same folds
+plus description TF-IDF/SVD). Nothing imports from the archive, and since 2026-09-27 no data or frozen number is
+read from it either (the "Nothing from the archive" decision below). The text flag's two pattern detectors
+(conversion, modification) live in `analysis/lib/text_flags.py`; the patterns came from the archived chain and the
+modification word list was distilled from the vocabulary of an archived LLM extraction trial. They stay because
+they are applied to the current text on every run and their output is used. The hp and M/RS model detectors,
+which fed nothing, were removed; `analysis/frozen/` and the archived LLM extraction file are gone.
+
+## Nothing from the archive reaches the live chain (2026-09-27, owner's decision)
+
+"Take nothing from the old archive … don't use what was copied from it and is not fully live or has no effect."
+Every input of the live chain is produced by the current scripts in the current run; data, tables, frozen numbers
+or hand-typed numbers copied from `archive/`, an older run or an older DB never enter it. Code and rules that came
+from the archive (the segment map, model settings, the text flag's word list) stay only if they are applied to the
+current data on every run and their output is used, and their origin is written down; nothing ineffective is
+kept. Guard: `tests/repo/test_no_archive_inputs.py`. Removed under this decision:
+- the frozen text ablation (`analysis/frozen/text_ablation.json`) and the archived LLM extraction file → §10 is a
+  live measurement;
+- `dashboard_cache` / `options_cache` carried over from older DBs → dropped from silver and gold; the gold contract
+  refuses any extra table;
+- the hand-typed numbers in the §8 notes → computed on every run;
+- ineffective items: `08_large_errors`'s old-D series group (`old_d_group`), the unused text reasons,
+  `tools/metric_renames.py`'s proof commands against the archived P0 copy, two dead data files
+  (`archive/obsolete/archive-inputs-2026-09-27/`).
 
 ## Privacy
 

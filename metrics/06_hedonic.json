@@ -1,11 +1,11 @@
 {
  "_meta": {
   "script": "06_hedonic.py",
-  "generated_at": "2026-09-26T00:38:27+03:00",
+  "generated_at": "2026-09-27T21:45:45+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
-   "sha256": "ebf8cea3c520c50f26cad748932acaee15d53444c3bb0490e1561dc77116d15e",
+   "sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
    "rows": 45315
   },
   "run_id": null,
@@ -279,7 +279,7 @@
     "n_boot": 1000,
     "n_requested": 1000,
     "n_jobs": 16,
-    "seconds": 117.5
+    "seconds": 76.9
    },
    "note": "Ham (log yok) cc+HP: birim başına yorum. Yaş ve km medyan araca ortalandı; doğrusal katsayılar o noktadaki marjinal etki. Güven aralıkları satır bootstrap'inden.",
    "with_model": {

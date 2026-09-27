@@ -1,14 +1,14 @@
 {
  "_meta": {
   "script": "07_text_flag.py",
-  "generated_at": "2026-09-26T00:57:26+03:00",
+  "generated_at": "2026-09-27T21:56:38+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
-   "sha256": "ebf8cea3c520c50f26cad748932acaee15d53444c3bb0490e1561dc77116d15e",
+   "sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
    "rows": 45315
   },
-  "run_id": "1dfe3eed250e",
+  "run_id": "601741517e09",
   "source": {
    "script": {
     "analysis/07_text_flag.py": "9c3b22430a341b8fc4e43c21ce50956642f850f10614d0207fbeac75a798d632"
@@ -18,7 +18,7 @@
     "analysis/lib/common.py": "533eaad7a29580e93aeff01214fc024538dd6a6ab717e6b669e7e7b0a4399295",
     "analysis/lib/cv.py": "e83f615405ac012d466c9d82f698dc4145ba2df680c46ec3f529ee3ee6da56f5",
     "analysis/lib/segment_rule.py": "9e014153906e9fb7a139099d1b581459a7b9e17bb21acb2172bd67cdb66c01cc",
-    "analysis/lib/text_flags.py": "06c9194501acc59737c478b80f17c2734e1b6b223317f7c2f7557156c429ba09"
+    "analysis/lib/text_flags.py": "93da61db5441605933eba7f535119b411bd025ff43d36b0891051400d6ca99d6"
    }
   }
  },

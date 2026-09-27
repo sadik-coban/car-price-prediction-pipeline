@@ -68,9 +68,13 @@ derived from it (`data/cars_gold.duckdb`, below). Until 2026-09-24 this file its
   The API's drift screen reads this column, so it shows the midpoint while the model uses the upper bound (7,827
   bucketed listings differ, median 99.5 cc; measured 2026-09-25). Drift compares two snapshots on the same
   definition, so the result holds; left as is by the owner's decision.
-- **`dashboard_cache` / `options_cache`** belong to no generator in this repo (the archived
-  `build_aggregates.py`); their content is stale (2026-07-14, no TR plate filter). On a rebuild
-  `build_duckdb.py` carries them over from the old DB unchanged: they are neither dropped nor refreshed.
+- **`dashboard_cache` / `options_cache` are gone (2026-09-27, owner's decision).** They were stale output of
+  the archived `build_aggregates.py`, carried over from the old DB on every build by `build_duckdb.py`; the live
+  API did not read them (it builds its dashboard from `car_listings` in memory). Under the "nothing from the
+  archive" decision they were dropped from silver and gold: the DB holds only `car_listings`, `duplicate_ad_ids`,
+  `price_history`, and the gold contract (`build_gold_db.GOLD_TABLES`) refuses any other table. The DBs from
+  before the removal are in `archive/backups/before-cache-removal-2026-09-27/`; the three tables equal the new DBs
+  including `id`.
 - **`gb_body_type`** holds body type merged with the seat count on part of the rows; the model uses
   `kb_body_type`.
 - **`duplicate_ad_ids`** lists `ad_id`s with more than one row, i.e. listings seen again in later
@@ -113,14 +117,14 @@ data/raw ──build_duckdb──► data/cars.duckdb (semi-raw, analysis) ─�
   - the description as in the semi-raw DB: only the heading-free `description_text`, **no `description_clean`**
     (owner's decision 2026-09-24: keep the description as `description_text`; if it touches the API, the owner
     fixes the API);
-  - result: 116 columns + `id`; rows, order, ids, types and every other cell unchanged; the four other tables as
+  - result: 116 columns + `id`; rows, order, ids, types and every other cell unchanged; the two other tables as
     they are.
 - **`publish_data_to_s3.py`**: default input `data/cars_gold.duckdb`, S3 object name unchanged
   (`data/cars.duckdb`). Before uploading it checks the gold contract (columns = `id` + the gold columns, no `NULL`
   in a rule column); a semi-raw or old-contract file cannot reach the API.
 - **Run order:** `build_duckdb.py` → `build_gold_db.py` → (owner) `publish_data_to_s3.py`.
 - **Tests** (`tests/db/test_build_gold_db.py` + the publishing tests): the rule file fits the DB columns; `NULL` →
-  false/0 in the rule columns and known values untouched; non-rule columns and the four tables equal cell by
+  false/0 in the rule columns and known values untouched; non-rule columns and the two tables equal cell by
   cell; schema and types; the input check; the safe write; the publisher refusing a non-gold file and a `NULL` in
   a rule column.
 - **Proof (2026-09-24, real raw data, in a temp folder):** a semi-raw DB built by the new code → gold, compared
@@ -134,7 +138,7 @@ data/raw ──build_duckdb──► data/cars.duckdb (semi-raw, analysis) ─�
   - `publish --dry-run`: gold passed; the semi-raw DB and today's old DB were refused.
 - **What the API will see: nothing different** (checked 2026-09-25 in the API code and with the API's own
   functions, `sadik-portfolio/api`). The API reads 55 columns of `car_listings` only; `description_clean`,
-  `description_text`, `kb_paint_change_summary`, `kb_is_heavy_damaged`, `gb_is_first_owner` and the four other
+  `description_text`, `kb_paint_change_summary`, `kb_is_heavy_damaged`, `gb_is_first_owner` and the other
   tables are never read, so no API fix is needed. The API also gives identical output on the semi-raw (silver)
   file (dashboard rows, snapshot list, drift), since its code implicitly counts NULL as 0. Gold is still what gets
   published: an explicit contract instead of relying on that implicit behaviour (owner's decision).

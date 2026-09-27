@@ -45,7 +45,7 @@ Toplanan veriye modelden önce sırasıyla şunlar uygulandı:
 
 1. **Yapısal** — yaş · km · motor gücü/hacmi · kasa · yakıt · vites · çekiş · segment.
 2. **Hasar / ekspertiz** — 13 kaporta paneli × {değişen, boyalı, lokal boya} + ağır hasar kaydı. Bu 39 ham bayrak modele 12 öznitelik olarak giriyor: tavan · kaput · bagaj tek panel olduğu için **durum** (orijinal/lokal/boyalı/değişen), kapı · çamurluk · tampon ise grup içi **sayı** (kapı 0–4, çamurluk 0–4, tampon 0–2).
-3. **Serbest metin** — satıcı açıklaması; modelde **kullanılmıyor**. Ölçüldü: R²'ye katkısı 0.0015; ayrıntısı §10'da.
+3. **Serbest metin** — satıcı açıklaması; modelde **kullanılmıyor**. Ölçüldü: log R²'ye katkısı 0.0008; ayrıntısı §10'da.
 
 **"Belirtilmemiş" panel orijinal sayıldı.** Site her panel için beş cevaptan birini veriyor: orijinal, belirtilmemiş, boyalı, lokal boyalı, değişmiş. Modele giren ilanlarda 59.651 panel (%15.3) belirtilmemiş; 1.235 ilanda 13 panelin hiçbiri belirtilmemiş. Bu cevap bilinçli bir kararla orijinal gibi kodlandı; gerekçe, satıcının hasarı yazmayı unutmuş olabileceği ama hasar olmamasının daha olası sayılması.
 
@@ -410,8 +410,8 @@ Hatası ±%20 sınırını aşan 1.208 ilan (768 fazla, 440 düşük tahmin). A�
 | BMW 750i Long | 2007 | 271.000 | ₺1.190.000 | ₺2.831.842 | -%138.0 |
 
 - **BMW 640i · 2011:** İlan metnine göre araç komple M6 dönüşümü: M6 motoru ve M6 kasa parçaları takılmış. Form hâlâ 640i dediği için model onu sıradan bir 640i gibi fiyatlıyor; alıcı ise bir M6'ya bakıyor.
-- **Audi 4.2 FSI Quattro R-tronic (R8) · 2008:** Veride tek R8. Formdaki model adı yalnız "4.2 FSI Quattro R-tronic"; aynı motor adını taşıyan S5 4.2 FSI Quattro'ların medyanı ₺2.62M ve model tahmini buna yakın. Emsali olmayan bir süper otomobili model, adı benzeyen S5 gibi fiyatlamış.
-- **BMW 750i Long · 2007:** Veride bu addan iki ilan var; diğeri ₺5.3M'lik dönüşümlü bir 2009 araç. Bu ilan ise aynı yılın 730d'leriyle (15 ilan, medyan ₺1.18M) uyumlu ve metni bakımlı, masrafsız diyor. İlan piyasaya uygun, yanılan model: emsali olmadığı için muhtemelen adın diğer, pahalı ilanından etkileniyor.
+- **Audi 4.2 FSI Quattro R-tronic (R8) · 2008:** Veride tek R8. Formdaki model adı yalnız "4.2 FSI Quattro R-tronic"; aynı motor adını taşıyan S5 4.2 FSI Quattro'ların medyanı ₺2.62M (4 ilan) ve model tahmini buna yakın. Emsali olmayan bir süper otomobili model, adı benzeyen S5 gibi fiyatlamış.
+- **BMW 750i Long · 2007:** Veride bu addan 2 ilan var; diğeri ₺5.30M'lik dönüşümlü bir 2009 araç. Bu ilan ise aynı yılın 730d'leriyle (15 ilan, medyan ₺1.18M) uyumlu ve metni bakımlı, masrafsız diyor. İlan piyasaya uygun, yanılan model: emsali olmadığı için muhtemelen adın diğer, pahalı ilanından etkileniyor.
 
 ![Artık% vs Tahmin](figures/tr-09-residual.png)
 
@@ -576,12 +576,8 @@ Bu tablo zamansal değil: her satır düz 5-fold OOF, yalnız yeni ilan kuralı 
 
 ## 10. Serbest metin: ölçüldü, dahil edilmedi
 
-Satıcı açıklaması modele **girmiyor**. Bu bir ihmal değil, ölçüm sonucu: yapısal model R² **0.9645**, üstüne metin öznitelikleri eklenince **0.9660** — ΔR² **0.0015**: yapısal modelin açıklayamadığı log varyansın %4.2 kadarı.
+Satıcı açıklaması modele **girmiyor**. Bu bir ihmal değil, ölçüm sonucu: §7'deki model log fiyatta R² **0.9699**; aynı fold'larda açıklama metni eklenince **0.9707** — ΔR² **0.0008**, modelin açıklayamadığı log varyansın %2.6 kadarı. MAPE %6.49 → %6.41, ortalama mutlak hata ₺109.776 → ₺108.770.
 
-Bu iki sayı ayrı bir koşumdan geliyor ve kurulumu bu raporunkinden farklı: taban modelde model ve seri adı yok, 300 ağaç, 6 kategorik ve 8 sayısal öznitelik; o yüzden taban R², §7'deki 0.9745 ile karşılaştırılmamalı. Anlamlı olan mutlak seviye değil, **iki kol arasındaki fark**.
+Metin kolu modelle aynı öznitelikleri, fold'ları ve LightGBM ayarlarını kullanıyor; açıklama kelime TF-IDF'i (1–2 gram) ve 50 SVD bileşeni olarak ekleniyor, ikisi de her fold'un yalnız eğitim kısmında kuruluyor. Fark ön kayıtlı eşiğin altında (ΔR² < 0.005 ve MAPE iyileşmesi < 0,2 puan), bu yüzden metin modele eklenmedi. Ölçüm her koşuda yeniden yapılıyor; eşik aşılırsa bu bölüm üretilmez.
 
-Metinden yapılandırılmış bilgi çıkarmak ayrıca denendi: **LangExtract** kütüphanesi ve **gemini-3.1-flash-lite** ile 13.904 ilan metnindeki hasar, bakım, modifiye ifadeleri parça ve durum niteliğiyle çıkarıldı; bu metinlerin 13.867 tanesi modeldeki ilanlara denk geliyor (ilanların %46.2 kadarı).
-
-Bu çıkarımların kendisi ne modele ne rapora girdi, çünkü **doğrulukları ölçülemedi**. Tek dolaylı bağ: §7'deki metin bayrağının ve §8'deki örnek gerekçelerinin modifiye kelime listesi (dönüşüm kalıbı değil) bu çıkarımların sözcük dağarcığından damıtıldı; bayrak ilan metnine uygulanan düz bir kelime kuralı. Ölçmek için zor/orta/kolay ilanlardan dengeli bir doğrulama kümesi kurup elle etiketlemek gerekiyor; o emek harcanmadan modelin ne zaman yanıldığı bilinmiyor. Ölçemediğimiz bir sinyalin üstüne karar kurulmadı.
-
-Yapılması gereken belli: çıkarımlar önce doğrulanmalı, sonra modele **temiz sinyal** olarak verilip katkısı aynı protokolle test edilmeli. Önündeki engel **örneklem**: metninde dönüşüm ya da modifiye ifadesi geçen ilan 3.107 (%10.4) ve bunların ne kadarının gerçekten modifiye olduğu bilinmiyor; yeterli doğrulanmış örnek yoksa model bu sinyali öğrenemez, gürültüye karışır. Bir de alternatif yol var: sinyali modele hiç vermeden bu ilanları **veriden çıkarmak** ve hata payının ne kadar düştüğünü ölçmek. Hangisi seçilirse seçilsin, sonuç **canlı ilanlarda** da sınanmadan kabul edilmemeli.
+Metinde dönüşüm, motor değişimi ya da modifiye ifadesi geçen ilanlar ayrıca işaretleniyor: 3.107 ilan (%10.4), §7'deki metin bayrağı. Bayrak düz bir kelime kuralı; kelime listesi arşivlenmiş bir LLM çıkarım denemesinin sözcük dağarcığından damıtıldı ve her koşuda bugünkü metne uygulanıyor.

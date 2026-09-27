@@ -1,70 +1,50 @@
 {
  "_meta": {
   "script": "10_free_text.py",
-  "generated_at": "2026-09-26T00:59:29+03:00",
+  "generated_at": "2026-09-27T21:58:31+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
-   "sha256": "ebf8cea3c520c50f26cad748932acaee15d53444c3bb0490e1561dc77116d15e",
+   "sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
    "rows": 45315
   },
   "run_id": null,
   "source": {
    "script": {
-    "analysis/10_free_text.py": "e5235dff01c60741120bb4c29b7fa108827064f68ca37a15c519c25d3951b244"
+    "analysis/10_free_text.py": "7d93496edd16e4207555ba596eb73cb7520c62fe5f67cb86b733217f5e9f629c"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
     "analysis/lib/common.py": "533eaad7a29580e93aeff01214fc024538dd6a6ab717e6b669e7e7b0a4399295",
-    "analysis/lib/segment_rule.py": "9e014153906e9fb7a139099d1b581459a7b9e17bb21acb2172bd67cdb66c01cc"
+    "analysis/lib/cv.py": "e83f615405ac012d466c9d82f698dc4145ba2df680c46ec3f529ee3ee6da56f5",
+    "analysis/lib/segment_rule.py": "9e014153906e9fb7a139099d1b581459a7b9e17bb21acb2172bd67cdb66c01cc",
+    "analysis/lib/text_flags.py": "93da61db5441605933eba7f535119b411bd025ff43d36b0891051400d6ca99d6"
    }
-  }
- },
- "error_drivers": {
-  "text_source": {
-   "llm_texts": 13904,
-   "llm_listings_in_model": 13867,
-   "listings": 29988,
-   "llm_coverage_pct": 46.2,
-   "ablation_trees": 300,
-   "ablation_categorical": [
-    "brand",
-    "kb_body_type",
-    "kb_drivetrain",
-    "segment",
-    "kb_transmission",
-    "kb_fuel"
-   ],
-   "ablation_numeric": [
-    "vehicle_age",
-    "gb_mileage",
-    "power_hp_val",
-    "engine_cc_val",
-    "count_painted",
-    "count_changed",
-    "count_local_painted",
-    "is_heavy_damaged"
-   ],
-   "ablation_model_series": false
   }
  },
  "report": {
   "text_ablation": {
-   "ablation": {
-    "r2_structured": 0.9645,
-    "r2_structured_plus_text": 0.966,
-    "delta_r2": 0.0015
+   "r2_log_base": 0.9699,
+   "r2_log_text": 0.9707,
+   "delta_r2": 0.0008,
+   "mape_base": 6.49,
+   "mape_text": 6.41,
+   "mae_base": 109776,
+   "mae_text": 108770,
+   "unexplained_share_pct": 2.6,
+   "n": 29988,
+   "folds": 5,
+   "empty_descriptions": 80,
+   "text_svd": 50,
+   "tfidf": {
+    "analyzer": "word",
+    "ngram_range": [
+     1,
+     2
+    ],
+    "min_df": 5
    },
-   "llm": {
-    "library": "LangExtract",
-    "model": "gemini-3.1-flash-lite",
-    "classes": [
-     "damage",
-     "maintenance",
-     "modification"
-    ]
-   },
-   "source": "_arsiv/text_analysis (2026-09-19'da arsivlenen metin analizi kosumu): ablasyon metrics/text_insights.json->delta_r2, model adi langextract/extgemini.py MODEL_NAME. Arsiv git disi oldugu icin degerler 2026-09-22'de bu dosyaya donduruldu; teknik rapor buradan okur."
+   "note": "Taban = bu koşunun model OOF'u (07_model_comparison); metin kolu aynı fold'lar ve ayarlar + açıklama kelime TF-IDF'i ve SVD, yalnız eğitim fold'unda kurulur. Ön kayıt: plans/10-text-contribution."
   }
  }
 }

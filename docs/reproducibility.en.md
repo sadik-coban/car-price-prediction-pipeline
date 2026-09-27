@@ -85,6 +85,10 @@ each group was proven a **pure rename** against one origin taken once before the
   source hashes and the exempt residue left out). **0 residual differences** in every group;
 - `check-outputs`: the repository reports and figures equal P0, `site_data.json` equals translated P0.
 
+Because these proof commands ran against the archived P0 copy, they were removed from the tool on 2026-09-27
+(nothing from the archive reaches the live chain); `tools/metric_renames.py` keeps only the map reader the name
+guard uses.
+
 `run_id` did not change. The path and value map of `site_data.json` for the portfolio site is
 `docs/site-data-renames.json`. The key `FINAL_LGB_AGAC` in `encoders.pkl` keeps its old name on purpose: it is the
 serving/API contract, read outside the repository. `tests/metrics/test_metric_key_names.py` keeps the old names

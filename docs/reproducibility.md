@@ -81,6 +81,9 @@ değişikliği** olarak, işten önce bir kez alınan tek bir başlangıca (P0 k
   izi ve muaf kalıntı hariç). Her grupta **0 artık fark**;
 - `check-outputs`: depodaki raporlar ve figürler P0 ile aynı, `site_data.json` çevrilmiş P0'a eşit.
 
+Bu kanıt komutları arşivdeki P0 kopyasına karşı koştuğu için 2026-09-27'de araçtan kaldırıldı (arşivden canlıya
+hiçbir şey); `tools/metric_renames.py`'de yalnız ad bekçisinin kullandığı eşleme okuyucusu kaldı.
+
 `run_id` değişmedi. Portföy sitesi için `site_data.json`'un yol ve değer eşlemesi `docs/site-data-renames.json`'da.
 `encoders.pkl`'deki `FINAL_LGB_AGAC` anahtarı bilerek eski adıyla kaldı: servis/API sözleşmesi, depo dışında okunuyor.
 `tests/metrics/test_metric_key_names.py` eski adların geri gelmesini engeller.

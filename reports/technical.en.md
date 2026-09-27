@@ -45,7 +45,7 @@ Before the model, these steps were applied to the collected data, in this order:
 
 1. **Structural** — age · km · engine power/size · body · fuel · transmission · drivetrain · segment.
 2. **Damage / inspection** — 13 body panels × {changed, painted, local paint} + the heavy-damage record. Those 39 raw flags reach the model as 12 features: roof · hood · trunk are single panels, so they carry a **state** (original/local/painted/changed), while door · fender · bumper carry a within-group **count** (doors 0–4, fenders 0–4, bumpers 0–2).
-3. **Free text** — the seller's description; **not used** by the model. It was measured: it adds 0.0015 to R²; the detail is in §10.
+3. **Free text** — the seller's description; **not used** by the model. It was measured: it adds 0.0008 to log R²; the detail is in §10.
 
 **"Unspecified" panels were counted as original.** The site gives one of five answers per panel: original, unspecified, painted, locally painted, changed. Across the listings in the model 59,651 panels (15.3%) are unspecified; on 1,235 listings all 13 are. That answer was coded as original by a deliberate decision, on the reasoning that the seller may have forgotten to list damage but no damage is the likelier case.
 
@@ -410,8 +410,8 @@ Association; not verified listing by listing. Information absent from the form (
 | BMW 750i Long | 2007 | 271,000 | ₺1,190,000 | ₺2,831,842 | -138.0% |
 
 - **BMW 640i · 2011:** Per the ad text the car is a full M6 conversion: M6 engine and M6 body parts. The form still says 640i, so the model prices an ordinary 640i while the buyer is looking at an M6.
-- **Audi 4.2 FSI Quattro R-tronic (R8) · 2008:** The only R8 in the data. Its model name on the form is just "4.2 FSI Quattro R-tronic"; the S5 4.2 FSI Quattros sharing that engine name have a median of ₺2.62M, and the model's estimate is close to that. With no comparable, the model priced a supercar like the similarly named S5.
-- **BMW 750i Long · 2007:** There are two listings under this name; the other is a ₺5.3M converted 2009 car. This listing is in line with same-year 730ds (15 listings, median ₺1.18M) and its text says well-maintained with no pending costs. The listing is priced right and the model is wrong: lacking a comparable, it is probably pulled up by the name's other, expensive listing.
+- **Audi 4.2 FSI Quattro R-tronic (R8) · 2008:** The only R8 in the data. Its model name on the form is just "4.2 FSI Quattro R-tronic"; the S5 4.2 FSI Quattros sharing that engine name have a median of ₺2.62M (4 listings), and the model's estimate is close to that. With no comparable, the model priced a supercar like the similarly named S5.
+- **BMW 750i Long · 2007:** There are 2 listings under this name; the other is a ₺5.30M converted 2009 car. This listing is in line with same-year 730ds (15 listings, median ₺1.18M) and its text says well-maintained with no pending costs. The listing is priced right and the model is wrong: lacking a comparable, it is probably pulled up by the name's other, expensive listing.
 
 ![Residual% vs Predicted](figures/en-09-residual.png)
 
@@ -576,12 +576,8 @@ This table is not temporal: every row is plain 5-fold OOF with no new-listings-o
 
 ## 10. Free text: measured, left out
 
-The seller's description does **not** enter the model. That is a measurement, not an oversight: the structural model scores R² **0.9645** and adding text features gives **0.9660** — ΔR² **0.0015**: 4.2% of the log variance the structural model leaves unexplained.
+The seller's description does **not** enter the model. That is a measurement, not an oversight: the model of §7 scores R² **0.9699** on log price, and with the description added on the same folds **0.9707** — ΔR² **0.0008**, 2.6% of the log variance the model leaves unexplained. MAPE 6.49% → 6.41%, mean absolute error ₺109,776 → ₺108,770.
 
-These two numbers come from a separate run set up differently from this report: the baseline has no model or series name, 300 trees, 6 categorical and 8 numeric features; so the baseline R² should not be read against the 0.9745 in §7. What matters is the **gap between the two arms**, not the level.
+The text arm uses the model's features, folds and LightGBM settings; the description is added as word TF-IDF (1–2 grams) and 50 SVD components, both fitted on each fold's training part only. The gap is below the pre-registered threshold (ΔR² < 0.005 and a MAPE gain < 0.2 points), so the text was not added to the model. The measurement is repeated on every run; if the threshold is crossed this section is not produced.
 
-Pulling structured facts out of the text was tried separately: **LangExtract** with **gemini-3.1-flash-lite** extracted damage, maintenance, modification phrases from 13,904 ad texts, each with a part and a state attribute; 13,867 of those texts belong to listings in the model (46.2% of the model's listings).
-
-The extractions themselves entered neither the model nor this report, because **their accuracy could not be measured**. The one indirect link: the modification word list (not the conversion pattern) behind the text flag in §7 and the example reasons in §8 was distilled from their vocabulary; the flag itself is a plain word rule applied to the ad text. Measuring it needs a balanced validation set of easy, medium and hard listings, labelled by hand; without that work there is no way to know when the extraction is wrong. We did not build decisions on a signal we could not measure.
-
-What it would take is clear: validate the extractions, then feed them to the model as a **clean signal** and test the gain under the same protocol. The obstacle is **sample size**: 3,107 listings (10.4%) mention a conversion or modification in their text, and how many of them really are modified is unknown; with too few verified examples the model cannot learn the signal — it stays noise. There is also an alternative route: keep the signal out of the model and **drop those listings from the data**, then measure how far the error falls. Either way the result has to be tested on **live listings** before it is trusted.
+Listings whose text mentions a conversion, an engine swap or modifications are flagged separately: 3,107 listings (10.4%), the text flag in §7. The flag is a plain word rule; its word list was distilled from the vocabulary of an archived LLM extraction trial and is applied to today's text on every run.

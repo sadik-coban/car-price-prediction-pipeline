@@ -24,10 +24,13 @@ Arşivdeki metin raporunun üreteci de aynı desendedir; o rapor yayımlanan iş
 1. ~~`HP_SEARCH_TL = 5000`~~ — 2026-09-20'de kalktı: gürültü tabanı paragrafı raporlardan çıkınca
    bu sayı da hiçbir yerde geçmiyor. Kalan elle yazılı içerik yalnız aşağıdaki örnek notları
    (`feature_drop` 2026-09-23'ten beri hesaplanıyor).
-2. `HANDWRITTEN_EXAMPLE_NOTES` (2026-09-17, kullanıcı kararı) — teknik rapordaki "Büyük hatalar nereden
-   geliyor" örneklerinin altındaki açıklamalar, ilan metinleri okunarak yazıldı. Üstlerindeki tablo ve
-   **otomatik gerekçe** sütunu `analysis/08_large_errors.py`'den gelir. Her not bir örneğe `(model, yıl, fiyat)`
-   ile bağlıdır; veri değişip örnek bulunamazsa üreteç **durur** — not sessizce bayatlamaz.
+2. `EXAMPLE_NOTES` (2026-09-17, kullanıcı kararı; eski adı `HANDWRITTEN_EXAMPLE_NOTES`) — teknik rapordaki
+   "Büyük hatalar nereden geliyor" örneklerinin altındaki açıklamalar, ilan metinleri okunarak yazıldı. Üstlerindeki
+   tablo `analysis/08_large_errors.py`'den gelir. **2026-09-27'den beri notlarda elle yazılmış sayı yok:** her notun
+   dayandığı karşılaştırma (seri sayısı, aynı adın öteki ilanları, karşılaştırma grubunun n'i ve medyanı) 08'de her
+   koşuda hesaplanır (`examples[].compare`) ve nota oradan girer; notun iddiası (ör. "veride tek R8", "ilan aynı
+   yılın 730d'leriyle uyumlu") veriyle kapılıdır. Her not bir örneğe `(model, yıl, fiyat)` ile bağlıdır; veri
+   değişip örnek bulunamazsa ya da iddia tutmazsa üreteç **durur** — not sessizce bayatlamaz.
 
 **Türetilen değerler.** Veri gerektiren her sayı bir analiz betiğinde hesaplanır (yalnız raporun kullandıkları
 metrik JSON'unun `report` bölümünde: hata bantları, conformal kapsaması, Holm düzeltmesi …). Derleyici yalnız
@@ -77,15 +80,36 @@ raporda da geçer: karar notunda karar için, teknik raporda kanıt olarak — b
 **yayımlanan işin parçası değil** (`.gitignore`'da). İki gerekçe:
 
 1. **Ana bulgusu olumsuzdu.** Yapısal modele metin öznitelikleri eklendiğinde çapraz-doğrulamalı
-   doğrulukta ölçülebilir bir katkı bulunamadı (ΔR² ≈ 0.0015). Bu sonuç teknik raporun §10'unda
-   ölçüsüyle duruyor (kaynak: `analysis/frozen/text_ablation.json`); ayrı bir rapor taşımasına gerek yok.
+   doğrulukta ölçülebilir bir katkı bulunamadı. 2026-09-27'den beri bu sonuç arşivden alınmıyor: teknik raporun
+   §10'u metnin katkısını `analysis/10_free_text.py` ile her koşuda canlı ölçüyor (ön kayıt
+   `plans/10-text-contribution`; modelin OOF'u ve aynı fold'larda + açıklama TF-IDF/SVD).
 2. **Fiyat iddialarını üreten dedektörlerde denetimle bulunmuş kusurlar vardı**
    (`archive/experiments/regex_audit/`). Kusurlar düzeltildi, ama düzeltmeden sonra da geriye fiyat
    iddiası kalmıyordu.
 
-Arşivden bugün hiçbir betik import edilmiyor (2026-09-23): örnek gerekçelerinin ve metin bayrağının
-kullandığı dört desen dedektörü aynen `analysis/lib/text_flags.py`'ye taşındı (29.988 ilanın hepsinde arşivle
-birebir aynı sonuç), ablasyon ölçüsü ve kurulumu `analysis/frozen/text_ablation.json`'da donduruldu.
+Arşivden hiçbir betik import edilmiyor ve 2026-09-27'den beri arşivden hiçbir veri ya da dondurulmuş sayı
+da okunmuyor (aşağıdaki "Arşivden canlıya hiçbir şey" kararı). Metin bayrağının iki desen dedektörü
+(dönüşüm, modifiye) `analysis/lib/text_flags.py`'de; desenler arşivdeki zincirden taşındı, modifiye kelime
+listesi arşivlenmiş bir LLM çıkarım denemesinin sözcük dağarcığından damıtıldı. Her koşuda güncel metne
+uygulandıkları ve çıktıları kullanıldığı için kalıyorlar. Hiçbir yeri beslemeyen beygir ve M/RS model dedektörleri
+kaldırıldı; `analysis/frozen/` ve arşivdeki LLM çıkarım dosyası artık yok.
+
+## Arşivden canlıya hiçbir şey (2026-09-27, kullanıcı kararı)
+
+"Eski arşivden hiçbir şey alma … tam canlı olmayan ya da etkisiz olan şeyleri kullanma." Canlı zincirin her
+girdisi mevcut betiklerin bu koşuda ürettiği şeydir; `archive/`'den, eski koşulardan ya da eski DB'lerden
+kopyalanan veri, tablo, dondurulmuş sayı ya da elle yazılmış sayı girmez. Arşiv kökenli kod ve kural (segment
+haritası, model ayarları, metin bayrağı kelime listesi) yalnız her koşuda güncel veriye uygulanıyor ve çıktısı
+kullanılıyorsa kalır, kökeni yazılır; etkisiz olan tutulmaz. Bekçi: `tests/repo/test_no_archive_inputs.py`.
+Bu kararla kalkanlar:
+- dondurulmuş metin ablasyonu (`analysis/frozen/text_ablation.json`) ve arşivdeki LLM çıkarım dosyası → §10 canlı
+  ölçüm;
+- eski DB'den taşınan `dashboard_cache` / `options_cache` → silver ve gold'dan kaldırıldı, gold sözleşmesi fazla
+  tabloyu reddediyor;
+- §8 notlarındaki elle yazılmış sayılar → her koşuda hesaplanıyor;
+- etkisizler: `08_large_errors`'ın eski D serileri (`old_d_group`), kullanılmayan metin gerekçeleri,
+  `tools/metric_renames.py`'nin arşivdeki P0 kopyasına karşı kanıt komutları, iki ölü veri dosyası
+  (`archive/obsolete/archive-inputs-2026-09-27/`).
 
 ## Gizlilik
 

@@ -1,24 +1,23 @@
 {
  "_meta": {
   "script": "08_large_errors.py",
-  "generated_at": "2026-09-26T00:57:37+03:00",
+  "generated_at": "2026-09-27T21:56:43+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
-   "sha256": "ebf8cea3c520c50f26cad748932acaee15d53444c3bb0490e1561dc77116d15e",
+   "sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
    "rows": 45315
   },
-  "run_id": "1dfe3eed250e",
+  "run_id": "601741517e09",
   "source": {
    "script": {
-    "analysis/08_large_errors.py": "3b6c954f6068f4e3149ba64ca4cbf02f8b9771df15042d4d7f6962a6deac1735"
+    "analysis/08_large_errors.py": "fb34a55230fd25848fe7086ee61ea3bf45effb473fd4e133456bbbe6a7e2d2a7"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
     "analysis/lib/common.py": "533eaad7a29580e93aeff01214fc024538dd6a6ab717e6b669e7e7b0a4399295",
     "analysis/lib/cv.py": "e83f615405ac012d466c9d82f698dc4145ba2df680c46ec3f529ee3ee6da56f5",
-    "analysis/lib/segment_rule.py": "9e014153906e9fb7a139099d1b581459a7b9e17bb21acb2172bd67cdb66c01cc",
-    "analysis/lib/text_flags.py": "06c9194501acc59737c478b80f17c2734e1b6b223317f7c2f7557156c429ba09"
+    "analysis/lib/segment_rule.py": "9e014153906e9fb7a139099d1b581459a7b9e17bb21acb2172bd67cdb66c01cc"
    }
   }
  },
@@ -3213,7 +3212,6 @@
    "ape_top10_under": 0,
    "ape_top10_threshold": 72.7,
    "under_ape_max": 56.5,
-   "top_n_text": 23,
    "perf_series": [
     "M Serisi",
     "RS",
@@ -3433,22 +3431,6 @@
     4.02
    ]
   ],
-  "old_d_group": {
-   "series": [
-    "S",
-    "M Serisi",
-    "i Serisi",
-    "RS",
-    "TTS",
-    "Z Serisi"
-   ],
-   "n": 224,
-   "mean_bias_tl": -61625.0,
-   "other_mean_bias_tl": -5754.0,
-   "mae_tl": 473295.0,
-   "mape": 13.5,
-   "tl_top50_inside": 17
-  },
   "spec_outliers": {
    "threshold": 1.5,
    "min_group": 5,
@@ -3507,18 +3489,20 @@
     "resid_pct": 42.2,
     "n_model": 3,
     "n_model_year": 2,
-    "reasons_tr": [
-     "metinde 650 hp, formda 320 hp",
-     "metinde farklı M/RS modeli (M6)",
-     "metinde dönüşüm ifadesi",
-     "veride bu modelden 3 ilan"
-    ],
-    "reasons_en": [
-     "text says 650 hp, form says 320 hp",
-     "text names a different M/RS model (M6)",
-     "conversion wording in text",
-     "3 listing(s) of this model in the data"
-    ]
+    "compare": {
+     "series_n": 51,
+     "others": [
+      [
+       2011,
+       3550000.0
+      ],
+      [
+       2012,
+       2485000.0
+      ]
+     ],
+     "peer": null
+    }
    },
    {
     "key": [
@@ -3534,18 +3518,15 @@
     "resid_pct": 41.5,
     "n_model": 1,
     "n_model_year": 1,
-    "reasons_tr": [
-     "veride bu modelden 1 ilan",
-     "aynı model+yılda başka ilan yok",
-     "segment S",
-     "yaş 18"
-    ],
-    "reasons_en": [
-     "1 listing(s) of this model in the data",
-     "no other listing of the same model+year",
-     "segment S",
-     "age 18"
-    ]
+    "compare": {
+     "series_n": 1,
+     "others": [],
+     "peer": {
+      "model": "S5 4.2 FSI Quattro",
+      "n": 4,
+      "median": 2622500.0
+     }
+    }
    },
    {
     "key": [
@@ -3561,18 +3542,21 @@
     "resid_pct": -138.0,
     "n_model": 2,
     "n_model_year": 1,
-    "reasons_tr": [
-     "veride bu modelden 2 ilan",
-     "aynı model+yılda başka ilan yok",
-     "segment F",
-     "yaş 19"
-    ],
-    "reasons_en": [
-     "2 listing(s) of this model in the data",
-     "no other listing of the same model+year",
-     "segment F",
-     "age 19"
-    ]
+    "compare": {
+     "series_n": 244,
+     "others": [
+      [
+       2009,
+       5300000.0
+      ]
+     ],
+     "peer": {
+      "model_prefix": "730d",
+      "same_year": true,
+      "n": 15,
+      "median": 1180000.0
+     }
+    }
    }
   ]
  }
