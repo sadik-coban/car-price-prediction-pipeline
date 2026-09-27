@@ -3,13 +3,17 @@ build_site_data.py
 EN: Assembles data/site_data.json — the site's single data file — from metrics/*.json. No analysis: the
     meta / domain / methodology sections the analysis scripts publish are merged (builders/report_lib/metrics_view.py,
     which also checks that every file comes from the same database and model run), the static column labels
-    are added, and the tree is written with the old schema. Also writes data/serving/column_labels.json.
+    are added, and the tree is written with the old schema plus an error_drivers section that holds only the keys
+    the report figures read (SITE_KEYS; tests/reports/test_site_figure_data.py checks every figure's data is
+    here). Also writes data/serving/column_labels.json.
     Both files carry _meta.generated_at = when this builder wrote them; meta gains metrics_generated_at (the
     newest metrics stamp) / data_until / run_id so the site can show which run it is.
 TR: Sitenin tek veri dosyası data/site_data.json'u metrics/*.json'dan derler. Analiz yok: analiz betiklerinin
     yayımladığı meta / domain / methodology bölümleri birleştirilir (builders/report_lib/metrics_view.py; her dosyanın
     aynı veritabanı ve model koşumundan geldiğini de sınar), durağan kolon etiketleri eklenir ve ağaç eski
-    şemayla yazılır. Ayrıca data/serving/column_labels.json'u yazar. İki dosya da _meta.generated_at taşır: bu
+    şemayla, üstüne yalnız rapor figürlerinin okuduğu anahtarları tutan bir error_drivers bölümüyle yazılır
+    (SITE_KEYS; her figürün verisinin burada olduğunu tests/reports/test_site_figure_data.py sınar). Ayrıca
+    data/serving/column_labels.json'u yazar. İki dosya da _meta.generated_at taşır: bu
     derleyicinin onları yazdığı an. meta'ya metrics_generated_at (en yeni metrik damgası) / data_until / run_id
     eklenir; site hangi koşumu gösterdiğini söyleyebilir.
 Run / Koşum: python builders/build_site_data.py
@@ -29,6 +33,9 @@ from report_lib.column_labels import COLUMN_LABELS  # noqa: E402
 OUT_ROOT = pathlib.Path(os.environ.get("CARDATASYS_OUT") or ROOT)
 SITE_OUT = OUT_ROOT / "data" / "site_data.json"
 LABELS_OUT = OUT_ROOT / "data" / "serving" / "column_labels.json"
+# EN: the sections the site gets whole; any other section goes only with the keys SITE_KEYS lists for it
+# TR: siteye bütün giden bölümler; öteki bölümler yalnız SITE_KEYS'te onlar için sayılan anahtarlarla gider
+WHOLE_SECTIONS = ("meta", "domain", "methodology")
 # EN: the keys the site reads; a missing one stops the build | TR: sitenin okuduğu anahtarlar; eksikse durur
 SITE_KEYS = {
     "meta": ["n_dedup", "n_raw", "snapshots", "n_features", "brands", "repro"],
@@ -41,23 +48,31 @@ SITE_KEYS = {
                     "g_mpv", "assoc_model", "lofo", "lofo_trees", "kmeans_selection", "pca_axes", "column_missing",
                     "impute_note", "backtest", "column_missing_all", "systematic_missing", "column_accounting",
                     "kb_gb_twins", "content_duplicates"],
+    # EN: 2026-09-27: report figures 11 (error per model), 27 (lira error by quartile) and 29/30 (engine range rule)
+    #     draw from these; the rest of error_drivers is input for the report text and stays out
+    # TR: 2026-09-27: rapor figürleri 11 (model başına hata), 27 (çeyreğe göre lira hatası) ve 29/30 (motor aralığı
+    #     kuralı) bunlardan çiziliyor; error_drivers'ın geri kalanı rapor metninin girdisi, siteye gitmez
+    "error_drivers": ["per_model_error", "per_model_buckets", "lira_quartile", "pred_quartile", "engine_rule"],
 }
 
 
 def assemble(view, generated_at):
     """
     EN: The site tree from the merged metrics view: _meta (generated_at = this build), meta (+ run stamp),
-        domain, methodology, column_labels. Stops if a key the site reads is missing.
+        domain, methodology (whole), the listed keys of every other SITE_KEYS section, column_labels. Stops if a
+        key the site reads is missing.
     TR: Birleşik metrik görünümünden site ağacı: _meta (generated_at = bu derleme), meta (+ koşum damgası),
-        domain, methodology, column_labels. Sitenin okuduğu bir anahtar eksikse durur.
+        domain, methodology (bütün), SITE_KEYS'teki öteki her bölümün sayılan anahtarları, column_labels.
+        Sitenin okuduğu bir anahtar eksikse durur.
     """
     missing = [f"{sec}.{k}" for sec, keys in SITE_KEYS.items() for k in keys if k not in view[sec]]
     if missing:
         raise SystemExit(f"site keys missing | site anahtarı eksik — run | koşun: python analysis/run_all.py · {missing}")
     stamp = {"metrics_generated_at": view["_meta"]["generated_at"],
              **{k: view["_meta"][k] for k in ("data_until", "run_id")}}
+    partial = {sec: {k: view[sec][k] for k in keys} for sec, keys in SITE_KEYS.items() if sec not in WHOLE_SECTIONS}
     return {"_meta": {"generated_at": generated_at}, "meta": {**view["meta"], **stamp}, "domain": view["domain"],
-            "methodology": view["methodology"], "column_labels": COLUMN_LABELS}
+            "methodology": view["methodology"], **partial, "column_labels": COLUMN_LABELS}
 
 
 def labels_file(generated_at):
