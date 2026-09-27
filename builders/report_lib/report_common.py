@@ -49,9 +49,9 @@ REQUIRED = [
     "methodology.pca_axes", "meta.repro", "meta.brands", "column_labels"] + [f"error_drivers.{p_}" for p_ in [
     "plate_scope", "segment_quality", "hedonic_dropped", "per_model_error", "per_model_buckets", "lira_quartile",
     "lira_scaled", "scope", "price_changes", "unspecified", "baseline_equal_terms", "text_flag",
-    "age_sensitivity", "age_cuts", "old_d_group", "spec_outliers.blind_spot", "period_shift",
+    "age_sensitivity", "age_cuts", "spec_outliers.blind_spot", "period_shift",
     "by_model_year_n", "by_segment_FS", "by_age", "by_snapshot", "raw_columns", "examples",
-    "engine_rule.engine_cc", "engine_rule.power_hp", "unspecified.structure", "live_vs_gone", "text_source"]] + [
+    "engine_rule.engine_cc", "engine_rule.power_hp", "unspecified.structure", "live_vs_gone"]] + [
     f"report.{p_}" for p_ in ["q_bounds", "model_r2_log", "err_bands", "conformal_q", "conformal_all",
                               "conformal_by_pred", "drift_holm", "text_ablation"]]
 
@@ -84,33 +84,65 @@ def lofo_name(d, k, lang):
     return (g[0] if lang == "tr" else g[1]) if g else col(d, k, lang)
 
 # ============================================================================
-# ELLE YAZILDI (2026-09-17) — "Her sayi JSON'dan" kuralinin BILINCLI istisnasi (kullanici karari).
-# Ilan metinleri okunarak yazildi; uretec bunlari hesaplayamaz. Anahtar (model, yil, fiyat)
-# error_drivers.json'daki bir ornekle birebir eslesmeli, yoksa uretec DURUR — veri degisince
-# bu notlar sessizce bayatlamasin. Otomatik gerekceler ayri sutunda, bu notlarin ustunde.
+# ORNEK NOTLARI — metin ilan metinleri okunarak elle yazildi (2026-09-17, kullanici karari); SAYILAR canli
+# (2026-09-27, arsivden canliya hicbir sey kurali): 08_large_errors her koşuda examples[].compare'i hesaplar
+# (seri sayisi, ayni adin oteki ilanlari, notun karsilastirdigi grubun n'i ve medyani). Her notun iddiasi veriyle
+# kapili; tutmazsa uretec DURUR, not sessizce bayatlamaz. Anahtar (model, yil, fiyat) 08'deki bir ornekle eslesmeli.
 # ============================================================================
-HANDWRITTEN_EXAMPLE_NOTES = {
-    ("640i", 2011, 5_600_000): (
-        "İlan metnine göre araç komple M6 dönüşümü: M6 motoru ve M6 kasa parçaları takılmış. Form hâlâ "
-        "640i dediği için model onu sıradan bir 640i gibi fiyatlıyor; alıcı ise bir M6'ya bakıyor.",
-        "Per the ad text the car is a full M6 conversion: M6 engine and M6 body parts. The form still says "
-        "640i, so the model prices an ordinary 640i while the buyer is looking at an M6."),
-    ("4.2 FSI Quattro R-tronic", 2008, 4_690_000): (
-        "Veride tek R8. Formdaki model adı yalnız \"4.2 FSI Quattro R-tronic\"; aynı motor adını taşıyan "
-        "S5 4.2 FSI Quattro'ların medyanı ₺2.62M ve model tahmini buna yakın. Emsali olmayan bir "
-        "süper otomobili model, adı benzeyen S5 gibi fiyatlamış.",
-        "The only R8 in the data. Its model name on the form is just \"4.2 FSI Quattro R-tronic\"; the S5 "
-        "4.2 FSI Quattros sharing that engine name have a median of ₺2.62M, and the model's estimate is "
-        "close to that. With no comparable, the model priced a supercar like the similarly named S5."),
-    ("750i Long", 2007, 1_190_000): (
-        "Veride bu addan iki ilan var; diğeri ₺5.3M'lik dönüşümlü bir 2009 araç. Bu ilan ise aynı yılın "
-        "730d'leriyle (15 ilan, medyan ₺1.18M) uyumlu ve metni bakımlı, masrafsız diyor. İlan piyasaya uygun, yanılan "
-        "model: emsali olmadığı için muhtemelen adın diğer, pahalı ilanından etkileniyor.",
-        "There are two listings under this name; the other is a ₺5.3M converted 2009 car. This listing is in "
-        "line with same-year 730ds (15 listings, median ₺1.18M) and its text says well-maintained with no pending costs. "
-        "The listing is priced right and the model is wrong: lacking a comparable, it is probably pulled up by "
-        "the name's other, expensive listing."),
-}
+def _note_640i(e, lang):
+    """
+    EN: The 640i converted to an M6 (read from the ad text; no number in it).
+    TR: M6'ya dönüştürülmüş 640i (ilan metninden okundu; içinde sayı yok).
+    """
+    return ("İlan metnine göre araç komple M6 dönüşümü: M6 motoru ve M6 kasa parçaları takılmış. Form hâlâ 640i "
+            "dediği için model onu sıradan bir 640i gibi fiyatlıyor; alıcı ise bir M6'ya bakıyor." if lang == "tr" else
+            "Per the ad text the car is a full M6 conversion: M6 engine and M6 body parts. The form still says 640i, "
+            "so the model prices an ordinary 640i while the buyer is looking at an M6.")
+
+
+def _note_r8(e, lang):
+    """
+    EN: The only R8, priced like the S5 4.2 FSI Quattros; stops unless it is alone in its series and the model's
+        estimate is within 15% of that group's median.
+    TR: Tek R8, S5 4.2 FSI Quattro'lar gibi fiyatlanmış; serisinde tek değilse ya da model tahmini o grubun
+        medyanının %15'i içinde değilse durur.
+    """
+    c, peer = e["compare"], e["compare"]["peer"]
+    assert c["series_n"] == 1 and peer and abs(e["pred"] / peer["median"] - 1) < .15, f"R8 notu bayat: {c}, {e['pred']}"
+    return (f"Veride tek R8. Formdaki model adı yalnız \"4.2 FSI Quattro R-tronic\"; aynı motor adını taşıyan "
+            f"{peer['model']}'ların medyanı {tlm(peer['median'])} ({num(peer['n'], lang)} ilan) ve model tahmini buna "
+            f"yakın. Emsali olmayan bir süper otomobili model, adı benzeyen S5 gibi fiyatlamış." if lang == "tr" else
+            f"The only R8 in the data. Its model name on the form is just \"4.2 FSI Quattro R-tronic\"; the "
+            f"{peer['model']}s sharing that engine name have a median of {tlm(peer['median'])} "
+            f"({num(peer['n'], lang)} listings), and the model's estimate is close to that. With no comparable, the "
+            f"model priced a supercar like the similarly named S5.")
+
+
+def _note_750i(e, lang):
+    """
+    EN: The 750i Long priced right, pulled up by its name's other, expensive listing; stops unless the name has
+        exactly one other listing and the price is within 10% of the same-year 730d median.
+    TR: Piyasaya uygun fiyatlı 750i Long, adın öteki pahalı ilanından etkilenmiş; adın tam bir öteki ilanı yoksa ya
+        da fiyat aynı yılın 730d medyanının %10'u içinde değilse durur.
+    """
+    c, peer = e["compare"], e["compare"]["peer"]
+    assert len(c["others"]) == 1 and peer and abs(e["price"] / peer["median"] - 1) < .10, f"750i notu bayat: {c}"
+    (o_year, o_price), = c["others"]
+    return (f"Veride bu addan {num(e['n_model'], lang)} ilan var; diğeri {tlm(o_price)}'lik dönüşümlü bir {o_year} araç. "
+            f"Bu ilan ise aynı yılın {peer['model_prefix']}'leriyle ({num(peer['n'], lang)} ilan, medyan "
+            f"{tlm(peer['median'])}) uyumlu ve metni bakımlı, masrafsız diyor. İlan piyasaya uygun, yanılan model: "
+            f"emsali olmadığı için muhtemelen adın diğer, pahalı ilanından etkileniyor." if lang == "tr" else
+            f"There are {num(e['n_model'], lang)} listings under this name; the other is a {tlm(o_price)} converted "
+            f"{o_year} car. This listing is in line with same-year {peer['model_prefix']}s ({num(peer['n'], lang)} "
+            f"listings, median {tlm(peer['median'])}) and its text says well-maintained with no pending costs. The "
+            f"listing is priced right and the model is wrong: lacking a comparable, it is probably pulled up by the "
+            f"name's other, expensive listing.")
+
+
+EXAMPLE_NOTES = {("640i", 2011, 5_600_000): _note_640i,
+                 ("4.2 FSI Quattro R-tronic", 2008, 4_690_000): _note_r8,
+                 ("750i Long", 2007, 1_190_000): _note_750i}
+
 
 # --- Palet: tek renk ailesi, susleme yok ------------------------------------
 C1, C2, C3, GRID = "#2563eb", "#64748b", "#dc2626", "#e5e7eb"

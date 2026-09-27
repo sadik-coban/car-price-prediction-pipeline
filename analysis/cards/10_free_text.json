@@ -1,50 +1,61 @@
 {
  "script": "analysis/10_free_text.py",
  "question": {
-  "tr": "Satıcının serbest metni fiyat tahminine bir şey katıyor mu, ve metinden yapılandırılmış bilgi çıkarma denemesi neyi kapsadı?",
-  "en": "Does the seller's free text add anything to the price prediction, and what did the attempt to extract structured facts from the text cover?"
+  "tr": "Satıcı açıklaması modele eklenince OOF doğruluğu ne kadar değişir? (ön kayıt: plans/10-text-contribution)",
+  "en": "How much does the out-of-fold accuracy change when the seller's description is added to the model? (pre-registered: plans/10-text-contribution)"
  },
  "data": {
-  "tr": "load_clean() (29.988 ilan); data/langextract/extraction_results.jsonl (çıkarım sonuçları, salt okunur); analysis/frozen/text_ablation.json (dondurulmuş ablasyon ve LLM kurulumu, korumalı).",
-  "en": "load_clean() (29,988 listings); data/langextract/extraction_results.jsonl (extraction results, read-only); analysis/frozen/text_ablation.json (the frozen ablation and LLM setup, protected)."
+  "tr": "load_clean() (modelin ilanları) ve açıklamaları (description_text); bu koşunun model OOF'u (07_model_comparison, cv.load_oof).",
+  "en": "load_clean() (the model's listings) and their descriptions (description_text); this run's model OOF (07_model_comparison, cv.load_oof)."
  },
  "method": {
-  "tr": "Çıkarım kapsamı sayılır (metin, modeldeki ilan, pay); metinli ve metinsiz ablasyonun R² farkı ve kurulumu dondurulmuş kanıttan okunur, alan adları ve LLM sınıfları burada İngilizceye çevrilir (bilinmeyen alan ya da sınıf durdurur). Yeni model eğitilmez.",
-  "en": "The extraction coverage is counted (texts, listings in the model, share); the R² gap and setup of the ablation with and without text are read from the frozen evidence, its field names and LLM classes translated to English here (an unknown field or class stops). No model is trained."
+  "tr": "Taban kol = modelin OOF'u. Metin kolu = aynı 5 fold, öznitelikler ve LightGBM ayarları + açıklamanın kelime TF-IDF'i (1–2 gram, min_df 5) ve SVD 50, ikisi de eğitim fold'unda kurulur. İki kolun log R², MAPE ve MAE'si ve farkları; H1: ΔR² < 0.005 ve MAPE iyileşmesi < 0,2 puan.",
+  "en": "Base arm = the model's OOF. Text arm = the same 5 folds, features and LightGBM settings + the description as word TF-IDF (1–2 grams, min_df 5) and SVD 50, both fitted on the training fold. Log R², MAPE and MAE of both arms and their gaps; H1: ΔR² < 0.005 and a MAPE gain < 0.2 points."
  },
- "split": "none",
+ "split": "kfold_oof",
  "leakage": {
   "duplicate_ad_id": {
-   "status": "n/a",
-   "note": null
+   "status": "present",
+   "note": {
+    "tr": "Modelle aynı fold'lar: farklı ad_id ile yeniden ilan edilen aynı araç fold'lar arasına düşebilir (01_dedup_leakage %0,46–%4,26); iki kolu eşit etkiler.",
+    "en": "The model's own folds: the same car re-listed under a new ad_id can span folds (01_dedup_leakage 0.46%–4.26%); it affects both arms equally."
+   }
   },
   "target_in_features": {
-   "status": "n/a",
-   "note": null
+   "status": "none",
+   "note": {
+    "tr": "Öznitelikler modelinkiler artı açıklama metni; fiyattan türeyen alan yok. Açıklama fiyatı yazabilir; ölçülen fark bunu da içerir.",
+    "en": "The features are the model's plus the description text; nothing derived from price. A description may state the price; the measured gap includes that."
+   }
   },
   "fit_on_full_data": {
-   "status": "unknown",
+   "status": "present",
    "note": {
-    "tr": "Dondurulmuş ablasyon 2026-09-19'da arşivlenen bir koşumdan; bölme protokolü bu depoda yeniden üretilemiyor.",
-    "en": "The frozen ablation comes from a run archived on 2026-09-19; its split protocol cannot be reproduced in this repository."
+    "tr": "TF-IDF ve SVD yalnız eğitim fold'unda kurulur (test_text_features_fit_on_train_only). Erken durdurma modeldeki gibi fold'un doğrulama kısmında; iki kolu eşit etkiler.",
+    "en": "TF-IDF and SVD are fitted on the training fold only (test_text_features_fit_on_train_only). Early stopping uses the fold's validation part as in the model; it affects both arms equally."
    }
   },
   "temporal": {
-   "status": "n/a",
-   "note": null
+   "status": "present",
+   "note": {
+    "tr": "KFold dönemleri karıştırır, modeldeki gibi; iki kol aynı bölmeyi kullanır.",
+    "en": "KFold mixes the snapshots, as in the model; both arms use the same split."
+   }
   }
  },
  "evidence": {
   "tests": [
-   "tests/analysis/test_10_free_text.py::test_coverage",
-   "tests/analysis/test_10_free_text.py::test_ablation_delta",
-   "tests/analysis/test_10_free_text.py::test_identity_flag_matches_features",
-   "tests/analysis/test_10_free_text.py::test_llm_classes"
+   "tests/analysis/test_10_free_text.py::test_text_features_fit_on_train_only",
+   "tests/analysis/test_10_free_text.py::test_gap_is_text_minus_base",
+   "tests/analysis/test_10_free_text.py::test_base_is_the_model",
+   "tests/analysis/test_10_free_text.py::test_settings_are_the_plan"
   ],
   "report_keys": [
-   "error_drivers.text_source.llm_coverage_pct",
-   "report.text_ablation.ablation.delta_r2",
-   "report.text_ablation.llm.classes"
+   "report.text_ablation.delta_r2",
+   "report.text_ablation.r2_log_base",
+   "report.text_ablation.r2_log_text",
+   "report.text_ablation.mape_base",
+   "report.text_ablation.mape_text"
   ]
  },
  "status": "complete"

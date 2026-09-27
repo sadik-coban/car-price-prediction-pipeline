@@ -1,17 +1,15 @@
 """
 test_metric_renames.py
-EN: The translator of tools/metric_renames.py on small made-up documents — the traps the real map has to get
-    right: the same word with two meanings (alt/ust as candidates vs range bounds), enum values by row position,
-    data-valued subtrees, names from analysis/lib that change only with the LIB group, group gating, key order and
-    clashes — plus the real map (every metrics file has one group at most, none = a new file, always checked; the
-    map is valid against the P0 copy when it exists and docs/site-data-renames.json is current) and
-    snapshot_metrics' --rename-exemption on temp folders.
-TR: tools/metric_renames.py'nin çevirmeni küçük uydurma belgeler üzerinde — gerçek eşlemenin doğru yapması gereken
-    tuzaklar: iki anlamlı aynı sözcük (aday olarak alt/ust ile aralık sınırı), satır konumuna göre değerler, veri
-    değerli alt ağaçlar, yalnız LIB grubuyla değişen analysis/lib adları, grup kapısı, anahtar sırası ve çakışma —
-    ayrıca gerçek eşleme (her metrik dosyasının en çok bir grubu var, hiç yoksa yeni dosyadır ve hep sınanır; P0
-    kopyası varsa eşleme ona göre geçerli ve docs/site-data-renames.json güncel) ve snapshot_metrics'in
-    --rename-exemption'ı geçici klasörlerde.
+EN: The helpers of tools/metric_renames.py that the name guard uses, on a small made-up map (retired names, old
+    enum values, stale dotted paths, list suffixes in patterns), the real map (every metrics file has one group at
+    most; none = a new file, always checked) and snapshot_metrics' --rename-exemption on temp folders. The
+    translator's tests and the checks against the archived P0 copy went with them on 2026-09-27 (nothing from the
+    archive reaches the live chain).
+TR: tools/metric_renames.py'nin ad bekçisinin kullandığı yardımcıları küçük uydurma bir eşleme üzerinde (emekli
+    adlar, eski değerler, bayat noktalı yollar, kalıplarda liste ekleri), gerçek eşleme (her metrik dosyasının en çok
+    bir grubu var; hiç yoksa yeni dosyadır ve hep sınanır) ve snapshot_metrics'in --rename-exemption'ı geçici
+    klasörlerde. Çevirmenin testleri ve arşivdeki P0 kopyasına karşı denetimler 2026-09-27'de onlarla birlikte
+    kalktı (arşivden canlı zincire hiçbir şey girmez).
 """
 import json
 import sys
@@ -31,71 +29,6 @@ MAP = {"keys": {"alt": "lower", "ust": "upper", "medyan": "median", "not": "note
        "values": {"a.*.secilen": {"ust": "upper", "orta": "mid"}, "a.rows[][1]": {"alt": "lower"},
                   "b.worst[][0]": {"harita": "series_map"}},
        "site_only": {}, "groups": {"G": {"prefixes": ["x"], "status": "todo"}}, "lib": ["harita"]}
-
-
-def tr(doc, ok=True, lib=False):
-    """EN: Translates doc with the made-up map. / TR: doc'u uydurma eşlemeyle çevirir."""
-    return MR.translate(doc, MR.compile_map(json.loads(json.dumps(MAP))), lambda p: ok, lib)
-
-
-def test_same_word_two_meanings():
-    """
-    EN: alt/ust are candidates (lower/upper) in one place and range bounds (low/up) under ornek.
-    TR: alt/ust bir yerde aday (lower/upper), ornek altında aralık sınırı (low/up).
-    """
-    doc = {"a": {"cc": {"adaylar": {"alt": 1, "ust": 2}, "ornek": {"alt": 3, "ust": 4}}}}
-    assert tr(doc) == {"a": {"cc": {"adaylar": {"lower": 1, "upper": 2}, "ornek": {"low": 3, "up": 4}}}}
-
-
-def test_values_by_site_and_position():
-    """
-    EN: A value changes only at its site and row position; other strings stay.
-    TR: Değer yalnız kendi yerinde ve satır konumunda değişir; öteki metinler kalır.
-    """
-    doc = {"a": {"cc": {"secilen": "ust", "other": "ust"}, "rows": [[1, "alt"], ["alt", "ust"]]}}
-    assert tr(doc) == {"a": {"cc": {"secilen": "upper", "other": "ust"}, "rows": [[1, "lower"], ["alt", "ust"]]}}
-
-
-def test_data_valued_and_keep():
-    """EN: Keys under a data-valued root and kept keys stay. / TR: Veri değerli kök altı ve kalan anahtarlar kalır."""
-    doc = {"a": {"data": {"alt": 1, "medyan": 2}, "en": {"not": "x"}}}
-    assert tr(doc) == {"a": {"data": {"alt": 1, "medyan": 2}, "en": {"note": "x"}}}
-
-
-def test_lib_names_only_with_lib():
-    """
-    EN: segment_rule's names (keys and values) change only when LIB is done; overrides still apply before.
-    TR: segment_rule adları (anahtar ve değer) yalnız LIB bitince değişir; istisnalar önceden de uygulanır.
-    """
-    doc = {"b": {"yol": {"harita": 5}, "worst": [["harita", 1]]}}
-    assert tr(doc) == {"b": {"paths": {"harita": 5}, "worst": [["harita", 1]]}}
-    assert tr(doc, lib=True) == {"b": {"paths": {"series_map": 5}, "worst": [["series_map", 1]]}}
-
-
-def test_group_gating():
-    """EN: Nothing changes while the owner is not done. / TR: Sahibi bitmedikçe hiçbir şey değişmez."""
-    doc = {"a": {"cc": {"secilen": "ust", "medyan": 1}}}
-    assert tr(doc, ok=False) == doc
-
-
-def test_order_kept_and_clash_stops():
-    """EN: Key order is kept; two keys ending with one name stop. / TR: Sıra korunur; aynı ada düşen iki anahtar durur."""
-    assert list(tr({"z": 1, "medyan": 2, "a": 3})) == ["z", "median", "a"]
-    with pytest.raises(SystemExit):
-        tr({"x": {"alt": 1, "lower": 2}})
-
-
-def test_prose_quotes_follow_the_rename():
-    """
-    EN: A prose value at a "prose" site gets the quoted old path replaced; elsewhere prose stays.
-    TR: "prose" yerindeki düzyazı değerde anılan eski yol değişir; başka yerde düzyazı kalır.
-    """
-    m = json.loads(json.dumps(MAP))
-    m["prose"] = {"a.note_here": {"domain.kova": "domain.range"}}
-    m = MR.compile_map(m)
-    doc = {"a": {"note_here": "see domain.kova", "elsewhere": "see domain.kova"}}
-    assert MR.translate(doc, m, lambda p: True, False) == {"a": {"note_here": "see domain.range",
-                                                                 "elsewhere": "see domain.kova"}}
 
 
 def test_translate_pattern_keeps_list_suffix():
@@ -136,28 +69,6 @@ def test_new_file_is_checked():
     m = MR.load_map()
     assert MR.group_of("11_price_history", m) == MR.NEW_GROUP
     assert MR.NEW_GROUP in MR.done_groups(m)
-
-
-def test_real_map_is_valid():
-    """
-    EN: Every map entry matches the P0 metrics and the fully translated metrics still merge (skipped without P0).
-    TR: Eşlemenin her girdisi P0 metrikleriyle eşleşir ve tamamen çevrilmiş metrikler birleşir (P0 yoksa atlanır).
-    """
-    if not MR.P0_DIR.exists():
-        pytest.skip("no P0 copy in this clone | bu klonda P0 yok")
-    assert MR.cmd_validate(MR.load_map(), MR.P0_DIR) == []
-
-
-def test_site_map_file_is_current():
-    """
-    EN: docs/site-data-renames.json is what `site-map` writes from today's map (skipped without P0).
-    TR: docs/site-data-renames.json, `site-map`'in bugünkü eşlemeden yazdığıyla aynı (P0 yoksa atlanır).
-    """
-    if not MR.P0_DIR.exists():
-        pytest.skip("no P0 copy in this clone | bu klonda P0 yok")
-    written = json.loads((ROOT / "docs" / "site-data-renames.json").read_text(encoding="utf-8"))
-    assert written == MR.cmd_site_map(MR.load_map(), MR.P0_DIR), \
-        "rerun | yeniden yaz: python tools/metric_renames.py site-map --out docs/site-data-renames.json"
 
 
 @pytest.fixture

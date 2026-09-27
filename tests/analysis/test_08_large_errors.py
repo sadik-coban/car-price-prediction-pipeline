@@ -66,7 +66,7 @@ def test_lira_ranking(ed, metrics):
     """
     ls = ed["lira_scaled"]
     assert ls["top_n_under"] + ls["top_n_over"] == ls["top_n"]
-    assert max(ls["top_n_q4"], ls["top_n_perf"], ls["top_n_text"]) <= ls["top_n"]
+    assert max(ls["top_n_q4"], ls["top_n_perf"]) <= ls["top_n"]
     worst = ls["worst"]
     gaps = [abs(r[6]) for r in worst]
     assert len(worst) == 6 and gaps == sorted(gaps, reverse=True)
@@ -82,3 +82,19 @@ def test_spec_outliers(ed, n):
     assert so["pct"] == pytest.approx(round(100 * so["n"] / n, 2))
     assert so["blind_spot"]["pct"] == pytest.approx(round(100 * so["blind_spot"]["listings"] / n, 2))
     assert 0 <= so["worst6_inside"] <= 6 and len(so["worst6_comparables"]) == 6
+
+
+def test_example_compares(ed):
+    """
+    EN: Each example's comparison is computed on the data: its series holds it, the other listings of its name are
+        its model count minus itself, and a named comparison group has listings and a positive median.
+    TR: Her örneğin karşılaştırması veriden hesaplanır: serisi onu içerir, adının öteki ilanları model sayısı eksi
+        kendisi, adı geçen karşılaştırma grubunun ilanı ve pozitif medyanı var.
+    """
+    assert len(ed["examples"]) == 3
+    for e in ed["examples"]:
+        c = e["compare"]
+        assert c["series_n"] >= 1 and len(c["others"]) == e["n_model"] - 1
+        if c["peer"] is not None:
+            assert c["peer"]["n"] >= 1 and c["peer"]["median"] > 0
+

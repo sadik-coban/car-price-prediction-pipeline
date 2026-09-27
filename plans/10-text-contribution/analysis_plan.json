@@ -1,0 +1,47 @@
+{
+ "id": "10-text-contribution",
+ "created": "2026-09-27",
+ "question": {
+  "tr": "Satıcı açıklaması modele eklenince OOF doğruluğu ne kadar değişir?",
+  "en": "How much does the out-of-fold accuracy change when the seller's description is added to the model?"
+ },
+ "data_slice": "load_clean(): the 29,988 unique TR-plated listings the model is trained on (latest snapshot per ad_id).",
+ "split": "kfold_oof: the model's own 5 folds (analysis/lib/cv.make_folds, KFold shuffle, seed 42).",
+ "target": "log1p(price). Base arm = this run's model OOF (cv.load_oof, the §7 LightGBM with the 25 features). Text arm = the same folds, features and LightGBM settings (cv.fold_matrices + cv.fit_lgb_fold) plus description_text as word TF-IDF (1-2 grams, min_df=5, text lower-cased with text_flags.lower_tr) reduced by TruncatedSVD to 50 components; both fitted on each fold's training part only. Measured on both arms: R² on log price, MAPE, MAE; published as base, text and their differences.",
+ "comparisons": {
+  "count": 1,
+  "correction": "none"
+ },
+ "hypotheses": [
+  {
+   "id": "H1",
+   "statement": {
+    "tr": "Açıklama metni modele eklenince doğruluk anlamlı artmaz: log R² en fazla 0.005 artar ve MAPE en fazla 0,2 puan düşer.",
+    "en": "Adding the description text does not improve accuracy materially: log R² rises by less than 0.005 and MAPE falls by less than 0.2 points."
+   },
+   "accept_if": "delta_r2 = r2_log_text - r2_log_base < 0.005 AND mape_base - mape_text < 0.2 (percentage points)",
+   "reject_if": "delta_r2 >= 0.005 OR mape_base - mape_text >= 0.2",
+   "required_checks": [
+    "metric:10_free_text:report.text_ablation.delta_r2",
+    "metric:10_free_text:report.text_ablation.mape_base",
+    "metric:10_free_text:report.text_ablation.mape_text",
+    "test:tests/analysis/test_10_free_text.py::test_text_features_fit_on_train_only"
+   ],
+   "status": "confirmed",
+   "evidence": [
+    "metric:10_free_text:report.text_ablation.delta_r2",
+    "metric:10_free_text:report.text_ablation.mape_base",
+    "metric:10_free_text:report.text_ablation.mape_text",
+    "test:tests/analysis/test_10_free_text.py::test_text_features_fit_on_train_only"
+   ]
+  }
+ ],
+ "out_of_scope": [
+  "LLM extraction of facts from the text (not run: cost; the archived extraction is not used)",
+  "Other text representations (char n-grams, embeddings) or tuning the SVD size",
+  "Using the text in the served model"
+ ],
+ "status": "locked",
+ "approved_by": "sadik-coban (plan onayı, 2026-09-27)",
+ "approved_at": "2026-09-27"
+}

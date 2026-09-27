@@ -15,7 +15,7 @@ from datetime import date
 
 import numpy as np
 
-from report_lib.report_common import (BAND_LABEL, FUEL_EN, HANDWRITTEN_EXAMPLE_NOTES, HED_TERM_EN, LADDER_EN,
+from report_lib.report_common import (BAND_LABEL, EXAMPLE_NOTES, FUEL_EN, HED_TERM_EN, LADDER_EN,
                            LOFO_FLAT_KEYS, LOFO_GROUPS, P, REPORTS_DIR, TECHNICAL_FIGS, TIER_LABEL, VARIANTS, VARIANTS_EN,
                            VIF_TERM, _Ctx, build_figures, cluster_labels, col, derive, fp, fraction_words, id_label, load_report_view,
                            lofo_name, num, number_word, tl, tlm, tlx, tx, write_md)
@@ -172,13 +172,13 @@ def section_data(c):
     A("")
     # 2026-09-23: panel/bayrak/oznitelik sayilari ELLE yaziliydi; esleme sabitlerinden okunur (_struct,
     # _n_damage_features: yukarida, on isleme listesinde). Metin katkisi "cikmadi" yerine olculen ΔR².
-    _dr2 = d["report"]["text_ablation"]["ablation"]["delta_r2"]
+    _dr2 = d["report"]["text_ablation"]["delta_r2"]
     A(L("1. **Yapısal** — yaş · km · motor gücü/hacmi · kasa · yakıt · vites · çekiş · segment.\n"
         f"2. **Hasar / ekspertiz** — {_struct['panel']} kaporta paneli × {{değişen, boyalı, lokal boya}} + ağır hasar "
         f"kaydı. Bu {_struct['flags']} ham bayrak modele {_n_damage_features} öznitelik olarak giriyor: tavan · kaput · bagaj tek "
         "panel olduğu için **durum** (orijinal/lokal/boyalı/değişen), kapı · çamurluk · tampon ise "
         f"grup içi **sayı** (kapı 0–{_grouped['door']}, çamurluk 0–{_grouped['fender']}, tampon 0–{_grouped['bumper']}).\n"
-        f"3. **Serbest metin** — satıcı açıklaması; modelde **kullanılmıyor**. Ölçüldü: R²'ye katkısı "
+        f"3. **Serbest metin** — satıcı açıklaması; modelde **kullanılmıyor**. Ölçüldü: log R²'ye katkısı "
         f"{_dr2:.4f}; ayrıntısı §{section_no('text')}'da.",
         "1. **Structural** — age · km · engine power/size · body · fuel · transmission · drivetrain · segment.\n"
         f"2. **Damage / inspection** — {_struct['panel']} body panels × {{changed, painted, local paint}} + the "
@@ -187,7 +187,7 @@ def section_data(c):
         f"fender · bumper carry a within-group **count** (doors 0–{_grouped['door']}, fenders 0–{_grouped['fender']}, "
         f"bumpers 0–{_grouped['bumper']}).\n"
         f"3. **Free text** — the seller's description; **not used** by the model. It was measured: it adds "
-        f"{_dr2:.4f} to R²; the detail is in §{section_no('text')}."))
+        f"{_dr2:.4f} to log R²; the detail is in §{section_no('text')}."))
     A("")
     # B7 (2026-09-23): "Belirtilmemis" panel durumu orijinal sayiliyor — bilincli karar (kullanici), ama
     # raporda yazmiyordu. Sayilar error_drivers.unspecified'dan (ham JSONL, gold bayraklarla kapili).
@@ -1381,13 +1381,14 @@ def section_calibration(c):
       [[e["name"], e["year"], num(e["km"], lang) if e["km"] is not None else "—", tlx(e["price"], lang),
         tlx(e["pred"], lang), P(e["resid_pct"], lang, sign=True)] for e in ed["examples"]], "lrrrrr")
     ex_keys = {tuple(e["key"]): e for e in ed["examples"]}
-    missing = [k for k in HANDWRITTEN_EXAMPLE_NOTES if k not in ex_keys]
-    assert not missing, (f"elle yazılmış not için örnek yok: {missing} — veri ya da EXAMPLE_KEYS değişmiş; "
-                         f"HANDWRITTEN_EXAMPLE_NOTES'u gözden geçir")
+    missing = [k for k in EXAMPLE_NOTES if k not in ex_keys]
+    assert not missing, (f"not için örnek yok: {missing} — veri ya da EXAMPLE_KEYS değişmiş; "
+                         f"EXAMPLE_NOTES'u gözden geçir")
+    # 2026-09-27: notların sayıları canlı (08_large_errors examples[].compare); iddia tutmazsa not işlevi durur.
     for e in ed["examples"]:
-        note = HANDWRITTEN_EXAMPLE_NOTES.get(tuple(e["key"]))
+        note = EXAMPLE_NOTES.get(tuple(e["key"]))
         if note:
-            A(f"- **{e['name']} · {e['year']}:** {note[0] if lang == 'tr' else note[1]}")
+            A(f"- **{e['name']} · {e['year']}:** {note(e, lang)}")
     A("")
     figs(9)
     figs(11)
@@ -1913,83 +1914,48 @@ def section_time(c):
 
 def section_text(c):
     """
-    EN: §10 — the measured contribution of free text, and why the LLM extraction was left out. The ablation
-        is a frozen measurement (analysis/frozen/text_ablation.json, published by 10_free_text).
-    TR: §10 — serbest metnin ölçülen katkısı ve LLM çıkarımının neden dahil edilmediği. Ablasyon dondurulmuş
-        bir ölçüm (analysis/frozen/text_ablation.json, 10_free_text yayımlar).
+    EN: §10 — the measured contribution of the seller's free text (10_free_text measures it live on every run;
+        pre-registered plan plans/10-text-contribution) and the keyword text flag.
+    TR: §10 — satıcının serbest metninin ölçülen katkısı (10_free_text her koşuda canlı ölçer; ön kayıtlı plan
+        plans/10-text-contribution) ve anahtar kelime metin bayrağı.
     """
     L, A, v, lang, d = c.L, c.A, c.v, c.lang, c.d
     ta = d["report"]["text_ablation"]
-    ab, llm = ta["ablation"], ta["llm"]
-    # 2026-09-23: kapsam, ablasyon kurulumu ve bayrak sayisi elle/eksik yaziliydi — error_drivers'tan.
-    _src = v["ed"]["text_source"]
     _flag = v["ed"]["text_flag"]
-    _remaining = ab["delta_r2"] / (1 - ab["r2_structured"]) * 100
-    _class_label = {"damage": ("hasar", "damage"), "maintenance": ("bakım", "maintenance"),
-                    "modification": ("modifiye", "modification")}
-    _classes = ", ".join(id_label(_class_label, k_, lang) for k_ in llm["classes"])
-    A(L(f"Satıcı açıklaması modele **girmiyor**. Bu bir ihmal değil, ölçüm sonucu: yapısal model "
-        f"R² **{ab['r2_structured']:.4f}**, üstüne metin öznitelikleri eklenince "
-        f"**{ab['r2_structured_plus_text']:.4f}** — ΔR² **{ab['delta_r2']:.4f}**: yapısal modelin "
-        f"açıklayamadığı log varyansın {P(_remaining, lang)} kadarı.\n\n"
-        f"Bu iki sayı ayrı bir koşumdan geliyor ve kurulumu bu raporunkinden farklı: taban modelde "
-        + ("model ve seri adı yok, " if not _src["ablation_model_series"] else "")
-        + f"{_src['ablation_trees']} ağaç, {len(_src['ablation_categorical'])} kategorik ve "
-        f"{len(_src['ablation_numeric'])} sayısal öznitelik; o yüzden taban R², §{section_no('model')}'deki "
-        f"{v['model_r2']} ile karşılaştırılmamalı. "
-        f"Anlamlı olan mutlak seviye değil, **iki kol arasındaki fark**.",
-        f"The seller's description does **not** enter the model. That is a measurement, not an "
-        f"oversight: the structural model scores R² **{ab['r2_structured']:.4f}** and adding text "
-        f"features gives **{ab['r2_structured_plus_text']:.4f}** — ΔR² **{ab['delta_r2']:.4f}**: "
-        f"{P(_remaining, lang)} of the log variance the structural model leaves unexplained.\n\n"
-        f"These two numbers come from a separate run set up differently from this report: the baseline "
-        + ("has no model or series name, " if not _src["ablation_model_series"] else "")
-        + f"{_src['ablation_trees']} trees, {len(_src['ablation_categorical'])} categorical and "
-        f"{len(_src['ablation_numeric'])} numeric features; so the baseline R² should not be read against the "
-        f"{v['model_r2']} in "
-        f"§{section_no('model')}. What matters is the **gap between the two arms**, not the level."))
+    # 2026-09-27 (kullanici: arsivden canliya hicbir sey): dondurulmus ablasyon ve arsivdeki LLM cikariminin
+    # paragraflari kalkti. "Ihmal degil, olcum sonucu" iddiasi on kayitli H1'e kapili; tutmazsa uretec durur.
+    _gain = ta["mape_base"] - ta["mape_text"]
+    assert ta["delta_r2"] < .005 and _gain < .2, f"H1 tutmuyor (plans/10-text-contribution), metin bolumu bayat: {ta}"
+    A(L(f"Satıcı açıklaması modele **girmiyor**. Bu bir ihmal değil, ölçüm sonucu: §{section_no('model')}'deki model "
+        f"log fiyatta R² **{ta['r2_log_base']:.4f}**; aynı fold'larda açıklama metni eklenince "
+        f"**{ta['r2_log_text']:.4f}** — ΔR² **{ta['delta_r2']:.4f}**, modelin açıklayamadığı log varyansın "
+        f"{P(ta['unexplained_share_pct'], lang)} kadarı. MAPE %{ta['mape_base']:.2f} → %{ta['mape_text']:.2f}, "
+        f"ortalama mutlak hata {tlx(ta['mae_base'], lang)} → {tlx(ta['mae_text'], lang)}.",
+        f"The seller's description does **not** enter the model. That is a measurement, not an oversight: the "
+        f"model of §{section_no('model')} scores R² **{ta['r2_log_base']:.4f}** on log price, and with the description "
+        f"added on the same folds **{ta['r2_log_text']:.4f}** — ΔR² **{ta['delta_r2']:.4f}**, "
+        f"{P(ta['unexplained_share_pct'], lang)} of the log variance the model leaves unexplained. MAPE "
+        f"{ta['mape_base']:.2f}% → {ta['mape_text']:.2f}%, mean absolute error {tlx(ta['mae_base'], lang)} → "
+        f"{tlx(ta['mae_text'], lang)}."))
     A("")
-    A(L(f"Metinden yapılandırılmış bilgi çıkarmak ayrıca denendi: **{llm['library']}** "
-        f"kütüphanesi ve **{llm['model']}** ile {num(_src['llm_texts'], lang)} ilan metnindeki {_classes} ifadeleri "
-        f"parça ve durum niteliğiyle çıkarıldı; bu metinlerin {num(_src['llm_listings_in_model'], lang)} tanesi "
-        f"modeldeki ilanlara denk geliyor (ilanların {P(_src['llm_coverage_pct'], lang)} kadarı).",
-        f"Pulling structured facts out of the text was tried separately: **{llm['library']}** "
-        f"with **{llm['model']}** extracted {_classes} phrases from {num(_src['llm_texts'], lang)} ad texts, each "
-        f"with a part and a state attribute; {num(_src['llm_listings_in_model'], lang)} of those texts belong to "
-        f"listings in the model ({P(_src['llm_coverage_pct'], lang)} of the model's listings)."))
+    A(L(f"Metin kolu modelle aynı öznitelikleri, fold'ları ve LightGBM ayarlarını kullanıyor; açıklama kelime "
+        f"TF-IDF'i (1–2 gram) ve {ta['text_svd']} SVD bileşeni olarak ekleniyor, ikisi de her fold'un yalnız eğitim "
+        f"kısmında kuruluyor. Fark ön kayıtlı eşiğin altında (ΔR² < 0.005 ve MAPE iyileşmesi < 0,2 puan), bu yüzden "
+        f"metin modele eklenmedi. Ölçüm her koşuda yeniden yapılıyor; eşik aşılırsa bu bölüm üretilmez.",
+        f"The text arm uses the model's features, folds and LightGBM settings; the description is added as word "
+        f"TF-IDF (1–2 grams) and {ta['text_svd']} SVD components, both fitted on each fold's training part only. The "
+        f"gap is below the pre-registered threshold (ΔR² < 0.005 and a MAPE gain < 0.2 points), so the text was "
+        f"not added to the model. The measurement is repeated on every run; if the threshold is crossed this "
+        f"section is not produced."))
     A("")
-    A(L("Bu çıkarımların kendisi ne modele ne rapora girdi, çünkü **doğrulukları ölçülemedi**. Tek dolaylı "
-        f"bağ: §{section_no('model')}'deki metin bayrağının ve §{section_no('calibration')}'deki örnek gerekçelerinin "
-        "modifiye kelime listesi (dönüşüm kalıbı değil) bu çıkarımların sözcük dağarcığından damıtıldı; bayrak "
-        "ilan metnine uygulanan düz bir kelime kuralı. "
-        "Ölçmek için "
-        "zor/orta/kolay ilanlardan dengeli bir doğrulama kümesi kurup elle etiketlemek gerekiyor; "
-        "o emek harcanmadan modelin ne zaman yanıldığı bilinmiyor. Ölçemediğimiz bir sinyalin "
-        "üstüne karar kurulmadı.",
-        "The extractions themselves entered neither the model nor this report, because **their accuracy "
-        f"could not be measured**. The one indirect link: the modification word list (not the conversion "
-        f"pattern) behind the text flag in §{section_no('model')} and the example reasons in §{section_no('calibration')} was "
-        "distilled from their vocabulary; the flag itself is a plain word rule applied to the ad text. Measuring it needs a balanced validation set of easy, medium and hard "
-        "listings, labelled by hand; without that work there is no way to know when the "
-        "extraction is wrong. We did not build decisions on a signal we could not measure."))
-    A("")
-    A(L("Yapılması gereken belli: çıkarımlar önce doğrulanmalı, sonra modele **temiz sinyal** "
-        "olarak verilip katkısı aynı protokolle test edilmeli. Önündeki engel **örneklem**: "
-        f"metninde dönüşüm ya da modifiye ifadesi geçen ilan {num(_flag['n'], lang)} ({P(_flag['pct'], lang)}) ve "
-        "bunların ne kadarının gerçekten modifiye olduğu bilinmiyor; yeterli doğrulanmış "
-        "örnek yoksa model bu sinyali öğrenemez, gürültüye karışır. Bir de alternatif yol var: "
-        "sinyali modele "
-        "hiç vermeden bu ilanları **veriden çıkarmak** ve hata payının ne kadar düştüğünü "
-        "ölçmek. Hangisi seçilirse seçilsin, sonuç **canlı ilanlarda** da sınanmadan kabul "
-        "edilmemeli.",
-        "What it would take is clear: validate the extractions, then feed them to the model as a "
-        "**clean signal** and test the gain under the same protocol. The obstacle is **sample "
-        f"size**: {num(_flag['n'], lang)} listings ({P(_flag['pct'], lang)}) mention a conversion or modification "
-        "in their text, and how many of them really are modified is unknown; "
-        "with too few verified examples the model cannot learn the signal — it stays noise. There is also an "
-        "alternative route: keep the signal out of the model and **drop those listings from the data**, "
-        "then measure how far the error falls. Either way the result has to be tested on **live "
-        "listings** before it is trusted."))
+    A(L(f"Metinde dönüşüm, motor değişimi ya da modifiye ifadesi geçen ilanlar ayrıca işaretleniyor: "
+        f"{num(_flag['n'], lang)} ilan ({P(_flag['pct'], lang)}), §{section_no('model')}'deki metin bayrağı. Bayrak düz "
+        f"bir kelime kuralı; kelime listesi arşivlenmiş bir LLM çıkarım denemesinin sözcük dağarcığından damıtıldı ve "
+        f"her koşuda bugünkü metne uygulanıyor.",
+        f"Listings whose text mentions a conversion, an engine swap or modifications are flagged separately: "
+        f"{num(_flag['n'], lang)} listings ({P(_flag['pct'], lang)}), the text flag in §{section_no('model')}. The flag is "
+        f"a plain word rule; its word list was distilled from the vocabulary of an archived LLM extraction trial and "
+        f"is applied to today's text on every run."))
 
 
 # Bolum SIRASI burada; degistirmek icin satirlari yer degistirmek yeter.
