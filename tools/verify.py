@@ -72,6 +72,7 @@ def main(argv=None):
     EN: Command line. Returns: 0 when the selected layer is green, 1 otherwise.
     TR: Komut satırı. Döndürür: seçilen katman yeşilse 0, değilse 1.
     """
+    sys.stdout.reconfigure(encoding="utf-8")      # EN: Turkish failure lines on a cp1252 console | TR: cp1252 konsolda Türkçe
     ap = argparse.ArgumentParser(description="Definition of done | bitti tanımı")
     group = ap.add_mutually_exclusive_group()
     group.add_argument("--data", action="store_true", help="also the real-data layer | gerçek veri katmanı da")
