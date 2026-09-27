@@ -107,18 +107,27 @@ and its setup were frozen in `analysis/frozen/text_ablation.json`.
   corrupt); the rule lives in `analysis/lib/segment_rule.py` (single source; `07_final_model` copies it into
   `encoders.pkl`), and the run stops if a series or model cannot be resolved. The report says so.
 - **Scope comes from the collection filters.** A price cap (price is right-truncated), an earliest model
-  year, the `/otomobil/` category only (the SUV category was not collected; only a few SUVs are in the
-  data) and four fuel types (no electric cars). Technical report
+  year, the "otomobil" (car) category only (the SUV category was not collected; only a few SUVs are in
+  the data) and four fuel types (no electric cars). Technical report
   §1 reads these filters from the scraper's config file (`scraper/collection_config.json`) and counts
   their footprint in the data.
+- **Scope is Turkish-plated cars only** (2026-09-26). Blue-plate listings (a different tax regime) and
+  listings with an empty plate field (regime unknown) do not enter the model. Blue plates stay in the
+  database but do not go to gold (`db/gold_rules.json`). The counts are in technical report §1.
+- **A listing with no body style is not filled in** (2026-09-26). The model name does not fix the body: the
+  same name is sold in several body styles, and the site labels even the same name inconsistently. The
+  model sees these listings as a category of their own; the median-price-by-body-style chart leaves them
+  out and counts them in its title.
 - **Engine size = the bucket's upper bound, power = the mean of the lower and upper bounds** (the user's
   rule). On some listings the site gives both as a bucket; technical report §1 prints the table and figure
   that compare each candidate with the same model's exact-value listings. If the chosen candidate stops
   having the smallest gap, `analysis/01_engine_rule.py` stops.
-- **"Unspecified" panels count as original** (a deliberate decision). Technical report §1 prints its
-  size and the price evidence; the cost is that damage effects are pulled slightly toward zero. The
-  translation happens in the analysis (`analysis/lib/common.py`); the DB keeps the information semi-raw
-  (`NULL` from the next build on).
+- **"Unspecified" panels count as original** (a deliberate decision); the heavy-damage record follows the
+  same rule. Technical report §1 prints its size. The translation happens in the analysis
+  (`analysis/lib/common.py`); the database keeps the information semi-raw (`NULL`).
 - **The hedonic model has no period effect** (user decision, 2026-09-23): periods are pooled; the shift in
   market level is read in technical report §9 from live listings of the same model and year.
+- **Retraining is not tied to a fixed PSI threshold** (2026-09-27). Drift is watched and the model is
+  retrained on new snapshots. The reason is in the data: with PSI far below the threshold, the error of a
+  model trained on one snapshot still grows as the test horizon lengthens (technical report §9).
 - Scope is BMW + Audi; how far it generalises to other brands was not measured.

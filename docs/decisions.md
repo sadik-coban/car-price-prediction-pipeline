@@ -104,17 +104,26 @@ birebir aynı sonuç), ablasyon ölçüsü ve kurulumu `analysis/frozen/text_abl
   `analysis/lib/segment_rule.py`'de (tek kaynak; `07_final_model` onu `encoders.pkl`'ye kopyalar), çözülemeyen
   seri/model kalırsa koşum durur; raporda söylenir.
 - **Kapsam toplama filtrelerinden gelir.** Fiyat tavanı (fiyat sağdan kesik), en eski model yılı,
-  yalnız `/otomobil/` kategorisi (SUV kategorisi toplanmadı; veride yalnız birkaç SUV var) ve dört yakıt
+  yalnız otomobil kategorisi (SUV kategorisi toplanmadı; veride yalnız birkaç SUV var) ve dört yakıt
   türü (elektrikli yok). Teknik rapor §1 bu
   filtreleri scraper'ın ayar dosyasından (`scraper/collection_config.json`) okur ve karşılıklarını veride
   sayar.
+- **Kapsam yalnız TR plakalı araçlar** (2026-09-26). Mavi plakalılar (vergi rejimi farklı) ve plakası boş
+  ilanlar (rejimi bilinmiyor) modele girmez. Mavi plakalılar veritabanında durur, gold'a gitmez
+  (`db/gold_rules.json`). Sayılar teknik rapor §1'de.
+- **Kasa tipi verilmeyen ilan doldurulmaz** (2026-09-26). Model adı kasayı belirlemiyor: aynı ad birden çok
+  tiple satılıyor, site aynı adı bile tutarsız etiketliyor. Model bunları ayrı bir kategori olarak görür;
+  kasa tipine göre medyan fiyat grafiği onları çizmez, başlıkta sayar.
 - **Motor hacmi = kovanın üst sınırı, güç = alt ve üst sınırın ortalaması** (kullanıcının kuralı). Site
   ikisini ilanların bir kısmında kova olarak veriyor; teknik rapor §1 her adayı aynı modelin kesin değerli
   ilanlarıyla karşılaştıran tabloyu ve figürü basar. Seçilen aday en küçük farkı vermezse
   `analysis/01_engine_rule.py` durur.
-- **"Belirtilmemiş" panel orijinal sayılır** (bilinçli karar). Teknik rapor §1 kararın ölçüsünü ve fiyat
-  kanıtını basar; bedeli, hasar etkilerinin hafifçe sıfıra çekilmesi. Çeviri analizde yapılır
-  (`analysis/lib/common.py`); DB bilgiyi yarı ham tutar (bir sonraki kurulumdan itibaren `NULL`).
+- **"Belirtilmemiş" panel orijinal sayılır** (bilinçli karar); ağır hasar kaydında da aynı kural. Teknik
+  rapor §1 kararın ölçüsünü basar. Çeviri analizde yapılır (`analysis/lib/common.py`); veritabanı bilgiyi
+  yarı ham tutar (`NULL`).
 - **Hedonik model dönem etkisi içermez** (kullanıcı kararı, 2026-09-23): dönemler havuzlanarak kestirilir;
   piyasa seviyesinin kayması teknik rapor §9'da aynı model ve yılın canlı ilanlarından okunur.
+- **Yeniden eğitim sabit bir PSI eşiğine bağlanmaz** (2026-09-27). Kayma izlenir, model yeni taramalarla
+  yeniden eğitilir. Gerekçe veride: PSI eşiğin çok altındayken bile aynı taramada eğitilen modelin hatası
+  test ufku uzadıkça artıyor (teknik rapor §9).
 - Kapsam BMW + Audi; başka markalara ne kadar genellenebildiği ölçülmedi.
