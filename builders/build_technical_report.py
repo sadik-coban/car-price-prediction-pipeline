@@ -15,9 +15,9 @@ from datetime import date
 
 import numpy as np
 
-from report_lib.report_common import (BAND_LABEL, EXAMPLE_NOTES, FUEL_EN, HED_TERM_EN, LADDER_EN,
+from report_lib.report_common import (BAND_LABEL, EXAMPLE_NOTES, FUEL_EN, HED_TERM, LADDER_EN,
                            LOFO_FLAT_KEYS, LOFO_GROUPS, P, REPORTS_DIR, TECHNICAL_FIGS, TIER_LABEL, VARIANTS, VARIANTS_EN,
-                           VIF_TERM, _Ctx, build_figures, cluster_labels, col, derive, fp, fraction_words, id_label, load_report_view,
+                           _Ctx, build_figures, cluster_labels, col, derive, fp, fraction_words, id_label, load_report_view,
                            lofo_name, num, number_word, tl, tlm, tlx, tx, write_md)
 
 
@@ -801,57 +801,62 @@ def section_segment(c):
 
 def section_hedonic(c):
     """
-    EN: §6 — the hedonic model: bootstrap effects, VIF, assumptions, model identity, the hp–cc correlation, LOFO
-        vs SHAP ranking.
-    TR: §6 — hedonik model: bootstrap etkileri, VIF, varsayımlar, model kimliği, hp–cc korelasyonu, LOFO ile
-        SHAP sıralaması.
+    EN: §6 — the hedonic model: two columns (segment control, model control) with 95% intervals clustered by model,
+        variance and VIF in one sentence each, the engine terms, LOFO vs the SHAP ranking.
+    TR: §6 — hedonik model: modele göre kümeli %95 aralıklı iki sütun (segment kontrolü, model kontrolü), varyans
+        ve VIF birer cümle, motor terimleri, LOFO ile SHAP sıralaması.
     """
     v, d, dom, met, meta, hr, lang = c.v, c.d, c.dom, c.met, c.meta, c.hr, c.lang
     L, A, T, figs = c.L, c.A, c.T, c.figs
-    A(L(f"Hedonik regresyon her sürücünün *kontrollü* (diğer her şey sabitken) fiyat etkisini verir — "
-        f"R² **{v['hed_r2']}**, n **{num(v['hed_n'], lang)}**. Katsayılar bootstrap ile güven aralıklı"
-        + (f"; {v['n_boot']} terimin hepsinin %95 GA'sı sıfırı dışlıyor → her sürücü güvenilir şekilde anlamlı."
-           if v["all_sig"] else "."),
-        f"The hedonic regression gives each driver's *controlled* effect on price (all else equal) — "
-        f"R² **{v['hed_r2']}**, n **{num(v['hed_n'], lang)}**. Coefficients carry bootstrap confidence intervals"
-        + (f"; all {v['n_boot']} terms have a 95% CI excluding zero → each driver is reliably significant."
-           if v["all_sig"] else ".")))
+    # 2026-09-28 (sadelestirme listesi): 1000 tekrarli satir bootstrap'i ilanlari bagimsiz sayiyordu -> modele gore
+    # kumeli SH. C(model)'li model artik ikinci sutun (karar notu onu basiyor, kullanici karari). VIF tablosu,
+    # yakita gore hp-cc tablosu ve varsayim testi paragrafi birer cumleye indi.
+    cols = hr["columns"]
+    seg = {r["term"]: r for r in cols["segment"]["coefficients"]}
+    mod = {r["term"]: r for r in cols["model"]["coefficients"]}
+    terms = list(seg)
+    assert terms == list(mod), "hedonik sutunlarin terimleri farkli"
+    lab = lambda k_, lg_: HED_TERM[k_][0 if lg_ == "tr" else 1]                         # noqa: E731
+    _share = (cols["model"]["r2"] - v["hed_r2"]) / (v["model_r2_log"] - v["hed_r2"]) * 100
+    _seg_zero = [k_ for k_ in terms if seg[k_]["contains_zero"]]
+    _mod_zero = [k_ for k_ in terms if mod[k_]["contains_zero"]]
+    _apart = [k_ for k_ in terms if not seg[k_]["pct_lo"] <= mod[k_]["pct_effect"] <= seg[k_]["pct_hi"]]
+    _names = lambda ks_, lg_: ", ".join(lab(k_, lg_) for k_ in ks_)                      # noqa: E731
+    assert hr["homoskedasticity_p"] < .05, "Breusch-Pagan esit varyansi reddetmiyor — gerekce cumlesi bayat"
+    A(L(f"Hedonik regresyon her sürücünün *kontrollü* (diğer her şey sabitken) fiyat etkisini verir; hedef log fiyat, "
+        f"n **{num(v['hed_n'], lang)}**. İki sütun yan yana. **Segment kontrolü** segment, marka, yakıt ve vites "
+        f"kuklalarıyla kurulur (R² **{v['hed_r2']}**). **Model kontrolü** bunlara `C(model)` ekler "
+        f"({num(hr['n_clusters'], lang)} model adı), yani her etki aynı model adı içinde ölçülür (R² "
+        f"**{cols['model']['r2']}**). Model kimliği, hedonik R² ile modelin aynı ölçekteki OOF R²'si "
+        f"({v['model_r2_log']}, log fiyat) arasındaki farkın yaklaşık {P(_share, lang, 0)} kadarını kapatıyor — bir üst "
+        f"tahmin: C(model)'li R² örneklem içi, modelinki OOF. Modelin başlıktaki R²'si ({v['model_r2']}) ham ₺ "
+        f"ölçeğinde; hedonikle o karşılaştırılmamalı.",
+        f"The hedonic regression gives each driver's *controlled* effect on price (all else equal); the target is log "
+        f"price, n **{num(v['hed_n'], lang)}**. Two columns side by side. **Segment control** uses segment, brand, "
+        f"fuel and transmission dummies (R² **{v['hed_r2']}**). **Model control** adds `C(model)` "
+        f"({num(hr['n_clusters'], lang)} model names), so each effect is measured within one model name (R² "
+        f"**{cols['model']['r2']}**). Model identity closes about {P(_share, lang, 0)} of the gap between the hedonic R² "
+        f"and the model's OOF R² on the same scale ({v['model_r2_log']}, log price) — an upper estimate: the R² with "
+        f"C(model) is in-sample while the model's is OOF. The model's headline R² ({v['model_r2']}) is on the raw ₺ "
+        f"scale and should not be read against the hedonic one."))
     A("")
-    _n_model = len(v["ed"]["per_model_error"])
-    # 2026-09-23: "eklenseydi katsayilari tasirdi" / "farkin bir kismi" olculmemisti ve "seri zaten onun
-    # kabalastirilmis hali" regresyonda seri varmis gibi okunuyordu (yalniz segment var). Model etkili OLS bir kez
-    # kuruldu (06_hedonic: hedonic_reliability.with_model).
-    _with_model = hr["with_model"]
-    _coef = _with_model["coef_pct"]
-    _share = (_with_model["r2"] - v["hed_r2"]) / (v["model_r2_log"] - v["hed_r2"]) * 100
-    _coef_text = lambda k_, lab_: f"{lab_} {P(_coef[k_][0], lang, 2, sign=True)} → {P(_coef[k_][1], lang, 2, sign=True)}"  # noqa: E731
-    _same_sign = all((a_ > 0) == (b_ > 0) for a_, b_ in (_coef[k_] for k_ in ("age", "hp100", "cc_litre", "km100k")))
-    A(L(f"**`model` bu regresyona girmiyor.** Kardinalitesi çok yüksek"
-        + (f" ({num(_n_model, lang)} ayrı değer)" if _n_model else "")
-        + f"; regresyonda seri de yok, yalnız segment var. Ölçüldü: `C(model)` eklenince R² {v['hed_r2']} → "
-        f"{_with_model['r2']} — hedonik R² ile modelin aynı ölçekteki OOF R²'si ({v['model_r2_log']}, log fiyat) "
-        f"arasındaki farkın yaklaşık {P(_share, lang, 0)} kadarı model kimliğinden — bir üst tahmin: C(model)'li R² "
-        f"örneklem içi, modelinki OOF (iki R² farklı n'de de: hedonik "
-        f"{num(hr['n'], lang)}, model {num(v['n_dedup'], lang)} ilan). Doğrusal katsayılar "
-        + ("yönünü koruyor, büyüklükleri kayıyor" if _same_sign else "kayıyor, bazılarının yönü değişiyor")
-        + f": {_coef_text('age', 'yaş')}, {_coef_text('hp100', '+100 hp')}, {_coef_text('cc_litre', '1 litre')}, "
-        f"{_coef_text('km100k', '100 bin km')}. Yani "
-        f"buradaki \"kontrollü\" etkiler **model kimliği hariç** kontrollüdür. Modelin başlıktaki R²'si "
-        f"({v['model_r2']}) ham ₺ ölçeğinde; hedonikle o karşılaştırılmamalı.",
-        f"**`model` does not enter this regression.** Its cardinality is very high"
-        + (f" ({num(_n_model, lang)} distinct values)" if _n_model else "")
-        + f"; series is not in the regression either, only segment. Measured: adding `C(model)` moves R² from "
-        f"{v['hed_r2']} to {_with_model['r2']} — about {P(_share, lang, 0)} of the gap between the hedonic R² and the model's "
-        f"OOF R² on the same scale ({v['model_r2_log']}, log price) is model identity — an upper estimate: the "
-        f"R² with C(model) is in-sample while the model's is OOF (the two also come from different n: hedonic {num(hr['n'], lang)}, model {num(v['n_dedup'], lang)} listings). The linear "
-        f"coefficients " + ("keep their sign but shift in size" if _same_sign else "shift, some changing sign")
-        + f": {_coef_text('age', 'age')}, {_coef_text('hp100', '+100 hp')}, {_coef_text('cc_litre', '1 litre')}, "
-        f"{_coef_text('km100k', '100k km')}. So the \"controlled\" effects here are controlled for everything **except "
-        f"model identity**. The model's headline R² ({v['model_r2']}) is on the raw ₺ scale and should not be "
-        f"read against the hedonic one."))
+    A(L(f"**Güven aralıkları.** Aynı modelin ilanları birbirinden bağımsız değil ve hata varyansı eşit değil "
+        f"(Breusch-Pagan p {fp(hr['homoskedasticity_p'])}); bu yüzden %95 güven aralıkları modele göre kümelenmiş "
+        f"standart hatalardan ({num(hr['n_clusters'], lang)} küme). Segment sütununda "
+        + (f"{len(terms)} terimin hepsinin aralığı sıfırı dışlıyor" if not _seg_zero else
+           f"{_names(_seg_zero, 'tr')} terimlerinin aralığı sıfırı içeriyor")
+        + ("; model sütununda da." if not _mod_zero else
+           f"; model sütununda {_names(_mod_zero, 'tr')} terimlerinin aralığı sıfırı içeriyor."),
+        f"**Confidence intervals.** Listings of the same model are not independent and the error variance is not "
+        f"equal (Breusch-Pagan p {fp(hr['homoskedasticity_p'])}), so the 95% intervals come from standard errors "
+        f"clustered by model ({num(hr['n_clusters'], lang)} clusters). In the segment column "
+        + (f"all {len(terms)} intervals exclude zero" if not _seg_zero else
+           f"the intervals of {_names(_seg_zero, 'en')} contain zero")
+        + ("; in the model column too." if not _mod_zero else
+           f"; in the model column the intervals of {_names(_mod_zero, 'en')} contain zero.")))
     A("")
-    # OLS eksik deger kaldirmaz: kac ilanin neden elendigi build_error_drivers.py'de SAYILIR
-    # (hedonic_dropped), burada yalnizca yazilir. Kapi: n_dedup - total == hedonik n.
+    # OLS eksik deger kaldirmaz: kac ilanin neden elendigi 06_hedonic'te SAYILIR (hedonic_dropped), burada yalnizca
+    # yazilir. Kapi: n_dedup - total == hedonik n.
     _dropped = v["ed"]["hedonic_dropped"]
     if _dropped:
         assert v["n_dedup"] - _dropped["total"] == v["hed_n"], (
@@ -867,99 +872,71 @@ def section_hedonic(c):
         A("")
     figs(3)
 
-    ex = lambda b: (np.exp(b) - 1) * 100
-    A(L("### Bootstrap katsayıları", "### Bootstrap coefficients"))
+    cell = lambda r_: (f"{P(r_['pct_effect'], lang, 2, sign=True)} [{P(r_['pct_lo'], lang, 2, sign=True)}, "   # noqa: E731
+                       f"{P(r_['pct_hi'], lang, 2, sign=True)}]")
+    A(L("### Kontrollü etkiler", "### Controlled effects"))
     A("")
-    T([L("terim", "term"), L("etki", "effect"), L("log katsayı [%95 GA]", "log coef [95% CI]"),
-       L("etki %95 GA", "effect 95% CI"), L("anlamlı", "significant")],
-      [[tx(HED_TERM_EN, b["term"], lang), P(b["pct_effect"], lang, 2, sign=True),
-        f"{b['point']:+.4f} [{b['ci_lo']:+.4f}, {b['ci_hi']:+.4f}]",
-        f"{P(ex(b['ci_lo']), lang, 2, sign=True)} … {P(ex(b['ci_hi']), lang, 2, sign=True)}",
-        L("hayır", "no") if b["contains_zero"] else L("evet", "yes")]
-       for b in hr["bootstrap"]], "lrrrl")
+    T([L("terim", "term"), L("segment kontrolü [%95 GA]", "segment control [95% CI]"),
+       L("model kontrolü [%95 GA]", "model control [95% CI]")],
+      [[lab(k_, lang), cell(seg[k_]), cell(mod[k_])] for k_ in terms], "lrr")
     _center = hr["center"]
     A(L(f"Etki = exp(β)−1. Yaş ve km **medyan araca** ({num(_center['age'], lang)} yaş, "
         f"{num(_center['km'], lang)} km) ortalandı: yaş ve km satırları o araçtaki marjinal etki. "
-        f"Kare ve etkileşim terimleri (yaş², km², yaş×km) tek başına okunmaz; eğrinin bükülmesini taşır.",
+        f"Kare ve etkileşim terimleri (yaş², km², yaş×km) tek başına okunmaz; eğrinin bükülmesini taşır. "
+        + (f"Model sütununun nokta tahmini segment sütununun aralığının dışında kalan terimler: {_names(_apart, 'tr')} — "
+           f"bunlarda model kimliğini sabitlemek etkiyi örnekleme hatasından fazla değiştiriyor; öteki terimlerde iki "
+           f"sütun birbirinin aralığı içinde. " if _apart else
+           "İki sütunun nokta tahminleri birbirinin aralığı içinde. ")
+        + "Karar notundaki etkiler model sütunundan: aynı model adı içinde.",
         f"Effect = exp(β)−1. Age and km are centred on the **median car** ({num(_center['age'], lang)} "
         f"years, {num(_center['km'], lang)} km): the age and km rows are the marginal effect at that car. "
-        f"Squared and interaction terms (age², km², age×km) are not read alone; they carry the curvature."))
+        f"Squared and interaction terms (age², km², age×km) are not read alone; they carry the curvature. "
+        + (f"Terms whose model-column estimate falls outside the segment column's interval: {_names(_apart, 'en')} — "
+           f"for these, holding model identity fixed moves the effect by more than sampling error; for the other "
+           f"terms the two columns sit inside each other's interval. " if _apart else
+           "The two columns' estimates sit inside each other's interval. ")
+        + "The decision note's effects come from the model column: within one model name."))
+    A("")
+    A(L("**Katsayılar nedensel etki değil, kontrollü ilişkidir.** Ör. boyalı panelin katsayısı boyamanın fiyatı "
+        "düşürdüğünü değil, boyalı panelli ilanların benzerlerinden o kadar ucuz ilan edildiğini söyler.",
+        "**The coefficients are controlled associations, not causal effects.** E.g. the painted-panel coefficient "
+        "does not say that painting lowers the price, only that listings with painted panels are advertised that "
+        "much cheaper than similar ones."))
+    A("")
+    _vif = hr["vif"]
+    _vif_level_tr = "10'un altında" if _vif["value"] < 10 else "10'un üzerinde — dikkatle okunmalı"
+    _vif_level_en = "below 10" if _vif["value"] < 10 else "above 10 — read with care"
+    A(L(f"**Çoklu bağlantı.** Segment sütununun tasarımında en yüksek VIF {lab(_vif['term'], 'tr')} "
+        f"{_vif['value']:.2f} ({_vif_level_tr}); ortalanmamış tasarımda en yüksek {lab(_vif['raw_term'], 'tr')} "
+        f"{_vif['raw_value']:.2f}. Yaş, yaş², km, km² ve yaş×km aynı iki değişkenden türediği için yapısal olarak "
+        f"bağlı; medyan araca ortalamak bunu giderir, tahminler ve R² değişmez.",
+        f"**Collinearity.** The highest VIF in the segment column's design is {lab(_vif['term'], 'en')} "
+        f"{_vif['value']:.2f} ({_vif_level_en}); in the uncentred design the highest is {lab(_vif['raw_term'], 'en')} "
+        f"{_vif['raw_value']:.2f}. Age, age², km, km² and age×km are built from two variables, so they are "
+        f"structurally linked; centring on the median car removes that, and predictions and R² do not change."))
     A("")
 
-    eng = hr["engine_effect"]
     A(L("### Motor etkisi", "### Engine effect"))
     A("")
-    A(L(f"+{hr['unit']['hp']} → **{P(eng['hp100_pct'], lang, sign=True)}**, +{hr['unit']['cc']} → "
-        f"**{P(eng['cc_litre_pct'], lang, sign=True)}** (aynı regresyonda, diğeri sabitken). Hacmin etkisi, güç "
-        f"sabitlendikten sonra kalan kısımdır; birimler farklı olduğu için iki sayı doğrudan kıyaslanmaz.",
-        f"+{hr['unit']['hp']} → **{P(eng['hp100_pct'], lang, sign=True)}**, +{hr['unit']['cc']} → "
-        f"**{P(eng['cc_litre_pct'], lang, sign=True)}** (same regression, the other held fixed). Displacement's effect "
-        f"is what remains once power is fixed; the units differ, so the two numbers are not directly comparable."))
-    A("")
-
-    A(L("### Yakıt bazında cc–HP korelasyonu", "### cc–HP correlation by fuel"))
-    A("")
-    T([L("yakıt", "fuel"), "Pearson", "Pearson (log)", "Spearman", "cc / HP", "n"],
-      [[tx(FUEL_EN, r["fuel"], lang), f"{r['pearson']:.3f}", f"{r['pearson_log']:.3f}", f"{r['spearman']:.3f}",
-        f"{r['cc_hp_ratio']:.1f}", num(r["n"], lang)] for r in hr["fuel_correlation"]], "lrrrrr")
-    _weakest = min(hr["fuel_correlation"], key=lambda r: r["pearson"])
-    A(L(f"Genel korelasyon {hr['overall_correlation']}. İlişki yakıta göre değişiyor — en zayıf "
-        f"{_weakest['fuel']} (Pearson {_weakest['pearson']:.3f}, n {num(_weakest['n'], lang)}). Hacim güçten türetilemiyor; "
-        f"ikisi ayrı öznitelik olarak kalır.",
-        f"Overall correlation {hr['overall_correlation']}. The relationship varies by fuel — weakest for "
-        f"{tx(FUEL_EN, _weakest['fuel'], lang)} (Pearson {_weakest['pearson']:.3f}, n {num(_weakest['n'], lang)}). Displacement "
-        f"cannot be derived from power; both stay as separate features."))
-    A("")
-
-    # VIF — 2026-09-23: eskiden 7 degiskenli, HIC KURULMAMIS bir yardimci matristen geliyordu ve
-    # "hepsi 5'in altinda" cumlesi oradan cikiyordu. Artik kurulan modelin kendi tasarimindan; yanina
-    # ayni tasarimin ORTALANMAMIS hali konuyor ki ortalamanin neyi duzelttigi gorunsun.
-    vif, vif_raw = hr["vif"], dict(hr["vif_raw"])
-    vd_term, vd_value = hr["vif_dummy"]
-    vmax = max(vif, key=lambda r: r[1])
-    hmax = max(hr["vif_raw"], key=lambda r: r[1])
-    _nm = lambda t_: VIF_TERM.get(t_, (t_, t_))[0 if lang == "tr" else 1]
-    A(L("### VIF — çoklu bağlantı", "### VIF — multicollinearity"))
-    A("")
-    T([L("terim", "term"), L("VIF (kurulan model)", "VIF (fitted model)"), L("VIF (ortalanmamış)", "VIF (uncentred)")],
-      [[_nm(t), f"{x:.2f}", f"{vif_raw[t]:.2f}"] for t, x in vif], "lrr")
-    _vif_level_tr = ("hepsi 5'in altında" if vmax[1] < 5 else
-             ("10'un altında" if vmax[1] < 10 else "10'un üzerinde — dikkatle okunmalı"))
-    _vif_level_en = ("all below 5" if vmax[1] < 5 else
-                ("below 10" if vmax[1] < 10 else "above 10 — read with care"))
-    A(L(f"Tablodaki değerler kurulan modelin kendi tasarım matrisinden. En yüksek **{_nm(vmax[0])} "
-        f"{vmax[1]:.2f}** — {_vif_level_tr}. Ortalanmamış tasarımda aynı terim grubu çok daha yüksek "
-        f"(**{_nm(hmax[0])} {hmax[1]:.2f}**): yaş, yaş², km, km² ve yaş×km aynı iki değişkenden türediği "
-        f"için birbirine yapısal olarak bağlı. Medyan araca ortalamak bunu giderir; tahminler ve R² "
-        f"değişmez, yalnız doğrusal katsayıların anlamı netleşir. Kuklalar arasında en yüksek VIF "
-        f"`{vd_term}` ({vd_value:.2f}): kukla VIF'i referans seviyesi küçük olduğunda şişer ve yalnız o kukla "
-        f"katsayılarının standart hatasını etkiler — burada raporlanmıyor.",
-        f"The values come from the fitted model's own design matrix. The highest is **{_nm(vmax[0])} "
-        f"{vmax[1]:.2f}** — {_vif_level_en}. In the uncentred design the same group is far higher "
-        f"(**{_nm(hmax[0])} {hmax[1]:.2f}**): age, age², km, km² and age×km are all built from two "
-        f"variables, so they are structurally linked. Centring on the median car removes that; "
-        f"predictions and R² do not change, only the meaning of the linear coefficients sharpens. "
-        f"Among the dummies the highest VIF is `{vd_term}` ({vd_value:.2f}): a dummy's VIF inflates when its "
-        f"reference level is small and only affects that dummy's standard error, which is not "
-        f"reported here."))
-    A("")
-
-
-    assum = hr["assumptions"]
-    A(L("### Varsayım testleri", "### Assumption tests"))
-    A("")
-    A(L(f"Breusch-Pagan (eşit varyans) p = **{fp(assum['homoskedasticity_p'])}** · Jarque-Bera "
-        f"(normallik) p = **{fp(assum['normality_p'])}** → ikisi de ihlal. Bu yüzden çıkarım çıplak "
-        f"OLS p-değerine dayanmıyor: güven aralıkları, veriyi **{hr['bootstrap_setup']['n_boot']} "
-        f"kez yerine koymalı yeniden örnekleyip** modeli her turda yeniden kuran bootstrap'in "
-        f"**%2.5–97.5 yüzdeliklerinden** geliyor. Model ayrıca HC3 robust kovaryansla kuruluyor; "
-        f"bu, yayımlanan aralıklara girmiyor.",
-        f"Breusch-Pagan (equal variance) p = **{fp(assum['homoskedasticity_p'])}** · Jarque-Bera "
-        f"(normality) p = **{fp(assum['normality_p'])}** → both violated. Inference therefore does "
-        f"not rest on plain OLS p-values: the intervals are the **2.5–97.5 percentiles** of a "
-        f"bootstrap that resamples the rows with replacement **{hr['bootstrap_setup']['n_boot']} "
-        f"times** and refits the model each round. The model is also fitted with HC3 robust "
-        f"covariance, which does not enter the published intervals."))
+    _hp_s, _hp_m, _l_s, _l_m = seg["hp100"], mod["hp100"], seg["litre"], mod["litre"]
+    _wider = (_hp_m["pct_hi"] - _hp_m["pct_lo"] > _hp_s["pct_hi"] - _hp_s["pct_lo"]
+              and _l_m["pct_hi"] - _l_m["pct_lo"] > _l_s["pct_hi"] - _l_s["pct_lo"])
+    assert _wider, "model sutununda motor araliklari daha genis degil — 'araliklari genis' cumlesi bayat"
+    A(L(f"{lab('hp100', 'tr')} segment kontrolünde **{P(_hp_s['pct_effect'], lang, sign=True)}**, model kontrolünde "
+        f"**{P(_hp_m['pct_effect'], lang, sign=True)}**; {lab('litre', 'tr')} **{P(_l_s['pct_effect'], lang, sign=True)}** "
+        f"ile **{P(_l_m['pct_effect'], lang, sign=True)}** (aynı regresyonda, diğeri sabitken). Model adı motoru büyük "
+        f"ölçüde belirlediği için model sütununda motor terimleri yalnız aynı model adı içindeki güç ve hacim farkından "
+        f"ölçülür; aralıkları bu yüzden daha geniş. Hacim ve güç birbirine bağlı (korelasyon "
+        f"{hr['hp_cc_correlation']:.2f}): hacmin etkisi güç sabitken kalan kısım, iki katsayı birlikte okunmalı; "
+        f"birimler farklı olduğu için doğrudan kıyaslanmaz.",
+        f"{lab('hp100', 'en')} is **{P(_hp_s['pct_effect'], lang, sign=True)}** under segment control and "
+        f"**{P(_hp_m['pct_effect'], lang, sign=True)}** under model control; {lab('litre', 'en')} "
+        f"**{P(_l_s['pct_effect'], lang, sign=True)}** and **{P(_l_m['pct_effect'], lang, sign=True)}** (same "
+        f"regression, the other held fixed). The model name largely fixes the engine, so in the model column the "
+        f"engine terms are measured only from power and size differences within one model name; that is why their "
+        f"intervals are wider. Size and power are linked (correlation {hr['hp_cc_correlation']:.2f}): size's effect is "
+        f"what remains with power fixed, so read the two coefficients together; the units differ, so they are not "
+        f"directly comparable."))
     A("")
 
     A(L("### LOFO — çıkarma testi", "### LOFO — leave-one-feature-out"))
@@ -991,33 +968,23 @@ def section_hedonic(c):
     A("")
     figs(4)
 
-    # Grafikte 5 cubuk var, modelde 25 oznitelik — aradaki fark okurun ilk sorusu. Kapsam
-    # tablosu ve ölçülmeyenlerin adlari VERIDEN turetilir (elle yazilan sayi yok): tekil
-    # olculenler methodology.lofo'dan, tamami feature_kept'ten; farki tam olarak LOFO
-    # dongusunun hic gezmedigi kategorik oznitelikler verir. Dongu ileride duzelirse bu blok
-    # kendiliginde dogru kalir, hatta bosalir.
+    # Grafikte 5 cubuk var, modelde 25 oznitelik — aradaki fark okurun ilk sorusu. Kapsam VERIDEN turetilir (elle
+    # yazilan sayi yok): tekil olculenler methodology.lofo'dan, tamami feature_kept'ten. 2026-09-28 (sadelestirme
+    # listesi): kapsam tablosu tek cumleye indi; olculmeyen 6 kategorik icin yeni kol acilmadi (2026-09-25 karari).
     lofo_singles = {r[0] for r in met["lofo"] if r[2] == "single"}
     lofo_groups = [r[0] for r in met["lofo"] if r[2] == "group"]
     kept = met["feature_kept"]
     unmeasured = [f for f in kept if f not in lofo_singles]
     own_bar = [k for k in LOFO_FLAT_KEYS if k in lofo_singles]      # tekil ama kendi cubugu olanlar
     in_group = len(lofo_singles) - len(own_bar)                      # tekil ama grubun icinde cizilenler
-    A(L(f"Grafik {len(LOFO_FLAT_KEYS)} çubuk gösteriyor, model {len(kept)} öznitelik kullanıyor. Kapsam:",
-        f"The chart shows {len(LOFO_FLAT_KEYS)} bars while the model uses {len(kept)} features. Coverage:"))
-    A("")
-    T([L("kapsam", "coverage"), L("sayı", "count"), L("nerede", "where")],
-      [[L("ölçülen öznitelik", "features measured"), len(lofo_singles),
-         L(f"{len(own_bar)}'si kendi çubuğunda, {in_group}'si grupların içinde",
-           f"{len(own_bar)} as their own bar, {in_group} inside the groups")],
-       [L("grup olarak ölçülen", "measured as a group"),
-        f"{len(lofo_groups)} " + L("grup", "groups"),
-        " · ".join(f"`{g}`" for g in lofo_groups)],
-       [L("**hiç ölçülmeyen öznitelik**", "**features never measured**"), f"**{len(unmeasured)}**",
-        " · ".join(f"`{f}`" for f in unmeasured)]],
-      "lrl")
-    # "Not — LOFO neyi kapsamiyor" blogu 2026-09-20'de kullanici karariyla kaldirildi (once TR'den,
-    # senkron olsun diye EN'den de). Kapsam tablosu ayni bilgiyi zaten veriyor: hic olculmeyen
-    # kategorikler orada "hic olculmedi" satirinda adlariyla listeleniyor.
+    A(L(f"Grafik {len(LOFO_FLAT_KEYS)} çubuk gösteriyor, model {len(kept)} öznitelik kullanıyor: {len(lofo_singles)} "
+        f"öznitelik ölçüldü ({len(own_bar)}'si kendi çubuğunda, {in_group}'si {len(lofo_groups)} grubun içinde: "
+        f"{' · '.join(f'`{g}`' for g in lofo_groups)}); **{len(unmeasured)} öznitelik hiç ölçülmedi**: "
+        f"{' · '.join(f'`{f}`' for f in unmeasured)}.",
+        f"The chart shows {len(LOFO_FLAT_KEYS)} bars while the model uses {len(kept)} features: {len(lofo_singles)} "
+        f"features were measured ({len(own_bar)} as their own bar, {in_group} inside the {len(lofo_groups)} groups: "
+        f"{' · '.join(f'`{g}`' for g in lofo_groups)}); **{len(unmeasured)} features were never measured**: "
+        f"{' · '.join(f'`{f}`' for f in unmeasured)}."))
 
 
 def section_model(c):

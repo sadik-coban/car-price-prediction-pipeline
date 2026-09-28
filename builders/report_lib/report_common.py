@@ -40,7 +40,7 @@ RESID_VIEW = 40
 REQUIRED = [
     "domain.drift.all_pairs", "domain.drift.note",
     "domain.hedonic_reliability.center", "domain.brand_ablation.validation",
-    "methodology.column_accounting", "methodology.kb_gb_twins", "domain.hedonic_reliability.with_model",
+    "methodology.column_accounting", "methodology.kb_gb_twins", "domain.hedonic_reliability.columns",
     "domain.segment_ladder", "domain.model_year_median.ladder", "domain.price_dist.p10", "domain.price_dist.p90",
     "domain.final_results.training.target", "domain.shap.lightgbm_tfidf_svd", "domain.kmeans",
     "methodology.theils_matrix", "methodology.column_missing",
@@ -186,10 +186,14 @@ def derive(d):
     hr = dom["hedonic_reliability"]
 
     model_mae, base_mae = lgb["MAE"], year_med["baseline"]["MAE"]
-    boot = {b["term"]: b for b in hr["bootstrap"]}
-    # EN: the effects by English term id; an unknown display term stops (no silent None)
-    # TR: etkiler İngilizce terim kimliğiyle; bilinmeyen görünen terim durdurur (sessiz None yok)
-    hed_terms = {HED_TERM_ID[k]: b["pct_effect"] for k, b in boot.items()}
+    # EN: 2026-09-28 (owner's decision): the decision note prints the model-control column (effects within one
+    #     model name); an unknown term id stops (no silent None)
+    # TR: 2026-09-28 (kullanıcı kararı): karar notu model kontrolü sütununu basar (etkiler tek model adı içinde);
+    #     bilinmeyen terim kimliği durdurur (sessiz None yok)
+    hed_terms, hed_ci = {}, {}
+    for r in hr["columns"]["model"]["coefficients"]:
+        assert r["term"] in HED_TERM, f"unknown hedonic term | bilinmeyen hedonik terim: {r['term']}"
+        hed_terms[r["term"]], hed_ci[r["term"]] = r["pct_effect"], (r["pct_lo"], r["pct_hi"])
 
     v = {
         # olcek
@@ -215,13 +219,9 @@ def derive(d):
         "cov_q1": dom["conformal"]["by_quantile"][0][1],
         # EN: price quartile bounds (08_conformal_coverage) | TR: fiyat çeyreği sınırları (08_conformal_coverage)
         "q_bounds": rep["q_bounds"],
-        # hedonik
-        "hed_r2": hr["model_r2"], "hed_n": hr["n"], "hed_center": hr["center"],
-        "age_pct": hed_terms["age"], "km_pct": hed_terms["km100k"],
-        # teknik §6'nin kontrollu etkileri — karar notu da bunlari basiyor
-        "hed_terms": hed_terms,
-        "n_boot": len(hr["bootstrap"]),
-        "all_sig": all(not b["contains_zero"] for b in hr["bootstrap"]),
+        # hedonik: segment sutununun R²'si ve n'i; karar notunun etkileri model sutunundan
+        "hed_r2": hr["columns"]["segment"]["r2"], "hed_n": hr["n"], "hed_center": hr["center"],
+        "hed_terms": hed_terms, "hed_ci": hed_ci,
         # marka
         "brand_mae_delta": abs(ba["brand_series_model"]["MAE"] - ba["series_model"]["MAE"]),
         "brand_mape_delta": abs(ba["brand_series_model"]["MAPE"] - ba["series_model"]["MAPE"]),
@@ -347,19 +347,26 @@ def heatmap(name, labels_y, labels_x, matrix, title, vmin=None, vmax=None, cmap=
     return _save(fig, name)
 
 
-def errorbar(name, labels, point, lo, hi, title, xlabel=""):
+def errorbar(name, labels, series, title, xlabel=""):
     """
-    EN: Point + interval chart template (e.g. bootstrap CIs). Returns: the file name.
-    TR: Nokta + aralık grafik şablonu (örn. bootstrap GA'ları). Döndürür: dosya adı.
+    EN: Point + interval chart template; series = [(legend, points, lows, highs), ...], drawn side by side on each
+        row. Returns: the file name.
+    TR: Nokta + aralık grafik şablonu; series = [(lejant, noktalar, alt, üst), ...], her satırda yan yana çizilir.
+        Döndürür: dosya adı.
     """
-    fig, ax = plt.subplots(figsize=(7, max(2.6, .34 * len(labels))))
-    y = range(len(labels))
-    ax.errorbar(point, y, xerr=[np.array(point) - np.array(lo), np.array(hi) - np.array(point)],
-                fmt="o", color=C1, ecolor=C2, capsize=3, ms=4, lw=1)
-    ax.axvline(0, color=C3, lw=1, ls="--")
+    fig, ax = plt.subplots(figsize=(7, max(2.6, .42 * len(labels))))
+    y = np.arange(len(labels))
+    step = .32 / max(len(series) - 1, 1)
+    for i, (leg, point, lo, hi) in enumerate(series):
+        off = (i - (len(series) - 1) / 2) * step
+        ax.errorbar(point, y + off, xerr=[np.array(point) - np.array(lo), np.array(hi) - np.array(point)],
+                    fmt="o", color=(C1, C3, C2)[i % 3], capsize=3, ms=4, lw=1, label=leg)
+    ax.axvline(0, color="#444", lw=.8, ls="--")
     ax.set_yticks(list(y), labels); ax.invert_yaxis()
     ax.set_title(title); ax.set_xlabel(xlabel)
     ax.grid(axis="x", color=GRID, lw=.7); ax.set_axisbelow(True)
+    if len(series) > 1:
+        ax.legend(frameon=False, fontsize=7)
     return _save(fig, name)
 
 
@@ -417,15 +424,19 @@ def build_figures(d, v, lang, only=None):
     # 02 (segmente gore medyan) 2026-09-22'de cikti: karar notundaki kume bolumuyle birlikte
     # gitti, teknik rapor onu hic kullanmiyordu. Segment kirilimi teknik §5'te duruyor.
 
-    # 03 bootstrap katsayilari  [TEKNIK]
+    # 03 hedonik etkiler, iki sutun  [TEKNIK] — 2026-09-28: bootstrap yerine modele gore kumeli %95 GA.
     if want(3):
-        b = dom["hedonic_reliability"]["bootstrap"]
-        t = L("Bootstrap katsayıları (nokta + %95 GA)", "Bootstrap coefficients (point + 95% CI)")
-        _t03 = {"km(100K)": "km (100 bin)", "+100 HP": "+100 hp"}
-        reg(3, errorbar(f"{p}-03-bootstrap-ci", [(_t03.get(x["term"], x["term"]) if lang == "tr"
-                                                 else HED_TERM_EN.get(x["term"], x["term"])) for x in b],
-                        [x["point"] for x in b], [x["ci_lo"] for x in b], [x["ci_hi"] for x in b],
-                        t, L("log-fiyat katsayısı", "log-price coefficient")), t)
+        cols = dom["hedonic_reliability"]["columns"]
+        t = L("Hedonik etkiler (nokta + modele göre kümeli %95 GA)",
+              "Hedonic effects (point + 95% CI clustered by model)")
+        terms = [r["term"] for r in cols["segment"]["coefficients"]]
+        assert terms == [r["term"] for r in cols["model"]["coefficients"]], "hedonik sutunlarin terimleri farkli"
+        series = [(leg, [r["pct_effect"] for r in cols[k]["coefficients"]], [r["pct_lo"] for r in cols[k]["coefficients"]],
+                   [r["pct_hi"] for r in cols[k]["coefficients"]])
+                  for k, leg in (("segment", L("segment kontrolü", "segment control")),
+                                 ("model", L("model kontrolü", "model control")))]
+        reg(3, errorbar(f"{p}-03-hedonic-ci", [HED_TERM[k][0 if lang == "tr" else 1] for k in terms], series,
+                        t, L("fiyata etki %", "effect on price %")), t)
 
     # 04 LOFO - DUZ surum  [TEKNIK]
     if want(4):
@@ -924,19 +935,12 @@ def tl(x):
 
 
 # ---- EN etiket sozlukleri (kaynak: sadik-portfolio/lib/labels.ts; eksik anahtar -> ham deger) ----
-# EN: the hedonic model's display terms (06_hedonic bootstrap[].terim) -> the English ids the code indexes by
-# TR: hedonik modelin görünen terimleri (06_hedonic bootstrap[].terim) -> kodun indekslediği İngilizce kimlikler
-HED_TERM_ID = {"yaş": "age", "yaş²": "age_sq", "yaş×km": "age_x_km", "km(100K)": "km100k", "km²": "km_sq",
-               "ağır hasar": "heavy_damage", "boyalı": "painted", "değişen": "changed", "+100 HP": "hp100",
-               "+1 litre": "litre"}
-HED_TERM_EN = {"yaş": "age", "yaş²": "age²", "yaş×km": "age×km", "km(100K)": "km (100K)", "km²": "km²",
-               "ağır hasar": "heavy damage", "boyalı": "painted", "değişen": "changed",
-               "+100 HP": "+100 HP", "+1 litre": "+1 litre"}
-VIF_TERM = {"age": ("yaş", "age"), "I(age ** 2)": ("yaş²", "age²"), "km10": ("km", "km"),
-            "I(km10 ** 2)": ("km²", "km²"), "age:km10": ("yaş×km", "age×km"),
-            "dmg": ("ağır hasar", "heavy damage"),
-            "painted": ("boyalı", "painted"), "changed": ("değişen", "changed"),
-            "hp100": ("+100 HP", "+100 HP"), "cc_L": ("motor (L)", "engine (L)")}
+# EN: the hedonic model's term ids (06_hedonic columns[].coefficients[].term) -> (TR, EN) display label
+# TR: hedonik modelin terim kimlikleri (06_hedonic columns[].coefficients[].term) -> (TR, EN) görünen etiket
+HED_TERM = {"age": ("yaş", "age"), "age_sq": ("yaş²", "age²"), "km100k": ("km (100 bin)", "km (100k)"),
+            "km_sq": ("km²", "km²"), "age_x_km": ("yaş×km", "age×km"), "heavy_damage": ("ağır hasar", "heavy damage"),
+            "painted": ("boyalı", "painted"), "changed": ("değişen", "changed"), "hp100": ("+100 hp", "+100 hp"),
+            "litre": ("+1 litre", "+1 litre")}
 # EN: ids the metrics publish -> (TR, EN) display; id_label stops on an unknown id
 # TR: metriklerin yayımladığı kimlikler -> (TR, EN) görünen ad; id_label bilinmeyen kimlikte durur
 TIER_LABEL = {"model_year": ("model+yıl", "model + year"), "model": ("model", "model"), "global": ("global", "global")}

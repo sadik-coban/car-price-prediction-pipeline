@@ -20,6 +20,7 @@ Run / Koşum:
     python tools/snapshot_metrics.py --diff                       # differences | farklar
     python tools/snapshot_metrics.py --accept "<reason | gerekçe>"
     python tools/snapshot_metrics.py --accept "<reason>" --rename-exemption FILE OLD NEW   # after a key rename
+    python tools/snapshot_metrics.py --accept "<reason>" --drop-exemption FILE PATH       # after a key removal
 """
 import argparse
 import fnmatch
@@ -187,14 +188,36 @@ def rename_exemption(name, old, new, metrics_dir=METRICS_DIR, baseline_dir=BASEL
     return old, new
 
 
-def accept(reason, metrics_dir=METRICS_DIR, baseline_dir=BASELINE_DIR, now=None, renamed=()):
+def drop_exemption(name, pattern, metrics_dir=METRICS_DIR, baseline_dir=BASELINE_DIR):
+    """
+    EN: Removes one exemption after the metric key it covered was removed on purpose. Refuses unless an exemption
+        with exactly (name, pattern) exists and the pattern matches no current key of that file (a live key keeps
+        its exemption). Returns: (name, pattern).
+    TR: Kapsadığı metrik anahtarı bilinçli olarak kaldırıldıktan sonra bir istisnayı siler. Tam olarak (name,
+        pattern) istisnası yoksa ya da desen o dosyanın güncel bir anahtarına hâlâ uyuyorsa reddeder (canlı anahtar
+        istisnasını korur). Döndürür: (name, pattern).
+    """
+    path = baseline_dir / EXEMPTIONS_FILE.name
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    hits = [e for e in doc["exemptions"] if e["file"] == name and e["path"] == pattern]
+    if len(hits) != 1:
+        raise ValueError(f"no single exemption {name} {pattern} | tek istisna yok")
+    if any(fnmatch.fnmatchcase(k, pattern) for k in snapshot(metrics_dir)[0].get(name, {})):
+        raise ValueError(f"{pattern} still matches a key of {name} | desen hâlâ bir anahtara uyuyor")
+    doc["exemptions"].remove(hits[0])
+    with open(path, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(json.dumps(doc, ensure_ascii=False, indent=2) + "\n")
+    return name, pattern
+
+
+def accept(reason, metrics_dir=METRICS_DIR, baseline_dir=BASELINE_DIR, now=None, renamed=(), dropped=()):
     """
     EN: Takes the current metrics as the new baseline, for a stated reason, and appends the acceptance (time,
-        reason, what changed, exemptions moved by rename_exemption) to accept_log.jsonl. Refuses without a reason.
-        Returns: the differences that were accepted.
+        reason, what changed, exemptions moved by rename_exemption or removed by drop_exemption) to
+        accept_log.jsonl. Refuses without a reason. Returns: the differences that were accepted.
     TR: Güncel metrikleri belirtilen gerekçeyle yeni referans yapar ve onayı (zaman, gerekçe, ne değişti,
-        rename_exemption'ın taşıdığı istisnalar) accept_log.jsonl'a ekler. Gerekçesiz reddeder.
-        Döndürür: onaylanan farklar.
+        rename_exemption'ın taşıdığı ya da drop_exemption'ın sildiği istisnalar) accept_log.jsonl'a ekler.
+        Gerekçesiz reddeder. Döndürür: onaylanan farklar.
     """
     if not reason or not reason.strip():
         raise ValueError("a reason is required | gerekçe gerekli")
@@ -208,6 +231,8 @@ def accept(reason, metrics_dir=METRICS_DIR, baseline_dir=BASELINE_DIR, now=None,
              "changed": {k: len(v) for k, v in changed.items()}, "first": [m for v in changed.values() for m in v][:20]}
     if renamed:
         entry["exemptions_renamed"] = [list(r) for r in renamed]
+    if dropped:
+        entry["exemptions_dropped"] = [list(r) for r in dropped]
     with open(baseline_dir / LOG_FILE.name, "a", encoding="utf-8") as fh:
         fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
     return changed
@@ -224,9 +249,11 @@ def main(argv=None):
     group.add_argument("--accept", metavar="REASON", help="take the current metrics as the baseline, with a reason")
     ap.add_argument("--rename-exemption", nargs=3, action="append", default=[], metavar=("FILE", "OLD", "NEW"),
                     help="with --accept: move an exemption to its key's new name (metric key rename)")
+    ap.add_argument("--drop-exemption", nargs=2, action="append", default=[], metavar=("FILE", "PATH"),
+                    help="with --accept: remove an exemption whose key was removed on purpose")
     args = ap.parse_args(argv)
-    if args.rename_exemption and args.accept is None:
-        ap.error("--rename-exemption only with --accept | yalnız --accept ile")
+    if (args.rename_exemption or args.drop_exemption) and args.accept is None:
+        ap.error("--rename-exemption / --drop-exemption only with --accept | yalnız --accept ile")
     if args.accept is not None:
         if not args.accept.strip():
             ap.error("--accept needs a reason | gerekçe gerekli")
@@ -236,7 +263,8 @@ def main(argv=None):
         from report_lib import metrics_view
         metrics_view.load_view(ROOT)
         renamed = [rename_exemption(*r) for r in args.rename_exemption]
-        changed = accept(args.accept, renamed=renamed)
+        dropped = [drop_exemption(*r) for r in args.drop_exemption]
+        changed = accept(args.accept, renamed=renamed, dropped=dropped)
         print("baseline updated | referans güncellendi:", {k: len(v) for k, v in changed.items()})
         return 0
     diff = compare()

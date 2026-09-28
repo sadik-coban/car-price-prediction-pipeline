@@ -20,16 +20,18 @@ Farkı kapatan, model ve yılın ötesi en çok kilometre ve hasar: modelden ç�
 
 ## Piyasa fiyatı nasıl kuruyor
 
-Her kalemin fiyatı ne kadar oynattığı — **diğer her şey sabitken**:
+Her kalemin fiyatı ne kadar oynattığı — **aynı model adı içinde, diğer her şey sabitken**:
 
 | kalem | fiyat |
 |---|---:|
-| yaş (yıl başına, tipik araçta) | -%6.6 |
-| kilometre (100 bin km başına, tipik araçta) | -%15.1 |
-| ağır hasar kaydı | -%11.6 |
+| yaş (yıl başına, tipik araçta) | -%5.8 |
+| kilometre (100 bin km başına, tipik araçta) | -%14.8 |
+| ağır hasar kaydı | -%12.5 |
 | değişen panel (her biri) | -%3.1 |
-| boyalı panel (her biri) | -%1.1 |
-| +100 hp motor gücü | +%19.9 |
+| boyalı panel (her biri) | -%1.0 |
+| +100 hp motor gücü | +%19.3 |
+
+En belirsiz kalem +100 hp motor gücü: %95 güven aralığı +%6.8 ile +%33.3 arasında.
 
 Yaş ve kilometre birbirine bağlı iki eksen; tablodaki yaş ve km satırları biri sabitken ötekinin etkisi, tipik araçta (11 yaş, 181.000 km) ölçüldü.
 

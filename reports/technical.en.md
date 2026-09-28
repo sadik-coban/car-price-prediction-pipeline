@@ -227,66 +227,38 @@ The first 3 components explain 43.1% of variance. PC1 ≈ Mileage + Age (years) 
 
 ## 6. Hedonic model — controlled effects
 
-The hedonic regression gives each driver's *controlled* effect on price (all else equal) — R² **0.9312**, n **29,554**. Coefficients carry bootstrap confidence intervals; all 10 terms have a 95% CI excluding zero → each driver is reliably significant.
+The hedonic regression gives each driver's *controlled* effect on price (all else equal); the target is log price, n **29,554**. Two columns side by side. **Segment control** uses segment, brand, fuel and transmission dummies (R² **0.9312**). **Model control** adds `C(model)` (735 model names), so each effect is measured within one model name (R² **0.9648**). Model identity closes about 87% of the gap between the hedonic R² and the model's OOF R² on the same scale (0.9699, log price) — an upper estimate: the R² with C(model) is in-sample while the model's is OOF. The model's headline R² (0.9745) is on the raw ₺ scale and should not be read against the hedonic one.
 
-**`model` does not enter this regression.** Its cardinality is very high (745 distinct values); series is not in the regression either, only segment. Measured: adding `C(model)` moves R² from 0.9312 to 0.9648 — about 87% of the gap between the hedonic R² and the model's OOF R² on the same scale (0.9699, log price) is model identity — an upper estimate: the R² with C(model) is in-sample while the model's is OOF (the two also come from different n: hedonic 29,554, model 29,988 listings). The linear coefficients keep their sign but shift in size: age -6.64% → -5.80%, +100 hp +19.86% → +19.30%, 1 litre +7.49% → +5.97%, 100k km -15.11% → -14.83%. So the "controlled" effects here are controlled for everything **except model identity**. The model's headline R² (0.9745) is on the raw ₺ scale and should not be read against the hedonic one.
+**Confidence intervals.** Listings of the same model are not independent and the error variance is not equal (Breusch-Pagan p <0.001), so the 95% intervals come from standard errors clustered by model (735 clusters). In the segment column all 10 intervals exclude zero; in the model column the intervals of age², +1 litre contain zero.
 
 **Note:** The hedonic model is an OLS and cannot run with missing values, so listings with missing engine power (426) or missing displacement (356) were removed before the analysis. Once the rows missing both are counted only once, 434 rows in total were dropped from the dataset.
 
-![Bootstrap coefficients (point + 95% CI)](figures/en-03-bootstrap-ci.png)
+![Hedonic effects (point + 95% CI clustered by model)](figures/en-03-hedonic-ci.png)
 
-### Bootstrap coefficients
+### Controlled effects
 
-| term | effect | log coef [95% CI] | effect 95% CI | significant |
-|---|---:|---:|---:|---|
-| age | -6.64% | -0.0687 [-0.0695, -0.0680] | -6.71% … -6.57% | yes |
-| age² | +0.08% | +0.0008 [+0.0007, +0.0010] | +0.07% … +0.10% | yes |
-| km (100K) | -15.11% | -0.1638 [-0.1673, -0.1604] | -15.41% … -14.82% | yes |
-| km² | +1.56% | +0.0155 [+0.0127, +0.0184] | +1.28% … +1.86% | yes |
-| age×km | -0.62% | -0.0062 [-0.0074, -0.0050] | -0.74% … -0.50% | yes |
-| heavy damage | -11.60% | -0.1233 [-0.1321, -0.1140] | -12.37% … -10.77% | yes |
-| painted | -1.05% | -0.0105 [-0.0114, -0.0096] | -1.13% … -0.96% | yes |
-| changed | -3.06% | -0.0311 [-0.0332, -0.0290] | -3.27% … -2.86% | yes |
-| +100 HP | +19.86% | +0.1812 [+0.1659, +0.1972] | +18.05% … +21.80% | yes |
-| +1 litre | +7.49% | +0.0723 [+0.0510, +0.0933] | +5.23% … +9.78% | yes |
+| term | segment control [95% CI] | model control [95% CI] |
+|---|---:|---:|
+| age | -6.64% [-6.92%, -6.37%] | -5.80% [-6.34%, -5.27%] |
+| age² | +0.08% [+0.04%, +0.13%] | +0.03% [-0.03%, +0.09%] |
+| km (100k) | -15.11% [-15.81%, -14.40%] | -14.83% [-15.31%, -14.34%] |
+| km² | +1.56% [+1.08%, +2.05%] | +1.67% [+1.33%, +2.01%] |
+| age×km | -0.62% [-0.89%, -0.35%] | -0.33% [-0.56%, -0.10%] |
+| heavy damage | -11.60% [-12.51%, -10.68%] | -12.46% [-13.26%, -11.66%] |
+| painted | -1.05% [-1.17%, -0.92%] | -0.98% [-1.09%, -0.87%] |
+| changed | -3.06% [-3.33%, -2.79%] | -3.12% [-3.35%, -2.88%] |
+| +100 hp | +19.86% [+13.89%, +26.15%] | +19.30% [+6.76%, +33.31%] |
+| +1 litre | +7.49% [+0.71%, +14.73%] | +5.97% [-1.01%, +13.45%] |
 
-Effect = exp(β)−1. Age and km are centred on the **median car** (11 years, 181,000 km): the age and km rows are the marginal effect at that car. Squared and interaction terms (age², km², age×km) are not read alone; they carry the curvature.
+Effect = exp(β)−1. Age and km are centred on the **median car** (11 years, 181,000 km): the age and km rows are the marginal effect at that car. Squared and interaction terms (age², km², age×km) are not read alone; they carry the curvature. Terms whose model-column estimate falls outside the segment column's interval: age, age², age×km — for these, holding model identity fixed moves the effect by more than sampling error; for the other terms the two columns sit inside each other's interval. The decision note's effects come from the model column: within one model name.
+
+**The coefficients are controlled associations, not causal effects.** E.g. the painted-panel coefficient does not say that painting lowers the price, only that listings with painted panels are advertised that much cheaper than similar ones.
+
+**Collinearity.** The highest VIF in the segment column's design is age×km 7.25 (below 10); in the uncentred design the highest is age×km 96.28. Age, age², km, km² and age×km are built from two variables, so they are structurally linked; centring on the median car removes that, and predictions and R² do not change.
 
 ### Engine effect
 
-+100 HP → **+19.9%**, +1 litre → **+7.5%** (same regression, the other held fixed). Displacement's effect is what remains once power is fixed; the units differ, so the two numbers are not directly comparable.
-
-### cc–HP correlation by fuel
-
-| fuel | Pearson | Pearson (log) | Spearman | cc / HP | n |
-|---|---:|---:|---:|---:|---:|
-| Petrol | 0.806 | 0.731 | 0.407 | 9.8 | 14,693 |
-| Diesel | 0.836 | 0.863 | 0.694 | 11.1 | 12,783 |
-| LPG & Petrol | 0.900 | 0.863 | 0.805 | 13.9 | 1,199 |
-| Hybrid | 0.429 | 0.522 | 0.308 | 10.0 | 879 |
-
-Overall correlation 0.73. The relationship varies by fuel — weakest for Hybrid (Pearson 0.429, n 879). Displacement cannot be derived from power; both stay as separate features.
-
-### VIF — multicollinearity
-
-| term | VIF (fitted model) | VIF (uncentred) |
-|---|---:|---:|
-| age | 3.69 | 34.54 |
-| age² | 4.84 | 66.54 |
-| km | 4.03 | 29.95 |
-| km² | 3.61 | 34.49 |
-| age×km | 7.25 | 96.28 |
-| heavy damage | 1.05 | 1.05 |
-| painted | 1.25 | 1.25 |
-| changed | 1.12 | 1.12 |
-| +100 HP | 4.77 | 4.77 |
-| engine (L) | 5.56 | 5.56 |
-
-The values come from the fitted model's own design matrix. The highest is **age×km 7.25** — below 10. In the uncentred design the same group is far higher (**age×km 96.28**): age, age², km, km² and age×km are all built from two variables, so they are structurally linked. Centring on the median car removes that; predictions and R² do not change, only the meaning of the linear coefficients sharpens. Among the dummies the highest VIF is `C(segment)[T.D]` (62.42): a dummy's VIF inflates when its reference level is small and only affects that dummy's standard error, which is not reported here.
-
-### Assumption tests
-
-Breusch-Pagan (equal variance) p = **<0.001** · Jarque-Bera (normality) p = **<0.001** → both violated. Inference therefore does not rest on plain OLS p-values: the intervals are the **2.5–97.5 percentiles** of a bootstrap that resamples the rows with replacement **1000 times** and refits the model each round. The model is also fitted with HC3 robust covariance, which does not enter the published intervals.
++100 hp is **+19.9%** under segment control and **+19.3%** under model control; +1 litre **+7.5%** and **+6.0%** (same regression, the other held fixed). The model name largely fixes the engine, so in the model column the engine terms are measured only from power and size differences within one model name; that is why their intervals are wider. Size and power are linked (correlation 0.73): size's effect is what remains with power fixed, so read the two coefficients together; the units differ, so they are not directly comparable.
 
 ### LOFO — leave-one-feature-out
 
@@ -294,13 +266,7 @@ LOFO is a second, independent method: drop each feature and measure how much CV 
 
 ![LOFO — ΔRMSE when a feature is removed (non-overlapping groups)](figures/en-04-lofo-flat.png)
 
-The chart shows 5 bars while the model uses 25 features. Coverage:
-
-| coverage | count | where |
-|---|---:|---|
-| features measured | 19 | 2 as their own bar, 17 inside the groups |
-| measured as a group | 3 groups | `DAMAGE_COLS` · `MODEL_SERIES` · `ENGINE` |
-| **features never measured** | **6** | `brand` · `kb_body_type` · `kb_drivetrain` · `segment` · `kb_transmission` · `kb_fuel` |
+The chart shows 5 bars while the model uses 25 features: 19 features were measured (2 as their own bar, 17 inside the 3 groups: `DAMAGE_COLS` · `MODEL_SERIES` · `ENGINE`); **6 features were never measured**: `brand` · `kb_body_type` · `kb_drivetrain` · `segment` · `kb_transmission` · `kb_fuel`.
 
 ## 7. Model comparison and limitations
 

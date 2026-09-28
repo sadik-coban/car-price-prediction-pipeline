@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "06_hedonic.py",
-  "generated_at": "2026-09-27T21:45:45+03:00",
+  "generated_at": "2026-09-28T20:55:05+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": null,
   "source": {
    "script": {
-    "analysis/06_hedonic.py": "d7dea5005bbc1b4d1f82671ef2db93eb7033d79989b62bcb4e60ab7998fecd61"
+    "analysis/06_hedonic.py": "6a221c766437c2854fb0247b718a3a9e1da71c67c48e078bb4b30c758991d5e0"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -22,301 +22,263 @@
  },
  "domain": {
   "hedonic": {
-   "r2": 0.9312,
-   "age_pct": -6.64,
-   "damage_pct": -11.6,
-   "km100k_pct": -15.11,
-   "hp100_pct": 19.86,
-   "cc_litre_pct": 7.49,
-   "note": "Dönem etkisi modelde yok (kullanıcı kararı): dönemler havuzlanarak kestirildi."
+   "r2": 0.9648,
+   "control": "model",
+   "age_pct": -5.8,
+   "damage_pct": -12.46,
+   "km100k_pct": -14.83,
+   "hp100_pct": 19.3,
+   "cc_litre_pct": 5.97,
+   "note": "Model kontrolü sütunu: etkiler aynı model adı içinde. Dönem etkisi modelde yok (kullanıcı kararı): dönemler havuzlanarak kestirildi."
   },
   "hedonic_reliability": {
-   "model_r2": 0.9312,
    "n": 29554,
-   "unit": {
-    "hp": "100 HP",
-    "cc": "1 litre"
-   },
-   "engine_effect": {
-    "hp100_pct": 19.9,
-    "cc_litre_pct": 7.5
-   },
-   "bootstrap": [
-    {
-     "term": "yaş",
-     "point": -0.0687,
-     "boot_mean": -0.0687,
-     "ci_lo": -0.0695,
-     "ci_hi": -0.068,
-     "std": 0.0004,
-     "pct_effect": -6.64,
-     "contains_zero": false
-    },
-    {
-     "term": "yaş²",
-     "point": 0.0008,
-     "boot_mean": 0.0008,
-     "ci_lo": 0.0007,
-     "ci_hi": 0.001,
-     "std": 0.0001,
-     "pct_effect": 0.08,
-     "contains_zero": false
-    },
-    {
-     "term": "km(100K)",
-     "point": -0.1638,
-     "boot_mean": -0.1639,
-     "ci_lo": -0.1673,
-     "ci_hi": -0.1604,
-     "std": 0.0018,
-     "pct_effect": -15.11,
-     "contains_zero": false
-    },
-    {
-     "term": "km²",
-     "point": 0.0155,
-     "boot_mean": 0.0155,
-     "ci_lo": 0.0127,
-     "ci_hi": 0.0184,
-     "std": 0.0015,
-     "pct_effect": 1.56,
-     "contains_zero": false
-    },
-    {
-     "term": "yaş×km",
-     "point": -0.0062,
-     "boot_mean": -0.0062,
-     "ci_lo": -0.0074,
-     "ci_hi": -0.005,
-     "std": 0.0006,
-     "pct_effect": -0.62,
-     "contains_zero": false
-    },
-    {
-     "term": "ağır hasar",
-     "point": -0.1233,
-     "boot_mean": -0.1232,
-     "ci_lo": -0.1321,
-     "ci_hi": -0.114,
-     "std": 0.0046,
-     "pct_effect": -11.6,
-     "contains_zero": false
-    },
-    {
-     "term": "boyalı",
-     "point": -0.0105,
-     "boot_mean": -0.0105,
-     "ci_lo": -0.0114,
-     "ci_hi": -0.0096,
-     "std": 0.0005,
-     "pct_effect": -1.05,
-     "contains_zero": false
-    },
-    {
-     "term": "değişen",
-     "point": -0.0311,
-     "boot_mean": -0.0311,
-     "ci_lo": -0.0332,
-     "ci_hi": -0.029,
-     "std": 0.0011,
-     "pct_effect": -3.06,
-     "contains_zero": false
-    },
-    {
-     "term": "+100 HP",
-     "point": 0.1812,
-     "boot_mean": 0.1812,
-     "ci_lo": 0.1659,
-     "ci_hi": 0.1972,
-     "std": 0.008,
-     "pct_effect": 19.86,
-     "contains_zero": false
-    },
-    {
-     "term": "+1 litre",
-     "point": 0.0723,
-     "boot_mean": 0.0723,
-     "ci_lo": 0.051,
-     "ci_hi": 0.0933,
-     "std": 0.011,
-     "pct_effect": 7.49,
-     "contains_zero": false
-    }
-   ],
-   "vif": [
-    [
-     "age",
-     3.69
-    ],
-    [
-     "I(age ** 2)",
-     4.84
-    ],
-    [
-     "km10",
-     4.03
-    ],
-    [
-     "I(km10 ** 2)",
-     3.61
-    ],
-    [
-     "age:km10",
-     7.25
-    ],
-    [
-     "dmg",
-     1.05
-    ],
-    [
-     "painted",
-     1.25
-    ],
-    [
-     "changed",
-     1.12
-    ],
-    [
-     "hp100",
-     4.77
-    ],
-    [
-     "cc_L",
-     5.56
-    ]
-   ],
-   "vif_raw": [
-    [
-     "age",
-     34.54
-    ],
-    [
-     "I(age ** 2)",
-     66.54
-    ],
-    [
-     "km10",
-     29.95
-    ],
-    [
-     "I(km10 ** 2)",
-     34.49
-    ],
-    [
-     "age:km10",
-     96.28
-    ],
-    [
-     "dmg",
-     1.05
-    ],
-    [
-     "painted",
-     1.25
-    ],
-    [
-     "changed",
-     1.12
-    ],
-    [
-     "hp100",
-     4.77
-    ],
-    [
-     "cc_L",
-     5.56
-    ]
-   ],
-   "vif_dummy": [
-    "C(segment)[T.D]",
-    62.42
-   ],
+   "cluster": "model",
+   "n_clusters": 735,
    "center": {
     "age": 11.0,
     "km": 181000.0
    },
-   "fuel_correlation": [
-    {
-     "fuel": "Benzin",
-     "pearson": 0.806,
-     "pearson_log": 0.731,
-     "spearman": 0.407,
-     "cc_hp_ratio": 9.8,
-     "n": 14693
-    },
-    {
-     "fuel": "Dizel",
-     "pearson": 0.836,
-     "pearson_log": 0.863,
-     "spearman": 0.694,
-     "cc_hp_ratio": 11.1,
-     "n": 12783
-    },
-    {
-     "fuel": "LPG & Benzin",
-     "pearson": 0.9,
-     "pearson_log": 0.863,
-     "spearman": 0.805,
-     "cc_hp_ratio": 13.9,
-     "n": 1199
-    },
-    {
-     "fuel": "Hibrit",
-     "pearson": 0.429,
-     "pearson_log": 0.522,
-     "spearman": 0.308,
-     "cc_hp_ratio": 10.0,
-     "n": 879
-    }
-   ],
-   "overall_correlation": 0.73,
-   "assumptions": {
-    "homoskedasticity_p": 0.0,
-    "normality_p": 0.0,
-    "note": "Breusch-Pagan ve Jarque-Bera ihlal (p<0.05). Bu yüzden çıkarım çıplak OLS p-değerine değil, satır bootstrap'inin %2.5–97.5 yüzdeliklerine dayanıyor."
-   },
-   "bootstrap_setup": {
-    "n_boot": 1000,
-    "n_requested": 1000,
-    "n_jobs": 16,
-    "seconds": 76.9
-   },
-   "note": "Ham (log yok) cc+HP: birim başına yorum. Yaş ve km medyan araca ortalandı; doğrusal katsayılar o noktadaki marjinal etki. Güven aralıkları satır bootstrap'inden.",
-   "with_model": {
-    "r2": 0.9648,
-    "n_model": 735,
-    "coef_pct": {
-     "age": [
-      -6.64,
-      -5.8
-     ],
-     "km100k": [
-      -15.11,
-      -14.83
-     ],
-     "hp100": [
-      19.86,
-      19.3
-     ],
-     "cc_litre": [
-      7.49,
-      5.97
-     ],
-     "heavy_damage": [
-      -11.6,
-      -12.46
-     ],
-     "painted": [
-      -1.05,
-      -0.98
-     ],
-     "changed": [
-      -3.06,
-      -3.12
+   "columns": {
+    "segment": {
+     "r2": 0.9312,
+     "coefficients": [
+      {
+       "term": "age",
+       "point": -0.0687,
+       "se": 0.0015,
+       "ci_lo": -0.0717,
+       "ci_hi": -0.0658,
+       "pct_effect": -6.64,
+       "pct_lo": -6.92,
+       "pct_hi": -6.37,
+       "contains_zero": false
+      },
+      {
+       "term": "age_sq",
+       "point": 0.0008,
+       "se": 0.0002,
+       "ci_lo": 0.0004,
+       "ci_hi": 0.0013,
+       "pct_effect": 0.08,
+       "pct_lo": 0.04,
+       "pct_hi": 0.13,
+       "contains_zero": false
+      },
+      {
+       "term": "km100k",
+       "point": -0.1638,
+       "se": 0.0042,
+       "ci_lo": -0.1721,
+       "ci_hi": -0.1555,
+       "pct_effect": -15.11,
+       "pct_lo": -15.81,
+       "pct_hi": -14.4,
+       "contains_zero": false
+      },
+      {
+       "term": "km_sq",
+       "point": 0.0155,
+       "se": 0.0024,
+       "ci_lo": 0.0107,
+       "ci_hi": 0.0203,
+       "pct_effect": 1.56,
+       "pct_lo": 1.08,
+       "pct_hi": 2.05,
+       "contains_zero": false
+      },
+      {
+       "term": "age_x_km",
+       "point": -0.0062,
+       "se": 0.0014,
+       "ci_lo": -0.009,
+       "ci_hi": -0.0035,
+       "pct_effect": -0.62,
+       "pct_lo": -0.89,
+       "pct_hi": -0.35,
+       "contains_zero": false
+      },
+      {
+       "term": "heavy_damage",
+       "point": -0.1233,
+       "se": 0.0053,
+       "ci_lo": -0.1336,
+       "ci_hi": -0.113,
+       "pct_effect": -11.6,
+       "pct_lo": -12.51,
+       "pct_hi": -10.68,
+       "contains_zero": false
+      },
+      {
+       "term": "painted",
+       "point": -0.0105,
+       "se": 0.0006,
+       "ci_lo": -0.0118,
+       "ci_hi": -0.0092,
+       "pct_effect": -1.05,
+       "pct_lo": -1.17,
+       "pct_hi": -0.92,
+       "contains_zero": false
+      },
+      {
+       "term": "changed",
+       "point": -0.0311,
+       "se": 0.0014,
+       "ci_lo": -0.0339,
+       "ci_hi": -0.0283,
+       "pct_effect": -3.06,
+       "pct_lo": -3.33,
+       "pct_hi": -2.79,
+       "contains_zero": false
+      },
+      {
+       "term": "hp100",
+       "point": 0.1812,
+       "se": 0.026,
+       "ci_lo": 0.1301,
+       "ci_hi": 0.2323,
+       "pct_effect": 19.86,
+       "pct_lo": 13.89,
+       "pct_hi": 26.15,
+       "contains_zero": false
+      },
+      {
+       "term": "litre",
+       "point": 0.0723,
+       "se": 0.0332,
+       "ci_lo": 0.0071,
+       "ci_hi": 0.1374,
+       "pct_effect": 7.49,
+       "pct_lo": 0.71,
+       "pct_hi": 14.73,
+       "contains_zero": false
+      }
      ]
     },
-    "note": "C(model) eklenmiş tek OLS (bootstrap yok); katsayi_pct = [model yok, model var], yüzde etki."
-   }
+    "model": {
+     "r2": 0.9648,
+     "coefficients": [
+      {
+       "term": "age",
+       "point": -0.0598,
+       "se": 0.0029,
+       "ci_lo": -0.0655,
+       "ci_hi": -0.0541,
+       "pct_effect": -5.8,
+       "pct_lo": -6.34,
+       "pct_hi": -5.27,
+       "contains_zero": false
+      },
+      {
+       "term": "age_sq",
+       "point": 0.0003,
+       "se": 0.0003,
+       "ci_lo": -0.0003,
+       "ci_hi": 0.0009,
+       "pct_effect": 0.03,
+       "pct_lo": -0.03,
+       "pct_hi": 0.09,
+       "contains_zero": true
+      },
+      {
+       "term": "km100k",
+       "point": -0.1605,
+       "se": 0.0029,
+       "ci_lo": -0.1662,
+       "ci_hi": -0.1548,
+       "pct_effect": -14.83,
+       "pct_lo": -15.31,
+       "pct_hi": -14.34,
+       "contains_zero": false
+      },
+      {
+       "term": "km_sq",
+       "point": 0.0166,
+       "se": 0.0017,
+       "ci_lo": 0.0132,
+       "ci_hi": 0.0199,
+       "pct_effect": 1.67,
+       "pct_lo": 1.33,
+       "pct_hi": 2.01,
+       "contains_zero": false
+      },
+      {
+       "term": "age_x_km",
+       "point": -0.0033,
+       "se": 0.0012,
+       "ci_lo": -0.0056,
+       "ci_hi": -0.001,
+       "pct_effect": -0.33,
+       "pct_lo": -0.56,
+       "pct_hi": -0.1,
+       "contains_zero": false
+      },
+      {
+       "term": "heavy_damage",
+       "point": -0.1331,
+       "se": 0.0047,
+       "ci_lo": -0.1422,
+       "ci_hi": -0.124,
+       "pct_effect": -12.46,
+       "pct_lo": -13.26,
+       "pct_hi": -11.66,
+       "contains_zero": false
+      },
+      {
+       "term": "painted",
+       "point": -0.0099,
+       "se": 0.0006,
+       "ci_lo": -0.011,
+       "ci_hi": -0.0088,
+       "pct_effect": -0.98,
+       "pct_lo": -1.09,
+       "pct_hi": -0.87,
+       "contains_zero": false
+      },
+      {
+       "term": "changed",
+       "point": -0.0317,
+       "se": 0.0012,
+       "ci_lo": -0.0341,
+       "ci_hi": -0.0292,
+       "pct_effect": -3.12,
+       "pct_lo": -3.35,
+       "pct_hi": -2.88,
+       "contains_zero": false
+      },
+      {
+       "term": "hp100",
+       "point": 0.1764,
+       "se": 0.0566,
+       "ci_lo": 0.0654,
+       "ci_hi": 0.2875,
+       "pct_effect": 19.3,
+       "pct_lo": 6.76,
+       "pct_hi": 33.31,
+       "contains_zero": false
+      },
+      {
+       "term": "litre",
+       "point": 0.058,
+       "se": 0.0347,
+       "ci_lo": -0.0101,
+       "ci_hi": 0.1262,
+       "pct_effect": 5.97,
+       "pct_lo": -1.01,
+       "pct_hi": 13.45,
+       "contains_zero": true
+      }
+     ]
+    }
+   },
+   "vif": {
+    "term": "age_x_km",
+    "value": 7.25,
+    "raw_term": "age_x_km",
+    "raw_value": 96.28
+   },
+   "hp_cc_correlation": 0.73,
+   "homoskedasticity_p": 0.0
   }
  },
  "error_drivers": {

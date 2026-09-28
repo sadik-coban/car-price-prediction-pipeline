@@ -498,84 +498,38 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-27T21:45:45+03:00",
+  "_meta.generated_at": "2026-09-28T20:55:05+03:00",
   "_meta.run_id": null,
   "_meta.script": "06_hedonic.py",
-  "domain.hedonic.age_pct": -6.64,
-  "domain.hedonic.cc_litre_pct": 7.49,
-  "domain.hedonic.damage_pct": -11.6,
-  "domain.hedonic.hp100_pct": 19.86,
-  "domain.hedonic.km100k_pct": -15.11,
-  "domain.hedonic.note": "Dönem etkisi modelde yok (kullanıcı kararı): dönemler havuzlanarak kestirildi.",
-  "domain.hedonic.r2": 0.9312,
-  "domain.hedonic_reliability.assumptions.homoskedasticity_p": 0.0,
-  "domain.hedonic_reliability.assumptions.normality_p": 0.0,
-  "domain.hedonic_reliability.assumptions.note": "Breusch-Pagan ve Jarque-Bera ihlal (p<0.05). Bu yüzden çıkarım çıplak OLS p-değerine değil, satır bootstrap'inin %2.5–97.5 yüzdeliklerine dayanıyor.",
-  "domain.hedonic_reliability.bootstrap": {
-   "len": 10,
-   "sha256": "33d73d8ea11cc73b3549858eb2c6ad53446e0350b722ffb13a45fecfb1826486"
-  },
-  "domain.hedonic_reliability.bootstrap_setup.n_boot": 1000,
-  "domain.hedonic_reliability.bootstrap_setup.n_jobs": 16,
-  "domain.hedonic_reliability.bootstrap_setup.n_requested": 1000,
-  "domain.hedonic_reliability.bootstrap_setup.seconds": 76.9,
+  "domain.hedonic.age_pct": -5.8,
+  "domain.hedonic.cc_litre_pct": 5.97,
+  "domain.hedonic.control": "model",
+  "domain.hedonic.damage_pct": -12.46,
+  "domain.hedonic.hp100_pct": 19.3,
+  "domain.hedonic.km100k_pct": -14.83,
+  "domain.hedonic.note": "Model kontrolü sütunu: etkiler aynı model adı içinde. Dönem etkisi modelde yok (kullanıcı kararı): dönemler havuzlanarak kestirildi.",
+  "domain.hedonic.r2": 0.9648,
   "domain.hedonic_reliability.center.age": 11.0,
   "domain.hedonic_reliability.center.km": 181000.0,
-  "domain.hedonic_reliability.engine_effect.cc_litre_pct": 7.5,
-  "domain.hedonic_reliability.engine_effect.hp100_pct": 19.9,
-  "domain.hedonic_reliability.fuel_correlation": {
-   "len": 4,
-   "sha256": "87154a3251039ce49b839d0dd6235c9b78164d11b0c3b7e6a6893f7f72b3766e"
+  "domain.hedonic_reliability.cluster": "model",
+  "domain.hedonic_reliability.columns.model.coefficients": {
+   "len": 10,
+   "sha256": "e16f2f974b1b6dfc466d65bdd42100c5914bba3ff25521bc94eae4e1353c583e"
   },
-  "domain.hedonic_reliability.model_r2": 0.9312,
+  "domain.hedonic_reliability.columns.model.r2": 0.9648,
+  "domain.hedonic_reliability.columns.segment.coefficients": {
+   "len": 10,
+   "sha256": "38ae0c525516abde4e52c5a9a8db901660b2300bb4c5a064913ca773bef29b14"
+  },
+  "domain.hedonic_reliability.columns.segment.r2": 0.9312,
+  "domain.hedonic_reliability.homoskedasticity_p": 0.0,
+  "domain.hedonic_reliability.hp_cc_correlation": 0.73,
   "domain.hedonic_reliability.n": 29554,
-  "domain.hedonic_reliability.note": "Ham (log yok) cc+HP: birim başına yorum. Yaş ve km medyan araca ortalandı; doğrusal katsayılar o noktadaki marjinal etki. Güven aralıkları satır bootstrap'inden.",
-  "domain.hedonic_reliability.overall_correlation": 0.73,
-  "domain.hedonic_reliability.unit.cc": "1 litre",
-  "domain.hedonic_reliability.unit.hp": "100 HP",
-  "domain.hedonic_reliability.vif": {
-   "len": 10,
-   "sha256": "7055c68b1862ef4accef436b9ec15a9e57443c7aa8bc6de28a562defc3fd10fe"
-  },
-  "domain.hedonic_reliability.vif_dummy": {
-   "len": 2,
-   "sha256": "77a71b5365e8e943dc60b7650778d9707c3abfcd92af60c28e9463eaa808fd9a"
-  },
-  "domain.hedonic_reliability.vif_raw": {
-   "len": 10,
-   "sha256": "b3052b2e2d2e7bc90c045cfcac926801ee91b0d42194981c84a1d479270e8ea1"
-  },
-  "domain.hedonic_reliability.with_model.coef_pct.age": {
-   "len": 2,
-   "sha256": "e076b48c474e446fd28e0989f5597cf189216cf20539409bb9a3df095c94d95d"
-  },
-  "domain.hedonic_reliability.with_model.coef_pct.cc_litre": {
-   "len": 2,
-   "sha256": "4d8cc0720d852e80173058271933bcbc805f28f98b94e7b6af6db4f6688e16e1"
-  },
-  "domain.hedonic_reliability.with_model.coef_pct.changed": {
-   "len": 2,
-   "sha256": "6e147f489290d0a6acca928901809984ec2198490b5382d3af5100ff81eb820d"
-  },
-  "domain.hedonic_reliability.with_model.coef_pct.heavy_damage": {
-   "len": 2,
-   "sha256": "4b48348f2e4305202a9dd1a1ea76321bbe369f2c247e43fd1a4e299bb268af2c"
-  },
-  "domain.hedonic_reliability.with_model.coef_pct.hp100": {
-   "len": 2,
-   "sha256": "735e409c1cbdcb273ed5a9150a8f8a2aae613e8f8d83f997aa37d34673f32b20"
-  },
-  "domain.hedonic_reliability.with_model.coef_pct.km100k": {
-   "len": 2,
-   "sha256": "c05a748d4b731fcfc2fe1c0704b91fd223ec57e5721c7a5be958412941bae296"
-  },
-  "domain.hedonic_reliability.with_model.coef_pct.painted": {
-   "len": 2,
-   "sha256": "04cdcedcef1cc7de3bb59e9ff538790f8388f2ae15cea62e87068a2dd517a162"
-  },
-  "domain.hedonic_reliability.with_model.n_model": 735,
-  "domain.hedonic_reliability.with_model.note": "C(model) eklenmiş tek OLS (bootstrap yok); katsayi_pct = [model yok, model var], yüzde etki.",
-  "domain.hedonic_reliability.with_model.r2": 0.9648,
+  "domain.hedonic_reliability.n_clusters": 735,
+  "domain.hedonic_reliability.vif.raw_term": "age_x_km",
+  "domain.hedonic_reliability.vif.raw_value": 96.28,
+  "domain.hedonic_reliability.vif.term": "age_x_km",
+  "domain.hedonic_reliability.vif.value": 7.25,
   "error_drivers.hedonic_dropped.both": 348,
   "error_drivers.hedonic_dropped.cc": 356,
   "error_drivers.hedonic_dropped.hp": 426,

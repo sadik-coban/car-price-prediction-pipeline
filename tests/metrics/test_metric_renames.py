@@ -2,13 +2,14 @@
 test_metric_renames.py
 EN: The helpers of tools/metric_renames.py that the name guard uses, on a small made-up map (retired names, old
     enum values, stale dotted paths, list suffixes in patterns), the real map (every metrics file has one group at
-    most; none = a new file, always checked) and snapshot_metrics' --rename-exemption on temp folders. The
+    most; none = a new file, always checked) and snapshot_metrics' --rename-exemption and --drop-exemption on temp
+    folders. The
     translator's tests and the checks against the archived P0 copy went with them on 2026-09-27 (nothing from the
     archive reaches the live chain).
 TR: tools/metric_renames.py'nin ad bekçisinin kullandığı yardımcıları küçük uydurma bir eşleme üzerinde (emekli
     adlar, eski değerler, bayat noktalı yollar, kalıplarda liste ekleri), gerçek eşleme (her metrik dosyasının en çok
-    bir grubu var; hiç yoksa yeni dosyadır ve hep sınanır) ve snapshot_metrics'in --rename-exemption'ı geçici
-    klasörlerde. Çevirmenin testleri ve arşivdeki P0 kopyasına karşı denetimler 2026-09-27'de onlarla birlikte
+    bir grubu var; hiç yoksa yeni dosyadır ve hep sınanır) ve snapshot_metrics'in --rename-exemption ve
+    --drop-exemption'ı geçici klasörlerde. Çevirmenin testleri ve arşivdeki P0 kopyasına karşı denetimler 2026-09-27'de onlarla birlikte
     kalktı (arşivden canlı zincire hiçbir şey girmez).
 """
 import json
@@ -105,3 +106,26 @@ def test_rename_exemption_refuses(folders):
         SM.rename_exemption("x", "domain.nope", "domain.setup.seconds", metrics, base)
     with pytest.raises(ValueError):
         SM.rename_exemption("x", "domain.ayar.sure_sn", "domain.setup.nothing", metrics, base)
+
+
+def test_drop_exemption_removes_a_stale_one(folders):
+    """
+    EN: An exemption whose key is gone (removed on purpose) is deleted; the rest of the file stays.
+    TR: Anahtarı (bilinçli olarak) kalkmış istisna silinir; dosyanın geri kalanı kalır.
+    """
+    metrics, base = folders
+    assert SM.drop_exemption("x", "domain.ayar.sure_sn", metrics, base) == ("x", "domain.ayar.sure_sn")
+    assert json.loads((base / "exemptions.json").read_text(encoding="utf-8"))["exemptions"] == []
+
+
+def test_drop_exemption_refuses_a_live_key(folders):
+    """
+    EN: Refused for an unknown exemption, or one whose pattern still matches a current key.
+    TR: Bilinmeyen istisnada ya da deseni hâlâ güncel bir anahtara uyan istisnada reddedilir.
+    """
+    metrics, base = folders
+    with pytest.raises(ValueError):
+        SM.drop_exemption("x", "domain.nope", metrics, base)
+    SM.rename_exemption("x", "domain.ayar.sure_sn", "domain.setup.seconds", metrics, base)
+    with pytest.raises(ValueError):
+        SM.drop_exemption("x", "domain.setup.seconds", metrics, base)

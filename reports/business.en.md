@@ -20,16 +20,18 @@ Beyond model and year the gap is closed mostly by mileage and damage: removing t
 
 ## How this market builds a price
 
-How much each driver moves the price — **with everything else held fixed**:
+How much each driver moves the price — **within one model name, with everything else held fixed**:
 
 | driver | price |
 |---|---:|
-| age (per year, at a typical car) | -6.6% |
-| mileage (per 100k km, at a typical car) | -15.1% |
-| heavy-damage record | -11.6% |
+| age (per year, at a typical car) | -5.8% |
+| mileage (per 100k km, at a typical car) | -14.8% |
+| heavy-damage record | -12.5% |
 | changed panel (each) | -3.1% |
-| painted panel (each) | -1.1% |
-| +100 hp of engine power | +19.9% |
+| painted panel (each) | -1.0% |
+| +100 hp of engine power | +19.3% |
+
+The least certain driver is +100 hp of engine power: its 95% confidence interval runs from +6.8% to +33.3%.
 
 Age and mileage are linked axes; the age and km rows above are each measured with the other held fixed, at a typical car (11 years, 181,000 km).
 

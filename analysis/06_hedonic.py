@@ -1,44 +1,53 @@
 """
 06_hedonic.py
-EN: Technical report §6 — the hedonic model: controlled price effects (log price ~ age, mileage, damage,
-    power, size + segment/brand/fuel/transmission). Age and mileage are centred on the median car, so the
-    linear coefficients are the marginal effects there. Confidence intervals come from a 1000-replicate row
-    bootstrap. Also: VIF (fitted, uncentred, dummies), hp–cc correlation by fuel, assumption tests, the same
-    model with model identity added, and how many listings the OLS drops for missing hp/cc.
-    No period effect in the model (the owner's decision).
-TR: Teknik rapor §6 — hedonik model: kontrollü fiyat etkileri (log fiyat ~ yaş, km, hasar, güç, hacim +
-    segment/marka/yakıt/vites). Yaş ve km medyan araca ortalanır; doğrusal katsayılar o noktadaki marjinal
-    etkidir. Güven aralıkları 1000 tekrarlı satır bootstrap'inden. Ayrıca: VIF (kurulan, ortalanmamış, kukla),
-    yakıta göre hp–cc korelasyonu, varsayım testleri, model kimliği eklenmiş aynı model ve OLS'in eksik hp/cc
-    yüzünden attığı ilan sayısı. Modelde dönem etkisi yok (kullanıcının kararı).
+EN: Technical report §6 — the hedonic model: controlled price effects (log price ~ age, mileage, damage, power,
+    size), in two columns side by side. Segment control: segment, brand, fuel and transmission dummies. Model
+    control: the same plus C(model), so each effect is measured within one model name. Age and mileage are
+    centred on the median car, so the linear coefficients are the marginal effects there. Listings of the same
+    model are not independent and the error variance is not equal (Breusch-Pagan), so the 95% intervals come from
+    standard errors clustered by model (735 models; the 22 series are too few and too uneven to cluster on).
+    2026-09-28 (simplification list): this replaces the 1000-replicate row bootstrap, which treated listings as
+    independent; the uncentred-VIF table, the dummy VIF, the Jarque-Bera test and the hp–cc table by fuel left the
+    report with it. Also: the largest VIF of the segment column's design (centred and uncentred), the overall hp–cc
+    correlation, and how many listings the OLS drops for missing hp/cc. No period effect in the model (the owner's
+    decision, 2026-09-23).
+TR: Teknik rapor §6 — hedonik model: kontrollü fiyat etkileri (log fiyat ~ yaş, km, hasar, güç, hacim), yan yana
+    iki sütun. Segment kontrolü: segment, marka, yakıt ve vites kuklaları. Model kontrolü: aynısı ve C(model);
+    her etki tek bir model adının içinde ölçülür. Yaş ve km medyan araca ortalanır; doğrusal katsayılar o noktadaki
+    marjinal etkidir. Aynı modelin ilanları bağımsız değil ve hata varyansı eşit değil (Breusch-Pagan); bu yüzden
+    %95 aralıklar modele göre kümelenmiş standart hatalardan (735 model; 22 seri kümelemek için az ve dengesiz).
+    2026-09-28 (sadeleştirme listesi): bu, ilanları bağımsız sayan 1000 tekrarlı satır bootstrap'inin yerini alır;
+    ortalanmamış VIF tablosu, kukla VIF'i, Jarque-Bera testi ve yakıta göre hp–cc tablosu onunla rapordan çıktı.
+    Ayrıca: segment sütunu tasarımının en yüksek VIF'i (ortalanmış ve ortalanmamış), genel hp–cc korelasyonu ve
+    OLS'in eksik hp/cc yüzünden attığı ilan sayısı. Modelde dönem etkisi yok (kullanıcının kararı, 2026-09-23).
 Output / Çıktı: metrics/06_hedonic.json
 """
 
 # %% [1] Setup | Kurulum
-import os
-import time
+import warnings
 
 import numpy as np
 import pandas as pd
 import patsy
 import statsmodels.formula.api as smf
-from joblib import Parallel, delayed
 from scipy import stats
 from statsmodels.stats.diagnostic import het_breuschpagan
 from statsmodels.stats.outliers_influence import variance_inflation_factor
+from statsmodels.tools.sm_exceptions import SingularMatrixWarning
 
 from lib.common import load_clean, save_metrics
 
-SEED = 42
-N_BOOT = 1000
-N_JOBS = int(os.environ.get("N_JOBS") or (os.cpu_count() or 4))
-FORMULA = ("log_price~age+I(age**2)+km10+I(km10**2)+age:km10+dmg+painted+changed"
-           "+hp100+cc_L+C(segment)+C(brand)+C(kb_fuel)+C(kb_transmission)")
-TRACKED = ["age", "I(age ** 2)", "km10", "I(km10 ** 2)", "age:km10", "dmg", "painted", "changed", "hp100", "cc_L"]
-LABELS = {"age": "yaş", "I(age ** 2)": "yaş²", "km10": "km(100K)", "I(km10 ** 2)": "km²", "age:km10": "yaş×km",
-          "dmg": "ağır hasar", "painted": "boyalı", "changed": "değişen", "hp100": "+100 HP", "cc_L": "+1 litre"}
-MODEL_ID_TERMS = {"age": "age", "km10": "km100k", "hp100": "hp100", "cc_L": "cc_litre", "dmg": "heavy_damage",
-                  "painted": "painted", "changed": "changed"}
+TERMS = "age+I(age**2)+km10+I(km10**2)+age:km10+dmg+painted+changed+hp100+cc_L"
+CONTROLS = "C(segment)+C(brand)+C(kb_fuel)+C(kb_transmission)"
+# EN: column id → formula; the model column adds C(model) (it pins brand and almost always segment, so the design
+#     is singular; statsmodels solves it with a pseudo-inverse and the linear terms stay identified)
+# TR: sütun kimliği → formül; model sütunu C(model) ekler (markayı ve neredeyse her zaman segmenti belirler, tasarım
+#     tekil; statsmodels pseudo-inverse ile çözer, doğrusal terimler tanımlı kalır)
+COLUMNS = {"segment": f"log_price~{TERMS}+{CONTROLS}", "model": f"log_price~{TERMS}+{CONTROLS}+C(model)"}
+# EN: patsy term name → English id the reports index by | TR: patsy terim adı → raporların indekslediği İngilizce kimlik
+TERM_ID = {"age": "age", "I(age ** 2)": "age_sq", "km10": "km100k", "I(km10 ** 2)": "km_sq", "age:km10": "age_x_km",
+           "dmg": "heavy_damage", "painted": "painted", "changed": "changed", "hp100": "hp100", "cc_L": "litre"}
+CLUSTER = "model"
 
 
 # %% [2] Analysis functions | Analiz fonksiyonları — pure: no file I/O, they only return values
@@ -86,129 +95,80 @@ def dropped_rows(listings):
             "total": int((bad_hp | bad_cc).sum())}
 
 
-def one_bootstrap(h, seed):
+def clustered_fit(h, formula, groups):
     """
-    EN: One bootstrap replicate: OLS on a resample of rows. Returns: {term: coefficient} or None if it fails.
-    TR: Tek bir bootstrap tekrarı: yeniden örneklenmiş satırlarda OLS. Döndürür: {terim: katsayı}, başarısızsa None.
+    EN: OLS with standard errors clustered by `groups` (small-sample corrected, t with G − 1 df). The model
+        column's design is singular by construction (see COLUMNS): that one warning is expected and silenced here;
+        coefficient_rows stops if a tracked term is not identified.
+    TR: Standart hataları `groups`'a göre kümelenmiş OLS (küçük örneklem düzeltmeli, G − 1 serbestlik dereceli t).
+        Model sütununun tasarımı yapısı gereği tekil (bkz. COLUMNS): o tek uyarı beklenen, burada susturulur;
+        izlenen bir terim tanımsızsa coefficient_rows durur.
     """
-    idx = np.random.default_rng(seed).integers(0, len(h), len(h))
-    try:
-        fit = smf.ols(FORMULA, data=h.iloc[idx]).fit()
-        return {k: fit.params.get(k, np.nan) for k in TRACKED}
-    except Exception:
-        return None
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", SingularMatrixWarning)
+        return smf.ols(formula, data=h).fit(cov_type="cluster", cov_kwds={"groups": groups}, use_t=True)
 
 
-def bootstrap_table(h, fit, n_boot, n_jobs, seed):
+def coefficient_rows(fit):
     """
-    EN: 1000 row-bootstrap replicates in parallel; stops if any replicate fails. For each tracked term:
-        point estimate, bootstrap mean, 2.5–97.5 percentiles, std, % effect, whether the CI contains zero.
-        Returns: (table, number of replicates, seconds).
-    TR: Paralel 1000 satır-bootstrap tekrarı; biri başarısız olursa durur. Her izlenen terim için: nokta
-        tahmin, bootstrap ortalaması, %2.5–97.5 yüzdelikleri, std, yüzde etki, GA'nın sıfırı içerip içermediği.
-        Döndürür: (tablo, tekrar sayısı, saniye).
+    EN: For every tracked term: point, clustered SE, 95% CI (log scale) and the same as a % effect, and whether the
+        CI contains zero. Stops if a term is missing or not finite (the pseudo-inverse must keep it identified).
+    TR: İzlenen her terim için: nokta, kümeli SH, %95 GA (log ölçek), aynısının % etki hâli ve GA'nın sıfırı içerip
+        içermediği. Bir terim eksik ya da sonlu değilse durur (pseudo-inverse onu tanımlı tutmalı).
     """
-    seeds = np.random.default_rng(seed).integers(0, 2**31, n_boot)
-    t0 = time.time()
-    reps = Parallel(n_jobs=n_jobs)(delayed(one_bootstrap)(h, s) for s in seeds)
-    seconds = time.time() - t0
-    reps = [r for r in reps if r is not None]
-    assert len(reps) == n_boot, f"bootstrap: {n_boot - len(reps)} replicates failed"
-    table = []
-    for k in TRACKED:
-        arr = np.array([r[k] for r in reps])
-        arr = arr[np.isfinite(arr)]
-        lo, hi = np.percentile(arr, [2.5, 97.5])
-        table.append({"term": LABELS[k], "point": round(float(fit.params[k]), 4), "boot_mean": round(float(arr.mean()), 4),
-                      "ci_lo": round(float(lo), 4), "ci_hi": round(float(hi), 4), "std": round(float(arr.std()), 4),
-                      "pct_effect": round(pct(fit.params[k]), 2), "contains_zero": bool(lo <= 0 <= hi)})
-    return table, len(reps), seconds
+    ci = fit.conf_int(0.05)
+    rows = []
+    for k, tid in TERM_ID.items():
+        b, se, lo, hi = fit.params[k], fit.bse[k], ci.loc[k, 0], ci.loc[k, 1]
+        assert np.isfinite([b, se, lo, hi]).all() and se > 0, f"{tid}: not identified | tanımsız"
+        rows.append({"term": tid, "point": round(float(b), 4), "se": round(float(se), 4), "ci_lo": round(float(lo), 4),
+                     "ci_hi": round(float(hi), 4), "pct_effect": round(pct(b), 2), "pct_lo": round(pct(lo), 2),
+                     "pct_hi": round(pct(hi), 2), "contains_zero": bool(lo <= 0 <= hi)})
+    return rows
 
 
-def vif_tables(h, fit, age_c, km_c):
+def vif_max(h, fit, age_c, km_c):
     """
-    EN: VIF from the fitted (centred) design, from the same design uncentred, and the largest dummy VIF.
-        Stops if the VIF input is not the fitted model's own design.
-    TR: VIF: kurulan (ortalanmış) tasarımdan, aynı tasarımın ortalanmamış hâlinden ve en büyük kukla VIF'i.
-        VIF girdisi kurulan modelin kendi tasarımı değilse durur.
+    EN: The largest VIF among the tracked terms, on the fitted (centred) design and on the same design uncentred.
+        Stops if the VIF input is not the fitted model's own design. Returns: {term, value, raw_term, raw_value}.
+    TR: İzlenen terimler arasında en yüksek VIF; kurulan (ortalanmış) tasarımda ve aynı tasarımın ortalanmamış
+        hâlinde. VIF girdisi kurulan modelin kendi tasarımı değilse durur. Döndürür: {term, value, raw_term, raw_value}.
     """
-    def vif_of(x):
-        """EN: VIF of every column except the intercept. / TR: Sabit terim hariç her kolonun VIF'i."""
-        return {c: float(variance_inflation_factor(x.values, i)) for i, c in enumerate(x.columns) if c != "Intercept"}
     x_fit = pd.DataFrame(fit.model.exog, columns=fit.model.exog_names)
     assert x_fit.shape[1] == len(fit.params), "VIF input is not the fitted design"
     raw = h.copy()
     raw["age"], raw["km10"] = raw["age"] + age_c, raw["km10"] + km_c
-    x_raw = patsy.dmatrix(FORMULA.split("~", 1)[1], raw, return_type="dataframe")
+    x_raw = patsy.dmatrix(COLUMNS["segment"].split("~", 1)[1], raw, return_type="dataframe")
     assert list(x_raw.columns) == list(x_fit.columns), "uncentred design has different columns"
-    v_fit, v_raw = vif_of(x_fit), vif_of(x_raw)
-    dummies = {k: v for k, v in v_fit.items() if k.startswith("C(")}
-    worst = max(dummies, key=dummies.get)
-    return ([[t, round(v_fit[t], 2)] for t in TRACKED], [[t, round(v_raw[t], 2)] for t in TRACKED],
-            [worst, round(dummies[worst], 2)])
-
-
-def fuel_correlation(h, min_n=30):
-    """
-    EN: hp–cc correlation within each fuel type (Pearson, Pearson on logs, Spearman, median cc/hp).
-    TR: Her yakıt türü içinde hp–cc korelasyonu (Pearson, log'larda Pearson, Spearman, medyan cc/hp).
-    """
-    out = []
-    for fuel in h["kb_fuel"].value_counts().index:
-        sub = h[h["kb_fuel"] == fuel]
-        if len(sub) >= min_n:
-            out.append({"fuel": str(fuel)[:20], "pearson": round(float(stats.pearsonr(sub.hp, sub.cc)[0]), 3),
-                        "pearson_log": round(float(stats.pearsonr(np.log(sub.hp), np.log(sub.cc))[0]), 3),
-                        "spearman": round(float(stats.spearmanr(sub.hp, sub.cc)[0]), 3),
-                        "cc_hp_ratio": round(float((sub.cc / sub.hp).median()), 1), "n": int(len(sub))})
-    return out
-
-
-def model_identity_fit(h, fit):
-    """
-    EN: The same OLS with C(model) added (fitted once, no bootstrap): R² and the linear coefficients with
-        and without model identity. The design is singular (model fixes brand/segment); statsmodels solves it
-        with a pseudo-inverse and the linear terms stay identified.
-    TR: C(model) eklenmiş aynı OLS (bir kez, bootstrap yok): R² ve model kimliği olmadan/ile doğrusal katsayılar.
-        Tasarım tekil (model markayı/segmenti belirliyor); statsmodels pseudo-inverse ile çözer, doğrusal
-        terimler tanımlı kalır.
-    """
-    fit_m = smf.ols(FORMULA + "+C(model)", data=h).fit()
-    return {"r2": round(float(fit_m.rsquared), 4), "n_model": int(h["model"].nunique()),
-            "coef_pct": {name: [round(pct(fit.params[k]), 2), round(pct(fit_m.params[k]), 2)]
-                            for k, name in MODEL_ID_TERMS.items()}}
+    v_fit = {k: float(variance_inflation_factor(x_fit.values, x_fit.columns.get_loc(k))) for k in TERM_ID}
+    v_raw = {k: float(variance_inflation_factor(x_raw.values, x_raw.columns.get_loc(k))) for k in TERM_ID}
+    top, top_raw = max(v_fit, key=v_fit.get), max(v_raw, key=v_raw.get)
+    return {"term": TERM_ID[top], "value": round(v_fit[top], 2), "raw_term": TERM_ID[top_raw],
+            "raw_value": round(v_raw[top_raw], 2)}
 
 
 # %% [3] Metrics assembly | Metrik derleme — naming and rounding only | yalnız adlandırma ve yuvarlama
 def to_metrics(res):
     """
-    EN: Published in the site tree (domain.hedonic, domain.hedonic_reliability) and the report inputs
-        (error_drivers.hedonic_dropped).
-    TR: Site ağacında (domain.hedonic, domain.hedonic_reliability) ve rapor girdilerinde
-        (error_drivers.hedonic_dropped) yayımlanır.
+    EN: Published in the site tree (domain.hedonic: the model column's headline effects, which the decision note
+        prints; domain.hedonic_reliability: both columns) and the report inputs (error_drivers.hedonic_dropped).
+    TR: Site ağacında (domain.hedonic: model sütununun manşet etkileri, karar notunun bastıkları;
+        domain.hedonic_reliability: iki sütun) ve rapor girdilerinde (error_drivers.hedonic_dropped) yayımlanır.
     """
-    fit, p = res["fit"], res["fit"].params
+    fits, rows = res["fits"], res["rows"]
+    head = {r["term"]: r["pct_effect"] for r in rows["model"]}
     return {
         "domain": {
-            "hedonic": {"r2": round(float(fit.rsquared), 4), "age_pct": round(pct(p["age"]), 2),
-                        "damage_pct": round(pct(p["dmg"]), 2), "km100k_pct": round(pct(p["km10"]), 2),
-                        "hp100_pct": round(pct(p["hp100"]), 2), "cc_litre_pct": round(pct(p["cc_L"]), 2),
-                        "note": "Dönem etkisi modelde yok (kullanıcı kararı): dönemler havuzlanarak kestirildi."},
+            "hedonic": {"r2": round(float(fits["model"].rsquared), 4), "control": "model", "age_pct": head["age"],
+                        "damage_pct": head["heavy_damage"], "km100k_pct": head["km100k"], "hp100_pct": head["hp100"],
+                        "cc_litre_pct": head["litre"],
+                        "note": ("Model kontrolü sütunu: etkiler aynı model adı içinde. Dönem etkisi modelde yok "
+                                 "(kullanıcı kararı): dönemler havuzlanarak kestirildi.")},
             "hedonic_reliability": {
-                "model_r2": round(float(fit.rsquared), 4), "n": int(fit.nobs), "unit": {"hp": "100 HP", "cc": "1 litre"},
-                "engine_effect": {"hp100_pct": round(pct(p["hp100"]), 1), "cc_litre_pct": round(pct(p["cc_L"]), 1)},
-                "bootstrap": res["boot"], "vif": res["vif"], "vif_raw": res["vif_raw"], "vif_dummy": res["vif_dummy"],
+                "n": int(fits["segment"].nobs), "cluster": CLUSTER, "n_clusters": res["n_clusters"],
                 "center": {"age": res["age_c"], "km": res["km_c"] * 1e5},
-                "fuel_correlation": res["fuel"], "overall_correlation": res["hp_cc_r"],
-                "assumptions": {"homoskedasticity_p": res["bp_p"], "normality_p": res["jb_p"],
-                             "note": ("Breusch-Pagan ve Jarque-Bera ihlal (p<0.05). Bu yüzden çıkarım çıplak OLS p-değerine "
-                                     "değil, satır bootstrap'inin %2.5–97.5 yüzdeliklerine dayanıyor.")},
-                "bootstrap_setup": {"n_boot": res["n_boot"], "n_requested": N_BOOT, "n_jobs": N_JOBS,
-                                    "seconds": round(res["seconds"], 1)},
-                "note": ("Ham (log yok) cc+HP: birim başına yorum. Yaş ve km medyan araca ortalandı; doğrusal "
-                        "katsayılar o noktadaki marjinal etki. Güven aralıkları satır bootstrap'inden."),
-                "with_model": {**res["model_id"],
-                               "note": "C(model) eklenmiş tek OLS (bootstrap yok); katsayi_pct = [model yok, model var], yüzde etki."}}},
+                "columns": {c: {"r2": round(float(fits[c].rsquared), 4), "coefficients": rows[c]} for c in COLUMNS},
+                "vif": res["vif"], "hp_cc_correlation": res["hp_cc_r"], "homoskedasticity_p": res["bp_p"]}},
         "error_drivers": {"hedonic_dropped": res["dropped"]},
     }
 
@@ -218,20 +178,16 @@ listings = load_clean()
 
 # %% [5] Compute | Hesapla — look at the results here | sonuçlara burada bak
 h, age_c, km_c = hedonic_frame(listings)
-fit = smf.ols(FORMULA, data=h).fit(cov_type="HC3")
 dropped = dropped_rows(listings)
-assert len(listings) - dropped["total"] == int(fit.nobs), "OLS row count does not match the dropped count"
-# EN: one BLAS thread per bootstrap worker (avoids oversubscription) | TR: işçi başına tek BLAS iş parçacığı
-for var in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
-    os.environ[var] = "1"
-boot, n_boot, seconds = bootstrap_table(h, fit, N_BOOT, N_JOBS, SEED)
-vif, vif_raw, vif_dummy = vif_tables(h, fit, age_c, km_c)
-bp, jb = het_breuschpagan(fit.resid, fit.model.exog), stats.jarque_bera(fit.resid)
-res = {"fit": fit, "boot": boot, "n_boot": n_boot, "seconds": seconds, "vif": vif, "vif_raw": vif_raw,
-       "vif_dummy": vif_dummy, "age_c": age_c, "km_c": km_c, "fuel": fuel_correlation(h),
-       "hp_cc_r": round(float(stats.pearsonr(h.hp, h.cc)[0]), 3), "bp_p": float(bp[1]), "jb_p": float(jb[1]),
-       "model_id": model_identity_fit(h, fit), "dropped": dropped}
-print(f"R² {fit.rsquared:.4f} | with model | model ile {res['model_id']['r2']} | bootstrap {n_boot} in {seconds:.0f}s")
+groups = pd.factorize(h[CLUSTER])[0]
+fits = {c: clustered_fit(h, f, groups) for c, f in COLUMNS.items()}
+assert all(len(listings) - dropped["total"] == int(f.nobs) for f in fits.values()), "OLS row count ≠ dropped count"
+bp = het_breuschpagan(fits["segment"].resid, fits["segment"].model.exog)
+res = {"fits": fits, "rows": {c: coefficient_rows(f) for c, f in fits.items()}, "n_clusters": int(groups.max() + 1),
+       "age_c": age_c, "km_c": km_c, "vif": vif_max(h, fits["segment"], age_c, km_c),
+       "hp_cc_r": round(float(stats.pearsonr(h.hp, h.cc)[0]), 3), "bp_p": float(bp[1]), "dropped": dropped}
+for c in COLUMNS:
+    print(c, f"R² {fits[c].rsquared:.4f}", [(r["term"], r["pct_effect"], r["pct_lo"], r["pct_hi"]) for r in res["rows"][c]])
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
 print("written | yazıldı:", save_metrics("06_hedonic", to_metrics(res)))

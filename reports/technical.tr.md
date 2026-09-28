@@ -227,66 +227,38 @@ Ham fiyat sağa çarpık (çarpıklık 1.62); log dönüşümü simetriğe yakla
 
 ## 6. Hedonik model — kontrollü etkiler
 
-Hedonik regresyon her sürücünün *kontrollü* (diğer her şey sabitken) fiyat etkisini verir — R² **0.9312**, n **29.554**. Katsayılar bootstrap ile güven aralıklı; 10 terimin hepsinin %95 GA'sı sıfırı dışlıyor → her sürücü güvenilir şekilde anlamlı.
+Hedonik regresyon her sürücünün *kontrollü* (diğer her şey sabitken) fiyat etkisini verir; hedef log fiyat, n **29.554**. İki sütun yan yana. **Segment kontrolü** segment, marka, yakıt ve vites kuklalarıyla kurulur (R² **0.9312**). **Model kontrolü** bunlara `C(model)` ekler (735 model adı), yani her etki aynı model adı içinde ölçülür (R² **0.9648**). Model kimliği, hedonik R² ile modelin aynı ölçekteki OOF R²'si (0.9699, log fiyat) arasındaki farkın yaklaşık %87 kadarını kapatıyor — bir üst tahmin: C(model)'li R² örneklem içi, modelinki OOF. Modelin başlıktaki R²'si (0.9745) ham ₺ ölçeğinde; hedonikle o karşılaştırılmamalı.
 
-**`model` bu regresyona girmiyor.** Kardinalitesi çok yüksek (745 ayrı değer); regresyonda seri de yok, yalnız segment var. Ölçüldü: `C(model)` eklenince R² 0.9312 → 0.9648 — hedonik R² ile modelin aynı ölçekteki OOF R²'si (0.9699, log fiyat) arasındaki farkın yaklaşık %87 kadarı model kimliğinden — bir üst tahmin: C(model)'li R² örneklem içi, modelinki OOF (iki R² farklı n'de de: hedonik 29.554, model 29.988 ilan). Doğrusal katsayılar yönünü koruyor, büyüklükleri kayıyor: yaş -%6.64 → -%5.80, +100 hp +%19.86 → +%19.30, 1 litre +%7.49 → +%5.97, 100 bin km -%15.11 → -%14.83. Yani buradaki "kontrollü" etkiler **model kimliği hariç** kontrollüdür. Modelin başlıktaki R²'si (0.9745) ham ₺ ölçeğinde; hedonikle o karşılaştırılmamalı.
+**Güven aralıkları.** Aynı modelin ilanları birbirinden bağımsız değil ve hata varyansı eşit değil (Breusch-Pagan p <0.001); bu yüzden %95 güven aralıkları modele göre kümelenmiş standart hatalardan (735 küme). Segment sütununda 10 terimin hepsinin aralığı sıfırı dışlıyor; model sütununda yaş², +1 litre terimlerinin aralığı sıfırı içeriyor.
 
 **Not:** Hedonik model bir OLS modelidir ve eksik değerlerle çalışamaz; bu yüzden eksik motor gücü (426) ve eksik motor hacmi (356) bulunan ilanlar analiz öncesinde elenmiştir. Her iki alanın da ortak eksik olduğu satırlar düşüldüğünde veri setinden toplam 434 satır çıkarılmıştır.
 
-![Bootstrap katsayıları (nokta + %95 GA)](figures/tr-03-bootstrap-ci.png)
+![Hedonik etkiler (nokta + modele göre kümeli %95 GA)](figures/tr-03-hedonic-ci.png)
 
-### Bootstrap katsayıları
+### Kontrollü etkiler
 
-| terim | etki | log katsayı [%95 GA] | etki %95 GA | anlamlı |
-|---|---:|---:|---:|---|
-| yaş | -%6.64 | -0.0687 [-0.0695, -0.0680] | -%6.71 … -%6.57 | evet |
-| yaş² | +%0.08 | +0.0008 [+0.0007, +0.0010] | +%0.07 … +%0.10 | evet |
-| km(100K) | -%15.11 | -0.1638 [-0.1673, -0.1604] | -%15.41 … -%14.82 | evet |
-| km² | +%1.56 | +0.0155 [+0.0127, +0.0184] | +%1.28 … +%1.86 | evet |
-| yaş×km | -%0.62 | -0.0062 [-0.0074, -0.0050] | -%0.74 … -%0.50 | evet |
-| ağır hasar | -%11.60 | -0.1233 [-0.1321, -0.1140] | -%12.37 … -%10.77 | evet |
-| boyalı | -%1.05 | -0.0105 [-0.0114, -0.0096] | -%1.13 … -%0.96 | evet |
-| değişen | -%3.06 | -0.0311 [-0.0332, -0.0290] | -%3.27 … -%2.86 | evet |
-| +100 HP | +%19.86 | +0.1812 [+0.1659, +0.1972] | +%18.05 … +%21.80 | evet |
-| +1 litre | +%7.49 | +0.0723 [+0.0510, +0.0933] | +%5.23 … +%9.78 | evet |
+| terim | segment kontrolü [%95 GA] | model kontrolü [%95 GA] |
+|---|---:|---:|
+| yaş | -%6.64 [-%6.92, -%6.37] | -%5.80 [-%6.34, -%5.27] |
+| yaş² | +%0.08 [+%0.04, +%0.13] | +%0.03 [-%0.03, +%0.09] |
+| km (100 bin) | -%15.11 [-%15.81, -%14.40] | -%14.83 [-%15.31, -%14.34] |
+| km² | +%1.56 [+%1.08, +%2.05] | +%1.67 [+%1.33, +%2.01] |
+| yaş×km | -%0.62 [-%0.89, -%0.35] | -%0.33 [-%0.56, -%0.10] |
+| ağır hasar | -%11.60 [-%12.51, -%10.68] | -%12.46 [-%13.26, -%11.66] |
+| boyalı | -%1.05 [-%1.17, -%0.92] | -%0.98 [-%1.09, -%0.87] |
+| değişen | -%3.06 [-%3.33, -%2.79] | -%3.12 [-%3.35, -%2.88] |
+| +100 hp | +%19.86 [+%13.89, +%26.15] | +%19.30 [+%6.76, +%33.31] |
+| +1 litre | +%7.49 [+%0.71, +%14.73] | +%5.97 [-%1.01, +%13.45] |
 
-Etki = exp(β)−1. Yaş ve km **medyan araca** (11 yaş, 181.000 km) ortalandı: yaş ve km satırları o araçtaki marjinal etki. Kare ve etkileşim terimleri (yaş², km², yaş×km) tek başına okunmaz; eğrinin bükülmesini taşır.
+Etki = exp(β)−1. Yaş ve km **medyan araca** (11 yaş, 181.000 km) ortalandı: yaş ve km satırları o araçtaki marjinal etki. Kare ve etkileşim terimleri (yaş², km², yaş×km) tek başına okunmaz; eğrinin bükülmesini taşır. Model sütununun nokta tahmini segment sütununun aralığının dışında kalan terimler: yaş, yaş², yaş×km — bunlarda model kimliğini sabitlemek etkiyi örnekleme hatasından fazla değiştiriyor; öteki terimlerde iki sütun birbirinin aralığı içinde. Karar notundaki etkiler model sütunundan: aynı model adı içinde.
+
+**Katsayılar nedensel etki değil, kontrollü ilişkidir.** Ör. boyalı panelin katsayısı boyamanın fiyatı düşürdüğünü değil, boyalı panelli ilanların benzerlerinden o kadar ucuz ilan edildiğini söyler.
+
+**Çoklu bağlantı.** Segment sütununun tasarımında en yüksek VIF yaş×km 7.25 (10'un altında); ortalanmamış tasarımda en yüksek yaş×km 96.28. Yaş, yaş², km, km² ve yaş×km aynı iki değişkenden türediği için yapısal olarak bağlı; medyan araca ortalamak bunu giderir, tahminler ve R² değişmez.
 
 ### Motor etkisi
 
-+100 HP → **+%19.9**, +1 litre → **+%7.5** (aynı regresyonda, diğeri sabitken). Hacmin etkisi, güç sabitlendikten sonra kalan kısımdır; birimler farklı olduğu için iki sayı doğrudan kıyaslanmaz.
-
-### Yakıt bazında cc–HP korelasyonu
-
-| yakıt | Pearson | Pearson (log) | Spearman | cc / HP | n |
-|---|---:|---:|---:|---:|---:|
-| Benzin | 0.806 | 0.731 | 0.407 | 9.8 | 14.693 |
-| Dizel | 0.836 | 0.863 | 0.694 | 11.1 | 12.783 |
-| LPG & Benzin | 0.900 | 0.863 | 0.805 | 13.9 | 1.199 |
-| Hibrit | 0.429 | 0.522 | 0.308 | 10.0 | 879 |
-
-Genel korelasyon 0.73. İlişki yakıta göre değişiyor — en zayıf Hibrit (Pearson 0.429, n 879). Hacim güçten türetilemiyor; ikisi ayrı öznitelik olarak kalır.
-
-### VIF — çoklu bağlantı
-
-| terim | VIF (kurulan model) | VIF (ortalanmamış) |
-|---|---:|---:|
-| yaş | 3.69 | 34.54 |
-| yaş² | 4.84 | 66.54 |
-| km | 4.03 | 29.95 |
-| km² | 3.61 | 34.49 |
-| yaş×km | 7.25 | 96.28 |
-| ağır hasar | 1.05 | 1.05 |
-| boyalı | 1.25 | 1.25 |
-| değişen | 1.12 | 1.12 |
-| +100 HP | 4.77 | 4.77 |
-| motor (L) | 5.56 | 5.56 |
-
-Tablodaki değerler kurulan modelin kendi tasarım matrisinden. En yüksek **yaş×km 7.25** — 10'un altında. Ortalanmamış tasarımda aynı terim grubu çok daha yüksek (**yaş×km 96.28**): yaş, yaş², km, km² ve yaş×km aynı iki değişkenden türediği için birbirine yapısal olarak bağlı. Medyan araca ortalamak bunu giderir; tahminler ve R² değişmez, yalnız doğrusal katsayıların anlamı netleşir. Kuklalar arasında en yüksek VIF `C(segment)[T.D]` (62.42): kukla VIF'i referans seviyesi küçük olduğunda şişer ve yalnız o kukla katsayılarının standart hatasını etkiler — burada raporlanmıyor.
-
-### Varsayım testleri
-
-Breusch-Pagan (eşit varyans) p = **<0.001** · Jarque-Bera (normallik) p = **<0.001** → ikisi de ihlal. Bu yüzden çıkarım çıplak OLS p-değerine dayanmıyor: güven aralıkları, veriyi **1000 kez yerine koymalı yeniden örnekleyip** modeli her turda yeniden kuran bootstrap'in **%2.5–97.5 yüzdeliklerinden** geliyor. Model ayrıca HC3 robust kovaryansla kuruluyor; bu, yayımlanan aralıklara girmiyor.
++100 hp segment kontrolünde **+%19.9**, model kontrolünde **+%19.3**; +1 litre **+%7.5** ile **+%6.0** (aynı regresyonda, diğeri sabitken). Model adı motoru büyük ölçüde belirlediği için model sütununda motor terimleri yalnız aynı model adı içindeki güç ve hacim farkından ölçülür; aralıkları bu yüzden daha geniş. Hacim ve güç birbirine bağlı (korelasyon 0.73): hacmin etkisi güç sabitken kalan kısım, iki katsayı birlikte okunmalı; birimler farklı olduğu için doğrudan kıyaslanmaz.
 
 ### LOFO — çıkarma testi
 
@@ -294,13 +266,7 @@ LOFO ikinci ve bağımsız bir yöntem: her özniteliği çıkarıp CV hatasın�
 
 ![LOFO — öznitelik çıkınca ΔRMSE (çakışmayan gruplar)](figures/tr-04-lofo-flat.png)
 
-Grafik 5 çubuk gösteriyor, model 25 öznitelik kullanıyor. Kapsam:
-
-| kapsam | sayı | nerede |
-|---|---:|---|
-| ölçülen öznitelik | 19 | 2'si kendi çubuğunda, 17'si grupların içinde |
-| grup olarak ölçülen | 3 grup | `DAMAGE_COLS` · `MODEL_SERIES` · `ENGINE` |
-| **hiç ölçülmeyen öznitelik** | **6** | `brand` · `kb_body_type` · `kb_drivetrain` · `segment` · `kb_transmission` · `kb_fuel` |
+Grafik 5 çubuk gösteriyor, model 25 öznitelik kullanıyor: 19 öznitelik ölçüldü (2'si kendi çubuğunda, 17'si 3 grubun içinde: `DAMAGE_COLS` · `MODEL_SERIES` · `ENGINE`); **6 öznitelik hiç ölçülmedi**: `brand` · `kb_body_type` · `kb_drivetrain` · `segment` · `kb_transmission` · `kb_fuel`.
 
 ## 7. Model karşılaştırma ve kısıtlar
 

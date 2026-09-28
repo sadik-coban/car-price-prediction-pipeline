@@ -1,16 +1,16 @@
 {
  "script": "analysis/06_hedonic.py",
  "question": {
-  "tr": "Her sürücünün (yaş, km, motor, hasar) fiyata kontrollü etkisi ne kadar ve bu tahmin ne kadar güvenilir?",
-  "en": "How large is each driver's (age, mileage, engine, damage) controlled effect on price, and how reliable is that estimate?"
+  "tr": "Her sürücünün (yaş, km, motor, hasar) fiyata kontrollü etkisi ne kadar, model kimliği sabitlenince nasıl değişiyor ve bu tahmin ne kadar güvenilir?",
+  "en": "How large is each driver's (age, mileage, engine, damage) controlled effect on price, how does it change once model identity is held fixed, and how reliable is that estimate?"
  },
  "data": {
   "tr": "load_clean() (29.988 ilan); motor gücü ya da hacmi eksik 434 ilan OLS'tan çıkar (29.554).",
   "en": "load_clean() (29,988 listings); the 434 listings missing engine power or displacement leave the OLS (29,554)."
  },
  "method": {
-  "tr": "Log fiyat üzerine OLS (yaş ve km medyan araca ortalanmış, kare ve etkileşim terimleri, segment kuklaları); 1000 satır bootstrap'iyle %95 güven aralıkları; VIF (ortalanmış ve ortalanmamış), Breusch–Pagan ve Jarque–Bera; yakıt bazında hp–cc korelasyonu; C(model) eklenmiş tek OLS ile model kimliğinin etkisi.",
-  "en": "OLS on log price (age and km centred on the median car, squared and interaction terms, segment dummies); 95% intervals from a 1000-round row bootstrap; VIF (centred and uncentred), Breusch–Pagan and Jarque–Bera; the hp–cc correlation by fuel; one OLS with C(model) added for the effect of model identity."
+  "tr": "Log fiyat üzerine iki OLS (yaş ve km medyan araca ortalanmış, kare ve etkileşim terimleri): segment kontrolü (segment, marka, yakıt, vites kuklaları) ve model kontrolü (aynısı + C(model)); %95 güven aralıkları modele göre kümelenmiş standart hatalardan; segment sütununun en yüksek VIF'i (ortalanmış ve ortalanmamış), Breusch–Pagan; genel hp–cc korelasyonu.",
+  "en": "Two OLS fits on log price (age and km centred on the median car, squared and interaction terms): segment control (segment, brand, fuel, transmission dummies) and model control (the same + C(model)); 95% intervals from standard errors clustered by model; the segment column's largest VIF (centred and uncentred), Breusch–Pagan; the overall hp–cc correlation."
  },
  "split": "none",
  "leakage": {
@@ -28,8 +28,8 @@
   "fit_on_full_data": {
    "status": "present",
    "note": {
-    "tr": "Tasarım gereği: açıklama modeli bütün veride kuruluyor, tahmin performansı iddiası yok; çıkarım satır bootstrap'iyle.",
-    "en": "By design: an explanatory model fitted on all data, with no claim of predictive performance; inference comes from a row bootstrap."
+    "tr": "Tasarım gereği: açıklama modeli bütün veride kuruluyor, tahmin performansı iddiası yok; çıkarım modele göre kümelenmiş standart hatalarla.",
+    "en": "By design: an explanatory model fitted on all data, with no claim of predictive performance; inference uses standard errors clustered by model."
    }
   },
   "temporal": {
@@ -40,16 +40,17 @@
  "evidence": {
   "tests": [
    "tests/analysis/test_06_hedonic.py::test_sample_size",
-   "tests/analysis/test_06_hedonic.py::test_bootstrap_rows",
-   "tests/analysis/test_06_hedonic.py::test_headline_matches_bootstrap",
-   "tests/analysis/test_06_hedonic.py::test_vif",
-   "tests/analysis/test_06_hedonic.py::test_model_identity"
+   "tests/analysis/test_06_hedonic.py::test_coefficient_rows",
+   "tests/analysis/test_06_hedonic.py::test_headline_is_the_model_column",
+   "tests/analysis/test_06_hedonic.py::test_clustered_by_model",
+   "tests/analysis/test_06_hedonic.py::test_model_identity",
+   "tests/analysis/test_06_hedonic.py::test_vif"
   ],
   "report_keys": [
-   "domain.hedonic_reliability.bootstrap",
+   "domain.hedonic_reliability.columns",
    "domain.hedonic_reliability.center",
-   "domain.hedonic_reliability.with_model.coef_pct",
-   "domain.hedonic_reliability.assumptions",
+   "domain.hedonic_reliability.vif",
+   "domain.hedonic_reliability.homoskedasticity_p",
    "error_drivers.hedonic_dropped"
   ]
  },

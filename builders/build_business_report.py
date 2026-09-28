@@ -92,20 +92,29 @@ def fmt_business(v, F, lang):
     # --- 2. Piyasa ne diyor
     A(L("## Piyasa fiyatı nasıl kuruyor", "## How this market builds a price"))
     A("")
-    _ht = v["hed_terms"]
-    _hrows = [("yaş (yıl başına, tipik araçta)", "age (per year, at a typical car)", _ht["age"]),
-              ("kilometre (100 bin km başına, tipik araçta)", "mileage (per 100k km, at a typical car)", _ht["km100k"]),
-              ("ağır hasar kaydı", "heavy-damage record", _ht["heavy_damage"]),
-              ("değişen panel (her biri)", "changed panel (each)", _ht["changed"]),
-              ("boyalı panel (her biri)", "painted panel (each)", _ht["painted"]),
-              ("+100 hp motor gücü", "+100 hp of engine power", _ht["hp100"])]
-    A(L("Her kalemin fiyatı ne kadar oynattığı — **diğer her şey sabitken**:",
-        "How much each driver moves the price — **with everything else held fixed**:"))
+    _ht, _hc = v["hed_terms"], v["hed_ci"]
+    _hrows = [("yaş (yıl başına, tipik araçta)", "age (per year, at a typical car)", "age"),
+              ("kilometre (100 bin km başına, tipik araçta)", "mileage (per 100k km, at a typical car)", "km100k"),
+              ("ağır hasar kaydı", "heavy-damage record", "heavy_damage"),
+              ("değişen panel (her biri)", "changed panel (each)", "changed"),
+              ("boyalı panel (her biri)", "painted panel (each)", "painted"),
+              ("+100 hp motor gücü", "+100 hp of engine power", "hp100")]
+    # 2026-09-28 (kullanici karari): etkiler teknik §6'nin model kontrolu sutunundan — ayni model adi icinde.
+    A(L("Her kalemin fiyatı ne kadar oynattığı — **aynı model adı içinde, diğer her şey sabitken**:",
+        "How much each driver moves the price — **within one model name, with everything else held fixed**:"))
     A("")
     A(L("| kalem | fiyat |", "| driver | price |"))
     A("|---|---:|")
-    for _tr, _en, _p in _hrows:
-        A(f"| {L(_tr, _en)} | {P(_p, lang, 1, sign=True)} |")
+    for _tr, _en, _k in _hrows:
+        A(f"| {L(_tr, _en)} | {P(_ht[_k], lang, 1, sign=True)} |")
+    A("")
+    # 2026-09-28: tablonun en belirsiz kalemi (en genis %95 aralik) veriden secilip soylenir; tek sayi onu saklamasin.
+    _wide = max(_hrows, key=lambda r_: _hc[r_[2]][1] - _hc[r_[2]][0])
+    _lo, _hi = _hc[_wide[2]]
+    A(L(f"En belirsiz kalem {_wide[0].split(' (')[0]}: %95 güven aralığı {P(_lo, lang, 1, sign=True)} ile "
+        f"{P(_hi, lang, 1, sign=True)} arasında.",
+        f"The least certain driver is {_wide[1].split(' (')[0]}: its 95% confidence interval runs from "
+        f"{P(_lo, lang, 1, sign=True)} to {P(_hi, lang, 1, sign=True)}."))
     A("")
     # 2026-09-23: burada "dusuk-km yasli arac sistematik olarak ucuz kaliyor" yaziyordu; arkasinda hesap
     # yoktu ve olcum tersini gosterdi (ayni model+yil hucresinde 100 bin km'nin etkisi genc/orta/yasli

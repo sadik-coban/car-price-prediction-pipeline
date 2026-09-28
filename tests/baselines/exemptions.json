@@ -13,14 +13,6 @@
       }
     },
     {
-      "file": "06_hedonic",
-      "path": "domain.hedonic_reliability.bootstrap_setup.seconds",
-      "reason": {
-        "en": "Wall-clock seconds of the bootstrap; depends on the machine load, not on the data.",
-        "tr": "Bootstrap'in saniye cinsinden süresi; makinenin yüküne bağlı, veriye değil."
-      }
-    },
-    {
       "file": "shap/04_variants",
       "path": "domain.shap.catboost_native*",
       "reason": {
