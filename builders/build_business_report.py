@@ -29,11 +29,11 @@ def fmt_business(v, F, lang):
     # --- 1. Ne değerinde
     _q1 = v["q_bounds"][0]
     A(L(f"**Kime:** fiyatlama ekibi ve galeri. **Karar:** model, fiyat önerisi aracında birincil "
-        f"referans olarak kullanılabilir; ucuz ({tlm(_q1)} altı), emsalsiz ve yaşlı (kabaca 18 yaş ve "
+        f"referans olarak kullanılabilir; ucuz (tahmini {tlm(_q1)} altı), emsalsiz ve yaşlı (kabaca 18 yaş ve "
         f"üstü) araçlarda tek başına kullanılmamalı. **Kazanç:** araç başına ~{tl(v['gap_tl'])} "
         f"daha az fiyatlama hatası. **Sınır:** ilan fiyatını tahmin eder, satış fiyatını değil.",
         f"**For:** the pricing team and the dealership. **Decision:** the model can serve as the "
-        f"primary reference in a price-suggestion tool, but not on its own for cheap (below "
+        f"primary reference in a price-suggestion tool, but not on its own for cheap (estimated below "
         f"{tlm(_q1)}), comparable-less or old (roughly 18+) cars. **Gain:** about {tl(v['gap_tl'])} "
         f"less pricing error per car. **Limit:** it predicts the asking price, not the sale price."))
     A("")
@@ -145,8 +145,10 @@ def fmt_business(v, F, lang):
     # --- 3. Nerede güvenme
     A(L("## Sayıya nerede güvenme", "## Where not to trust the number"))
     A("")
-    A(L(f"Model ucuz araçlarda **yüzde olarak** zorlanıyor — hata fiyat çeyreğine göre belirgin değişiyor.",
-        f"In **percentage** terms the model struggles on cheap cars — error varies sharply by price quartile."))
+    A(L(f"Model ucuz araçlarda **yüzde olarak** zorlanıyor — hata tahmin edilen fiyatın çeyreğine göre belirgin "
+        f"değişiyor.",
+        f"In **percentage** terms the model struggles on cheap cars — error varies sharply by predicted-price "
+        f"quartile."))
     A("")
     A(f"![{F[10][1]}](figures/{F[10][0]})")
     A("")
@@ -155,10 +157,10 @@ def fmt_business(v, F, lang):
     # error_drivers.lira_quartile'dan (medyan APE'si ureticinin quantile_error'uyla kapili).
     _lira_q = ed["lira_quartile"]
     _qtop = max(_lira_q, key=lambda r: r[2])
-    _qape = max(_lira_q, key=lambda r: r[5])
+    _qape = max(_lira_q, key=lambda r: r[4])
     _q4, _q1 = _lira_q[-1], _lira_q[0]
     _LOC = {"Q1": "Q1'de", "Q2": "Q2'de", "Q3": "Q3'te", "Q4": "Q4'te"}
-    # Yanlilik TAHMIN ceyreginden: gercek fiyata gore gruplama ortalamaya donus uretir (son denetim).
+    # 2026-09-28: butun ceyrekler TAHMIN fiyatindan; gercek fiyata gore gruplama ortalamaya donus uretir.
     _calib = ed["calibration"]
     _tcm = max(abs(r[2]) for r in ed["pred_quartile"])
     _calib_ok = abs(_calib["slope"] - 1) < 0.02 and _tcm < 0.2 * v["model_mae"]
@@ -166,14 +168,14 @@ def fmt_business(v, F, lang):
          f"**Lira hatası da aynı yeri gösteriyor.** ")
         + f"Toplam lira hatasının en büyük payı ({P(_qtop[2], lang)}) {_LOC[_qtop[0]]}; ortalama mutlak "
         f"hata en pahalı çeyrekte {tl(_q4[3])}, en ucuzda {tl(_q1[3])}."
-        + (f" Tahmin edilen fiyata göre bakınca (fiyatlama aracının bildiği tek şey) model hiçbir çeyrekte belirgin "
-           f"yanlı değil: gerçek fiyat ile tahmin arasındaki eğim {_calib['slope']:.3f}." if _calib_ok else ""),
+        + (f" Model hiçbir tahmin çeyreğinde belirgin yanlı değil: gerçek fiyat ile tahmin arasındaki eğim "
+           f"{_calib['slope']:.3f}." if _calib_ok else ""),
         (f"**In lira the picture flips.** " if _qtop[0] != _qape[0] else
          f"**The lira error points to the same place.** ")
         + f"The largest share of total lira error ({P(_qtop[2], lang)}) sits in {_qtop[0]}; mean absolute "
         f"error is {tl(_q4[3])} in the most expensive quartile and {tl(_q1[3])} in the cheapest."
-        + (f" Grouped by the predicted price (the only thing the tool knows) the model is not noticeably "
-           f"biased in any quartile: the slope of actual on predicted price is {_calib['slope']:.3f}." if _calib_ok else "")))
+        + (f" The model is not noticeably biased in any predicted quartile: the slope of actual on predicted "
+           f"price is {_calib['slope']:.3f}." if _calib_ok else "")))
     A("")
     A(f"![{F[27][1]}](figures/{F[27][0]})")
     A("")
@@ -203,11 +205,26 @@ def fmt_business(v, F, lang):
         "number hides how sure the "
         "estimate is; a range states it and warns the user exactly where uncertainty is large."))
     A("")
-    A(L(f"Bu yüzden çıktı tek sayı değil, **%{v['cov_target']} aralık**. Ama aralık ucuz araçlarda "
-        f"tutmuyor: en ucuz çeyrekte gerçek kapsama **%{v['cov_q1']}**, hedefin altında.",
-        f"That is why the output is a **{v['cov_target']}% range**, not one number. But the range "
-        f"does not hold on cheap cars: actual coverage in the cheapest quartile is "
-        f"**{v['cov_q1']}%**, below target."))
+    # 2026-09-28: banda gore hata payi (Mondrian) on kayitla olculdu; oneri sonucuna kapili (tutmazsa durur).
+    _mo = v["mondrian"]
+    _col = {c_: i_ for i_, c_ in enumerate(_mo["columns"])}
+    _mb = {r_[0]: r_ for r_ in _mo["by_band"]}
+    _cov_m = [r_[_col["coverage_band"]] for r_ in _mo["by_band"]]
+    assert all(_mo["accept_band"][0] <= c_ <= _mo["accept_band"][1] for c_ in _cov_m), "Mondrian H1 tutmuyor"
+    _span = lambda lg_: (P(min(_cov_m), lg_, 1) if P(min(_cov_m), lg_, 1) == P(max(_cov_m), lg_, 1) else   # noqa: E731
+                         f"{P(min(_cov_m), lg_, 1)}–{P(max(_cov_m), lg_, 1)}")
+    _wq1 = (_mb["Q1"][_col["width_pct_global"]], _mb["Q1"][_col["width_pct_band"]])
+    _wq4 = (_mb["Q4"][_col["width_pct_global"]], _mb["Q4"][_col["width_pct_band"]])
+    A(L(f"Bu yüzden çıktı tek sayı değil, **%{v['cov_target']} aralık**. Tek bir hata payıyla aralık ucuz araçlarda "
+        f"tutmuyor: tahmini en ucuz çeyrekte kapsama **{P(v['cov_q1'], lang)}**, hedefin altında. Hata payı fiyat "
+        f"bandına göre ayrı hesaplanınca her bantta {_span('tr')}: ucuz araçta "
+        f"aralık genişliyor (tahminin {P(_wq1[0], lang)} kadarından {P(_wq1[1], lang)} kadarına), pahalıda daralıyor "
+        f"({P(_wq4[0], lang)} kadarından {P(_wq4[1], lang)} kadarına).",
+        f"That is why the output is a **{v['cov_target']}% range**, not one number. With one margin the range does not "
+        f"hold on cheap cars: coverage in the cheapest predicted quartile is **{P(v['cov_q1'], lang)}**, below target. "
+        f"With the margin computed per price band it is {_span('en')} in every "
+        f"band: the range widens on cheap cars (from {P(_wq1[0], lang)} to {P(_wq1[1], lang)} of the estimate) and "
+        f"narrows on expensive ones (from {P(_wq4[0], lang)} to {P(_wq4[1], lang)})."))
     A("")
     A(f"![{F[12][1]}](figures/{F[12][0]})")
     A("")
@@ -227,7 +244,8 @@ def fmt_business(v, F, lang):
     _acc_en = " Do not discard old snapshots: more data means less error." if _accumulates else ""
     A(L("**Ne yapmalı**", "**What to do**"))
     A("")
-    A(L(f"- Ucuz araçlarda aralığı genişlet — tek sayıya güvenme.\n"
+    A(L(f"- Aralığın hata payını fiyat bandına göre ayrı hesapla: ucuz araçta daha geniş, pahalıda daha dar — tek "
+        f"sayıya güvenme.\n"
         f"- Nadir ve uç araçları elle fiyatla; model orada saçılıyor.\n"
         + (f"- Metninde dönüşüm, motor değişimi ya da modifiye geçen ilanı otomatik fiyatlama, "
            f"elle incele; bu bilgi formda yok{_flag_tr}.\n" if _flag_sig else
@@ -244,7 +262,8 @@ def fmt_business(v, F, lang):
         f"{P(v['ed']['period_shift']['live'][-1][1], lang, 1, sign=True)} kaydı ve model zamanı görmüyor.\n"
         f"- **Fiyat rejimini değiştiren gelişmeleri takip et** (vergi/ÖTV düzenlemesi, teşvik, ani "
         f"piyasa hareketi gibi) — eğitim planı bunlara göre yapılmalı." + _acc_tr,
-        f"- Widen the range on cheap cars — don't trust a point estimate.\n"
+        f"- Compute the range's margin per price band: wider on cheap cars, narrower on expensive ones — don't "
+        f"trust a point estimate.\n"
         f"- Price rare and edge cars by hand; the model scatters there.\n"
         + (f"- Never auto-price a listing whose text mentions a conversion, an engine swap or "
            f"modifications — price it by hand; that information is not in the form{_flag_en}.\n" if _flag_sig else

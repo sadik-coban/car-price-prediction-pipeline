@@ -372,30 +372,32 @@ Each point is a model; the y axis is the median error across that model's listin
 
 - **No distributional assumption:** Errors are not assumed to follow a formula (a bell curve, etc.). The model's real errors on cars it has never seen are sorted, the worst 10% are set aside, and the margin is read directly from the data. The one assumption is that new listings resemble past ones — as the market drifts (§9), that assumption weakens.
 - **Proportional:** The margin is applied as a percentage, not in lira (roughly 13% below to 15% above the estimate). So the lira band is wide for expensive cars and narrow for cheap ones.
-- **Limitation:** Because one percentage is applied to the whole market, the band is too narrow for cheap cars, where the model errs more in proportional terms (see the coverage chart below). The fix is to compute the margin separately for each price band instead of as a single number; this was not done in this report.
+- **Calibrated on other listings:** Coverage is measured cross-wise: each fold's interval is built only from the other folds' errors, so no listing's own error sets its interval. The overall coverage is therefore measured, not true by construction: 89.99%.
 
-**The weakness is price-dependent:** median error is 6.96% in the cheapest quartile and 3.59% in the most expensive. The 90% conformal interval does not hold everywhere; Q1 coverage, for instance, is 81.6%.
+**The weakness is price-dependent:** median error is 6.95% in the cheapest predicted quartile and 3.55% in the most expensive. With one percentage for the whole market the interval is too narrow in the cheap band, where the model errs more in proportional terms: Q1 coverage is 81.0%.
 
-![Median error by price quartile (%)](figures/en-10-quartile-error.png)
+![Median error by predicted-price quartile (%)](figures/en-10-quartile-error.png)
 
-In lira the picture changes: 39.7% of total lira error sits in the most expensive quartile and 17.5% in the cheapest; mean absolute error ₺176K against ₺77K.
+In lira the picture changes: 38.9% of total lira error sits in the most expensive predicted quartile and 17.6% in the cheapest; mean absolute error ₺171K against ₺77K.
+
+**Margin per band (Mondrian).** With the margin computed separately in each predicted-price quartile, coverage is 89.96%–90.04% in every band: the pre-registered criterion (88–92% in every band) holds. The price is width: in the cheapest band the interval widens from 28.3% to 37.1% of the estimate, in the most expensive it narrows from 28.3% to 21.4%.
 
 ![How often the 90% range held (target 90%)](figures/en-12-coverage.png)
 
-| quartile | price range | coverage |
-|---|---|---:|
-| Q1 | below ₺1.15M | 81.6% |
-| Q2 | ₺1.15M – ₺1.55M | 91.8% |
-| Q3 | ₺1.55M – ₺2.28M | 92.7% |
-| Q4 | above ₺2.28M | 94.0% |
+| band | predicted price | coverage: one margin | coverage: per band | width: per band |
+|---|---|---:|---:|---:|
+| Q1 | below ₺1.15M | 81.0% | 90.0% | 37.1% of the estimate |
+| Q2 | ₺1.15M – ₺1.53M | 91.0% | 90.0% | 27.2% of the estimate |
+| Q3 | ₺1.53M – ₺2.26M | 93.2% | 90.0% | 24.4% of the estimate |
+| Q4 | above ₺2.26M | 94.7% | 90.0% | 21.4% of the estimate |
 
-**Note:** The price quartiles are cut on actual values. Overall coverage is 90.0% by construction; only Q1 falls below the target. Cutting the quartiles on the predicted price gives 81.0% coverage in the cheapest one — the finding does not depend on the grouping.
+**Note:** The bands are cut on the predicted price, the only thing a pricing tool knows; grouping by the actual price produces regression to the mean. Width is the band's median distance between the interval's lower and upper end.
 
 ### The largest errors
 
 **Listings with an inconsistent engine value.** 15 listings (0.05%) have a power or displacement more than 1.5× off their own model's median: the catalogue match collapsed and the model is pricing an engine the car does not have; their median error is 12.8% against 4.7% for the rest. The check only works on models with at least 5 listings: the 632 listings (2.11%) of the 307 smaller models are its blind spot — exactly where comparables are scarcest.
 
-**In lira the largest errors are under-predictions.** Of the top 100 lira errors 73 are under- and 27 over-predictions; 91 sit in the most expensive quartile. The series that take their segment from the model name (M Serisi, RS, S, i Serisi) are 0.52% of the data but 23 of the top 100 — 44× their share of the data. The price cap (₺6.50M) also truncates the range the model learns at this end; under-prediction on the most expensive listings should be read with that limit in mind.
+**In lira the largest errors are under-predictions.** Of the top 100 lira errors 73 are under- and 27 over-predictions; 84 sit in the most expensive predicted quartile. The series that take their segment from the model name (M Serisi, RS, S, i Serisi) are 0.52% of the data but 23 of the top 100 — 44× their share of the data. The price cap (₺6.50M) also truncates the range the model learns at this end; under-prediction on the most expensive listings should be read with that limit in mind.
 
 ![Error in lira — predicted − actual](figures/en-28-residual-lira.png)
 

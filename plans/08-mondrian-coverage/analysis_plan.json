@@ -1,0 +1,43 @@
+{
+ "id": "08-mondrian-coverage",
+ "created": "2026-09-28",
+ "question": {
+  "tr": "Tahmin edilen fiyat bandına göre ayrı kalibre edilen %90 aralık her bantta hedefi tutar mı?",
+  "en": "Does a 90% interval calibrated separately per predicted-price band hold its target in every band?"
+ },
+ "data_slice": "load_clean(): the 29,988 unique TR-plated listings the model is trained on, with this run's LightGBM OOF predictions and their fold column (cv.load_oof, the model's own 5 folds).",
+ "split": "kfold_oof, cross-conformal: for each of the model's 5 folds the interval's q comes only from the other 4 folds' OOF residuals and is applied to that fold, so no listing's own residual calibrates its interval. Bands = quartiles of the predicted price over all listings (a function of the predictions only, no labels).",
+ "target": "Coverage of the 90% interval expm1(log1p(pred) ± q) in each predicted-price quartile band: share of listings whose price is inside. q = the ceil((n+1)·0.9)-th smallest |log1p(price) − log1p(pred)| of the calibration part (finite-sample conformal quantile). Two arms on the same folds: global (one q per fold, all bands) and Mondrian (one q per band per fold, from that band's calibration residuals). Also published: overall coverage and the median interval width per band in ₺ and as % of the prediction, for both arms.",
+ "comparisons": {
+  "count": 1,
+  "correction": "none"
+ },
+ "hypotheses": [
+  {
+   "id": "H1",
+   "statement": {
+    "tr": "Tahmin edilen fiyatın dört çeyrek bandında ayrı ayrı kalibre edilen (Mondrian, çapraz kalibreli) %90 aralığın kapsaması her bantta %88 ile %92 arasında.",
+    "en": "A 90% interval calibrated separately in each of the four predicted-price quartile bands (Mondrian, cross-calibrated) covers between 88% and 92% in every band."
+   },
+   "accept_if": "every one of the 4 bands has Mondrian coverage >= 88 and <= 92 (percent)",
+   "reject_if": "any band has Mondrian coverage < 88 or > 92 (percent)",
+   "required_checks": [
+    "metric:08_conformal_coverage:report.mondrian.by_band",
+    "test:tests/analysis/test_08_conformal_coverage.py::test_calibration_never_sees_the_scored_fold"
+   ],
+   "status": "confirmed",
+   "evidence": [
+    "metric:08_conformal_coverage:report.mondrian.by_band",
+    "test:tests/analysis/test_08_conformal_coverage.py::test_calibration_never_sees_the_scored_fold"
+   ]
+  }
+ ],
+ "out_of_scope": [
+  "Changing the served interval (encoders.pkl CONFORMAL_Q) or the live API",
+  "Bands on anything but the predicted price (segment, age, number of comparables)",
+  "Conformalized quantile regression (CQR) or other interval methods"
+ ],
+ "status": "locked",
+ "approved_by": "sadik-coban (plan onayı, 2026-09-28)",
+ "approved_at": "2026-09-28"
+}

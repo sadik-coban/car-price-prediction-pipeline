@@ -1,14 +1,16 @@
 """
 08_residuals.py
-EN: Technical report §8 — how the OOF errors are distributed. Median % error per price quartile; the same in
-    lira (where the lira error sits, and the mean bias by actual vs predicted quartile — grouping by the actual
-    price produces regression to the mean); the calibration slope (actual ~ a + b·predicted); error bands;
+EN: Technical report §8 — how the OOF errors are distributed. Median % error per predicted-price quartile; the
+    same in lira (where the lira error sits) and the mean/median bias per predicted-price quartile. Price levels are
+    grouped by the predicted price — what a pricing tool knows; grouping by the actual price produces regression to
+    the mean (2026-09-28, simplification list: the actual-price grouping left the report); the calibration slope (actual ~ a + b·predicted); error bands;
     median error per model against its number of listings; and the points of the predicted-vs-actual and
     residual figures. Needs 07_model_comparison's OOF artefact. 2026-09-28: the best/worst listing tables left
     the report (simplification list), so they are not computed.
-TR: Teknik rapor §8 — OOF hataları nasıl dağılıyor. Fiyat çeyreği başına medyan % hata; aynısı lira olarak
-    (lira hatası nerede toplanıyor, gerçek ve tahmin çeyreğine göre ortalama sapma — gerçek fiyata göre
-    gruplamak ortalamaya dönüş üretir); kalibrasyon eğimi (gerçek ~ a + b·tahmin); hata bantları; model başına
+TR: Teknik rapor §8 — OOF hataları nasıl dağılıyor. Tahmin fiyatı çeyreği başına medyan % hata; aynısı lira
+    olarak (lira hatası nerede toplanıyor) ve tahmin çeyreği başına ortalama/medyan sapma. Fiyat düzeyi tahmin
+    edilen fiyata göre gruplanır — bir fiyatlama aracının bildiği o; gerçek fiyata göre gruplamak ortalamaya dönüş
+    üretir (2026-09-28, sadeleştirme listesi: gerçek fiyata göre gruplama rapordan çıktı); kalibrasyon eğimi (gerçek ~ a + b·tahmin); hata bantları; model başına
     medyan hatanın ilan sayısına karşı dağılımı; tahmin-gerçek ve artık figürlerinin noktaları.
     07_model_comparison'ın OOF artefaktına ihtiyaç duyar. 2026-09-28: en iyi/en kötü ilan tabloları rapordan
     çıktı (sadeleştirme listesi), hesaplanmıyor.
@@ -40,12 +42,12 @@ def ape_values(price, pred):
     return np.minimum(np.where(np.isfinite(ape), ape, np.nan), APE_CAP)
 
 
-def quartile_median_ape(price, ape):
+def quartile_median_ape(pred, ape):
     """
-    EN: Median % error per actual-price quartile. Returns: [[quartile, median %], ...].
-    TR: Gerçek fiyat çeyreği başına medyan % hata. Döndürür: [[çeyrek, medyan %], ...].
+    EN: Median % error per predicted-price quartile. Returns: [[quartile, median %], ...].
+    TR: Tahmin fiyatı çeyreği başına medyan % hata. Döndürür: [[çeyrek, medyan %], ...].
     """
-    qb = pd.qcut(price, 4, labels=QUARTILES, duplicates="drop").astype(str)
+    qb = pd.qcut(pred, 4, labels=QUARTILES).astype(str)
     return [[b, float(np.nanmedian(ape[qb == b]))] for b in QUARTILES]
 
 
@@ -61,16 +63,16 @@ def error_by_model(listings, ape, min_n):
 
 def lira_by_quartile(price, pred, ape):
     """
-    EN: Per actual-price quartile: listings, share of total lira error (%), mean |error| ₺, mean bias
-        (prediction − actual) ₺, median % error.
-    TR: Gerçek fiyat çeyreği başına: ilan, toplam lira hatasındaki pay (%), ortalama |hata| ₺, ortalama sapma
-        (tahmin − gerçek) ₺, medyan % hata.
+    EN: Per predicted-price quartile: listings, share of total lira error (%), mean |error| ₺, median % error.
+        (The bias per predicted quartile is bias_by_predicted_quartile.)
+    TR: Tahmin fiyatı çeyreği başına: ilan, toplam lira hatasındaki pay (%), ortalama |hata| ₺, medyan % hata.
+        (Tahmin çeyreği başına sapma bias_by_predicted_quartile'da.)
     """
     dev = pred - price
-    qb = pd.qcut(price, 4, labels=QUARTILES).astype(str)
+    qb = pd.qcut(pred, 4, labels=QUARTILES).astype(str)
     tot = float(np.abs(dev).sum())
     return [[b, int((qb == b).sum()), 100 * float(np.abs(dev[qb == b]).sum()) / tot, float(np.abs(dev[qb == b]).mean()),
-             float(dev[qb == b].mean()), float(np.median(ape[qb == b]))] for b in QUARTILES]
+             float(np.median(ape[qb == b]))] for b in QUARTILES]
 
 
 def bias_by_predicted_quartile(price, pred):
@@ -141,7 +143,7 @@ def to_metrics(res):
                         f"zamanı görmüyor). Fiyata göre yanlılık tahmin edilen fiyata göre gruplanarak ölçülmeli; "
                         f"gerçek fiyata göre gruplamak ortalamaya dönüş üretir. Frontend: yoğunluk/hexbin render önerilir.")}},
         "error_drivers": {
-            "lira_quartile": [[b, n, round(s, 1), round(m, 0), round(d, 0), round(a, 2)] for b, n, s, m, d, a in res["lira"]],
+            "lira_quartile": [[b, n, round(s, 1), round(m, 0), round(a, 2)] for b, n, s, m, a in res["lira"]],
             "pred_quartile": [[b, n, round(m, 0), round(md, 0)] for b, n, m, md in res["bias_pred"]],
             "calibration": {"slope": round(res["slope"], 4), "intercept": round(res["intercept"], 0)}},
         "report": {**res["bands"], "model_r2_log": round(res["r2_log"], 4)},
@@ -158,13 +160,13 @@ pred = np.clip(oof["lgb"].values, 0, PRICE_CAP)
 ape = ape_values(price, pred)
 resid = residual_pct(price, oof["lgb"].values)
 slope, intercept = np.polyfit(pred, price, 1)
-res = {"price": price, "pred": pred, "resid": resid, "quartile_ape": quartile_median_ape(price, ape),
+res = {"price": price, "pred": pred, "resid": resid, "quartile_ape": quartile_median_ape(pred, ape),
        "by_model": error_by_model(listings, ape, MIN_MODEL_N),
        "snap_median": pd.Series(resid).groupby(listings["snap"].values).median().tolist(),
        "lira": lira_by_quartile(price, pred, np.minimum(np.abs(resid), APE_CAP)),
        "bias_pred": bias_by_predicted_quartile(price, pred), "slope": float(slope), "intercept": float(intercept),
        "bands": error_bands(price, pred), "r2_log": log_r2(price, pred)}
-print("median % error by quartile | çeyreğe göre medyan % hata:", [(b, round(v, 2)) for b, v in res["quartile_ape"]])
+print("median % error by predicted quartile | tahmin çeyreğine göre medyan % hata:", [(b, round(v, 2)) for b, v in res["quartile_ape"]])
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
 print("written | yazıldı:", save_metrics("08_residuals", to_metrics(res), run_id=oof_info["run_id"]))

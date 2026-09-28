@@ -117,16 +117,20 @@ def by_age(age, big):
 def lira_ranking(listings, price, pred, path):
     """
     EN: Where the largest lira errors (|prediction − actual|) sit: of the top 100, how many are under- or
-        over-predicted, in the top price quartile or in a performance family (segment from the model name).
+        over-predicted, in the top predicted-price quartile (2026-09-28: the predicted price, as every price-level
+        grouping in §8; by the actual price an under-prediction is pulled into the top quartile by construction) or
+        in a performance family (segment from the model name).
     TR: En büyük lira hataları (|tahmin − gerçek|) nerede: ilk 100'ün kaçı düşük ya da fazla tahmin, en pahalı
-        fiyat çeyreğinde ya da bir performans ailesinde (segmenti model adından).
+        tahmin fiyatı çeyreğinde (2026-09-28: §8'deki her fiyat düzeyi gruplaması gibi tahmin fiyatı; gerçek fiyata
+        göre düşük tahmin yapısı gereği en pahalı çeyreğe çekilir) ya da bir performans ailesinde (segmenti model
+        adından).
     """
     dev = pred - price
     top = np.argsort(-np.abs(dev), kind="stable")[:TOP_N_LIRA]
-    q75 = float(np.quantile(price, .75))
+    q75 = float(np.quantile(pred, .75))
     perf = path != SR.PATH_SERIES_MAP
     return {"top_n": TOP_N_LIRA, "top_n_under": int((dev[top] < 0).sum()), "top_n_over": int((dev[top] > 0).sum()),
-            "top_n_q4": int((price[top] >= q75).sum()), "top_n_perf": int(perf[top].sum()),
+            "top_n_q4": int((pred[top] > q75).sum()), "top_n_perf": int(perf[top].sum()),
             "perf_overall_pct": round(100 * float(perf.mean()), 2),
             "perf_series": sorted({str(x) for x in listings.loc[perf, "series"]})}
 

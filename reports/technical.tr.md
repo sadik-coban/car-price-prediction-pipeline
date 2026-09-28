@@ -372,30 +372,32 @@ Her nokta bir model; y ekseni o modelin ilanlarındaki medyan hata. Kova medyan�
 
 - **Dağılım varsayımı yapmaz:** Hataların bir formüle (çan eğrisi vb.) uyduğu varsayılmaz. Modelin daha önce hiç görmediği araçlardaki gerçek hataları sıralanır, en kötü %10'u dışarıda bırakılır ve pay doğrudan veriden okunur. Tek varsayım, yeni ilanların eskilere benzemesidir — piyasa kaydıkça (§9) bu varsayım zayıflar.
 - **Oransaldır:** Hata payı lira değil yüzde olarak uygulanır (tahminin yaklaşık %13 altı ile %15 üstü). Bu yüzden pahalı araçta lira bandı geniş, ucuz araçta dar çıkar.
-- **Kısıtı:** Tüm piyasaya tek bir yüzde uygulandığı için, modelin oransal olarak daha çok yanıldığı ucuz araçlarda bant fazla dar kalıyor (aşağıdaki kapsama grafiği). Çözüm, hata payını tek bir sayı yerine fiyat bandına göre ayrı ayrı hesaplamaktır; bu raporda yapılmadı.
+- **Kalibrasyonu başka ilanlardan:** Kapsama çapraz ölçülür: her katın aralığı yalnız öteki katların hatalarından kurulur, hiçbir ilanın kendi hatası kendi aralığını ayarlamaz. Genel kapsama bu yüzden tanım gereği değil, ölçülmüş: %89.99.
 
-**Zayıflık fiyata bağlı:** medyan hata en ucuz çeyrekte %6.96, en pahalıda %3.59. Conformal %90 aralık her yerde tutmuyor; örneğin Q1 kapsaması %81.6.
+**Zayıflık fiyata bağlı:** medyan hata tahmini en ucuz çeyrekte %6.95, en pahalıda %3.55. Tüm piyasaya tek bir yüzde uygulanınca, modelin oransal olarak daha çok yanıldığı ucuz bantta aralık dar kalıyor: Q1 kapsaması %81.0.
 
-![Fiyat çeyreğine göre medyan hata (%)](figures/tr-10-quartile-error.png)
+![Tahmin edilen fiyat çeyreğine göre medyan hata (%)](figures/tr-10-quartile-error.png)
 
-Liraya çevrilince tablo değişiyor: toplam lira hatasının %39.7 kadarı en pahalı çeyrekte, %17.5 kadarı en ucuzda; ortalama mutlak hata ₺176K ile ₺77K.
+Liraya çevrilince tablo değişiyor: toplam lira hatasının %38.9 kadarı tahmini en pahalı çeyrekte, %17.6 kadarı en ucuzda; ortalama mutlak hata ₺171K ile ₺77K.
+
+**Hata payı banda göre (Mondrian).** Hata payı tahmin edilen fiyatın dört çeyreğinde ayrı ayrı hesaplanınca kapsama her bantta %89.96–%90.04: ön kayıtlı ölçüt (her bantta %88–%92) tuttu. Bedeli genişlik: en ucuz bantta aralık tahminin %28.3 kadarından %37.1 kadarına genişliyor, en pahalıda %28.3 kadarından %21.4 kadarına daralıyor.
 
 ![%90 aralık kaç ilanda tuttu (hedef %90)](figures/tr-12-coverage.png)
 
-| çeyrek | fiyat aralığı | kapsama |
-|---|---|---:|
-| Q1 | ₺1.15M altı | %81.6 |
-| Q2 | ₺1.15M – ₺1.55M | %91.8 |
-| Q3 | ₺1.55M – ₺2.28M | %92.7 |
-| Q4 | ₺2.28M üstü | %94.0 |
+| bant | tahmin edilen fiyat | kapsama: tek oran | kapsama: banda göre | genişlik: banda göre |
+|---|---|---:|---:|---:|
+| Q1 | ₺1.15M altı | %81.0 | %90.0 | tahminin %37.1 kadarı |
+| Q2 | ₺1.15M – ₺1.53M | %91.0 | %90.0 | tahminin %27.2 kadarı |
+| Q3 | ₺1.53M – ₺2.26M | %93.2 | %90.0 | tahminin %24.4 kadarı |
+| Q4 | ₺2.26M üstü | %94.7 | %90.0 | tahminin %21.4 kadarı |
 
-**Not:** Fiyat çeyrekleri gerçek değerler üzerinden dilimlenmiştir. Genel kapsama tanım gereği %90.0 seviyesindedir; yalnız Q1 hedefin altında kalmaktadır. Çeyrekler tahmin edilen fiyata göre kesilince de en ucuz çeyrekte kapsama %81.0 — bulgu gruplamaya bağlı değil.
+**Not:** Bantlar tahmin edilen fiyattan kesildi: bir fiyatlama aracının bildiği tek şey o. Gerçek fiyata göre gruplamak ortalamaya dönüş üretir. Genişlik, aralığın alt ve üst ucu arasındaki farkın o banttaki medyanı.
 
 ### En büyük hatalar
 
 **Motor değeri tutarsız ilanlar.** Motor gücü ya da hacmi kendi modelinin medyanından 1.5 kattan fazla sapan 15 ilan var (%0.05): katalog eşleşmesi çökmüş, model aracın sahip olmadığı bir motoru fiyatlıyor; medyan hataları %12.8, geri kalanınki %4.7. Bu kontrol yalnız en az 5 ilanı olan modellerde çalışıyor: daha az ilanlı 307 modelin 632 ilanı (%2.11) onun kör noktası — emsalsizliğin en yoğun olduğu yer.
 
-**Lira ölçeğinde en büyük hatalar düşük tahmin.** İlk 100 lira hatasından 73 tanesi düşük, 27 tanesi fazla tahmin; 91 tanesi en pahalı çeyrekte. Segmentini model adından alan seriler (M Serisi, RS, S, i Serisi) verinin %0.52 kadarı ama ilk 100 içinde 23 ilan — verideki paylarının 44 katı. Fiyat tavanı (₺6.50M) bu uçta modelin öğrendiği aralığı da kesiyor; en pahalı ilanlardaki düşük tahmin bu sınırla birlikte okunmalı.
+**Lira ölçeğinde en büyük hatalar düşük tahmin.** İlk 100 lira hatasından 73 tanesi düşük, 27 tanesi fazla tahmin; 84 tanesi tahmini en pahalı çeyrekte. Segmentini model adından alan seriler (M Serisi, RS, S, i Serisi) verinin %0.52 kadarı ama ilk 100 içinde 23 ilan — verideki paylarının 44 katı. Fiyat tavanı (₺6.50M) bu uçta modelin öğrendiği aralığı da kesiyor; en pahalı ilanlardaki düşük tahmin bu sınırla birlikte okunmalı.
 
 ![Lira ölçeğinde hata — tahmin − gerçek](figures/tr-28-residual-lira.png)
 

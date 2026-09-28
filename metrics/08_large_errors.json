@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "08_large_errors.py",
-  "generated_at": "2026-09-28T20:44:52+03:00",
+  "generated_at": "2026-09-28T21:12:44+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": "601741517e09",
   "source": {
    "script": {
-    "analysis/08_large_errors.py": "041cb59bbb399368bd4acad5aec0bd325e4bb5ba08a5e98591f4af94ce4d419f"
+    "analysis/08_large_errors.py": "8f4e842127af256021fdb4302ee45d99a2e6d9454025f2293e4d37d893e573ef"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -3144,7 +3144,7 @@
    "top_n": 100,
    "top_n_under": 73,
    "top_n_over": 27,
-   "top_n_q4": 91,
+   "top_n_q4": 84,
    "top_n_perf": 23,
    "perf_overall_pct": 0.52,
    "perf_series": [

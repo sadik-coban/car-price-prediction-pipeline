@@ -1,16 +1,16 @@
 {
  "script": "analysis/08_conformal_coverage.py",
  "question": {
-  "tr": "%90 conformal aralık gerçekten ilanların %90'ını kapsıyor mu, fiyat düzeyine göre nasıl değişiyor?",
-  "en": "Does the 90% conformal interval cover 90% of listings, and how does that change with price level?"
+  "tr": "%90 conformal aralık tahmin edilen fiyatın her bandında ilanların %90'ını kapsıyor mu; banda göre ayrı kalibre edilince (Mondrian) ne değişiyor?",
+  "en": "Does the 90% conformal interval cover 90% of listings in every predicted-price band, and what changes when it is calibrated per band (Mondrian)?"
  },
  "data": {
   "tr": "load_clean() + 07_model_comparison'ın OOF tahminleri.",
   "en": "load_clean() + 07_model_comparison's OOF predictions."
  },
  "method": {
-  "tr": "q = OOF log hatalarının 90. yüzdeliği; aralık expm1(tahmin_log ± q). Kapsama genel ve tahmin edilen fiyatın çeyreklerine göre (gerçek fiyata göre gruplamak ortalamaya dönüş üretir).",
-  "en": "q = 90th percentile of the OOF log errors; interval expm1(pred_log ± q). Coverage overall and by predicted-price quartile (grouping by actual price produces regression to the mean)."
+  "tr": "Aralık expm1(tahmin_log ± q). Çapraz kalibrasyon: her katın q'su yalnız öteki katların OOF log hatalarından (sonlu örneklem yüzdeliği). İki kol: tek q ve tahmin edilen fiyatın çeyrek bandı başına q (ön kayıt plans/08-mondrian-coverage). Bant başına kapsama ve medyan aralık genişliği.",
+  "en": "Interval expm1(pred_log ± q). Cross-calibration: each fold's q comes only from the other folds' OOF log errors (finite-sample quantile). Two arms: one q, and one q per predicted-price quartile band (pre-registered, plans/08-mondrian-coverage). Coverage and median interval width per band."
  },
  "split": "oof_input",
  "leakage": {
@@ -29,10 +29,10 @@
    }
   },
   "fit_on_full_data": {
-   "status": "present",
+   "status": "none",
    "note": {
-    "tr": "q ve kapsama aynı OOF hatalarında: genel %90 kapsama tanım gereği tutar, kanıt değildir. Bilgi taşıyan çeyrek kapsamaları (Q1 ~%81). Ayrıca OOF hataları 07'nin erken durdurması yüzünden hafifçe iyimser olabilir; yeni veride kapsama biraz daha düşük çıkabilir.",
-    "en": "q and the coverage come from the same OOF errors: the overall 90% holds by construction and is not evidence. The quartile coverages carry the information (Q1 ~81%). The OOF errors may also be slightly optimistic because of 07's early stopping, so coverage on new data may come out a little lower."
+    "tr": "Çapraz kalibreli: hiçbir ilanın kendi hatası kendi aralığını kalibre etmez (test_calibration_never_sees_the_scored_fold); genel kapsama tanım gereği değil, ölçülmüş. OOF hataları 07'nin erken durdurması yüzünden hafifçe iyimser olabilir; yeni veride kapsama biraz daha düşük çıkabilir.",
+    "en": "Cross-calibrated: no listing's own error calibrates its interval (test_calibration_never_sees_the_scored_fold); the overall coverage is measured, not true by construction. The OOF errors may be slightly optimistic because of 07's early stopping, so coverage on new data may come out a little lower."
    }
   },
   "temporal": {
@@ -45,15 +45,18 @@
  },
  "evidence": {
   "tests": [
+   "tests/analysis/test_08_conformal_coverage.py::test_calibration_never_sees_the_scored_fold",
+   "tests/analysis/test_08_conformal_coverage.py::test_conformal_quantile_rank",
+   "tests/analysis/test_08_conformal_coverage.py::test_bands_average_to_overall",
    "tests/analysis/test_08_conformal_coverage.py::test_overall_coverage_at_target",
-   "tests/analysis/test_08_conformal_coverage.py::test_quartile_coverages_average_to_overall",
-   "tests/analysis/test_08_conformal_coverage.py::test_quartile_bounds_increase",
-   "tests/analysis/test_08_conformal_coverage.py::test_q_is_positive"
+   "tests/analysis/test_08_conformal_coverage.py::test_accept_band_is_the_plan",
+   "tests/analysis/test_08_conformal_coverage.py::test_band_bounds_and_q"
   ],
   "report_keys": [
    "report.conformal_all",
-   "report.conformal_by_pred",
-   "report.conformal_q"
+   "report.mondrian.by_band",
+   "report.conformal_q",
+   "report.q_bounds"
   ]
  },
  "status": "complete"

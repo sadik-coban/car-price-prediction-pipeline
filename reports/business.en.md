@@ -1,6 +1,6 @@
 # Used Car Market Analysis — Decision Note
 
-**For:** the pricing team and the dealership. **Decision:** the model can serve as the primary reference in a price-suggestion tool, but not on its own for cheap (below ₺1.15M), comparable-less or old (roughly 18+) cars. **Gain:** about ₺81K less pricing error per car. **Limit:** it predicts the asking price, not the sale price.
+**For:** the pricing team and the dealership. **Decision:** the model can serve as the primary reference in a price-suggestion tool, but not on its own for cheap (estimated below ₺1.15M), comparable-less or old (roughly 18+) cars. **Gain:** about ₺81K less pricing error per car. **Limit:** it predicts the asking price, not the sale price.
 
 ## What's it worth?
 
@@ -45,13 +45,13 @@ Age and mileage are linked axes; the age and km rows above are each measured wit
 
 ## Where not to trust the number
 
-In **percentage** terms the model struggles on cheap cars — error varies sharply by price quartile.
+In **percentage** terms the model struggles on cheap cars — error varies sharply by predicted-price quartile.
 
-![Median error by price quartile (%)](figures/en-10-quartile-error.png)
+![Median error by predicted-price quartile (%)](figures/en-10-quartile-error.png)
 
-**In lira the picture flips.** The largest share of total lira error (39.7%) sits in Q4; mean absolute error is ₺176K in the most expensive quartile and ₺77K in the cheapest. Grouped by the predicted price (the only thing the tool knows) the model is not noticeably biased in any quartile: the slope of actual on predicted price is 1.003.
+**In lira the picture flips.** The largest share of total lira error (38.9%) sits in Q4; mean absolute error is ₺171K in the most expensive quartile and ₺77K in the cheapest. The model is not noticeably biased in any predicted quartile: the slope of actual on predicted price is 1.003.
 
-![Lira error by price quartile](figures/en-27-quartile-lira.png)
+![Lira error by predicted-price quartile](figures/en-27-quartile-lira.png)
 
 **The fewer the comparables, the higher the large-miss rate (beyond ±20%).** With no other listing of the same model and year the rate is 19.0%; with 100+ comparables 2.9%. Top/sport segments (19.1%) and cars aged 18 or older (12.0%) are risky too; overall 4.0%.
 
@@ -59,13 +59,13 @@ In **percentage** terms the model struggles on cheap cars — error varies sharp
 
 An asking-price error costs money in both directions: **over-estimating hits the buyer** — they overpay; **under-estimating hits the seller** — the car goes too cheap. A single number hides how sure the estimate is; a range states it and warns the user exactly where uncertainty is large.
 
-That is why the output is a **90% range**, not one number. But the range does not hold on cheap cars: actual coverage in the cheapest quartile is **81.6%**, below target.
+That is why the output is a **90% range**, not one number. With one margin the range does not hold on cheap cars: coverage in the cheapest predicted quartile is **81.0%**, below target. With the margin computed per price band it is 90.0% in every band: the range widens on cheap cars (from 28.3% to 37.1% of the estimate) and narrows on expensive ones (from 28.3% to 21.4%).
 
 ![How often the 90% range held (target 90%)](figures/en-12-coverage.png)
 
 **What to do**
 
-- Widen the range on cheap cars — don't trust a point estimate.
+- Compute the range's margin per price band: wider on cheap cars, narrower on expensive ones — don't trust a point estimate.
 - Price rare and edge cars by hand; the model scatters there.
 - Review a listing whose text mentions a conversion, an engine swap or modifications before it goes live: that information is not in the form. With vehicle attributes held fixed no significant difference in its error rate was measured; the review guards against what the form cannot see, not against model error.
 - **Watch drift and retrain the model:** run a service that tracks the price distribution, and retrain the model on new data. The price distribution moves little today (highest PSI 0.005), but the market level moved +2.0% over four snapshots and the model is time-blind.

@@ -530,10 +530,15 @@
   "_meta.script": "str",
   "domain.conformal.by_quantile": "list",
   "domain.conformal.coverage_target": "int",
+  "domain.conformal.mondrian_by_quantile": "list",
   "domain.conformal.note": "str",
   "report.conformal_all": "float",
-  "report.conformal_by_pred": "list",
   "report.conformal_q": "float",
+  "report.mondrian.accept_band": "list",
+  "report.mondrian.all": "float",
+  "report.mondrian.by_band": "list",
+  "report.mondrian.columns": "list",
+  "report.mondrian.q_by_band": "list",
   "report.q_bounds": "list"
  },
  "08_large_errors": {

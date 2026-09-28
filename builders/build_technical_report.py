@@ -1352,59 +1352,71 @@ def section_calibration(c):
         f"%{_up} üstü). Bu yüzden pahalı araçta lira bandı geniş, ucuz araçta dar çıkar.",
         f"- **Proportional:** The margin is applied as a percentage, not in lira (roughly {_dn}% below to "
         f"{_up}% above the estimate). So the lira band is wide for expensive cars and narrow for cheap ones."))
-    A(L("- **Kısıtı:** Tüm piyasaya tek bir yüzde uygulandığı için, modelin oransal olarak daha çok yanıldığı "
-        "ucuz araçlarda bant fazla dar kalıyor (aşağıdaki kapsama grafiği). Çözüm, hata payını tek bir sayı "
-        "yerine fiyat bandına göre ayrı ayrı hesaplamaktır; bu raporda yapılmadı.",
-        "- **Limitation:** Because one percentage is applied to the whole market, the band is too narrow for "
-        "cheap cars, where the model errs more in proportional terms (see the coverage chart below). The fix "
-        "is to compute the margin separately for each price band instead of as a single number; this was "
-        "not done in this report."))
+    # 2026-09-28 (sadelestirme listesi): kapsama capraz kalibreli ve tahmin fiyati bandina gore; "yapilmadi" denen
+    # banda gore hata payi (Mondrian) on kayitla olculdu (plans/08-mondrian-coverage).
+    _all = d["report"]["conformal_all"]
+    A(L(f"- **Kalibrasyonu başka ilanlardan:** Kapsama çapraz ölçülür: her katın aralığı yalnız öteki katların "
+        f"hatalarından kurulur, hiçbir ilanın kendi hatası kendi aralığını ayarlamaz. Genel kapsama bu yüzden tanım "
+        f"gereği değil, ölçülmüş: {P(_all, lang, 2)}.",
+        f"- **Calibrated on other listings:** Coverage is measured cross-wise: each fold's interval is built only from "
+        f"the other folds' errors, so no listing's own error sets its interval. The overall coverage is therefore "
+        f"measured, not true by construction: {P(_all, lang, 2)}."))
     A("")
     qe = dom["quantile_error"]
-    A(L(f"**Zayıflık fiyata bağlı:** medyan hata en ucuz çeyrekte {P(qe[0][1], lang, 2)}, en pahalıda "
-        f"{P(qe[-1][1], lang, 2)}. Conformal %{v['cov_target']} aralık her yerde tutmuyor; örneğin Q1 kapsaması "
-        f"{P(v['cov_q1'], lang)}.",
-        f"**The weakness is price-dependent:** median error is {P(qe[0][1], lang, 2)} in the cheapest quartile and "
-        f"{P(qe[-1][1], lang, 2)} in the most expensive. The {v['cov_target']}% conformal interval does not hold "
-        f"everywhere; Q1 coverage, for instance, is {P(v['cov_q1'], lang)}."))
+    A(L(f"**Zayıflık fiyata bağlı:** medyan hata tahmini en ucuz çeyrekte {P(qe[0][1], lang, 2)}, en pahalıda "
+        f"{P(qe[-1][1], lang, 2)}. Tüm piyasaya tek bir yüzde uygulanınca, modelin oransal olarak daha çok yanıldığı "
+        f"ucuz bantta aralık dar kalıyor: Q1 kapsaması {P(v['cov_q1'], lang)}.",
+        f"**The weakness is price-dependent:** median error is {P(qe[0][1], lang, 2)} in the cheapest predicted "
+        f"quartile and {P(qe[-1][1], lang, 2)} in the most expensive. With one percentage for the whole market the "
+        f"interval is too narrow in the cheap band, where the model errs more in proportional terms: Q1 coverage "
+        f"is {P(v['cov_q1'], lang)}."))
     A("")
     figs(10)
     # 2026-09-28 (sadelestirme listesi): lira paneli (fig 27) ve gercek fiyata gore sapma cumlesi (ortalamaya
     # donus) teknik rapordan cikti; fig 27 karar notunda kaliyor. Tahmine gore sapma §8 girisinde.
     _lira_q = v["ed"]["lira_quartile"]
     _q4, _q1 = _lira_q[-1], _lira_q[0]
-    A(L(f"Liraya çevrilince tablo değişiyor: toplam lira hatasının {P(_q4[2], lang)} kadarı en pahalı "
+    A(L(f"Liraya çevrilince tablo değişiyor: toplam lira hatasının {P(_q4[2], lang)} kadarı tahmini en pahalı "
         f"çeyrekte, {P(_q1[2], lang)} kadarı en ucuzda; ortalama mutlak hata {tl(_q4[3])} ile {tl(_q1[3])}.",
-        f"In lira the picture changes: {P(_q4[2], lang)} of total lira error sits in the most expensive "
+        f"In lira the picture changes: {P(_q4[2], lang)} of total lira error sits in the most expensive predicted "
         f"quartile and {P(_q1[2], lang)} in the cheapest; mean absolute error {tl(_q4[3])} against "
         f"{tl(_q1[3])}."))
     A("")
+    _mo = d["report"]["mondrian"]
+    _col = {c_: i_ for i_, c_ in enumerate(_mo["columns"])}
+    _mb = {r_[0]: r_ for r_ in _mo["by_band"]}
+    _acc_lo, _acc_hi = _mo["accept_band"]
+    _cov_m = [r_[_col["coverage_band"]] for r_ in _mo["by_band"]]
+    # On kayit (H1): her bantta kapsama kabul araliginda. Tutmazsa bu paragraf yanlis olur -> uretec durur.
+    assert all(_acc_lo <= c_ <= _acc_hi for c_ in _cov_m), f"Mondrian H1 tutmuyor: {_cov_m} — paragraf yeniden yazilmali"
+    _w = lambda b_, c_: _mb[b_][_col[c_]]                                                   # noqa: E731
+    A(L(f"**Hata payı banda göre (Mondrian).** Hata payı tahmin edilen fiyatın dört çeyreğinde ayrı ayrı "
+        f"hesaplanınca kapsama her bantta {P(min(_cov_m), lang, 2)}–{P(max(_cov_m), lang, 2)}: ön kayıtlı ölçüt "
+        f"(her bantta %{_acc_lo}–%{_acc_hi}) tuttu. Bedeli genişlik: en ucuz bantta aralık tahminin "
+        f"{P(_w('Q1', 'width_pct_global'), lang)} kadarından {P(_w('Q1', 'width_pct_band'), lang)} kadarına genişliyor, "
+        f"en pahalıda {P(_w('Q4', 'width_pct_global'), lang)} kadarından {P(_w('Q4', 'width_pct_band'), lang)} kadarına "
+        f"daralıyor.",
+        f"**Margin per band (Mondrian).** With the margin computed separately in each predicted-price quartile, "
+        f"coverage is {P(min(_cov_m), lang, 2)}–{P(max(_cov_m), lang, 2)} in every band: the pre-registered criterion "
+        f"({_acc_lo}–{_acc_hi}% in every band) holds. The price is width: in the cheapest band the interval widens from "
+        f"{P(_w('Q1', 'width_pct_global'), lang)} to {P(_w('Q1', 'width_pct_band'), lang)} of the estimate, in the most "
+        f"expensive it narrows from {P(_w('Q4', 'width_pct_global'), lang)} to {P(_w('Q4', 'width_pct_band'), lang)}."))
+    A("")
     figs(12)
-    # Kapsama grafiğinin sayısal karşılığı (2026-09-19, kullanıcı isteği). Hiçbir sayı elle yazılmaz:
-    # sınırlar gerçek fiyatın çeyrekleri (üreticinin pd.qcut(y, 4) ile aynı kesim), kapsamalar
-    # dom["conformal"]["by_quantile"] (yukarıdaki kapıyla doğrulanmış), genel oran _lo/_hi'den,
-    # hedefin altındaki çeyrekler de hesaplanır.
     _qc = v["q_bounds"]
-    _cq = {b: float(c) for b, c in dom["conformal"]["by_quantile"]}
     _rng = [L(f"{tlm(_qc[0])} altı", f"below {tlm(_qc[0])}"),
             f"{tlm(_qc[0])} – {tlm(_qc[1])}", f"{tlm(_qc[1])} – {tlm(_qc[2])}",
             L(f"{tlm(_qc[2])} üstü", f"above {tlm(_qc[2])}")]
-    T([L("çeyrek", "quartile"), L("fiyat aralığı", "price range"), L("kapsama", "coverage")],
-      [[b, r_, P(_cq[b], lang)] for b, r_ in zip(["Q1", "Q2", "Q3", "Q4"], _rng)], "llr")
-    _all = d["report"]["conformal_all"]
-    # Saglamlik (son denetim): kapsama gercek fiyat ceyregine gore; tahmin ceyregine gore de olculur.
-    _cp1 = dict(d["report"]["conformal_by_pred"])["Q1"]
-    _below = [b for b in ["Q1", "Q2", "Q3", "Q4"] if _cq[b] < v["cov_target"]]
-    A(L(f"**Not:** Fiyat çeyrekleri gerçek değerler üzerinden dilimlenmiştir. Genel kapsama tanım gereği "
-        f"{P(_all, lang)} seviyesindedir"
-        + (f"; yalnız {', '.join(_below)} hedefin altında kalmaktadır." if _below else ".")
-        + f" Çeyrekler tahmin edilen fiyata göre kesilince de en ucuz çeyrekte kapsama {P(_cp1, lang)}"
-        + (" — bulgu gruplamaya bağlı değil." if _cp1 < v["cov_target"] else "."),
-        f"**Note:** The price quartiles are cut on actual values. Overall coverage is {P(_all, lang)} by "
-        f"construction"
-        + (f"; only {', '.join(_below)} falls below the target." if _below else ".")
-        + f" Cutting the quartiles on the predicted price gives {P(_cp1, lang)} coverage in the cheapest one"
-        + (" — the finding does not depend on the grouping." if _cp1 < v["cov_target"] else ".")))
+    T([L("bant", "band"), L("tahmin edilen fiyat", "predicted price"), L("kapsama: tek oran", "coverage: one margin"),
+       L("kapsama: banda göre", "coverage: per band"), L("genişlik: banda göre", "width: per band")],
+      [[b_, r_, P(_w(b_, "coverage_global"), lang), P(_w(b_, "coverage_band"), lang),
+        L(f"tahminin {P(_w(b_, 'width_pct_band'), lang)} kadarı", f"{P(_w(b_, 'width_pct_band'), lang)} of the estimate")]
+       for b_, r_ in zip(["Q1", "Q2", "Q3", "Q4"], _rng)], "llrrr")
+    A(L("**Not:** Bantlar tahmin edilen fiyattan kesildi: bir fiyatlama aracının bildiği tek şey o. Gerçek fiyata göre "
+        "gruplamak ortalamaya dönüş üretir. Genişlik, aralığın alt ve üst ucu arasındaki farkın o banttaki medyanı.",
+        "**Note:** The bands are cut on the predicted price, the only thing a pricing tool knows; grouping by the "
+        "actual price produces regression to the mean. Width is the band's median distance between the interval's "
+        "lower and upper end."))
     A("")
 
     # 2026-09-28 (sadelestirme listesi, kullanici karari): "en iyi 5" ve iki "en kotu 6" tablosu cikti; satira
@@ -1436,7 +1448,7 @@ def section_calibration(c):
     A("")
     A(L(f"**Lira ölçeğinde en büyük hatalar düşük tahmin.** İlk {_lira['top_n']} lira hatasından "
         f"{num(_lira['top_n_under'], lang)} tanesi düşük, {num(_lira['top_n_over'], lang)} tanesi fazla tahmin; "
-        f"{num(_lira['top_n_q4'], lang)} tanesi en pahalı çeyrekte. Segmentini model adından alan seriler "
+        f"{num(_lira['top_n_q4'], lang)} tanesi tahmini en pahalı çeyrekte. Segmentini model adından alan seriler "
         f"({', '.join(_lira['perf_series'])}) verinin {P(_lira['perf_overall_pct'], lang, 2)} kadarı ama ilk "
         f"{_lira['top_n']} içinde {num(_lira['top_n_perf'], lang)} ilan"
         + (f" — verideki paylarının {_perf_ratio:.0f} katı." if _perf_ratio >= 2 else ".")
@@ -1444,7 +1456,7 @@ def section_calibration(c):
         f"öğrendiği aralığı da kesiyor; en pahalı ilanlardaki düşük tahmin bu sınırla birlikte okunmalı.",
         f"**In lira the largest errors are under-predictions.** Of the top {_lira['top_n']} lira errors "
         f"{num(_lira['top_n_under'], lang)} are under- and {num(_lira['top_n_over'], lang)} over-predictions; "
-        f"{num(_lira['top_n_q4'], lang)} sit in the most expensive quartile. The series that take their segment from "
+        f"{num(_lira['top_n_q4'], lang)} sit in the most expensive predicted quartile. The series that take their segment from "
         f"the model name ({', '.join(_lira['perf_series'])}) are {P(_lira['perf_overall_pct'], lang, 2)} of the data "
         f"but {num(_lira['top_n_perf'], lang)} of the top {_lira['top_n']}"
         + (f" — {_perf_ratio:.0f}× their share of the data." if _perf_ratio >= 2 else ".")

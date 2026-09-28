@@ -9,8 +9,8 @@
   "en": "load_clean() + 07_model_comparison's OOF predictions."
  },
  "method": {
-  "tr": "Hata bantları, fiyat ve tahmin çeyreklerine göre medyan hata, kalibrasyon eğimi, tahmin-gerçek ve artık figürlerinin noktaları. Yanlılık tahmin edilen fiyata göre gruplanır.",
-  "en": "Error bands, median error by price and predicted-price quartile, calibration slope, the points of the predicted-vs-actual and residual figures. Bias is grouped by predicted price."
+  "tr": "Hata bantları; tahmin edilen fiyatın çeyreklerine göre medyan hata, lira hatası payı ve sapma (gerçek fiyata göre gruplamak ortalamaya dönüş üretir); kalibrasyon eğimi; tahmin-gerçek ve artık figürlerinin noktaları.",
+  "en": "Error bands; median error, share of lira error and bias by predicted-price quartile (grouping by actual price produces regression to the mean); calibration slope; the points of the predicted-vs-actual and residual figures."
  },
  "split": "oof_input",
  "leakage": {

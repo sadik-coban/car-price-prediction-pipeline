@@ -798,24 +798,41 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-27T21:56:39+03:00",
+  "_meta.generated_at": "2026-09-28T21:15:23+03:00",
   "_meta.run_id": "601741517e09",
   "_meta.script": "08_conformal_coverage.py",
   "domain.conformal.by_quantile": {
    "len": 4,
-   "sha256": "df4e3afc4b9ad89439dd60e13aa6c092cefaf4e290d3b8901760f0b7c08ed79d"
+   "sha256": "67198bd1bb2fdfec2c107de1ffb0bbafefc89dd58086cfa2c4be9e07bdd7587e"
   },
   "domain.conformal.coverage_target": 90,
-  "domain.conformal.note": "Q1 (ucuz) under-coverage: model ucuzlarda daha belirsiz (dürüst bulgu).",
-  "report.conformal_all": 89.99933306655996,
-  "report.conformal_by_pred": {
+  "domain.conformal.mondrian_by_quantile": {
    "len": 4,
-   "sha256": "fd6fea9f02f46f759cd2812876d3dd1a9797b2739496783765c259922d2f91c6"
+   "sha256": "1ab0fee5138896443e1d48108fe593c205bb4b6d2028f2d5593066c1ab52276d"
   },
+  "domain.conformal.note": "Bantlar tahmin edilen fiyatın çeyrekleri; kapsama çapraz kalibreli (her katın q'su öteki katlardan). by_quantile = tek q, mondrian_by_quantile = bant başına q.",
+  "report.conformal_all": 89.99,
   "report.conformal_q": 0.1412297144167473,
+  "report.mondrian.accept_band": {
+   "len": 2,
+   "sha256": "7caf23f6f110c7a610b55cb8bcd15c6953b28f6c2a93dfa6c57e44a5bdb021dd"
+  },
+  "report.mondrian.all": 90.01,
+  "report.mondrian.by_band": {
+   "len": 4,
+   "sha256": "0b8b7a0f51f58cbcc62fc51045a9e273595958d82de8338e767f0f7155cd3a86"
+  },
+  "report.mondrian.columns": {
+   "len": 8,
+   "sha256": "bd94d9aebcbbe738b44273f5549cb89035bc3dff4da85232ef4b6e033c3162ba"
+  },
+  "report.mondrian.q_by_band": {
+   "len": 4,
+   "sha256": "ac091a05a6d2f0735aee69bcf2ef4b3ac0edb2b13af718aac410f110c7196674"
+  },
   "report.q_bounds": {
    "len": 3,
-   "sha256": "966cb41c8198581cec33e08122c4924d33d00543e1f43dde46ff046a209304fb"
+   "sha256": "8760f7f7af0a91d83ac8618e804345611abd6586d2c9e3459c5d3f516e8c6b9c"
   }
  },
  "08_large_errors": {
@@ -823,7 +840,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-28T20:44:52+03:00",
+  "_meta.generated_at": "2026-09-28T21:12:44+03:00",
   "_meta.run_id": "601741517e09",
   "_meta.script": "08_large_errors.py",
   "error_drivers.age_cuts": {
@@ -862,7 +879,7 @@
   "error_drivers.lira_scaled.top_n": 100,
   "error_drivers.lira_scaled.top_n_over": 27,
   "error_drivers.lira_scaled.top_n_perf": 23,
-  "error_drivers.lira_scaled.top_n_q4": 91,
+  "error_drivers.lira_scaled.top_n_q4": 84,
   "error_drivers.lira_scaled.top_n_under": 73,
   "error_drivers.live_vs_gone.gone_median_resid": -1.24,
   "error_drivers.live_vs_gone.gone_n": 18462,
@@ -898,7 +915,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-28T20:44:50+03:00",
+  "_meta.generated_at": "2026-09-28T21:12:42+03:00",
   "_meta.run_id": "601741517e09",
   "_meta.script": "08_residuals.py",
   "domain.pred_vs_true.ideal_line": {
@@ -914,7 +931,7 @@
   "domain.pred_vs_true.r2": 0.9745,
   "domain.quantile_error": {
    "len": 4,
-   "sha256": "5a6b077de72ba80c023e175a736e459d1ff74dc99f29b2c6a09a6a26ca5ed75f"
+   "sha256": "faf4a54ce1b3cee15afe1887c6dd9911c7e10657529f37b380d6993d69fa8083"
   },
   "domain.residual_scatter.mean_resid_pct": -0.47,
   "domain.residual_scatter.n": 29988,
@@ -932,7 +949,7 @@
   "error_drivers.calibration.slope": 1.0033,
   "error_drivers.lira_quartile": {
    "len": 4,
-   "sha256": "57d945a1baadc2f135cc6d662ea12a3edbb3449cd671aee67fb89357cdc22c06"
+   "sha256": "a6b62afda14f1d204bce3a0a5d536aaa91408090e9f8ad54bb881897ddc0418d"
   },
   "error_drivers.pred_quartile": {
    "len": 4,

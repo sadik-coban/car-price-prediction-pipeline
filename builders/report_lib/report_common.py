@@ -53,7 +53,7 @@ REQUIRED = [
     "by_model_year_n", "by_segment_FS", "by_age", "by_snapshot", "raw_columns", "examples",
     "engine_rule.engine_cc", "engine_rule.power_hp", "unspecified.structure", "live_vs_gone"]] + [
     f"report.{p_}" for p_ in ["q_bounds", "model_r2_log", "err_bands", "conformal_q", "conformal_all",
-                              "conformal_by_pred", "text_ablation"]]
+                              "mondrian", "text_ablation"]]
 
 
 def write_md(path, text):
@@ -217,8 +217,9 @@ def derive(d):
         "resid_std": dom["residual_scatter"]["std_resid_pct"],
         "cov_target": dom["conformal"]["coverage_target"],
         "cov_q1": dom["conformal"]["by_quantile"][0][1],
-        # EN: price quartile bounds (08_conformal_coverage) | TR: fiyat çeyreği sınırları (08_conformal_coverage)
-        "q_bounds": rep["q_bounds"],
+        # EN: predicted-price quartile bounds and the per-band (Mondrian) interval arm (08_conformal_coverage)
+        # TR: tahmin fiyatı çeyrek sınırları ve bant başına (Mondrian) aralık kolu (08_conformal_coverage)
+        "q_bounds": rep["q_bounds"], "mondrian": rep["mondrian"],
         # hedonik: segment sutununun R²'si ve n'i; karar notunun etkileri model sutunundan
         "hed_r2": hr["columns"]["segment"]["r2"], "hed_n": hr["n"], "hed_center": hr["center"],
         "hed_terms": hed_terms, "hed_ci": hed_ci,
@@ -504,7 +505,8 @@ def build_figures(d, v, lang, only=None):
     if want(10):
         rows = dom["quantile_error"]
         # quantile_error = ceyrek basina MEDYAN APE (uretici np.nanmedian) - MAPE degil
-        t = L("Fiyat çeyreğine göre medyan hata (%)", "Median error by price quartile (%)")
+        # 2026-09-28: ceyrekler tahmin edilen fiyattan (08_residuals); gercek fiyata gore gruplama cikti.
+        t = L("Tahmin edilen fiyat çeyreğine göre medyan hata (%)", "Median error by predicted-price quartile (%)")
         reg(10, bar(f"{p}-10-quartile-error", [r[0] for r in rows], [r[1] for r in rows],
                     t, L("medyan mutlak hata %", "median absolute error %")), t)
 
@@ -560,13 +562,21 @@ def build_figures(d, v, lang, only=None):
 
     # 12 kapsama  [IS + TEKNIK]
     if want(12):
-        rows = dom["conformal"]["by_quantile"]
+        # 2026-09-28: tahmin fiyati bandi basina iki kol (tek oran, banda gore / Mondrian), capraz kalibreli.
+        rows, rows_m = dom["conformal"]["by_quantile"], dom["conformal"]["mondrian_by_quantile"]
+        assert [r[0] for r in rows] == [r[0] for r in rows_m], "kapsama kollarinin bantlari farkli"
         tgt = dom["conformal"]["coverage_target"]
         t = L(f"%{tgt} aralık kaç ilanda tuttu (hedef %{tgt})",
               f"How often the {tgt}% range held (target {tgt}%)")
         fig, ax = plt.subplots(figsize=(7, 3.2))
-        ax.bar([r[0] for r in rows], [r[1] for r in rows], color=C1)
+        x = np.arange(len(rows))
+        ax.bar(x - .2, [r[1] for r in rows], width=.4, color=C2, label=L("tek oran", "one margin"))
+        ax.bar(x + .2, [r[1] for r in rows_m], width=.4, color=C1, label=L("banda göre", "per band"))
+        ax.set_xticks(x, [r[0] for r in rows])
+        ax.set_xlabel(L("tahmin edilen fiyat çeyreği", "predicted-price quartile"))
+        ax.set_ylim(min(r[1] for r in rows + rows_m) - 5, 100)
         ax.axhline(tgt, color=C3, ls="--", lw=1.2)
+        ax.legend(frameon=False, fontsize=7, loc="upper left")
         ax.set_ylabel(L("kapsama %", "coverage %")); ax.set_title(t)
         ax.grid(axis="y", color=GRID, lw=.7); ax.set_axisbelow(True)
         reg(12, _save(fig, f"{p}-12-coverage"), t)
@@ -765,7 +775,7 @@ def build_figures(d, v, lang, only=None):
     if want(27):
         # Yuzde hata ucuz ceyrege isaret ediyor; lira hatasi pahaliya. Kaynak error_drivers.lira_quartile.
         lc = v["ed"]["lira_quartile"]
-        t = L("Fiyat çeyreğine göre lira hatası", "Lira error by price quartile")
+        t = L("Tahmin edilen fiyat çeyreğine göre lira hatası", "Lira error by predicted-price quartile")
         fig, (a1, a2) = plt.subplots(1, 2, figsize=(8.4, 3.4))
         qs = [r[0] for r in lc]
         a1.bar(qs, [r[2] for r in lc], color=C1)
@@ -788,7 +798,7 @@ def build_figures(d, v, lang, only=None):
         a2.set_ylim(-_lim, _lim)
         a2.legend(frameon=False, fontsize=7)
         a2.set_ylabel(L("sapma: tahmin − gerçek (₺bin; eksen ±MAE/2)", "bias: predicted − actual (₺k; axis ±MAE/2)"))
-        a1.set_xlabel(L("gerçek fiyat çeyreği", "actual-price quartile"))
+        a1.set_xlabel(L("tahmin edilen fiyat çeyreği", "predicted-price quartile"))
         a2.set_xlabel(L("tahmin edilen fiyat çeyreği", "predicted-price quartile"))
         a2.set_title(L("tahmine göre gruplanınca sapma", "bias when grouped by prediction"), fontsize=9)
         for a_ in (a1, a2):

@@ -2,10 +2,11 @@
 test_08_residuals.py
 EN: Invariants of metrics/08_residuals.json (technical report §8): every figure and table covers exactly the
     listings in the model (01's unique listings); the R² of the predicted-vs-actual figure is the LightGBM OOF R²
-    of 07 (both are the same OOF predictions); the error bands and the quartile groups partition the listings.
+    of 07 (both are the same OOF predictions); the error bands and the predicted-price quartile groups partition the
+    listings.
 TR: metrics/08_residuals.json'un değişmezleri (teknik rapor §8): her figür ve tablo tam olarak modele giren
     ilanları kapsıyor (01'in tekil ilanları); tahmin-gerçek figürünün R²'si 07'deki LightGBM OOF R²'si (ikisi de
-    aynı OOF tahminleri); hata bantları ve çeyrek grupları ilanları bölüyor.
+    aynı OOF tahminleri); hata bantları ve tahmin fiyatı çeyrek grupları ilanları bölüyor.
 """
 import pytest
 
@@ -47,8 +48,16 @@ def test_error_bands_partition_the_listings(res):
     assert res["report"]["err_over20"] + res["report"]["err_under20"] == bands[-1][2]
 
 
-def test_quartile_groups_partition_the_listings(res, n_listings):
-    """EN: Price and predicted-price quartiles each hold every listing once. / TR: Her çeyrek grubu her ilanı bir kez tutar."""
+def test_quartile_groups_partition_the_listings(res, n_listings, metrics):
+    """
+    EN: Every quartile table is cut on the predicted price: each holds every listing once, with the same band sizes
+        as the bias table and 08_conformal_coverage's bands.
+    TR: Her çeyrek tablosu tahmin fiyatından kesilir: her biri her ilanı bir kez tutar; bant büyüklükleri sapma
+        tablosununkiyle ve 08_conformal_coverage'ın bantlarıyla aynı.
+    """
     ed = res["error_drivers"]
-    assert sum(r[1] for r in ed["lira_quartile"]) == n_listings
-    assert sum(r[1] for r in ed["pred_quartile"]) == n_listings
+    sizes = [r[1] for r in ed["pred_quartile"]]
+    assert sum(sizes) == n_listings
+    assert [r[1] for r in ed["lira_quartile"]] == sizes
+    assert [r[1] for r in metrics("08_conformal_coverage")["report"]["mondrian"]["by_band"]] == sizes
+    assert [r[0] for r in res["domain"]["quantile_error"]] == [r[0] for r in ed["pred_quartile"]]

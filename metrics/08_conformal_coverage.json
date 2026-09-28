@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "08_conformal_coverage.py",
-  "generated_at": "2026-09-27T21:56:39+03:00",
+  "generated_at": "2026-09-28T21:15:23+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": "601741517e09",
   "source": {
    "script": {
-    "analysis/08_conformal_coverage.py": "45299b7c6657a2780e00b0cbe1da0bac7c41c7962a205048b3966efe3a818b08"
+    "analysis/08_conformal_coverage.py": "cbc46c952de5f61b860d7cfb8640bb654035f56d31ddb72422cb09490b736932"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -26,50 +26,127 @@
    "by_quantile": [
     [
      "Q1",
-     81.6
+     80.99
     ],
     [
      "Q2",
-     91.8
+     90.98
     ],
     [
      "Q3",
-     92.7
+     93.25
     ],
     [
      "Q4",
-     94.0
+     94.72
+    ]
+   ],
+   "mondrian_by_quantile": [
+    [
+     "Q1",
+     89.96
+    ],
+    [
+     "Q2",
+     90.04
+    ],
+    [
+     "Q3",
+     90.01
+    ],
+    [
+     "Q4",
+     90.04
     ]
    ],
    "coverage_target": 90,
-   "note": "Q1 (ucuz) under-coverage: model ucuzlarda daha belirsiz (dürüst bulgu)."
+   "note": "Bantlar tahmin edilen fiyatın çeyrekleri; kapsama çapraz kalibreli (her katın q'su öteki katlardan). by_quantile = tek q, mondrian_by_quantile = bant başına q."
   }
  },
  "report": {
   "conformal_q": 0.1412297144167473,
-  "conformal_all": 89.99933306655996,
-  "conformal_by_pred": [
-   [
-    "Q1",
-    81.01907429638521
-   ],
-   [
-    "Q2",
-    91.00973722822462
-   ],
-   [
-    "Q3",
-    93.26397225556889
-   ],
-   [
-    "Q4",
-    94.70454848606109
-   ]
-  ],
+  "conformal_all": 89.99,
   "q_bounds": [
-   1150000.0,
-   1545000.0,
-   2275000.0
-  ]
+   1154371.0315541304,
+   1532721.5318234982,
+   2256098.228932405
+  ],
+  "mondrian": {
+   "by_band": [
+    [
+     "Q1",
+     7497,
+     80.99,
+     89.96,
+     28.3,
+     37.1,
+     257179.0,
+     335380.0
+    ],
+    [
+     "Q2",
+     7497,
+     90.98,
+     90.04,
+     28.3,
+     27.2,
+     379967.0,
+     365898.0
+    ],
+    [
+     "Q3",
+     7497,
+     93.25,
+     90.01,
+     28.3,
+     24.4,
+     505633.0,
+     434833.0
+    ],
+    [
+     "Q4",
+     7497,
+     94.72,
+     90.04,
+     28.3,
+     21.4,
+     882978.0,
+     664605.0
+    ]
+   ],
+   "all": 90.01,
+   "q_by_band": [
+    [
+     "Q1",
+     0.1839
+    ],
+    [
+     "Q2",
+     0.136
+    ],
+    [
+     "Q3",
+     0.1215
+    ],
+    [
+     "Q4",
+     0.1064
+    ]
+   ],
+   "accept_band": [
+    88,
+    92
+   ],
+   "columns": [
+    "band",
+    "n",
+    "coverage_global",
+    "coverage_band",
+    "width_pct_global",
+    "width_pct_band",
+    "width_tl_global",
+    "width_tl_band"
+   ]
+  }
  }
 }
