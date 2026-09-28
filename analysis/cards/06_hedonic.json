@@ -9,8 +9,8 @@
   "en": "load_clean() (29,988 listings); the 434 listings missing engine power or displacement leave the OLS (29,554)."
  },
  "method": {
-  "tr": "Log fiyat üzerine iki OLS (yaş ve km medyan araca ortalanmış, kare ve etkileşim terimleri): segment kontrolü (segment, marka, yakıt, vites kuklaları) ve model kontrolü (aynısı + C(model)); %95 güven aralıkları modele göre kümelenmiş standart hatalardan; segment sütununun en yüksek VIF'i (ortalanmış ve ortalanmamış), Breusch–Pagan; genel hp–cc korelasyonu.",
-  "en": "Two OLS fits on log price (age and km centred on the median car, squared and interaction terms): segment control (segment, brand, fuel, transmission dummies) and model control (the same + C(model)); 95% intervals from standard errors clustered by model; the segment column's largest VIF (centred and uncentred), Breusch–Pagan; the overall hp–cc correlation."
+  "tr": "Log fiyat üzerine iki OLS (yaş ve km medyan araca ortalanmış, kare ve etkileşim terimleri): segment kontrolü (segment, marka, yakıt, vites kuklaları) ve model kontrolü (aynısı, model adı model içi dönüşümle emilmiş: sabit etkiler kestiricisi); %95 güven aralıkları modele göre kümelenmiş standart hatalardan; iki sütun arasındaki farkın terim başına kümeli testi; duyarlılıklar (seriye göre kümeleme, §8'in motor değeri tutarsız ilanları olmadan model sütunu, gücün model içi değişimi); segment sütununun en yüksek VIF'i, Breusch–Pagan, genel hp–cc Pearson korelasyonu.",
+  "en": "Two OLS fits on log price (age and km centred on the median car, squared and interaction terms): segment control (segment, brand, fuel, transmission dummies) and model control (the same with the model name absorbed by the within transform: the fixed-effects estimator); 95% intervals from standard errors clustered by model; a cluster-robust test of the difference between the two columns per term; sensitivities (clustering by series, the model column without §8's inconsistent-engine listings, how much power varies within a model); the segment column's largest VIF, Breusch–Pagan, the overall hp–cc Pearson correlation."
  },
  "split": "none",
  "leakage": {
@@ -44,13 +44,17 @@
    "tests/analysis/test_06_hedonic.py::test_headline_is_the_model_column",
    "tests/analysis/test_06_hedonic.py::test_clustered_by_model",
    "tests/analysis/test_06_hedonic.py::test_model_identity",
-   "tests/analysis/test_06_hedonic.py::test_vif"
+   "tests/analysis/test_06_hedonic.py::test_vif",
+   "tests/analysis/test_06_hedonic.py::test_within_equals_dummies",
+   "tests/analysis/test_06_hedonic.py::test_difference_is_segment_minus_model",
+   "tests/analysis/test_06_hedonic.py::test_sensitivities"
   ],
   "report_keys": [
    "domain.hedonic_reliability.columns",
+   "domain.hedonic_reliability.difference",
+   "domain.hedonic_reliability.series_cluster",
+   "domain.hedonic_reliability.without_spec_outliers",
    "domain.hedonic_reliability.center",
-   "domain.hedonic_reliability.vif",
-   "domain.hedonic_reliability.homoskedasticity_p",
    "error_drivers.hedonic_dropped"
   ]
  },

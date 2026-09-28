@@ -31,7 +31,7 @@ Her kalemin fiyatı ne kadar oynattığı — **aynı model adı içinde, diğer
 | boyalı panel (her biri) | -%1.0 |
 | +100 hp motor gücü | +%19.3 |
 
-En belirsiz kalem +100 hp motor gücü: %95 güven aralığı +%6.8 ile +%33.3 arasında.
+En belirsiz kalem +100 hp motor gücü: %95 güven aralığı +%6.9 ile +%33.1 arasında.
 
 Yaş ve kilometre birbirine bağlı iki eksen; tablodaki yaş ve km satırları biri sabitken ötekinin etkisi, tipik araçta (11 yaş, 181.000 km) ölçüldü.
 
@@ -59,18 +59,18 @@ Model ucuz araçlarda **yüzde olarak** zorlanıyor — hata tahmin edilen fiyat
 
 İlan fiyatında iki yönlü hata da para kaybettirir: **fazla tahmin alıcıya patlar** — pahalıya alınmış araç; **düşük tahmin satıcıya** — ucuza gitmiş araç. Tek sayı ne kadar emin olunduğunu saklar; aralık bunu söyler ve kullanıcıyı belirsizliğin büyük olduğu yerde uyarır.
 
-Bu yüzden çıktı tek sayı değil, **%90 aralık**. Tek bir hata payıyla aralık ucuz araçlarda tutmuyor: tahmini en ucuz çeyrekte kapsama **%81.0**, hedefin altında. Hata payı fiyat bandına göre ayrı hesaplanınca her bantta %90.0: ucuz araçta aralık genişliyor (tahminin %28.3 kadarından %37.1 kadarına), pahalıda daralıyor (%28.3 kadarından %21.4 kadarına).
+Bu yüzden çıktı tek sayı değil, **%90 aralık**. Tek bir hata payıyla aralık ucuz araçlarda tutmuyor: tahmini en ucuz çeyrekte kapsama **%81.0**, hedefin altında. Hata payı fiyat bandına göre ayrı hesaplanınca, eğitimden sonraki taramanın yeni ilanlarında en ucuz bantta kapsama %77.1–%85.3 yerine %88.8–%92.5 oluyor. Emsalsiz araçta ise aralık iki yolla da tutmuyor (%64.3–%76.2); banda göre payla kapsama orada daha da düşüyor.
 
 ![%90 aralık kaç ilanda tuttu (hedef %90)](figures/tr-12-coverage.png)
 
 **Ne yapmalı**
 
-- Aralığın hata payını fiyat bandına göre ayrı hesapla: ucuz araçta daha geniş, pahalıda daha dar — tek sayıya güvenme.
+- Aralığın hata payını fiyat bandına göre ayrı hesapla: ucuz araçta daha geniş, pahalıda daha dar — tek sayıya güvenme. Emsalsiz araçta aralığa da güvenme.
 - Nadir ve uç araçları elle fiyatla; model orada saçılıyor.
 - Metninde dönüşüm, motor değişimi ya da modifiye geçen ilanı yayına almadan önce gözden geçir: bu bilgi formda yok. Araç özellikleri sabitken bu ilanlarda hata oranında anlamlı bir fark ölçülmedi; gözden geçirme model hatasına değil, formun göremediği bilgiye karşı.
 - **Kaymayı izle ve modeli yeniden eğit:** canlıda fiyat dağılımını izleyen bir servis kur, model yeni verilerle yeniden eğitilsin. Fiyat dağılımı bugün az kayıyor (en yüksek PSI 0.005), ama piyasa seviyesi 4 dönemde +%2.0 kaydı ve model zamanı görmüyor.
 - **Hatayı doğrudan izle:** fiyat her taramada geldiği için modelin yeni ilanlardaki hatası doğrudan ölçülebilir; fiyat dağılımını izlemek tanı için kalır.
-- **Fiyat rejimini değiştiren gelişmeleri takip et** (vergi/ÖTV düzenlemesi, teşvik, ani piyasa hareketi gibi) — eğitim planı bunlara göre yapılmalı. Eski dönemleri atma: birikimli eğitim hatayı artırmıyor, bazen düşürüyor.
+- **Fiyat rejimini değiştiren gelişmeleri takip et** (vergi/ÖTV düzenlemesi, teşvik, ani piyasa hareketi gibi) — eğitim planı bunlara göre yapılmalı. Eski dönemleri atma: aynı ilanlarda birikimli eğitim hatayı hiçbir karşılaştırmada anlamlı artırmadı, bir kısmında düşürdü.
 
 ![Tek dönem ve biriken dönemler — ortalama yüzde hata](figures/tr-15-backtest.png)
 

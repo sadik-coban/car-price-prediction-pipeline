@@ -1,0 +1,61 @@
+{
+ "id": "09-forward-coverage",
+ "created": "2026-09-28",
+ "question": {
+  "tr": "Servis tarifiyle kurulan %90 aralık, eğitimden sonraki taramanın yeni ilanlarında ne kadar kapsıyor; banda göre hata payı orada da yardım ediyor mu?",
+  "en": "How much does the 90% interval built by the served recipe cover on the new listings of a later snapshot, and does a per-band margin still help there?"
+ },
+ "data_slice": "load_clean(all_snapshots=True). The forward setups of 09_backtest: every single-arm row (train on one snapshot, test on each later one) and every cumulative row whose training differs from the single arm's (9 setups). Test = the listings of the test snapshot whose ad_id never occurs in training.",
+ "split": "temporal: the headline setup of 09_backtest (cv.fold_matrices + cv.LGB_PARAMS, trees from an inner early-stopping 5-fold CV on the training set); nothing from the test snapshot sets the model, q or the band edges.",
+ "target": "The served recipe applied forward: q = the finite-sample 90% quantile (ceil((n+1)·0.9)-th smallest) of the training set's own 5-fold OOF errors |log1p(price) − log1p(clip(OOF prediction))|; band edges = quartiles of the training OOF predictions. Two arms: one q, and one q per predicted-price band (Mondrian). Measured on the test listings of each setup: coverage overall, per band, and on the listings whose (model, year) never occurs in training. Known before registration: an independent audit on 2026-09-28 measured 4 of these setups ad hoc (per-band coverage 87.0–90.2% on the 06-27 snapshot; one-q overall 87.4–89.9%), so these hypotheses are not blind; the plan fixes the definitions and the setups before this code runs.",
+ "comparisons": {
+  "count": 2,
+  "correction": "none"
+ },
+ "hypotheses": [
+  {
+   "id": "H1",
+   "statement": {
+    "tr": "İleri kullanımda banda göre hata payı, tahmini en ucuz bantta tek hata payından daha yüksek kapsama verir, her kurulumda.",
+    "en": "Used forward, the per-band margin covers more than the single margin in the cheapest predicted band, in every setup."
+   },
+   "accept_if": "coverage_band > coverage_global in band Q1 in all 9 setups",
+   "reject_if": "coverage_band <= coverage_global in band Q1 in any setup",
+   "required_checks": [
+    "metric:09_backtest:methodology.backtest.forward_coverage",
+    "test:tests/analysis/test_09_backtest.py::test_forward_coverage_calibrates_on_training_only"
+   ],
+   "status": "confirmed",
+   "evidence": [
+    "metric:09_backtest:methodology.backtest.forward_coverage",
+    "test:tests/analysis/test_09_backtest.py::test_forward_coverage_calibrates_on_training_only"
+   ]
+  },
+  {
+   "id": "H2",
+   "statement": {
+    "tr": "İleri kullanımda banda göre hata payı her bantta ve her kurulumda en az %88 kapsar.",
+    "en": "Used forward, the per-band margin covers at least 88% in every band of every setup."
+   },
+   "accept_if": "min over the 9 setups and 4 bands of coverage_band >= 88 (percent)",
+   "reject_if": "coverage_band < 88 in any band of any setup",
+   "required_checks": [
+    "metric:09_backtest:methodology.backtest.forward_coverage",
+    "test:tests/analysis/test_09_backtest.py::test_forward_coverage_calibrates_on_training_only"
+   ],
+   "status": "refuted",
+   "evidence": [
+    "metric:09_backtest:methodology.backtest.forward_coverage",
+    "test:tests/analysis/test_09_backtest.py::test_forward_coverage_calibrates_on_training_only"
+   ]
+  }
+ ],
+ "out_of_scope": [
+  "Changing the served interval (encoders.pkl CONFORMAL_Q) or the live API",
+  "Recalibrating q on the test snapshot or adapting it over time (online conformal)",
+  "Bands on anything but the predicted price"
+ ],
+ "status": "locked",
+ "approved_by": "sadik-coban (onay, 2026-09-28)",
+ "approved_at": "2026-09-28"
+}

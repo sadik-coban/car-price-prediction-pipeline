@@ -57,12 +57,16 @@ def test_per_model_buckets(ed, n):
 
 def test_lira_ranking(ed):
     """
-    EN: top-N = under + over; the top-quartile and performance-family counts fit in it.
-    TR: ilk N = düşük + fazla; en pahalı çeyrek ve performans ailesi sayımları içine sığıyor.
+    EN: top-N = under + over; the top-quartile and performance-family counts fit in it; the symmetric-sign
+        expectation is an ordered interval inside [0, N].
+    TR: ilk N = düşük + fazla; en pahalı çeyrek ve performans ailesi sayımları içine sığıyor; simetrik işaret
+        beklentisi [0, N] içinde sıralı bir aralık.
     """
     ls = ed["lira_scaled"]
     assert ls["top_n_under"] + ls["top_n_over"] == ls["top_n"]
     assert max(ls["top_n_q4"], ls["top_n_perf"]) <= ls["top_n"]
+    null = ls["under_if_symmetric"]
+    assert 0 <= null["lo"] <= null["mean"] <= null["hi"] <= ls["top_n"] and null["draws"] > 0
 
 
 def test_spec_outliers(ed, n):

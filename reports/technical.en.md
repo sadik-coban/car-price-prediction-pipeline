@@ -229,7 +229,7 @@ The first 3 components explain 43.1% of variance. PC1 ≈ Mileage + Age (years) 
 
 The hedonic regression gives each driver's *controlled* effect on price (all else equal); the target is log price, n **29,554**. Two columns side by side. **Segment control** uses segment, brand, fuel and transmission dummies (R² **0.9312**). **Model control** adds `C(model)` (735 model names), so each effect is measured within one model name (R² **0.9648**). Model identity closes about 87% of the gap between the hedonic R² and the model's OOF R² on the same scale (0.9699, log price) — an upper estimate: the R² with C(model) is in-sample while the model's is OOF. The model's headline R² (0.9745) is on the raw ₺ scale and should not be read against the hedonic one.
 
-**Confidence intervals.** Listings of the same model are not independent and the error variance is not equal (Breusch-Pagan p <0.001), so the 95% intervals come from standard errors clustered by model (735 clusters). In the segment column all 10 intervals exclude zero; in the model column the intervals of age², +1 litre contain zero.
+**Confidence intervals.** Listings of the same model are not independent and the error variance is not equal (Breusch-Pagan p <0.001), so the 95% intervals come from standard errors clustered by model (735 clusters). In the segment column all 10 intervals exclude zero; in the model column the intervals of age², +1 litre contain zero. Sensitivity: clustered by series (22 clusters; few and uneven, so for comparison only), the terms whose interval contains zero are +1 litre in the segment column and age², age×km, +1 litre in the model column. Models of one series are not independent either; these terms' significance depends on the clustering.
 
 **Note:** The hedonic model is an OLS and cannot run with missing values, so listings with missing engine power (426) or missing displacement (356) were removed before the analysis. Once the rows missing both are counted only once, 434 rows in total were dropped from the dataset.
 
@@ -239,18 +239,18 @@ The hedonic regression gives each driver's *controlled* effect on price (all els
 
 | term | segment control [95% CI] | model control [95% CI] |
 |---|---:|---:|
-| age | -6.64% [-6.92%, -6.37%] | -5.80% [-6.34%, -5.27%] |
-| age² | +0.08% [+0.04%, +0.13%] | +0.03% [-0.03%, +0.09%] |
+| age | -6.64% [-6.92%, -6.37%] | -5.80% [-6.33%, -5.27%] |
+| age² | +0.08% [+0.04%, +0.13%] | +0.03% [-0.03%, +0.08%] |
 | km (100k) | -15.11% [-15.81%, -14.40%] | -14.83% [-15.31%, -14.34%] |
-| km² | +1.56% [+1.08%, +2.05%] | +1.67% [+1.33%, +2.01%] |
+| km² | +1.56% [+1.08%, +2.05%] | +1.67% [+1.34%, +2.01%] |
 | age×km | -0.62% [-0.89%, -0.35%] | -0.33% [-0.56%, -0.10%] |
-| heavy damage | -11.60% [-12.51%, -10.68%] | -12.46% [-13.26%, -11.66%] |
-| painted | -1.05% [-1.17%, -0.92%] | -0.98% [-1.09%, -0.87%] |
+| heavy damage | -11.60% [-12.51%, -10.68%] | -12.46% [-13.25%, -11.67%] |
+| painted | -1.05% [-1.17%, -0.92%] | -0.98% [-1.09%, -0.88%] |
 | changed | -3.06% [-3.33%, -2.79%] | -3.12% [-3.35%, -2.88%] |
-| +100 hp | +19.86% [+13.89%, +26.15%] | +19.30% [+6.76%, +33.31%] |
-| +1 litre | +7.49% [+0.71%, +14.73%] | +5.97% [-1.01%, +13.45%] |
+| +100 hp | +19.86% [+13.89%, +26.15%] | +19.30% [+6.90%, +33.12%] |
+| +1 litre | +7.49% [+0.71%, +14.73%] | +5.97% [-0.92%, +13.35%] |
 
-Effect = exp(β)−1. Age and km are centred on the **median car** (11 years, 181,000 km): the age and km rows are the marginal effect at that car. Squared and interaction terms (age², km², age×km) are not read alone; they carry the curvature. Terms whose model-column estimate falls outside the segment column's interval: age, age², age×km — for these, holding model identity fixed moves the effect by more than sampling error; for the other terms the two columns sit inside each other's interval. The decision note's effects come from the model column: within one model name.
+Effect = exp(β)−1. Age and km are centred on the **median car** (11 years, 181,000 km): the age and km rows are the marginal effect at that car. Squared and interaction terms (age², km², age×km) are not read alone; they carry the curvature. The difference between the columns was tested per term with SEs clustered by model: it exceeds sampling error (at 5%) for age, age×km, heavy damage, painted, and not for the other terms. The decision note's effects come from the model column: within one model name.
 
 **The coefficients are controlled associations, not causal effects.** E.g. the painted-panel coefficient does not say that painting lowers the price, only that listings with painted panels are advertised that much cheaper than similar ones.
 
@@ -258,7 +258,7 @@ Effect = exp(β)−1. Age and km are centred on the **median car** (11 years, 18
 
 ### Engine effect
 
-+100 hp is **+19.9%** under segment control and **+19.3%** under model control; +1 litre **+7.5%** and **+6.0%** (same regression, the other held fixed). The model name largely fixes the engine, so in the model column the engine terms are measured only from power and size differences within one model name; that is why their intervals are wider. Size and power are linked (correlation 0.73): size's effect is what remains with power fixed, so read the two coefficients together; the units differ, so they are not directly comparable.
++100 hp is **+19.9%** under segment control and **+19.3%** under model control; +1 litre **+7.5%** and **+6.0%** (same regression, the other held fixed). The model name largely fixes the engine, so in the model column the engine terms are measured only from power and size differences within one model name; that is why their intervals are wider. That variation is thin: power varies across listings in only 354 of 735 model names (within-model standard deviation 9.0 hp, 43.1 hp overall), and part of it is catalogue error: without the 14 listings with an inconsistent engine value (§8) the model column's +100 hp goes +19.3% → +26.0%. Size and power are linked (Pearson correlation 0.73): size's effect is what remains with power fixed, so read the two coefficients together; the units differ, so they are not directly comparable.
 
 ### LOFO — leave-one-feature-out
 
@@ -372,7 +372,7 @@ Each point is a model; the y axis is the median error across that model's listin
 
 - **No distributional assumption:** Errors are not assumed to follow a formula (a bell curve, etc.). The model's real errors on cars it has never seen are sorted, the worst 10% are set aside, and the margin is read directly from the data. The one assumption is that new listings resemble past ones — as the market drifts (§9), that assumption weakens.
 - **Proportional:** The margin is applied as a percentage, not in lira (roughly 13% below to 15% above the estimate). So the lira band is wide for expensive cars and narrow for cheap ones.
-- **Calibrated on other listings:** Coverage is measured cross-wise: each fold's interval is built only from the other folds' errors, so no listing's own error sets its interval. The overall coverage is therefore measured, not true by construction: 89.99%.
+- **Calibrated on other listings:** Coverage is measured cross-wise: each fold's interval is built only from the other folds' errors, so no listing's own error sets its interval. The folds are random, so the overall coverage (89.99%) still lands on the target almost by itself; the real test is the forward coverage on a later snapshot's new listings (below).
 
 **The weakness is price-dependent:** median error is 6.95% in the cheapest predicted quartile and 3.55% in the most expensive. With one percentage for the whole market the interval is too narrow in the cheap band, where the model errs more in proportional terms: Q1 coverage is 81.0%.
 
@@ -380,7 +380,7 @@ Each point is a model; the y axis is the median error across that model's listin
 
 In lira the picture changes: 38.9% of total lira error sits in the most expensive predicted quartile and 17.6% in the cheapest; mean absolute error ₺171K against ₺77K.
 
-**Margin per band (Mondrian).** With the margin computed separately in each predicted-price quartile, coverage is 89.96%–90.04% in every band: the pre-registered criterion (88–92% in every band) holds. The price is width: in the cheapest band the interval widens from 28.3% to 37.1% of the estimate, in the most expensive it narrows from 28.3% to 21.4%.
+**Margin per band (Mondrian).** With the margin computed separately in each predicted-price quartile, coverage is 89.96%–90.04% in every band. With random folds that is almost by construction: the first pre-registration's criterion (88–92% in every band) tested the code, not the method; the real test is the forward coverage below. The price is width: in the cheapest band the interval widens from 28.3% to 37.1% of the estimate, in the most expensive it narrows from 28.3% to 21.4%.
 
 ![How often the 90% range held (target 90%)](figures/en-12-coverage.png)
 
@@ -393,11 +393,23 @@ In lira the picture changes: 38.9% of total lira error sits in the most expensiv
 
 **Note:** The bands are cut on the predicted price, the only thing a pricing tool knows; grouping by the actual price produces regression to the mean. Width is the band's median distance between the interval's lower and upper end.
 
+**Forward coverage (pre-registered, `plans/09-forward-coverage`).** The served recipe was applied forward: q from the training snapshot's own OOF errors, tested on the next snapshot's new listings (the nine forward setups of §9). With one margin the overall coverage is 87.3%–92.4%, in the cheapest band 77.1%–85.3%. The per-band margin fixes the cheapest band in every setup (88.8%–92.5%) but does not hold 88% in every band: the lowest is 84.9%. On listings whose model and year never occur in training, coverage is low in both arms (one margin 64.3%–76.2%, per band 63.0%–73.0%); there the per-band margin lowers it further in every setup.
+
+| band | one margin | per band |
+|---|---:|---:|
+| Q1 | 77.1%–85.3% | 88.8%–92.5% |
+| Q2 | 88.6%–92.1% | 87.3%–91.0% |
+| Q3 | 89.8%–94.5% | 84.9%–91.6% |
+| Q4 | 92.9%–96.2% | 88.0%–92.5% |
+| no comparable (model+year not in training) | 64.3%–76.2% | 63.0%–73.0% |
+
+Cells are the lowest–highest coverage over the nine forward setups.
+
 ### The largest errors
 
 **Listings with an inconsistent engine value.** 15 listings (0.05%) have a power or displacement more than 1.5× off their own model's median: the catalogue match collapsed and the model is pricing an engine the car does not have; their median error is 12.8% against 4.7% for the rest. The check only works on models with at least 5 listings: the 632 listings (2.11%) of the 307 smaller models are its blind spot — exactly where comparables are scarcest.
 
-**In lira the largest errors are under-predictions.** Of the top 100 lira errors 73 are under- and 27 over-predictions; 84 sit in the most expensive predicted quartile. The series that take their segment from the model name (M Serisi, RS, S, i Serisi) are 0.52% of the data but 23 of the top 100 — 44× their share of the data. The price cap (₺6.50M) also truncates the range the model learns at this end; under-prediction on the most expensive listings should be read with that limit in mind.
+**The largest errors in lira.** Of the top 100 lira errors 73 are under- and 27 over-predictions. That direction is not a lean of the model: if the actual price scattered symmetrically around the prediction on the log scale, 67.8 of the top 100 (95%: 60–77) would still be under-predictions; the same percentage error is bigger in lira when the price is above the prediction. 84 sit in the most expensive predicted quartile. The series that take their segment from the model name (M Serisi, RS, S, i Serisi) are 0.52% of the data but 23 of the top 100 — 44× their share of the data. The price cap (₺6.50M) also truncates the range the model learns at this end; under-prediction on the most expensive listings should be read with that limit in mind.
 
 ![Error in lira — predicted − actual](figures/en-28-residual-lira.png)
 
@@ -432,6 +444,8 @@ Single = train on one snapshot, predict a later one. Cumulative = train on every
 The setup is the headline model's: model and series names as TF-IDF+SVD, the same LightGBM settings. The tree count is chosen, as for the served model, by a 5-fold early-stopping CV inside the training set (161–211 trees); the test snapshot is never used to stop. Brackets are the 95% confidence interval: the test listings resampled by model (listings of one model are not independent), 1,000 times.
 
 From the same training snapshot (01-18) MAPE goes 6.29% → 7.34% as the test horizon lengthens; the confidence intervals do not overlap. But each horizon tests different listings: other listings, another mix, another test snapshot. The gap cannot be put on time alone.
+
+**Horizon on a fixed test set.** On the same listings that caveat goes: the 8,889 listings new in the 06-27 snapshot (seen in no earlier snapshot) were priced by the model of each earlier single snapshot. MAPE by training snapshot: 01-18 7.29%, 01-27 7.13%, 03-21 6.89%; difference from the latest training 01-18 +0.40 [+0.27, +0.52], 01-27 +0.24 [+0.13, +0.34] (paired, clustered by model). On the same listings the error grows as the training snapshot ages.
 
 | test | single training | cumulative training | shared listings | single | cumulative | difference [95% CI] |
 |---|---|---|---:|---:|---:|---:|
@@ -483,10 +497,10 @@ This table is not temporal: every row is plain 5-fold OOF with no new-listings-o
 
 ### When to retrain
 
-- **Watch drift, retrain the model.** Run a **drift service** in production that watches PSI · KS · EMD, and retrain the model on new snapshots. A fixed PSI threshold is not enough: today's highest PSI is 0.0049, yet in the backtest above MAPE rises 6.29% → 7.34% as the test horizon lengthens from the same training snapshot. That rise cannot be put on time alone: each horizon tests different listings, and the listing mix and the test snapshot change too. Still, a model trained on an old snapshot errs more even while the distribution barely moves.
+- **Watch drift, retrain the model.** Run a **drift service** in production that watches PSI · KS · EMD, and retrain the model on new snapshots. A fixed PSI threshold is not enough: today's highest PSI is 0.0049, yet on the same new listings the model trained on the oldest snapshot (01-18) errs +0.40 points [+0.27, +0.52] more than the latest one: the model ages while the distribution barely moves.
 - **Watch the error directly.** The price arrives with every snapshot, so the model's error on new listings can be measured directly; the backtest above does exactly that. The drift measures (PSI · KS · EMD) stay as diagnostics.
 - **Events that reset the pricing regime.** A tax or excise change, an incentive, an import rule, a currency move or a sudden market anomaly can shift the distribution before a monitoring window closes; treat those as **triggers** as well and plan retraining around them.
-- **Keep the old snapshots.** In the paired comparison on the same test listings, accumulating lowers the error significantly in one of the three comparisons and raises it in none. Retrain by **adding** snapshots, not by discarding the old ones.
+- **Keep the old snapshots.** In the paired comparison on the same test listings, accumulating lowers the error significantly in one of the three comparisons and raises it significantly in none (the intervals carry the sampling of the test listings, not the variability of training). Retrain by **adding** snapshots, not by discarding the old ones.
 
 ## 10. Free text: measured, left out
 

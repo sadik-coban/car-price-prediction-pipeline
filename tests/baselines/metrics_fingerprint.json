@@ -498,7 +498,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-28T20:55:05+03:00",
+  "_meta.generated_at": "2026-09-28T22:28:15+03:00",
   "_meta.run_id": null,
   "_meta.script": "06_hedonic.py",
   "domain.hedonic.age_pct": -5.8,
@@ -514,7 +514,7 @@
   "domain.hedonic_reliability.cluster": "model",
   "domain.hedonic_reliability.columns.model.coefficients": {
    "len": 10,
-   "sha256": "e16f2f974b1b6dfc466d65bdd42100c5914bba3ff25521bc94eae4e1353c583e"
+   "sha256": "85ecd5835138cd5c330517b50ae0ecb45c17a43711e1fb8c952d2f472de98572"
   },
   "domain.hedonic_reliability.columns.model.r2": 0.9648,
   "domain.hedonic_reliability.columns.segment.coefficients": {
@@ -522,14 +522,36 @@
    "sha256": "38ae0c525516abde4e52c5a9a8db901660b2300bb4c5a064913ca773bef29b14"
   },
   "domain.hedonic_reliability.columns.segment.r2": 0.9312,
+  "domain.hedonic_reliability.difference": {
+   "len": 10,
+   "sha256": "685cb20fc981436fdf0ec7ae2f8db42fb8f9c182f598136bc5dbf5d90a9d49b1"
+  },
   "domain.hedonic_reliability.homoskedasticity_p": 0.0,
-  "domain.hedonic_reliability.hp_cc_correlation": 0.73,
+  "domain.hedonic_reliability.hp_cc_pearson": 0.73,
+  "domain.hedonic_reliability.hp_within_model.models": 735,
+  "domain.hedonic_reliability.hp_within_model.models_varying": 354,
+  "domain.hedonic_reliability.hp_within_model.sd_overall": 43.1,
+  "domain.hedonic_reliability.hp_within_model.sd_within": 9.0,
   "domain.hedonic_reliability.n": 29554,
   "domain.hedonic_reliability.n_clusters": 735,
+  "domain.hedonic_reliability.series_cluster.n_clusters": 22,
+  "domain.hedonic_reliability.series_cluster.zero_in_ci.model": {
+   "len": 3,
+   "sha256": "28fca5e33dc0a8248ffd7bf3010d6560d0ee628a1bd00e629ba82b2bbc853edc"
+  },
+  "domain.hedonic_reliability.series_cluster.zero_in_ci.segment": {
+   "len": 1,
+   "sha256": "a4ec0ef2c39ec533938915c3e8d97f49765eccaef090834277c1aed01bbe9369"
+  },
   "domain.hedonic_reliability.vif.raw_term": "age_x_km",
   "domain.hedonic_reliability.vif.raw_value": 96.28,
   "domain.hedonic_reliability.vif.term": "age_x_km",
   "domain.hedonic_reliability.vif.value": 7.25,
+  "domain.hedonic_reliability.without_spec_outliers.coefficients": {
+   "len": 2,
+   "sha256": "deb0f5de7efa6b4d245c5313aef1b9f7b82bebb08566fd1d707131b8a8828a87"
+  },
+  "domain.hedonic_reliability.without_spec_outliers.n_dropped": 14,
   "error_drivers.hedonic_dropped.both": 348,
   "error_drivers.hedonic_dropped.cc": 356,
   "error_drivers.hedonic_dropped.hp": 426,
@@ -798,7 +820,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-28T21:15:23+03:00",
+  "_meta.generated_at": "2026-09-28T22:29:30+03:00",
   "_meta.run_id": "601741517e09",
   "_meta.script": "08_conformal_coverage.py",
   "domain.conformal.by_quantile": {
@@ -817,18 +839,13 @@
    "len": 2,
    "sha256": "7caf23f6f110c7a610b55cb8bcd15c6953b28f6c2a93dfa6c57e44a5bdb021dd"
   },
-  "report.mondrian.all": 90.01,
   "report.mondrian.by_band": {
    "len": 4,
-   "sha256": "0b8b7a0f51f58cbcc62fc51045a9e273595958d82de8338e767f0f7155cd3a86"
+   "sha256": "dc4dc3e70fb246a04556fbe118978a60db643f8952e7568bb4eb16ae1d61759b"
   },
   "report.mondrian.columns": {
-   "len": 8,
-   "sha256": "bd94d9aebcbbe738b44273f5549cb89035bc3dff4da85232ef4b6e033c3162ba"
-  },
-  "report.mondrian.q_by_band": {
-   "len": 4,
-   "sha256": "ac091a05a6d2f0735aee69bcf2ef4b3ac0edb2b13af718aac410f110c7196674"
+   "len": 6,
+   "sha256": "85e39a025f95a4694a9c7dae5635740b792fc4c19cf3531ad371d02fef94ce5a"
   },
   "report.q_bounds": {
    "len": 3,
@@ -840,7 +857,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-28T21:12:44+03:00",
+  "_meta.generated_at": "2026-09-28T22:28:36+03:00",
   "_meta.run_id": "601741517e09",
   "_meta.script": "08_large_errors.py",
   "error_drivers.age_cuts": {
@@ -881,6 +898,10 @@
   "error_drivers.lira_scaled.top_n_perf": 23,
   "error_drivers.lira_scaled.top_n_q4": 84,
   "error_drivers.lira_scaled.top_n_under": 73,
+  "error_drivers.lira_scaled.under_if_symmetric.draws": 200,
+  "error_drivers.lira_scaled.under_if_symmetric.hi": 77,
+  "error_drivers.lira_scaled.under_if_symmetric.lo": 60,
+  "error_drivers.lira_scaled.under_if_symmetric.mean": 67.8,
   "error_drivers.live_vs_gone.gone_median_resid": -1.24,
   "error_drivers.live_vs_gone.gone_n": 18462,
   "error_drivers.live_vs_gone.last_snapshot": "2026-06-27",
@@ -977,7 +998,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-28T21:43:04+03:00",
+  "_meta.generated_at": "2026-09-28T22:40:54+03:00",
   "_meta.run_id": "601741517e09",
   "_meta.script": "09_backtest.py",
   "methodology.backtest.columns.forward": {
@@ -991,6 +1012,20 @@
   "methodology.backtest.cumulative": {
    "len": 6,
    "sha256": "f1b6ee3af019538660a8db1e23f0e9fb9883c4c73e6e0280b676050d6ebd6896"
+  },
+  "methodology.backtest.forward_coverage": {
+   "len": 9,
+   "sha256": "9e0b0635796a7b997b069cd5dcceb0395a05060a64d3bffed388806d970eec18"
+  },
+  "methodology.backtest.horizon.n": 8889,
+  "methodology.backtest.horizon.rows": {
+   "len": 3,
+   "sha256": "a3e0133412586c3f67fb2352de10fe3494041e16440e352cfd8dc0b31bdc11fc"
+  },
+  "methodology.backtest.horizon.test": "06-27",
+  "methodology.backtest.horizon.vs_latest": {
+   "len": 2,
+   "sha256": "4a46d083d8c021f0bf293573bc26387f84712f1ff9bec3a419463922f11fb427"
   },
   "methodology.backtest.insample": {
    "len": 4,

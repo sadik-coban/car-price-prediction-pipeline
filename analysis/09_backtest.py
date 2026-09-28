@@ -13,7 +13,11 @@ EN: Technical report §9 — does a model trained on the past price the next sna
     snapshot is never used to stop. Every forward row carries a 95% interval from a bootstrap that resamples the
     test listings by model (listings of one model are not independent), and single vs cumulative are compared on
     the listings both arms tested, with the same paired resamples. 2026-09-28 (simplification list): the lighter
-    setup (raw categories, fixed 800/500 trees) left with the "compare rows only" caveat.
+    setup (raw categories, fixed 800/500 trees) left with the "compare rows only" caveat. 2026-09-28 (audit): the
+    horizon is also measured on one fixed test set (the listings new in the last snapshot, priced by the model of each
+    earlier single snapshot, paired), and the served interval recipe is applied forward (pre-registered,
+    plans/09-forward-coverage): q from the training set's own OOF errors, one q or one per predicted-price band,
+    coverage on the test listings per band and on those whose (model, year) never occurs in training.
 TR: Teknik rapor §9 — geçmişle eğitilen model bir sonraki taramayı fiyatlıyor mu? Dört kol; hepsi manşet kurulumla
     (cv.fold_matrices: kategori kodları ve model/seri TF-IDF+SVD yalnız eğitim kısmında kurulur; cv.LGB_PARAMS;
     log1p fiyat; MAPE, log tahminin expm1'i üzerinde cv.price_metrics ile):
@@ -27,7 +31,11 @@ TR: Teknik rapor §9 — geçmişle eğitilen model bir sonraki taramayı fiyatl
     için hiç kullanılmaz. Her ileri satır, test ilanlarını modele göre yeniden örnekleyen bootstrap'ten %95 aralık
     taşır (bir modelin ilanları bağımsız değil); single ve cumulative, iki kolun da test ettiği ilanlarda aynı eşli
     yeniden örneklemelerle karşılaştırılır. 2026-09-28 (sadeleştirme listesi): hafif kurulum (ham kategori, sabit
-    800/500 ağaç) "yalnız satırları karşılaştırın" uyarısıyla birlikte kalktı.
+    800/500 ağaç) "yalnız satırları karşılaştırın" uyarısıyla birlikte kalktı. 2026-09-28 (denetim): ufuk ayrıca tek
+    bir sabit test kümesinde ölçülür (son taramada yeni ilanlar, önceki her tek taramanın modeliyle fiyatlanır,
+    eşli) ve servis edilen aralık tarifi ileriye uygulanır (ön kayıtlı, plans/09-forward-coverage): q eğitim kümesinin
+    kendi OOF hatalarından, tek q ya da tahmin fiyatı bandı başına q, test ilanlarında bant başına ve (model, yıl)'ı
+    eğitimde hiç geçmeyenlerde kapsama.
 Output / Çıktı: metrics/09_backtest.json
 """
 
@@ -36,10 +44,12 @@ import lightgbm as lgb
 import numpy as np
 import pandas as pd
 
+from lib import conformal as CF
 from lib.common import FEATURES, load_clean, save_metrics
-from lib.cv import LGB_PARAMS, N_JOBS, SEED, fold_matrices, lgb_oof, load_oof, make_folds, price_metrics
+from lib.cv import LGB_PARAMS, N_JOBS, PRICE_CAP, SEED, fold_matrices, lgb_oof, load_oof, make_folds, price_metrics
 
 MIN_TEST, MIN_OOF = 30, 100
+BANDS = ["Q1", "Q2", "Q3", "Q4"]
 N_BOOT, LEVEL = 1000, 0.95
 
 
@@ -65,12 +75,14 @@ def fit_forward(train):
     """
     EN: Trains like the served model: a 5-fold CV with early stopping on the training set picks the tree count
         (median of the folds), then one fit on the whole set. Returns: (predict(test_frame) → log predictions,
-        trees).
+        trees, the training set's OOF log predictions from that CV).
     TR: Servis edilen model gibi eğitir: eğitim kümesinde erken durdurmalı 5 katlı CV ağaç sayısını seçer (katların
-        medyanı), sonra bütün kümede tek eğitim. Döndürür: (predict(test_tablosu) → log tahminler, ağaç).
+        medyanı), sonra bütün kümede tek eğitim. Döndürür: (predict(test_tablosu) → log tahminler, ağaç, o CV'nin
+        eğitim kümesindeki OOF log tahminleri).
     """
     X, yl = train[FEATURES].reset_index(drop=True), np.log1p(train["price"].values.astype(float))
-    trees = int(np.median(lgb_oof(X, yl, make_folds(len(X)))["iters"]))
+    cv_run = lgb_oof(X, yl, make_folds(len(X)))
+    trees = int(np.median(cv_run["iters"]))
 
     def predict(test):
         """EN: Log predictions for test rows. / TR: Test satırları için log tahminler."""
@@ -80,7 +92,7 @@ def fit_forward(train):
         mdl = lgb.LGBMRegressor(n_jobs=N_JOBS, **{**LGB_PARAMS, "n_estimators": trees})
         mdl.fit(Xtr, yl, categorical_feature=catc)
         return mdl.predict(Xte)
-    return predict, trees
+    return predict, trees, cv_run["pred_log"]
 
 
 def test_rows(rows, seen, snap):
@@ -117,19 +129,52 @@ def ape(price, pred_log):
     return np.abs(price - np.expm1(pred_log)) / price * 100
 
 
+def forward_coverage(train_price, train_oof_log, test_price, test_log, no_comparable):
+    """
+    EN: The served recipe applied forward: q from the training set's own OOF log errors (finite-sample 90%), band
+        edges from the quartiles of its OOF predictions; one q for all, or one q per band (Mondrian). Coverage on the
+        test listings overall, per band and on those whose (model, year) never occurs in training. Only training
+        numbers set q and the edges. Returns: {"q", "q_band", "bounds", "n", "coverage_global", "coverage_band",
+        "bands": [[band, n, cov_global, cov_band]], "no_comparable": {"n", "coverage_global", "coverage_band"}}.
+    TR: Servis tarifi ileriye uygulanır: q eğitim kümesinin kendi OOF log hatalarından (sonlu örneklem %90), bant
+        sınırları OOF tahminlerinin çeyreklerinden; herkese tek q ya da bant başına q (Mondrian). Kapsama test
+        ilanlarında genel, bant başına ve (model, yıl)'ı eğitimde hiç geçmeyenlerde. q'yu ve sınırları yalnız eğitim
+        sayıları belirler. Döndürür: {"q", "q_band", "bounds", "n", "coverage_global", "coverage_band", "bands":
+        [[bant, n, kapsama_genel, kapsama_bant]], "no_comparable": {"n", "coverage_global", "coverage_band"}}.
+    """
+    tr_pred = np.clip(np.expm1(train_oof_log), 0, PRICE_CAP)
+    tr_err = np.abs(np.log1p(train_price) - np.log1p(tr_pred))
+    bounds = [float(x) for x in np.quantile(tr_pred, [.25, .5, .75])]
+    tr_band = CF.band_of(tr_pred, bounds)
+    q = CF.conformal_quantile(tr_err)
+    q_band = [CF.conformal_quantile(tr_err[tr_band == b]) for b in range(len(BANDS))]
+    te_pred = np.clip(np.expm1(test_log), 0, PRICE_CAP)
+    te_band = CF.band_of(te_pred, bounds)
+    ins_g = CF.inside(test_price, te_pred, q)
+    ins_b = CF.inside(test_price, te_pred, np.asarray(q_band)[te_band])
+    pc = lambda m: round(float(m.mean() * 100), 2) if m.size else None       # noqa: E731
+    return {"q": round(q, 4), "q_band": [round(x, 4) for x in q_band], "bounds": [round(b, 0) for b in bounds],
+            "n": int(len(test_price)), "coverage_global": pc(ins_g), "coverage_band": pc(ins_b),
+            "bands": [[name, int((te_band == b).sum()), pc(ins_g[te_band == b]), pc(ins_b[te_band == b])]
+                      for b, name in enumerate(BANDS)],
+            "no_comparable": {"n": int(no_comparable.sum()), "coverage_global": pc(ins_g[no_comparable]),
+                              "coverage_band": pc(ins_b[no_comparable])}}
+
+
 def forward_arm(rows, snaps, cumulative):
     """
     EN: The single or cumulative arm. Returns: (rows [train, test, MAPE, n, lo, hi, trees], {(train, test): (ad_ids,
-        APE, model)} for the paired comparison).
-    TR: single ya da cumulative kol. Döndürür: (satırlar [eğitim, test, MAPE, n, alt, üst, ağaç], eşli karşılaştırma
-        için {(eğitim, test): (ad_id'ler, APE, model)}).
+        APE, model)} for the paired comparisons, {(train, test): forward_coverage(...)}).
+    TR: single ya da cumulative kol. Döndürür: (satırlar [eğitim, test, MAPE, n, alt, üst, ağaç], eşli karşılaştırmalar
+        için {(eğitim, test): (ad_id'ler, APE, model)}, {(eğitim, test): forward_coverage(...)}).
     """
-    out, keep = [], {}
+    out, keep, cover = [], {}, {}
     for i in range(1, len(snaps)) if cumulative else range(len(snaps) - 1):
         train_snaps = snaps[:i] if cumulative else [snaps[i]]
         train = latest_per_ad(rows[rows["snap"].isin(train_snaps)])
-        predict, trees = fit_forward(train)
+        predict, trees, oof_log = fit_forward(train)
         seen = set(train["ad_id"])
+        cells = set(zip(train["model"], train["gb_year"]))
         for t in snaps[(i if cumulative else i + 1):]:
             te = test_rows(rows, seen, t)
             if te is None:
@@ -141,7 +186,9 @@ def forward_arm(rows, snaps, cumulative):
             label = ("→" + train_snaps[-1][5:]) if cumulative else train_snaps[0][5:]
             out.append([label, t[5:], mape(price, pl), int(len(te)), lo, hi, trees])
             keep[(label, t[5:])] = (te["ad_id"].values, a, te["model"].values)
-    return out, keep
+            no_comp = np.array([c not in cells for c in zip(te["model"], te["gb_year"])])
+            cover[(label, t[5:])] = forward_coverage(train["price"].values.astype(float), oof_log, price, pl, no_comp)
+    return out, keep, cover
 
 
 def paired(single_keep, cumulative_keep, first):
@@ -167,6 +214,36 @@ def paired(single_keep, cumulative_keep, first):
     return out
 
 
+def horizon(single_keep, cumulative_keep, snaps):
+    """
+    EN: The horizon on one fixed test set: the listings new in the last snapshot (unseen in every earlier one) priced
+        by the models trained on each single earlier snapshot; MAPE per training snapshot and its difference from the
+        most recent one, all from the same model-resampled draws (paired). Returns: {"test", "n", "rows": [[train,
+        MAPE, lo, hi]], "vs_latest": [[train, difference, lo, hi]]}.
+    TR: Ufuk tek bir sabit test kümesinde: son taramada yeni olan (önceki hiçbir taramada görülmemiş) ilanlar, önceki
+        her tek taramayla eğitilen modellerle fiyatlanır; eğitim taraması başına MAPE ve en yenisinden farkı, hepsi aynı
+        model-yeniden-örneklemeli çekilişlerden (eşli). Döndürür: {"test", "n", "rows": [[eğitim, MAPE, alt, üst]],
+        "vs_latest": [[eğitim, fark, alt, üst]]}.
+    """
+    test, latest = snaps[-1][5:], snaps[-2][5:]
+    common, _a, models_ = cumulative_keep[("→" + latest, test)]
+    order = np.argsort(common)
+    common, models_ = common[order], models_[order]
+    trains = [s[5:] for s in snaps[:-1]]
+    apes = []
+    for tr in trains:
+        ids, a, _m = single_keep[(tr, test)]
+        both, ci, si = np.intersect1d(common, ids, return_indices=True)
+        assert len(both) == len(common), "fixed test set not inside a single arm's test set"
+        apes.append(a[si[np.argsort(ci)]])
+    draws = cluster_boot(models_, *apes)
+    rows = [[tr, round(float(a.mean()), 2), *interval(draws[:, j])] for j, (tr, a) in enumerate(zip(trains, apes))]
+    k = trains.index(latest)
+    vs = [[tr, round(float(apes[j].mean() - apes[k].mean()), 2), *interval(draws[:, j] - draws[:, k])]
+          for j, tr in enumerate(trains) if j != k]
+    return {"test": test, "n": int(len(common)), "rows": rows, "vs_latest": vs}
+
+
 def oof_arm(sub):
     """
     EN: 5-fold OOF MAPE inside a set of listings with the headline cv.lgb_oof. Returns: (MAPE or None, n, log
@@ -188,7 +265,8 @@ def to_metrics(res):
     TR: Site ağacında yayımlanır (methodology.backtest).
     """
     return {"methodology": {"backtest": {
-        "single": res["single"], "cumulative": res["cumulative"], "paired": res["paired"],
+        "single": res["single"], "cumulative": res["cumulative"], "paired": res["paired"], "horizon": res["horizon"],
+        "forward_coverage": res["forward_coverage"],
         "insample": res["insample"], "per_snapshot": res["per_snapshot"],
         "columns": {"forward": ["train", "test", "MAPE", "n", "ci_lo", "ci_hi", "trees"],
                     "paired": ["test", "single_train", "cumulative_train", "n_common", "single_MAPE",
@@ -207,8 +285,13 @@ stored, oof_info = load_oof(listings)
 
 # %% [5] Compute | Hesapla — look at the results here | sonuçlara burada bak
 snaps = sorted(rows["snap"].unique())
-single, single_keep = forward_arm(rows, snaps, cumulative=False)
-cumulative, cumulative_keep = forward_arm(rows, snaps, cumulative=True)
+single, single_keep, single_cover = forward_arm(rows, snaps, cumulative=False)
+cumulative, cumulative_keep, cumulative_cover = forward_arm(rows, snaps, cumulative=True)
+# EN: pre-registered setups (plans/09-forward-coverage): every single row, and every cumulative row whose training
+#     differs from the single arm's | TR: ön kayıtlı kurulumlar: her single satırı ve eğitimi single'dan farklı her
+#     cumulative satırı
+forward_cov = [{"train": k[0], "test": k[1], **v} for k, v in single_cover.items()] + \
+    [{"train": k[0], "test": k[1], **v} for k, v in cumulative_cover.items() if k[0] != "→" + snaps[0][5:]]
 insample = []
 for i in range(1, len(snaps) + 1):
     mp, n, pl = oof_arm(latest_per_ad(rows[rows["snap"].isin(snaps[:i])]))
@@ -218,8 +301,12 @@ assert n == len(listings) and np.array_equal(np.expm1(pl), stored["lgb"].values)
     "last insample block ≠ headline OOF | son insample bloğu manşet OOF'a eşit değil"
 per_snapshot = [[s[5:], *oof_arm(rows[rows["snap"] == s].reset_index(drop=True))[:2]] for s in snaps]
 res = {"single": single, "cumulative": cumulative, "paired": paired(single_keep, cumulative_keep, snaps[0][5:]),
+       "horizon": horizon(single_keep, cumulative_keep, snaps), "forward_coverage": forward_cov,
        "insample": insample, "per_snapshot": per_snapshot}
-print("single:", single, "\npaired:", res["paired"], "\ninsample:", insample, "\nper_snapshot:", per_snapshot)
+print("single:", single, "\npaired:", res["paired"], "\nhorizon:", res["horizon"], "\ninsample:", insample,
+      "\nper_snapshot:", per_snapshot)
+for c in forward_cov:
+    print("coverage", c["train"], "→", c["test"], c["coverage_global"], c["coverage_band"], c["bands"], c["no_comparable"])
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
 print("written | yazıldı:", save_metrics("09_backtest", to_metrics(res), run_id=oof_info["run_id"]))

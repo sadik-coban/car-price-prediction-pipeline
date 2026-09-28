@@ -229,7 +229,7 @@ Ham fiyat sağa çarpık (çarpıklık 1.62); log dönüşümü simetriğe yakla
 
 Hedonik regresyon her sürücünün *kontrollü* (diğer her şey sabitken) fiyat etkisini verir; hedef log fiyat, n **29.554**. İki sütun yan yana. **Segment kontrolü** segment, marka, yakıt ve vites kuklalarıyla kurulur (R² **0.9312**). **Model kontrolü** bunlara `C(model)` ekler (735 model adı), yani her etki aynı model adı içinde ölçülür (R² **0.9648**). Model kimliği, hedonik R² ile modelin aynı ölçekteki OOF R²'si (0.9699, log fiyat) arasındaki farkın yaklaşık %87 kadarını kapatıyor — bir üst tahmin: C(model)'li R² örneklem içi, modelinki OOF. Modelin başlıktaki R²'si (0.9745) ham ₺ ölçeğinde; hedonikle o karşılaştırılmamalı.
 
-**Güven aralıkları.** Aynı modelin ilanları birbirinden bağımsız değil ve hata varyansı eşit değil (Breusch-Pagan p <0.001); bu yüzden %95 güven aralıkları modele göre kümelenmiş standart hatalardan (735 küme). Segment sütununda 10 terimin hepsinin aralığı sıfırı dışlıyor; model sütununda yaş², +1 litre terimlerinin aralığı sıfırı içeriyor.
+**Güven aralıkları.** Aynı modelin ilanları birbirinden bağımsız değil ve hata varyansı eşit değil (Breusch-Pagan p <0.001); bu yüzden %95 güven aralıkları modele göre kümelenmiş standart hatalardan (735 küme). Segment sütununda 10 terimin hepsinin aralığı sıfırı dışlıyor; model sütununda yaş², +1 litre terimlerinin aralığı sıfırı içeriyor. Duyarlılık: seriye göre kümelenince (22 küme; az ve dengesiz, bu yüzden yalnız karşılaştırma için) aralığı sıfırı içeren terimler segment sütununda +1 litre, model sütununda yaş², yaş×km, +1 litre. Aynı serinin modelleri de birbirinden bağımsız değil; bu terimlerin anlamlılığı kümelemenin seçimine bağlı.
 
 **Not:** Hedonik model bir OLS modelidir ve eksik değerlerle çalışamaz; bu yüzden eksik motor gücü (426) ve eksik motor hacmi (356) bulunan ilanlar analiz öncesinde elenmiştir. Her iki alanın da ortak eksik olduğu satırlar düşüldüğünde veri setinden toplam 434 satır çıkarılmıştır.
 
@@ -239,18 +239,18 @@ Hedonik regresyon her sürücünün *kontrollü* (diğer her şey sabitken) fiya
 
 | terim | segment kontrolü [%95 GA] | model kontrolü [%95 GA] |
 |---|---:|---:|
-| yaş | -%6.64 [-%6.92, -%6.37] | -%5.80 [-%6.34, -%5.27] |
-| yaş² | +%0.08 [+%0.04, +%0.13] | +%0.03 [-%0.03, +%0.09] |
+| yaş | -%6.64 [-%6.92, -%6.37] | -%5.80 [-%6.33, -%5.27] |
+| yaş² | +%0.08 [+%0.04, +%0.13] | +%0.03 [-%0.03, +%0.08] |
 | km (100 bin) | -%15.11 [-%15.81, -%14.40] | -%14.83 [-%15.31, -%14.34] |
-| km² | +%1.56 [+%1.08, +%2.05] | +%1.67 [+%1.33, +%2.01] |
+| km² | +%1.56 [+%1.08, +%2.05] | +%1.67 [+%1.34, +%2.01] |
 | yaş×km | -%0.62 [-%0.89, -%0.35] | -%0.33 [-%0.56, -%0.10] |
-| ağır hasar | -%11.60 [-%12.51, -%10.68] | -%12.46 [-%13.26, -%11.66] |
-| boyalı | -%1.05 [-%1.17, -%0.92] | -%0.98 [-%1.09, -%0.87] |
+| ağır hasar | -%11.60 [-%12.51, -%10.68] | -%12.46 [-%13.25, -%11.67] |
+| boyalı | -%1.05 [-%1.17, -%0.92] | -%0.98 [-%1.09, -%0.88] |
 | değişen | -%3.06 [-%3.33, -%2.79] | -%3.12 [-%3.35, -%2.88] |
-| +100 hp | +%19.86 [+%13.89, +%26.15] | +%19.30 [+%6.76, +%33.31] |
-| +1 litre | +%7.49 [+%0.71, +%14.73] | +%5.97 [-%1.01, +%13.45] |
+| +100 hp | +%19.86 [+%13.89, +%26.15] | +%19.30 [+%6.90, +%33.12] |
+| +1 litre | +%7.49 [+%0.71, +%14.73] | +%5.97 [-%0.92, +%13.35] |
 
-Etki = exp(β)−1. Yaş ve km **medyan araca** (11 yaş, 181.000 km) ortalandı: yaş ve km satırları o araçtaki marjinal etki. Kare ve etkileşim terimleri (yaş², km², yaş×km) tek başına okunmaz; eğrinin bükülmesini taşır. Model sütununun nokta tahmini segment sütununun aralığının dışında kalan terimler: yaş, yaş², yaş×km — bunlarda model kimliğini sabitlemek etkiyi örnekleme hatasından fazla değiştiriyor; öteki terimlerde iki sütun birbirinin aralığı içinde. Karar notundaki etkiler model sütunundan: aynı model adı içinde.
+Etki = exp(β)−1. Yaş ve km **medyan araca** (11 yaş, 181.000 km) ortalandı: yaş ve km satırları o araçtaki marjinal etki. Kare ve etkileşim terimleri (yaş², km², yaş×km) tek başına okunmaz; eğrinin bükülmesini taşır. İki sütunun farkı her terim için modele göre kümeli bir testle sınandı: fark yaş, yaş×km, ağır hasar, boyalı terimlerinde örnekleme hatasından büyük (%5 düzeyinde); öteki terimlerde değil. Karar notundaki etkiler model sütunundan: aynı model adı içinde.
 
 **Katsayılar nedensel etki değil, kontrollü ilişkidir.** Ör. boyalı panelin katsayısı boyamanın fiyatı düşürdüğünü değil, boyalı panelli ilanların benzerlerinden o kadar ucuz ilan edildiğini söyler.
 
@@ -258,7 +258,7 @@ Etki = exp(β)−1. Yaş ve km **medyan araca** (11 yaş, 181.000 km) ortalandı
 
 ### Motor etkisi
 
-+100 hp segment kontrolünde **+%19.9**, model kontrolünde **+%19.3**; +1 litre **+%7.5** ile **+%6.0** (aynı regresyonda, diğeri sabitken). Model adı motoru büyük ölçüde belirlediği için model sütununda motor terimleri yalnız aynı model adı içindeki güç ve hacim farkından ölçülür; aralıkları bu yüzden daha geniş. Hacim ve güç birbirine bağlı (korelasyon 0.73): hacmin etkisi güç sabitken kalan kısım, iki katsayı birlikte okunmalı; birimler farklı olduğu için doğrudan kıyaslanmaz.
++100 hp segment kontrolünde **+%19.9**, model kontrolünde **+%19.3**; +1 litre **+%7.5** ile **+%6.0** (aynı regresyonda, diğeri sabitken). Model adı motoru büyük ölçüde belirlediği için model sütununda motor terimleri yalnız aynı model adı içindeki güç ve hacim farkından ölçülür; aralıkları bu yüzden daha geniş. Bu fark ince: model adlarının yalnız 354/735 tanesinde güç ilanlar arasında değişiyor (model içi standart sapma 9.0 hp, genelde 43.1 hp) ve bir kısmı katalog hatası: §8'in motor değeri tutarsız 14 ilanı çıkarılınca model sütununda +100 hp +%19.3 → +%26.0. Hacim ve güç birbirine bağlı (Pearson korelasyonu 0.73): hacmin etkisi güç sabitken kalan kısım, iki katsayı birlikte okunmalı; birimler farklı olduğu için doğrudan kıyaslanmaz.
 
 ### LOFO — çıkarma testi
 
@@ -372,7 +372,7 @@ Her nokta bir model; y ekseni o modelin ilanlarındaki medyan hata. Kova medyan�
 
 - **Dağılım varsayımı yapmaz:** Hataların bir formüle (çan eğrisi vb.) uyduğu varsayılmaz. Modelin daha önce hiç görmediği araçlardaki gerçek hataları sıralanır, en kötü %10'u dışarıda bırakılır ve pay doğrudan veriden okunur. Tek varsayım, yeni ilanların eskilere benzemesidir — piyasa kaydıkça (§9) bu varsayım zayıflar.
 - **Oransaldır:** Hata payı lira değil yüzde olarak uygulanır (tahminin yaklaşık %13 altı ile %15 üstü). Bu yüzden pahalı araçta lira bandı geniş, ucuz araçta dar çıkar.
-- **Kalibrasyonu başka ilanlardan:** Kapsama çapraz ölçülür: her katın aralığı yalnız öteki katların hatalarından kurulur, hiçbir ilanın kendi hatası kendi aralığını ayarlamaz. Genel kapsama bu yüzden tanım gereği değil, ölçülmüş: %89.99.
+- **Kalibrasyonu başka ilanlardan:** Kapsama çapraz ölçülür: her katın aralığı yalnız öteki katların hatalarından kurulur, hiçbir ilanın kendi hatası kendi aralığını ayarlamaz. Katlar rastgele olduğu için genel kapsama (%89.99) yine de hedefe neredeyse kendiliğinden oturur; asıl sınav, sonraki taramanın yeni ilanlarındaki ileri kapsama (aşağıda).
 
 **Zayıflık fiyata bağlı:** medyan hata tahmini en ucuz çeyrekte %6.95, en pahalıda %3.55. Tüm piyasaya tek bir yüzde uygulanınca, modelin oransal olarak daha çok yanıldığı ucuz bantta aralık dar kalıyor: Q1 kapsaması %81.0.
 
@@ -380,7 +380,7 @@ Her nokta bir model; y ekseni o modelin ilanlarındaki medyan hata. Kova medyan�
 
 Liraya çevrilince tablo değişiyor: toplam lira hatasının %38.9 kadarı tahmini en pahalı çeyrekte, %17.6 kadarı en ucuzda; ortalama mutlak hata ₺171K ile ₺77K.
 
-**Hata payı banda göre (Mondrian).** Hata payı tahmin edilen fiyatın dört çeyreğinde ayrı ayrı hesaplanınca kapsama her bantta %89.96–%90.04: ön kayıtlı ölçüt (her bantta %88–%92) tuttu. Bedeli genişlik: en ucuz bantta aralık tahminin %28.3 kadarından %37.1 kadarına genişliyor, en pahalıda %28.3 kadarından %21.4 kadarına daralıyor.
+**Hata payı banda göre (Mondrian).** Hata payı tahmin edilen fiyatın dört çeyreğinde ayrı ayrı hesaplanınca kapsama her bantta %89.96–%90.04. Rastgele katlarda bu neredeyse tanım gereği: ilk ön kayıttaki ölçüt (her bantta %88–%92) kodu sınadı, yöntemi değil; asıl sınav aşağıdaki ileri kapsama. Bedeli genişlik: en ucuz bantta aralık tahminin %28.3 kadarından %37.1 kadarına genişliyor, en pahalıda %28.3 kadarından %21.4 kadarına daralıyor.
 
 ![%90 aralık kaç ilanda tuttu (hedef %90)](figures/tr-12-coverage.png)
 
@@ -393,11 +393,23 @@ Liraya çevrilince tablo değişiyor: toplam lira hatasının %38.9 kadarı tahm
 
 **Not:** Bantlar tahmin edilen fiyattan kesildi: bir fiyatlama aracının bildiği tek şey o. Gerçek fiyata göre gruplamak ortalamaya dönüş üretir. Genişlik, aralığın alt ve üst ucu arasındaki farkın o banttaki medyanı.
 
+**İleri kapsama (ön kayıt `plans/09-forward-coverage`).** Servis edilen tarif ileriye uygulandı: q eğitim taramasının kendi OOF hatalarından, test sonraki taramanın yeni ilanlarında (§9'daki dokuz ileri kurulum). Tek payla genel kapsama %87.3–%92.4, en ucuz bantta %77.1–%85.3. Banda göre pay en ucuz bandı her kurulumda düzeltiyor (%88.8–%92.5) ama her bantta %88'i tutmuyor: en düşük %84.9. Aynı model ve yılı eğitimde hiç olmayan ilanlarda kapsama iki kolda da düşük (tek pay %64.3–%76.2, banda göre %63.0–%73.0); banda göre pay orada her kurulumda kapsamayı daha da düşürüyor.
+
+| bant | tek pay | banda göre |
+|---|---:|---:|
+| Q1 | %77.1–%85.3 | %88.8–%92.5 |
+| Q2 | %88.6–%92.1 | %87.3–%91.0 |
+| Q3 | %89.8–%94.5 | %84.9–%91.6 |
+| Q4 | %92.9–%96.2 | %88.0–%92.5 |
+| emsalsiz (model+yıl eğitimde yok) | %64.3–%76.2 | %63.0–%73.0 |
+
+Hücreler dokuz ileri kurulumdaki kapsamanın en düşüğü–en yükseği.
+
 ### En büyük hatalar
 
 **Motor değeri tutarsız ilanlar.** Motor gücü ya da hacmi kendi modelinin medyanından 1.5 kattan fazla sapan 15 ilan var (%0.05): katalog eşleşmesi çökmüş, model aracın sahip olmadığı bir motoru fiyatlıyor; medyan hataları %12.8, geri kalanınki %4.7. Bu kontrol yalnız en az 5 ilanı olan modellerde çalışıyor: daha az ilanlı 307 modelin 632 ilanı (%2.11) onun kör noktası — emsalsizliğin en yoğun olduğu yer.
 
-**Lira ölçeğinde en büyük hatalar düşük tahmin.** İlk 100 lira hatasından 73 tanesi düşük, 27 tanesi fazla tahmin; 84 tanesi tahmini en pahalı çeyrekte. Segmentini model adından alan seriler (M Serisi, RS, S, i Serisi) verinin %0.52 kadarı ama ilk 100 içinde 23 ilan — verideki paylarının 44 katı. Fiyat tavanı (₺6.50M) bu uçta modelin öğrendiği aralığı da kesiyor; en pahalı ilanlardaki düşük tahmin bu sınırla birlikte okunmalı.
+**Lira ölçeğinde en büyük hatalar.** İlk 100 lira hatasından 73 tanesi düşük, 27 tanesi fazla tahmin. Bu yön bir model eğilimi sayılmaz: gerçek fiyat tahminin etrafında log ölçekte simetrik dağılsaydı da ilk 100'ün ortalama 67.8'i (%95: 60–77) düşük tahmin olurdu; aynı yüzde hata, fiyat tahminin üstündeyken liraca daha büyük. 84 tanesi tahmini en pahalı çeyrekte. Segmentini model adından alan seriler (M Serisi, RS, S, i Serisi) verinin %0.52 kadarı ama ilk 100 içinde 23 ilan — verideki paylarının 44 katı. Fiyat tavanı (₺6.50M) bu uçta modelin öğrendiği aralığı da kesiyor; en pahalı ilanlardaki düşük tahmin bu sınırla birlikte okunmalı.
 
 ![Lira ölçeğinde hata — tahmin − gerçek](figures/tr-28-residual-lira.png)
 
@@ -432,6 +444,8 @@ Tek dönem = yalnız bir taramada eğit, sonrakini tahmin et. Kümülatif = t'ye
 Kurulum manşet modelinki: model ve seri adı TF-IDF+SVD, aynı LightGBM ayarları. Ağaç sayısını, servis edilen modeldeki gibi, eğitim kümesinin kendi içindeki 5 katlı erken durdurma seçiyor (161–211 ağaç); test taraması durdurmak için hiç kullanılmıyor. Köşeli parantez %95 güven aralığı: test ilanları modele göre yeniden örneklenerek (bir modelin ilanları birbirinden bağımsız değil) 1.000 kez hesaplandı.
 
 Aynı eğitim taramasından (01-18) test ufku uzadıkça MAPE %6.29 → %7.34; güven aralıkları örtüşmüyor. Ama her ufkun test ilanları farklı: başka ilanlar, başka bileşim, başka test taraması. Bu fark yalnız zamana bağlanamaz.
+
+**Sabit test kümesinde ufuk.** Bu çekince aynı ilanlarda kalkıyor: 06-27 taramasına yeni gelen 8.889 ilan (önceki hiçbir taramada görülmemiş) önceki her tek taramayla eğitilen modelle fiyatlandı. MAPE eğitim taramasına göre 01-18 %7.29, 01-27 %7.13, 03-21 %6.89; en yeni eğitime göre fark 01-18 +0.40 [+0.27, +0.52], 01-27 +0.24 [+0.13, +0.34] (eşli, modele göre kümeli). Aynı ilanlarda eğitim taraması eskidikçe hata artıyor.
 
 | test | tek dönem eğitimi | kümülatif eğitimi | ortak ilan | tek dönem | kümülatif | fark [%95 GA] |
 |---|---|---|---:|---:|---:|---:|
@@ -483,10 +497,10 @@ Bu tablo zamansal değil: her satır düz 5-fold OOF, yeni ilan kuralı yok. Son
 
 ### Yeniden eğitim ne zaman
 
-- **Kaymayı izle, modeli yeniden eğit.** Canlıda bir **kayma servisi** PSI · KS · EMD'yi izlesin ve model yeni taramalarla yeniden eğitilsin. Sabit bir PSI eşiği yetmez: bugünkü en yüksek PSI 0.0049, ama yukarıdaki backtest'te aynı eğitim döneminden test ufku uzadıkça MAPE %6.29 → %7.34 artıyor. Bu artış yalnız zamana bağlanamaz: her ufkun test ilanları farklı, ilan bileşimi ve test taraması da değişiyor. Ama dağılım neredeyse kıpırdamazken bile eski taramayla eğitilmiş modelin hatası büyüyor.
+- **Kaymayı izle, modeli yeniden eğit.** Canlıda bir **kayma servisi** PSI · KS · EMD'yi izlesin ve model yeni taramalarla yeniden eğitilsin. Sabit bir PSI eşiği yetmez: bugünkü en yüksek PSI 0.0049, ama aynı yeni ilanlarda en eski taramayla (01-18) eğitilen model en yenisinden +0.40 puan [+0.27, +0.52] daha çok yanılıyor: dağılım neredeyse kıpırdamazken model eskiyor.
 - **Hatayı doğrudan izle.** Fiyat her taramada geldiği için modelin yeni ilanlardaki hatası doğrudan ölçülebilir; yukarıdaki backtest tam bunu yapıyor. Kayma ölçüleri (PSI · KS · EMD) tanı için kalır.
 - **Fiyat rejimini değiştiren gelişmeler.** Vergi/ÖTV düzenlemesi, teşvik, ithalat kuralı, kur hareketi ya da ani piyasa anomalisi gibi dışsal olaylar kaymayı bir ölçüm penceresi dolmadan yaratabilir; bunlar ayrıca **tetikleyici** sayılmalı ve eğitim planı bunlara göre yapılmalı.
-- **Eski dönemleri atma.** Aynı test ilanlarındaki eşli karşılaştırmada birikimli eğitim üç karşılaştırmanın bir tanesinde hatayı anlamlı düşürüyor, hiçbirinde artırmıyor. Yeniden eğitim eski dönemleri atarak değil, **üstüne ekleyerek** yapılmalı.
+- **Eski dönemleri atma.** Aynı test ilanlarındaki eşli karşılaştırmada birikimli eğitim üç karşılaştırmanın bir tanesinde hatayı anlamlı düşürüyor, hiçbirinde anlamlı artırmıyor (aralıklar test ilanlarının örneklemesini taşır, eğitimin değişkenliğini değil). Yeniden eğitim eski dönemleri atarak değil, **üstüne ekleyerek** yapılmalı.
 
 ## 10. Serbest metin: ölçüldü, dahil edilmedi
 

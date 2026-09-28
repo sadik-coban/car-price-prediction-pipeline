@@ -97,6 +97,18 @@ Dışarıda hazırlanan bir sadeleştirme listesi madde madde değerlendirildi. 
   - veriden gelmeyen ±%1 yeniden eğitim eşiği.
 - `tools/snapshot_metrics.py --drop-exemption`, bilinçli kaldırılan bir anahtarın muafiyetini siler (bootstrap
   süresi böyle kalktı).
+- **Bağımsız denetim (aynı gün) ve düzeltmeleri:**
+  - Model sütunu tekil tasarımda pseudo-inverse ile çözülüyordu; kümeli SH'ler küçük değişikliklerde patlıyordu. Artık
+    model içi dönüşüm (sabit etkiler) kullanılıyor; tahminler aynı, tasarım tam ranklı, testli.
+  - Sütun farkı cümlesi artık terim başına kümeli fark testine dayanıyor.
+  - Duyarlılıklar eklendi: seriye göre kümeleme ve motor değeri tutarsız ilanlar olmadan +100 hp.
+  - "Lira ölçeğinde en büyük hatalar düşük tahmin" bir bulgu değil: simetrik log hatası da yaklaşık 68/100 düşük
+    tahmin verir; rapor bunu söylüyor.
+  - Ufuk artık sabit bir test kümesinde de ölçülüyor (aynı ilanlar, eğitim taraması eskidikçe hata artıyor).
+  - **Ön kayıttan sapma:** `plans/08-mondrian-coverage`'ın ölçütü rastgele katlarda neredeyse tanım gereği tutuyordu;
+    ölçüt kodu sınadı, yöntemi değil. Asıl soru yeni bir ön kayıtla soruldu (`plans/09-forward-coverage`): servis
+    tarifi ileriye uygulanınca banda göre pay en ucuz bandı her kurulumda düzeltiyor (H1 doğrulandı), ama her bantta
+    %88'i tutmuyor (H2 çürüdü) ve emsalsiz ilanlarda kapsamayı düşürüyor. Karar notunun önerisi bu sonuca göre yazıldı.
 
 ## İş / teknik ayrımı
 

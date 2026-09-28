@@ -107,6 +107,20 @@ the report's markdown.
   - a ±1% retraining threshold that does not come from the data.
 - `tools/snapshot_metrics.py --drop-exemption` removes the exemption of a key removed on purpose (the bootstrap run
   time went this way).
+- **Independent audit (same day) and its fixes:**
+  - The model column was solved by a pseudo-inverse on a singular design; its clustered SEs blew up on small
+    perturbations. It now uses the within transform (fixed effects): same estimates, full-rank design, tested.
+  - The column-difference sentence now rests on a per-term cluster-robust difference test.
+  - Sensitivities were added: clustering by series, and +100 hp without the listings with an inconsistent engine value.
+  - "In lira the largest errors are under-predictions" is not a finding: a symmetric log error also gives about 68/100
+    under-predictions; the report says so.
+  - The horizon is also measured on one fixed test set (the same listings; the error grows as the training snapshot
+    ages).
+  - **Deviation from a pre-registration:** the criterion of `plans/08-mondrian-coverage` held almost by construction
+    under random folds; it tested the code, not the method. The real question was asked under a new pre-registration
+    (`plans/09-forward-coverage`): applied forward, the per-band margin fixes the cheapest band in every setup (H1
+    confirmed), but does not hold 88% in every band (H2 refuted) and lowers coverage on listings without a comparable.
+    The decision note's advice was written from that result.
 
 ## Business / technical split
 

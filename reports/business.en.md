@@ -31,7 +31,7 @@ How much each driver moves the price — **within one model name, with everythin
 | painted panel (each) | -1.0% |
 | +100 hp of engine power | +19.3% |
 
-The least certain driver is +100 hp of engine power: its 95% confidence interval runs from +6.8% to +33.3%.
+The least certain driver is +100 hp of engine power: its 95% confidence interval runs from +6.9% to +33.1%.
 
 Age and mileage are linked axes; the age and km rows above are each measured with the other held fixed, at a typical car (11 years, 181,000 km).
 
@@ -59,18 +59,18 @@ In **percentage** terms the model struggles on cheap cars — error varies sharp
 
 An asking-price error costs money in both directions: **over-estimating hits the buyer** — they overpay; **under-estimating hits the seller** — the car goes too cheap. A single number hides how sure the estimate is; a range states it and warns the user exactly where uncertainty is large.
 
-That is why the output is a **90% range**, not one number. With one margin the range does not hold on cheap cars: coverage in the cheapest predicted quartile is **81.0%**, below target. With the margin computed per price band it is 90.0% in every band: the range widens on cheap cars (from 28.3% to 37.1% of the estimate) and narrows on expensive ones (from 28.3% to 21.4%).
+That is why the output is a **90% range**, not one number. With one margin the range does not hold on cheap cars: coverage in the cheapest predicted quartile is **81.0%**, below target. With the margin computed per price band, on the new listings of the snapshot after training the cheapest band covers 88.8%–92.5% instead of 77.1%–85.3%. On cars without a comparable the range fails either way (64.3%–76.2%); with the per-band margin coverage drops further there.
 
 ![How often the 90% range held (target 90%)](figures/en-12-coverage.png)
 
 **What to do**
 
-- Compute the range's margin per price band: wider on cheap cars, narrower on expensive ones — don't trust a point estimate.
+- Compute the range's margin per price band: wider on cheap cars, narrower on expensive ones — don't trust a point estimate. On cars without a comparable, don't trust the range either.
 - Price rare and edge cars by hand; the model scatters there.
 - Review a listing whose text mentions a conversion, an engine swap or modifications before it goes live: that information is not in the form. With vehicle attributes held fixed no significant difference in its error rate was measured; the review guards against what the form cannot see, not against model error.
 - **Watch drift and retrain the model:** run a service that tracks the price distribution, and retrain the model on new data. The price distribution moves little today (highest PSI 0.005), but the market level moved +2.0% over four snapshots and the model is time-blind.
 - **Watch the error directly:** the price arrives with every snapshot, so the model's error on new listings can be measured directly; watching the price distribution stays as a diagnostic.
-- **Watch for events that reset the pricing regime** (a tax or excise change, an incentive, a sudden market move) — plan retraining around them. Do not discard old snapshots: accumulating never raised the error and sometimes lowered it.
+- **Watch for events that reset the pricing regime** (a tax or excise change, an incentive, a sudden market move) — plan retraining around them. Do not discard old snapshots: on the same listings, accumulating never raised the error significantly and lowered it in some comparisons.
 
 ![Single period and pooled periods — mean percentage error](figures/en-15-backtest.png)
 

@@ -9,8 +9,8 @@
   "en": "load_clean(all_snapshots=True): every row of every snapshot; the test uses only ad_ids unseen in training."
  },
  "method": {
-  "tr": "Dört kol, hepsi manşet kurulumla (cv.fold_matrices + cv.LGB_PARAMS): single (bir taramada eğit, sonrakilerin yeni ilanlarında test), cumulative (t'ye kadar hepsinde eğit), insample ve per_snapshot (5-fold OOF, karşılaştırma için; insample'ın son bloğu manşet OOF'un kendisi). İleri kollarda ağaç = eğitim kümesinde erken durdurmalı iç 5-fold CV'nin medyanı. Her ileri satıra test ilanlarını modele göre yeniden örnekleyen bootstrap'ten %95 aralık; single ile cumulative aynı ilanlarda eşli karşılaştırılır.",
-  "en": "Four arms, all with the headline setup (cv.fold_matrices + cv.LGB_PARAMS): single (train on one snapshot, test on the new listings of later ones), cumulative (train on all up to t), insample and per_snapshot (5-fold OOF, for comparison; insample's last block is the headline OOF itself). Forward trees = median of an inner early-stopping 5-fold CV on the training set. Every forward row carries a 95% interval from a bootstrap that resamples the test listings by model; single and cumulative are compared paired on the same listings."
+  "tr": "Dört kol, hepsi manşet kurulumla (cv.fold_matrices + cv.LGB_PARAMS): single (bir taramada eğit, sonrakilerin yeni ilanlarında test), cumulative (t'ye kadar hepsinde eğit), insample ve per_snapshot (5-fold OOF, karşılaştırma için; insample'ın son bloğu manşet OOF'un kendisi). İleri kollarda ağaç = eğitim kümesinde erken durdurmalı iç 5-fold CV'nin medyanı. Her ileri satıra test ilanlarını modele göre yeniden örnekleyen bootstrap'ten %95 aralık; single ile cumulative aynı ilanlarda eşli karşılaştırılır. Ufuk ayrıca sabit bir test kümesinde (son taramada yeni ilanlar) önceki her tek taramayla eğitilen modellerle eşli ölçülür. İleri kapsama (ön kayıt plans/09-forward-coverage): q eğitim kümesinin kendi OOF hatalarından (servis tarifi), bant sınırları eğitim OOF tahminlerinden; tek q ve bant başına q, test ilanlarında bant başına ve emsalsiz ilanlarda kapsama.",
+  "en": "Four arms, all with the headline setup (cv.fold_matrices + cv.LGB_PARAMS): single (train on one snapshot, test on the new listings of later ones), cumulative (train on all up to t), insample and per_snapshot (5-fold OOF, for comparison; insample's last block is the headline OOF itself). Forward trees = median of an inner early-stopping 5-fold CV on the training set. Every forward row carries a 95% interval from a bootstrap that resamples the test listings by model; single and cumulative are compared paired on the same listings. The horizon is also measured on one fixed test set (the listings new in the last snapshot), priced by models trained on each earlier single snapshot, paired. Forward coverage (pre-registered, plans/09-forward-coverage): q from the training set's own OOF errors (the served recipe), band edges from the training OOF predictions; one q and a per-band q, coverage per band and on listings without a comparable."
  },
  "split": "temporal",
  "leakage": {
@@ -48,12 +48,17 @@
    "tests/analysis/test_09_backtest.py::test_train_before_test",
    "tests/analysis/test_09_backtest.py::test_cumulative_first_block_is_single",
    "tests/analysis/test_09_backtest.py::test_paired_is_cumulative_minus_single",
-   "tests/analysis/test_09_backtest.py::test_insample_ends_on_the_headline"
+   "tests/analysis/test_09_backtest.py::test_insample_ends_on_the_headline",
+   "tests/analysis/test_09_backtest.py::test_forward_coverage_calibrates_on_training_only",
+   "tests/analysis/test_09_backtest.py::test_horizon_on_a_fixed_test_set",
+   "tests/analysis/test_09_backtest.py::test_forward_coverage_rows"
   ],
   "report_keys": [
    "methodology.backtest.single",
    "methodology.backtest.cumulative",
    "methodology.backtest.paired",
+   "methodology.backtest.horizon",
+   "methodology.backtest.forward_coverage",
    "methodology.backtest.insample"
   ]
  },

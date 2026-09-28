@@ -205,26 +205,26 @@ def fmt_business(v, F, lang):
         "number hides how sure the "
         "estimate is; a range states it and warns the user exactly where uncertainty is large."))
     A("")
-    # 2026-09-28: banda gore hata payi (Mondrian) on kayitla olculdu; oneri sonucuna kapili (tutmazsa durur).
-    _mo = v["mondrian"]
-    _col = {c_: i_ for i_, c_ in enumerate(_mo["columns"])}
-    _mb = {r_[0]: r_ for r_ in _mo["by_band"]}
-    _cov_m = [r_[_col["coverage_band"]] for r_ in _mo["by_band"]]
-    assert all(_mo["accept_band"][0] <= c_ <= _mo["accept_band"][1] for c_ in _cov_m), "Mondrian H1 tutmuyor"
-    _span = lambda lg_: (P(min(_cov_m), lg_, 1) if P(min(_cov_m), lg_, 1) == P(max(_cov_m), lg_, 1) else   # noqa: E731
-                         f"{P(min(_cov_m), lg_, 1)}–{P(max(_cov_m), lg_, 1)}")
-    _wq1 = (_mb["Q1"][_col["width_pct_global"]], _mb["Q1"][_col["width_pct_band"]])
-    _wq4 = (_mb["Q4"][_col["width_pct_global"]], _mb["Q4"][_col["width_pct_band"]])
+    # 2026-09-28 (denetim): bant basina hata payinin degeri ileri kapsamadan (plans/09-forward-coverage): sonraki
+    # taramanin yeni ilanlarinda. En ucuz banti her kurulumda duzeltmesi (H1) kapili; tutmazsa durur.
+    _fc = v["bt_forward"]
+    _q1 = lambda i_: [dict((r_[0], r_) for r_ in c_["bands"])["Q1"][i_] for c_ in _fc]   # noqa: E731
+    assert all(b_ > g_ for g_, b_ in zip(_q1(2), _q1(3))), "bant basina pay ucuz banti duzeltmiyor"
+    _rng = lambda xs_, lg_: f"{P(min(xs_), lg_)}–{P(max(xs_), lg_)}"                          # noqa: E731
+    _nc_g = [c_["no_comparable"]["coverage_global"] for c_ in _fc]
+    _nc_b = [c_["no_comparable"]["coverage_band"] for c_ in _fc]
+    _nc_worse = all(b_ < g_ for g_, b_ in zip(_nc_g, _nc_b))
     A(L(f"Bu yüzden çıktı tek sayı değil, **%{v['cov_target']} aralık**. Tek bir hata payıyla aralık ucuz araçlarda "
         f"tutmuyor: tahmini en ucuz çeyrekte kapsama **{P(v['cov_q1'], lang)}**, hedefin altında. Hata payı fiyat "
-        f"bandına göre ayrı hesaplanınca her bantta {_span('tr')}: ucuz araçta "
-        f"aralık genişliyor (tahminin {P(_wq1[0], lang)} kadarından {P(_wq1[1], lang)} kadarına), pahalıda daralıyor "
-        f"({P(_wq4[0], lang)} kadarından {P(_wq4[1], lang)} kadarına).",
+        f"bandına göre ayrı hesaplanınca, eğitimden sonraki taramanın yeni ilanlarında en ucuz bantta kapsama "
+        f"{_rng(_q1(2), 'tr')} yerine {_rng(_q1(3), 'tr')} oluyor. Emsalsiz araçta ise aralık iki yolla da tutmuyor "
+        f"({_rng(_nc_g, 'tr')})" + ("; banda göre payla kapsama orada daha da düşüyor." if _nc_worse else "."),
         f"That is why the output is a **{v['cov_target']}% range**, not one number. With one margin the range does not "
         f"hold on cheap cars: coverage in the cheapest predicted quartile is **{P(v['cov_q1'], lang)}**, below target. "
-        f"With the margin computed per price band it is {_span('en')} in every "
-        f"band: the range widens on cheap cars (from {P(_wq1[0], lang)} to {P(_wq1[1], lang)} of the estimate) and "
-        f"narrows on expensive ones (from {P(_wq4[0], lang)} to {P(_wq4[1], lang)})."))
+        f"With the margin computed per price band, on the new listings of the snapshot after training the cheapest "
+        f"band covers {_rng(_q1(3), 'en')} instead of {_rng(_q1(2), 'en')}. On cars without a comparable the range "
+        f"fails either way ({_rng(_nc_g, 'en')})" + ("; with the per-band margin coverage drops further there."
+                                                      if _nc_worse else ".")))
     A("")
     A(f"![{F[12][1]}](figures/{F[12][0]})")
     A("")
@@ -243,13 +243,14 @@ def fmt_business(v, F, lang):
     _pc = {c_: i_ for i_, c_ in enumerate(v["bt_columns"]["paired"])}
     _accumulates = (any(r_[_pc["ci_hi"]] < 0 for r_ in v["bt_paired"])
                     and not any(r_[_pc["ci_lo"]] > 0 for r_ in v["bt_paired"]))
-    _acc_tr = " Eski dönemleri atma: birikimli eğitim hatayı artırmıyor, bazen düşürüyor." if _accumulates else ""
-    _acc_en = " Do not discard old snapshots: accumulating never raised the error and sometimes lowered it." \
-        if _accumulates else ""
+    _acc_tr = (" Eski dönemleri atma: aynı ilanlarda birikimli eğitim hatayı hiçbir karşılaştırmada anlamlı artırmadı, "
+               "bir kısmında düşürdü." if _accumulates else "")
+    _acc_en = (" Do not discard old snapshots: on the same listings, accumulating never raised the error significantly "
+               "and lowered it in some comparisons." if _accumulates else "")
     A(L("**Ne yapmalı**", "**What to do**"))
     A("")
     A(L(f"- Aralığın hata payını fiyat bandına göre ayrı hesapla: ucuz araçta daha geniş, pahalıda daha dar — tek "
-        f"sayıya güvenme.\n"
+        f"sayıya güvenme. Emsalsiz araçta aralığa da güvenme.\n"
         f"- Nadir ve uç araçları elle fiyatla; model orada saçılıyor.\n"
         + (f"- Metninde dönüşüm, motor değişimi ya da modifiye geçen ilanı otomatik fiyatlama, "
            f"elle incele; bu bilgi formda yok{_flag_tr}.\n" if _flag_sig else
@@ -270,7 +271,7 @@ def fmt_business(v, F, lang):
         f"- **Fiyat rejimini değiştiren gelişmeleri takip et** (vergi/ÖTV düzenlemesi, teşvik, ani "
         f"piyasa hareketi gibi) — eğitim planı bunlara göre yapılmalı." + _acc_tr,
         f"- Compute the range's margin per price band: wider on cheap cars, narrower on expensive ones — don't "
-        f"trust a point estimate.\n"
+        f"trust a point estimate. On cars without a comparable, don't trust the range either.\n"
         f"- Price rare and edge cars by hand; the model scatters there.\n"
         + (f"- Never auto-price a listing whose text mentions a conversion, an engine swap or "
            f"modifications — price it by hand; that information is not in the form{_flag_en}.\n" if _flag_sig else

@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 
 from lib import segment_rule as SR
+from lib import spec_rule as SPEC
 from lib.common import load_clean, save_metrics
 from lib.cv import LARGE_ERROR_PCT, PRICE_CAP, large_errors, load_oof, residual_pct
 
@@ -40,8 +41,8 @@ EXAMPLE_PEERS = {("4.2 FSI Quattro R-tronic", 2008, 4_690_000): {"model": "S5 4.
 BRAND = {"bmw": "BMW", "audi": "Audi"}
 COUNT_BINS = [("1", 1, 1), ("2–4", 2, 4), ("5–19", 5, 19), ("20–99", 20, 99), ("100+", 100, 10**9)]
 OLD_AGE, FIRST_CUT = 18, 8
-TOP_N_LIRA = 100
-SPEC_MIN_GROUP, SPEC_RATIO = 5, 1.5
+TOP_N_LIRA, N_NULL, SEED = 100, 200, 42
+SPEC_MIN_GROUP, SPEC_RATIO = SPEC.MIN_GROUP, SPEC.RATIO
 
 
 # %% [2] Analysis functions | Analiz fonksiyonları — pure: no file I/O, they only return values
@@ -135,6 +136,28 @@ def lira_ranking(listings, price, pred, path):
             "perf_series": sorted({str(x) for x in listings.loc[perf, "series"]})}
 
 
+def under_if_symmetric(price, pred, n_draws=N_NULL, seed=SEED):
+    """
+    EN: How many of the top-N lira errors would be under-predictions if the actual price scattered symmetrically
+        around the prediction on the log scale: each listing keeps its |log error| around its own prediction with a
+        random sign. The same % error is bigger in lira when the actual price is above the prediction, so this is well
+        above N/2. Returns: {"mean", "lo", "hi", "draws"} (2.5–97.5 percentiles).
+    TR: Gerçek fiyat tahminin etrafında log ölçekte simetrik dağılsaydı en büyük N lira hatasının kaçı düşük tahmin
+        olurdu: her ilan |log hatasını| kendi tahmini etrafında rastgele işaretle taşır. Aynı % hata, gerçek fiyat
+        tahminin üstündeyken liraca daha büyüktür; bu yüzden sonuç N/2'nin belirgin üstünde. Döndürür: {"mean", "lo",
+        "hi", "draws"} (%2.5–97.5 yüzdelikleri).
+    """
+    r = np.abs(np.log1p(pred) - np.log1p(price))
+    rng = np.random.default_rng(seed)
+    counts = []
+    for _ in range(n_draws):
+        dev = pred - np.expm1(np.log1p(pred) + rng.choice([-1.0, 1.0], size=len(r)) * r)
+        top = np.argsort(-np.abs(dev), kind="stable")[:TOP_N_LIRA]
+        counts.append(int((dev[top] < 0).sum()))
+    lo, hi = np.percentile(counts, [2.5, 97.5])
+    return {"mean": round(float(np.mean(counts)), 1), "lo": int(round(lo)), "hi": int(round(hi)), "draws": n_draws}
+
+
 def spec_outliers(listings, resid):
     """
     EN: Listings whose power or size is more than 1.5× off the median of their own model (models with ≥5
@@ -143,15 +166,8 @@ def spec_outliers(listings, resid):
     TR: Gücü ya da hacmi kendi modelinin medyanından 1.5 kattan fazla sapan ilanlar (≥5 ilanlı modeller);
         medyan hataları geri kalanla. <5 ilanlı modellerde bayrak hiç kalkamaz — bu kör nokta sayılır.
     """
-    hp = listings[["power_hp_low", "power_hp_up"]].apply(pd.to_numeric, errors="coerce").mean(axis=1)
-    cc = pd.to_numeric(listings["engine_cc_up"], errors="coerce")
-    g = listings.groupby("model")
-    n_model = g["model"].transform("size")
-    hp_med, cc_med = hp.groupby(listings["model"]).transform("median"), g["engine_cc_up"].transform("median")
-    off = ((n_model >= SPEC_MIN_GROUP) & ((hp > SPEC_RATIO * hp_med) | (hp < hp_med / SPEC_RATIO)
-                                          | (cc > SPEC_RATIO * cc_med) | (cc < cc_med / SPEC_RATIO))).fillna(False).values
+    off, blind = SPEC.spec_outlier_mask(listings, SPEC_MIN_GROUP, SPEC_RATIO)
     err = np.abs(resid)
-    blind = (n_model < SPEC_MIN_GROUP).values
     return {"threshold": SPEC_RATIO, "min_group": SPEC_MIN_GROUP,
             "blind_spot": {"listings": int(blind.sum()), "pct": round(100 * float(blind.mean()), 2),
                            "model": int(listings.loc[blind, "model"].nunique())},
@@ -245,7 +261,7 @@ path = np.array([SR.resolve(s, m)[1] for s, m in zip(listings["series"], listing
 per_model, buckets = error_per_model(listings["model"].values, resid)
 snaps, live = by_snapshot(listings["snap"], resid)
 age_each, age_cuts = by_age(age, big)
-lira = lira_ranking(listings, price, pred, path)
+lira = {**lira_ranking(listings, price, pred, path), "under_if_symmetric": under_if_symmetric(price, pred)}
 spec = spec_outliers(listings, resid)
 fs =np.isin(listings["segment"].values, ["F", "S"])
 res = {"overall": {"n": len(listings), "n_big": int(big.sum()), "n_over": int(over.sum()), "n_under": int(under.sum()),

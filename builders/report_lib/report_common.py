@@ -45,6 +45,7 @@ REQUIRED = [
     "domain.final_results.training.target", "domain.shap.lightgbm_tfidf_svd", "domain.kmeans",
     "methodology.theils_matrix", "methodology.column_missing",
     "methodology.backtest.per_snapshot", "methodology.backtest.insample", "methodology.backtest.protocol", "methodology.backtest.paired",
+    "methodology.backtest.horizon", "methodology.backtest.forward_coverage",
     "methodology.backtest.columns",
     "methodology.systematic_missing.systematic_groups", "methodology.systematic_missing.note",
     "methodology.pca_axes", "meta.repro", "meta.brands", "column_labels"] + [f"error_drivers.{p_}" for p_ in [
@@ -249,6 +250,7 @@ def derive(d):
     v["psi_max"] = max(r[2] for r in dom["drift"]["all_pairs"])    # [pair, KS, PSI, EMD, shared %]
     v["psi_safe"], v["psi_retrain"] = float(_th.group(1)), float(_th.group(2))
     v["bt_paired"], v["bt_columns"] = met["backtest"]["paired"], met["backtest"]["columns"]
+    v["bt_forward"] = met["backtest"]["forward_coverage"]
     v["lofo"] = met["lofo"]                      # karar notu "farki kapatan" siralamasi (2026-09-23)
     # EN: OOF error distribution: bands, median/mean error, extremes (08_residuals)
     # TR: OOF hata dağılımı: bantlar, medyan/ortalama hata, uçlar (08_residuals)

@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "08_large_errors.py",
-  "generated_at": "2026-09-28T21:12:44+03:00",
+  "generated_at": "2026-09-28T22:28:36+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,13 +11,14 @@
   "run_id": "601741517e09",
   "source": {
    "script": {
-    "analysis/08_large_errors.py": "8f4e842127af256021fdb4302ee45d99a2e6d9454025f2293e4d37d893e573ef"
+    "analysis/08_large_errors.py": "0efdb7cc8bdfe4e7c37e941d5407dfa7f0299e0759e45f407eb89269eb1c512a"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
     "analysis/lib/common.py": "533eaad7a29580e93aeff01214fc024538dd6a6ab717e6b669e7e7b0a4399295",
     "analysis/lib/cv.py": "e83f615405ac012d466c9d82f698dc4145ba2df680c46ec3f529ee3ee6da56f5",
-    "analysis/lib/segment_rule.py": "9e014153906e9fb7a139099d1b581459a7b9e17bb21acb2172bd67cdb66c01cc"
+    "analysis/lib/segment_rule.py": "9e014153906e9fb7a139099d1b581459a7b9e17bb21acb2172bd67cdb66c01cc",
+    "analysis/lib/spec_rule.py": "91f04d952ea6c6261efea511dcba61466c513a1442dbdf6a217c2c7d3fa8d276"
    }
   }
  },
@@ -3152,7 +3153,13 @@
     "RS",
     "S",
     "i Serisi"
-   ]
+   ],
+   "under_if_symmetric": {
+    "mean": 67.8,
+    "lo": 60,
+    "hi": 77,
+    "draws": 200
+   }
   },
   "age_sensitivity": [
    [

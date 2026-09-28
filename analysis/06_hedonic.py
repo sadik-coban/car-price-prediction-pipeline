@@ -2,52 +2,57 @@
 06_hedonic.py
 EN: Technical report §6 — the hedonic model: controlled price effects (log price ~ age, mileage, damage, power,
     size), in two columns side by side. Segment control: segment, brand, fuel and transmission dummies. Model
-    control: the same plus C(model), so each effect is measured within one model name. Age and mileage are
-    centred on the median car, so the linear coefficients are the marginal effects there. Listings of the same
-    model are not independent and the error variance is not equal (Breusch-Pagan), so the 95% intervals come from
-    standard errors clustered by model (735 models; the 22 series are too few and too uneven to cluster on).
+    control: the same with the model name absorbed (within-model transform, the fixed-effects estimator), so each
+    effect is measured within one model name. Age and mileage are centred on the median car, so the linear
+    coefficients are the marginal effects there. Listings of the same model are not independent and the error
+    variance is not equal (Breusch-Pagan), so the 95% intervals come from standard errors clustered by model (735
+    models). Also: a cluster-robust test of the difference between the two columns per term (stacked influence
+    functions), two sensitivities (clustering by series; the model column without the §8 listings whose engine value
+    breaks from their model), how much power varies within a model name, the largest VIF of the segment column's
+    design (centred and uncentred), the overall hp–cc Pearson correlation, and how many listings the OLS drops.
     2026-09-28 (simplification list): this replaces the 1000-replicate row bootstrap, which treated listings as
-    independent; the uncentred-VIF table, the dummy VIF, the Jarque-Bera test and the hp–cc table by fuel left the
-    report with it. Also: the largest VIF of the segment column's design (centred and uncentred), the overall hp–cc
-    correlation, and how many listings the OLS drops for missing hp/cc. No period effect in the model (the owner's
-    decision, 2026-09-23).
+    independent. 2026-09-28 (audit): the model column was a dummy-variable OLS solved by a pseudo-inverse on a
+    singular design, whose clustered SEs blew up on small perturbations; the within transform gives the same
+    estimates on a full-rank design. No period effect in the model (the owner's decision, 2026-09-23).
 TR: Teknik rapor §6 — hedonik model: kontrollü fiyat etkileri (log fiyat ~ yaş, km, hasar, güç, hacim), yan yana
-    iki sütun. Segment kontrolü: segment, marka, yakıt ve vites kuklaları. Model kontrolü: aynısı ve C(model);
-    her etki tek bir model adının içinde ölçülür. Yaş ve km medyan araca ortalanır; doğrusal katsayılar o noktadaki
-    marjinal etkidir. Aynı modelin ilanları bağımsız değil ve hata varyansı eşit değil (Breusch-Pagan); bu yüzden
-    %95 aralıklar modele göre kümelenmiş standart hatalardan (735 model; 22 seri kümelemek için az ve dengesiz).
-    2026-09-28 (sadeleştirme listesi): bu, ilanları bağımsız sayan 1000 tekrarlı satır bootstrap'inin yerini alır;
-    ortalanmamış VIF tablosu, kukla VIF'i, Jarque-Bera testi ve yakıta göre hp–cc tablosu onunla rapordan çıktı.
-    Ayrıca: segment sütunu tasarımının en yüksek VIF'i (ortalanmış ve ortalanmamış), genel hp–cc korelasyonu ve
-    OLS'in eksik hp/cc yüzünden attığı ilan sayısı. Modelde dönem etkisi yok (kullanıcının kararı, 2026-09-23).
+    iki sütun. Segment kontrolü: segment, marka, yakıt ve vites kuklaları. Model kontrolü: aynısı, model adı emilerek
+    (model içi dönüşüm, sabit etkiler kestiricisi); her etki tek bir model adının içinde ölçülür. Yaş ve km medyan
+    araca ortalanır; doğrusal katsayılar o noktadaki marjinal etkidir. Aynı modelin ilanları bağımsız değil ve hata
+    varyansı eşit değil (Breusch-Pagan); bu yüzden %95 aralıklar modele göre kümelenmiş standart hatalardan (735
+    model). Ayrıca: iki sütun arasındaki farkın terim başına kümeli testi (yığılmış etki fonksiyonları), iki
+    duyarlılık (seriye göre kümeleme; §8'in motor değeri modelinden kopan ilanları olmadan model sütunu), gücün model
+    adı içinde ne kadar değiştiği, segment sütunu tasarımının en yüksek VIF'i (ortalanmış ve ortalanmamış), genel
+    hp–cc Pearson korelasyonu ve OLS'in attığı ilan sayısı. 2026-09-28 (sadeleştirme listesi): bu, ilanları bağımsız
+    sayan 1000 tekrarlı satır bootstrap'inin yerini alır. 2026-09-28 (denetim): model sütunu tekil tasarımda
+    pseudo-inverse ile çözülen kukla OLS'ti ve kümeli SH'leri küçük değişikliklerde patlıyordu; model içi dönüşüm aynı
+    tahminleri tam ranklı tasarımda verir. Modelde dönem etkisi yok (kullanıcının kararı, 2026-09-23).
 Output / Çıktı: metrics/06_hedonic.json
 """
 
 # %% [1] Setup | Kurulum
-import warnings
-
 import numpy as np
 import pandas as pd
 import patsy
+import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from scipy import stats
 from statsmodels.stats.diagnostic import het_breuschpagan
 from statsmodels.stats.outliers_influence import variance_inflation_factor
-from statsmodels.tools.sm_exceptions import SingularMatrixWarning
 
+from lib import spec_rule as SPEC
 from lib.common import load_clean, save_metrics
 
 TERMS = "age+I(age**2)+km10+I(km10**2)+age:km10+dmg+painted+changed+hp100+cc_L"
 CONTROLS = "C(segment)+C(brand)+C(kb_fuel)+C(kb_transmission)"
-# EN: column id → formula; the model column adds C(model) (it pins brand and almost always segment, so the design
-#     is singular; statsmodels solves it with a pseudo-inverse and the linear terms stay identified)
-# TR: sütun kimliği → formül; model sütunu C(model) ekler (markayı ve neredeyse her zaman segmenti belirler, tasarım
-#     tekil; statsmodels pseudo-inverse ile çözer, doğrusal terimler tanımlı kalır)
-COLUMNS = {"segment": f"log_price~{TERMS}+{CONTROLS}", "model": f"log_price~{TERMS}+{CONTROLS}+C(model)"}
+FORMULA = f"log_price~{TERMS}+{CONTROLS}"
+# EN: column id → the group whose fixed effect is absorbed (None = plain OLS on FORMULA)
+# TR: sütun kimliği → sabit etkisi emilen grup (None = FORMULA üzerinde düz OLS)
+COLUMNS = {"segment": None, "model": "model"}
 # EN: patsy term name → English id the reports index by | TR: patsy terim adı → raporların indekslediği İngilizce kimlik
 TERM_ID = {"age": "age", "I(age ** 2)": "age_sq", "km10": "km100k", "I(km10 ** 2)": "km_sq", "age:km10": "age_x_km",
            "dmg": "heavy_damage", "painted": "painted", "changed": "changed", "hp100": "hp100", "cc_L": "litre"}
-CLUSTER = "model"
+CLUSTER, SENS_CLUSTER = "model", "series"
+ALPHA = 0.05
 
 
 # %% [2] Analysis functions | Analiz fonksiyonları — pure: no file I/O, they only return values
@@ -95,28 +100,49 @@ def dropped_rows(listings):
             "total": int((bad_hp | bad_cc).sum())}
 
 
-def clustered_fit(h, formula, groups):
+def fit_column(h, absorb, cluster):
     """
-    EN: OLS with standard errors clustered by `groups` (small-sample corrected, t with G − 1 df). The model
-        column's design is singular by construction (see COLUMNS): that one warning is expected and silenced here;
-        coefficient_rows stops if a tracked term is not identified.
-    TR: Standart hataları `groups`'a göre kümelenmiş OLS (küçük örneklem düzeltmeli, G − 1 serbestlik dereceli t).
-        Model sütununun tasarımı yapısı gereği tekil (bkz. COLUMNS): o tek uyarı beklenen, burada susturulur;
-        izlenen bir terim tanımsızsa coefficient_rows durur.
+    EN: One column: FORMULA by OLS, or with the fixed effect of `absorb` taken out by demeaning y and X within its
+        groups (Frisch–Waugh: the same estimates as its dummies). Columns constant inside every group (intercept,
+        brand, nested segment dummies) drop out; stops if the rest is not full rank. SEs clustered by `cluster`
+        (t with G − 1 df). Returns: (fit, R² of the full model = 1 − SSR / total SS around the mean).
+    TR: Tek sütun: FORMULA düz OLS ile ya da `absorb`'un sabit etkisi gruplarının içinde y ve X ortalamadan
+        çıkarılarak alınmış hâliyle (Frisch–Waugh: kuklalarıyla aynı tahminler). Her grubun içinde sabit kolonlar
+        (sabit terim, marka, iç içe segment kuklaları) düşer; kalan tam ranklı değilse durur. SH'ler `cluster`'a göre
+        kümeli (G − 1 serbestlik dereceli t). Döndürür: (fit, tam modelin R²'si = 1 − SSR / ortalama etrafı toplam KT).
     """
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", SingularMatrixWarning)
-        return smf.ols(formula, data=h).fit(cov_type="cluster", cov_kwds={"groups": groups}, use_t=True)
+    groups = pd.factorize(h[cluster])[0]
+    y, X = patsy.dmatrices(FORMULA, h, return_type="dataframe")
+    y = y.iloc[:, 0]
+    if absorb:
+        g = pd.factorize(h[absorb])[0]
+        X = X - X.groupby(g).transform("mean")
+        y_fit = y - y.groupby(g).transform("mean")
+        # EN: keep a column only if it adds rank (a redundant control dummy leaves the column space, so the fit and
+        #     the tracked terms, unchanged); a tracked term must never be the one dropped
+        # TR: bir kolon ancak rankı artırıyorsa kalır (gereksiz bir kontrol kuklası sütun uzayını, dolayısıyla uyumu
+        #     ve izlenen terimleri değiştirmez); düşen kolon asla izlenen bir terim olmamalı
+        keep = []
+        for c in X.columns:
+            if float(np.abs(X[c]).max()) > 1e-9 and np.linalg.matrix_rank(X[keep + [c]].values) == len(keep) + 1:
+                keep.append(c)
+        assert set(TERM_ID) <= set(keep), f"a tracked term is not identified | izlenen terim tanımsız: {set(TERM_ID) - set(keep)}"
+        X = X[keep]
+    else:
+        y_fit = y
+    assert np.linalg.matrix_rank(X.values) == X.shape[1], "design not full rank | tasarım tam ranklı değil"
+    fit = sm.OLS(y_fit, X).fit(cov_type="cluster", cov_kwds={"groups": groups}, use_t=True)
+    return fit, 1 - float((fit.resid ** 2).sum()) / float(((y - y.mean()) ** 2).sum())
 
 
 def coefficient_rows(fit):
     """
     EN: For every tracked term: point, clustered SE, 95% CI (log scale) and the same as a % effect, and whether the
-        CI contains zero. Stops if a term is missing or not finite (the pseudo-inverse must keep it identified).
+        CI contains zero. Stops if a term is missing or not finite.
     TR: İzlenen her terim için: nokta, kümeli SH, %95 GA (log ölçek), aynısının % etki hâli ve GA'nın sıfırı içerip
-        içermediği. Bir terim eksik ya da sonlu değilse durur (pseudo-inverse onu tanımlı tutmalı).
+        içermediği. Bir terim eksik ya da sonlu değilse durur.
     """
-    ci = fit.conf_int(0.05)
+    ci = fit.conf_int(ALPHA)
     rows = []
     for k, tid in TERM_ID.items():
         b, se, lo, hi = fit.params[k], fit.bse[k], ci.loc[k, 0], ci.loc[k, 1]
@@ -125,6 +151,55 @@ def coefficient_rows(fit):
                      "ci_hi": round(float(hi), 4), "pct_effect": round(pct(b), 2), "pct_lo": round(pct(lo), 2),
                      "pct_hi": round(pct(hi), 2), "contains_zero": bool(lo <= 0 <= hi)})
     return rows
+
+
+def influence(fit):
+    """
+    EN: Per-listing influence of every coefficient, (X'X)⁻¹ x_i e_i (rows = listings). Returns: DataFrame.
+    TR: Her katsayının ilan başına etkisi, (X'X)⁻¹ x_i e_i (satırlar = ilanlar). Döndürür: DataFrame.
+    """
+    X = np.asarray(fit.model.exog)
+    return pd.DataFrame((X * np.asarray(fit.resid)[:, None]) @ np.linalg.inv(X.T @ X), columns=fit.model.exog_names)
+
+
+def difference_test(fit_a, fit_b, groups):
+    """
+    EN: Cluster-robust test of (column a − column b) per tracked term, both fitted on the same listings: the variance
+        of the difference is the clustered sum of the stacked influences, G/(G−1)·Σ_g (Σ_{i∈g} ψa_i − ψb_i)²; t with
+        G − 1 df. Returns: [{term, diff (log), se, t, significant}].
+    TR: Aynı ilanlarda kurulmuş iki sütun için terim başına (a sütunu − b sütunu) kümeli testi: farkın varyansı yığılmış
+        etkilerin kümeli toplamı, G/(G−1)·Σ_g (Σ_{i∈g} ψa_i − ψb_i)²; G − 1 serbestlik dereceli t.
+        Döndürür: [{term, diff (log), se, t, significant}].
+    """
+    ia, ib = influence(fit_a), influence(fit_b)
+    n_g = int(groups.max() + 1)
+    crit = stats.t.ppf(1 - ALPHA / 2, n_g - 1)
+    out = []
+    for k, tid in TERM_ID.items():
+        d = np.bincount(groups, weights=(ia[k] - ib[k]).values, minlength=n_g)
+        se = float(np.sqrt(n_g / (n_g - 1) * (d ** 2).sum()))
+        diff = float(fit_a.params[k] - fit_b.params[k])
+        out.append({"term": tid, "diff": round(diff, 6), "se": round(se, 6), "t": round(diff / se, 2),
+                    "significant": bool(abs(diff / se) > crit)})
+    return out
+
+
+def zero_in_ci(fit):
+    """EN: Tracked terms whose 95% CI contains zero. / TR: %95 GA'sı sıfırı içeren izlenen terimler."""
+    ci = fit.conf_int(ALPHA)
+    return [tid for k, tid in TERM_ID.items() if ci.loc[k, 0] <= 0 <= ci.loc[k, 1]]
+
+
+def hp_within(h, group):
+    """
+    EN: How much power varies inside a model name: models with more than one power value, and the within-model vs
+        overall standard deviation of hp.
+    TR: Güç bir model adının içinde ne kadar değişiyor: birden çok güç değeri olan model sayısı ve hp'nin model içi ile
+        genel standart sapması.
+    """
+    g = h.groupby(group)["hp"]
+    return {"models": int(g.ngroups), "models_varying": int((g.nunique() > 1).sum()),
+            "sd_within": round(float((h["hp"] - g.transform("mean")).std()), 1), "sd_overall": round(float(h["hp"].std()), 1)}
 
 
 def vif_max(h, fit, age_c, km_c):
@@ -138,7 +213,7 @@ def vif_max(h, fit, age_c, km_c):
     assert x_fit.shape[1] == len(fit.params), "VIF input is not the fitted design"
     raw = h.copy()
     raw["age"], raw["km10"] = raw["age"] + age_c, raw["km10"] + km_c
-    x_raw = patsy.dmatrix(COLUMNS["segment"].split("~", 1)[1], raw, return_type="dataframe")
+    x_raw = patsy.dmatrix(FORMULA.split("~", 1)[1], raw, return_type="dataframe")
     assert list(x_raw.columns) == list(x_fit.columns), "uncentred design has different columns"
     v_fit = {k: float(variance_inflation_factor(x_fit.values, x_fit.columns.get_loc(k))) for k in TERM_ID}
     v_raw = {k: float(variance_inflation_factor(x_raw.values, x_raw.columns.get_loc(k))) for k in TERM_ID}
@@ -151,15 +226,18 @@ def vif_max(h, fit, age_c, km_c):
 def to_metrics(res):
     """
     EN: Published in the site tree (domain.hedonic: the model column's headline effects, which the decision note
-        prints; domain.hedonic_reliability: both columns) and the report inputs (error_drivers.hedonic_dropped).
+        prints; domain.hedonic_reliability: both columns, the difference test, the sensitivities) and the report
+        inputs (error_drivers.hedonic_dropped).
     TR: Site ağacında (domain.hedonic: model sütununun manşet etkileri, karar notunun bastıkları;
-        domain.hedonic_reliability: iki sütun) ve rapor girdilerinde (error_drivers.hedonic_dropped) yayımlanır.
+        domain.hedonic_reliability: iki sütun, fark testi, duyarlılıklar) ve rapor girdilerinde
+        (error_drivers.hedonic_dropped) yayımlanır.
     """
-    fits, rows = res["fits"], res["rows"]
+    fits, rows, r2 = res["fits"], res["rows"], res["r2"]
     head = {r["term"]: r["pct_effect"] for r in rows["model"]}
+    spec = {r["term"]: r for r in res["spec_rows"]}
     return {
         "domain": {
-            "hedonic": {"r2": round(float(fits["model"].rsquared), 4), "control": "model", "age_pct": head["age"],
+            "hedonic": {"r2": round(r2["model"], 4), "control": "model", "age_pct": head["age"],
                         "damage_pct": head["heavy_damage"], "km100k_pct": head["km100k"], "hp100_pct": head["hp100"],
                         "cc_litre_pct": head["litre"],
                         "note": ("Model kontrolü sütunu: etkiler aynı model adı içinde. Dönem etkisi modelde yok "
@@ -167,8 +245,13 @@ def to_metrics(res):
             "hedonic_reliability": {
                 "n": int(fits["segment"].nobs), "cluster": CLUSTER, "n_clusters": res["n_clusters"],
                 "center": {"age": res["age_c"], "km": res["km_c"] * 1e5},
-                "columns": {c: {"r2": round(float(fits[c].rsquared), 4), "coefficients": rows[c]} for c in COLUMNS},
-                "vif": res["vif"], "hp_cc_correlation": res["hp_cc_r"], "homoskedasticity_p": res["bp_p"]}},
+                "columns": {c: {"r2": round(r2[c], 4), "coefficients": rows[c]} for c in COLUMNS},
+                "difference": res["difference"],
+                "series_cluster": {"n_clusters": res["n_series"], "zero_in_ci": res["series_zero"]},
+                "without_spec_outliers": {"n_dropped": res["spec_n"],
+                                          "coefficients": [spec["hp100"], spec["litre"]]},
+                "hp_within_model": res["hp_within"],
+                "vif": res["vif"], "hp_cc_pearson": res["hp_cc_r"], "homoskedasticity_p": res["bp_p"]}},
         "error_drivers": {"hedonic_dropped": res["dropped"]},
     }
 
@@ -177,17 +260,27 @@ def to_metrics(res):
 listings = load_clean()
 
 # %% [5] Compute | Hesapla — look at the results here | sonuçlara burada bak
+listings["spec_off"] = SPEC.spec_outlier_mask(listings)[0]
 h, age_c, km_c = hedonic_frame(listings)
 dropped = dropped_rows(listings)
-groups = pd.factorize(h[CLUSTER])[0]
-fits = {c: clustered_fit(h, f, groups) for c, f in COLUMNS.items()}
+fitted = {c: fit_column(h, absorb, CLUSTER) for c, absorb in COLUMNS.items()}
+fits, r2 = {c: f for c, (f, _) in fitted.items()}, {c: r for c, (_, r) in fitted.items()}
 assert all(len(listings) - dropped["total"] == int(f.nobs) for f in fits.values()), "OLS row count ≠ dropped count"
+groups = pd.factorize(h[CLUSTER])[0]
 bp = het_breuschpagan(fits["segment"].resid, fits["segment"].model.exog)
-res = {"fits": fits, "rows": {c: coefficient_rows(f) for c, f in fits.items()}, "n_clusters": int(groups.max() + 1),
-       "age_c": age_c, "km_c": km_c, "vif": vif_max(h, fits["segment"], age_c, km_c),
+series_fits = {c: fit_column(h, absorb, SENS_CLUSTER)[0] for c, absorb in COLUMNS.items()}
+h_spec = h[~h["spec_off"]].reset_index(drop=True)
+res = {"fits": fits, "r2": r2, "rows": {c: coefficient_rows(f) for c, f in fits.items()},
+       "n_clusters": int(groups.max() + 1), "difference": difference_test(fits["segment"], fits["model"], groups),
+       "n_series": int(h[SENS_CLUSTER].nunique()), "series_zero": {c: zero_in_ci(f) for c, f in series_fits.items()},
+       "spec_n": int(h["spec_off"].sum()), "spec_rows": coefficient_rows(fit_column(h_spec, "model", CLUSTER)[0]),
+       "hp_within": hp_within(h, CLUSTER), "age_c": age_c, "km_c": km_c, "vif": vif_max(h, fits["segment"], age_c, km_c),
        "hp_cc_r": round(float(stats.pearsonr(h.hp, h.cc)[0]), 3), "bp_p": float(bp[1]), "dropped": dropped}
 for c in COLUMNS:
-    print(c, f"R² {fits[c].rsquared:.4f}", [(r["term"], r["pct_effect"], r["pct_lo"], r["pct_hi"]) for r in res["rows"][c]])
+    print(c, f"R² {r2[c]:.4f}", [(r["term"], r["pct_effect"], r["pct_lo"], r["pct_hi"]) for r in res["rows"][c]])
+print("difference | fark:", [(d["term"], d["t"], d["significant"]) for d in res["difference"]])
+print("series clusters | seri kümeleri:", res["series_zero"], "· without spec outliers | tutarsızlar olmadan:",
+      [(r["term"], r["pct_effect"]) for r in res["spec_rows"] if r["term"] in ("hp100", "litre")], res["spec_n"])
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
 print("written | yazıldı:", save_metrics("06_hedonic", to_metrics(res)))

@@ -31,8 +31,8 @@
   "fit_on_full_data": {
    "status": "none",
    "note": {
-    "tr": "Çapraz kalibreli: hiçbir ilanın kendi hatası kendi aralığını kalibre etmez (test_calibration_never_sees_the_scored_fold); genel kapsama tanım gereği değil, ölçülmüş. OOF hataları 07'nin erken durdurması yüzünden hafifçe iyimser olabilir; yeni veride kapsama biraz daha düşük çıkabilir.",
-    "en": "Cross-calibrated: no listing's own error calibrates its interval (test_calibration_never_sees_the_scored_fold); the overall coverage is measured, not true by construction. The OOF errors may be slightly optimistic because of 07's early stopping, so coverage on new data may come out a little lower."
+    "tr": "Çapraz kalibreli: hiçbir ilanın kendi hatası kendi aralığını kalibre etmez (test_calibration_never_sees_the_scored_fold). Ama katlar rastgele olduğu için genel ve bant başına kapsama yine neredeyse tanım gereği ~%90; ileri kullanımdaki kapsama 09_backtest'te (plans/09-forward-coverage). OOF hataları 07'nin erken durdurması yüzünden hafifçe iyimser olabilir.",
+    "en": "Cross-calibrated: no listing's own error calibrates its interval (test_calibration_never_sees_the_scored_fold). But the folds are random, so the overall and per-band coverage are still ~90% almost by construction; forward coverage is in 09_backtest (plans/09-forward-coverage). The OOF errors may be slightly optimistic because of 07's early stopping."
    }
   },
   "temporal": {
