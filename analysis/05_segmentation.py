@@ -1,30 +1,30 @@
 """
 05_segmentation.py
-EN: Technical report §5 — market structure: price by segment and body type, depreciation curves by age
-    and mileage, the BMW/Audi price comparison, and KMeans (k=3, fixed for interpretability) with PCA.
-TR: Teknik rapor §5 — piyasa yapısı: segment ve kasa tipine göre fiyat, yaş ve kilometreye göre değer kaybı
-    eğrileri, BMW/Audi fiyat karşılaştırması, KMeans (k=3, yorumlanabilirlik için sabit) ve PCA.
+EN: Market structure: price by segment and body type, depreciation curves by age and mileage (decision note
+    figures), the BMW/Audi price comparison, and whether the listings form natural clusters (technical report §5:
+    the KMeans silhouette for k = 2..8). 2026-09-29 (second simplification list): §5 is one paragraph — there are no
+    clear clusters — so the fixed-k clusters, their profiles, the elbow curve and the PCA are not computed.
+TR: Piyasa yapısı: segment ve kasa tipine göre fiyat, yaş ve kilometreye göre değer kaybı eğrileri (karar notu
+    figürleri), BMW/Audi fiyat karşılaştırması ve ilanların doğal kümeler oluşturup oluşturmadığı (teknik rapor §5:
+    k = 2..8 için KMeans silhouette). 2026-09-29 (ikinci sadeleştirme listesi): §5 tek paragraf — belirgin küme
+    yok — bu yüzden sabit k'li kümeler, profilleri, dirsek eğrisi ve PCA hesaplanmıyor.
 Output / Çıktı: metrics/05_segmentation.json
 """
 
 # %% [1] Setup | Kurulum
 import numpy as np
-import pandas as pd
 from scipy import stats
 from sklearn.cluster import KMeans
-from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_score
 from sklearn.preprocessing import StandardScaler
 
 from lib.common import NUM, load_clean, save_metrics
 
 SEED = 42
-K = 3                      # fixed for interpretability, not chosen by silhouette | silhouette ile değil, sabit
 K_RANGE = range(2, 9)
 SILHOUETTE_SAMPLE = 3000
 MIN_BODY_N, MIN_AGE_N, MAX_AGE = 80, 10, 25
 KM_BIN, KM_LIMIT = 25000, 400000
-DAMAGE_AXES = ("door_", "fender_", "bumper_")
 
 
 # %% [2] Analysis functions | Analiz fonksiyonları — pure: no file I/O, they only return values
@@ -96,62 +96,21 @@ def brand_compare(listings):
             "mwu_p": float(p), "cliffs_delta": float(cliffs_delta(bmw, audi))}
 
 
-def cluster_name(m):
+def silhouette_by_k(listings, k_range, sample, seed):
     """
-    EN: A short name for a cluster from its heavy-damage share, age and mileage.
-    TR: Ağır hasar payı, yaş ve kilometresinden bir küme için kısa ad.
-    """
-    if m["is_heavy_damaged"].mean() > 0.4:
-        return "Hasarlı"
-    if m["vehicle_age"].median() <= 10 and m["gb_mileage"].median() < 160000:
-        return "Genç & temiz premium"
-    if m["vehicle_age"].median() >= 13:
-        return "Yaşlı & yüksek-km ekonomik"
-    return "Orta segment"
-
-
-def kmeans_and_pca(listings, k, k_range, sample, seed):
-    """
-    EN: Standardised numeric features (median-filled), elbow + silhouette for k in k_range (silhouette on a
-        random sample), KMeans with the fixed k, cluster profiles, and a 3-component PCA.
-        Returns: dict with elbow, silhouette, profiles, pca axes and the 2-D/3-D scatter points.
-    TR: Standartlaştırılmış sayısal öznitelikler (medyanla doldurulmuş), k_range için dirsek + silhouette
-        (silhouette rastgele örneklemde), sabit k ile KMeans, küme profilleri ve 3 bileşenli PCA.
-        Döndürür: dirsek, silhouette, profiller, PCA eksenleri ve 2-B/3-B nokta bulutu içeren sözlük.
+    EN: Standardised numeric features (median-filled); KMeans for every k in k_range and its silhouette on a random
+        sample. Returns: [[k, silhouette], ...].
+    TR: Standartlaştırılmış sayısal öznitelikler (medyanla doldurulmuş); k_range'deki her k için KMeans ve rastgele
+        örneklemde silhouette'i. Döndürür: [[k, silhouette], ...].
     """
     nc = listings[NUM].fillna(listings[NUM].median())
     xs = StandardScaler().fit_transform(nc)
     idx = np.random.default_rng(seed).choice(len(xs), sample, replace=False)
-    elbow, sil = [], []
+    sil = []
     for kk in k_range:
-        km_k = KMeans(kk, random_state=seed, n_init=10).fit(xs)
-        elbow.append([kk, round(float(km_k.inertia_), 0)])
-        sil.append([kk, round(float(silhouette_score(xs[idx], km_k.labels_[idx])), 3)])
-    labels = KMeans(k, random_state=seed, n_init=10).fit(xs).labels_
-    pca_m = PCA(3, random_state=seed).fit(xs)
-    pca = pca_m.transform(xs)
-    profiles = []
-    for c in range(k):
-        mask = labels == c
-        m = listings[mask]
-        z = (nc[mask].mean() - nc.mean()) / nc.std()
-        top = z.abs().sort_values(ascending=False).head(3)
-        damage_axis = str(top.index[0]).startswith(DAMAGE_AXES) or str(top.index[0]).endswith("_state")
-        profiles.append({"cluster": int(c), "name": "Hasar yoğun" if damage_axis else cluster_name(m), "n": int(mask.sum()),
-                         "median": float(m["price"].median()), "age": float(m["vehicle_age"].median()),
-                         "km": float(m["gb_mileage"].median()), "hp": float(m["power_hp_val"].median()),
-                         "heavy_damage_pct": round(100 * float(m["is_heavy_damaged"].mean()), 0),
-                         "distinguishing": [[kk, "+" if z[kk] > 0 else "-"] for kk in top.index]})
-    names = pd.Series([p["name"] for p in profiles]).value_counts()
-    for p in profiles:                        # repeated names get numbered | tekrar eden adlar numaralanır
-        if names[p["name"]] > 1:
-            p["name"] = f"{p['name']} ({p['cluster'] + 1})"
-    axes = [{"pc": f"PC{i + 1}", "var_pct": round(pca_m.explained_variance_ratio_[i] * 100, 1),
-             "top": [[n, round(w, 2)] for n, w in sorted(zip(NUM, pca_m.components_[i]), key=lambda x: -abs(x[1]))[:4]]}
-            for i in range(3)]
-    return {"elbow": elbow, "silhouette": sil, "profiles": profiles, "axes": axes,
-            "pca12": [[round(float(pca[i, 0]), 2), round(float(pca[i, 1]), 2), int(labels[i])] for i in range(len(xs))],
-            "pca13": [[round(float(pca[i, 0]), 2), round(float(pca[i, 2]), 2), int(labels[i])] for i in range(len(xs))]}
+        labels = KMeans(kk, random_state=seed, n_init=10).fit(xs).labels_
+        sil.append([kk, round(float(silhouette_score(xs[idx], labels[idx])), 3)])
+    return sil
 
 
 # %% [3] Metrics assembly | Metrik derleme — naming and rounding only | yalnız adlandırma ve yuvarlama
@@ -160,8 +119,7 @@ def to_metrics(res):
     EN: Published in the site tree (domain and methodology) under the names the site and reports read.
     TR: Site ağacında (domain ve methodology), sitenin ve raporların okuduğu adlarla yayımlanır.
     """
-    km, bc = res["km"], res["brand"]
-    best = max(km["silhouette"], key=lambda r: r[1])
+    bc = res["brand"]
     return {
         "domain": {
             "segment_ladder": res["segment"], "body_median": res["body"], "age_depreciation": res["age"],
@@ -169,14 +127,8 @@ def to_metrics(res):
             "brand_compare": {**bc, "cliffs_delta": round(bc["cliffs_delta"], 4),
                               "note": ("Mann-Whitney U: iki markanın fiyat dağılımı farkı (p<0.05 anlamlı). "
                                       "Cliff's δ: etki büyüklüğü (|δ|>0.33 orta, >0.47 büyük fark).")},
-            "age_km_note": "Medyan tipik fiyat, ortalama aykırı-etkili. Açıklık = fiyat çarpıklığı.",
-            "kmeans": km["profiles"], "pca_scatter": km["pca12"], "pca_scatter_13": km["pca13"]},
-        "methodology": {
-            "kmeans_selection": {"elbow": km["elbow"], "silhouette": km["silhouette"], "chosen_k": K,
-                                 "note": (f"Silhouette en yüksek k={best[0]} ({best[1]}); k={K} için "
-                                         f"{dict(km['silhouette']).get(K)}. k={K} silhouette ile değil, "
-                                         f"yorumlanabilirlik için sabit seçildi.")},
-            "pca_axes": km["axes"]},
+            "age_km_note": "Medyan tipik fiyat, ortalama aykırı-etkili. Açıklık = fiyat çarpıklığı."},
+        "methodology": {"kmeans_selection": {"silhouette": res["silhouette"]}},
     }
 
 
@@ -187,8 +139,8 @@ listings = load_clean()
 km_rows, km_scope = mileage_curve(listings, KM_BIN, KM_LIMIT)
 res = {"segment": median_by(listings, "segment"), "body": median_by(listings, "kb_body_type", MIN_BODY_N),
        "age": age_curve(listings, MAX_AGE, MIN_AGE_N), "km_rows": km_rows, "km_scope": km_scope,
-       "brand": brand_compare(listings), "km": kmeans_and_pca(listings, K, K_RANGE, SILHOUETTE_SAMPLE, SEED)}
-print("clusters | kümeler:", [(p["name"], p["n"]) for p in res["km"]["profiles"]])
+       "brand": brand_compare(listings), "silhouette": silhouette_by_k(listings, K_RANGE, SILHOUETTE_SAMPLE, SEED)}
+print("silhouette by k | k'ye göre silhouette:", res["silhouette"])
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
 print("written | yazıldı:", save_metrics("05_segmentation", to_metrics(res)))

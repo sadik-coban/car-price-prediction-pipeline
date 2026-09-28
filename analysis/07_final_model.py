@@ -2,13 +2,13 @@
 07_final_model.py
 EN: Technical report §7 — the served models. LightGBM is trained on all listings with the median of the
     tree counts early stopping chose in the 5-fold CV (so the served model has the measured setting), next to
-    the two CatBoost variants. Writes the serving files (native model formats + encoders.pkl + README) and
-    predicts three sample listings (the best-predicted undamaged listing in each price third).
-    Needs 07_model_comparison's OOF artefact (tree counts, OOF errors, conformal q).
+    the two CatBoost variants. Writes the serving files (native model formats + encoders.pkl + README).
+    2026-09-29 (second simplification list): the three best-case sample predictions left §7, so they are not
+    computed. Needs 07_model_comparison's OOF artefact (tree counts, OOF errors, conformal q).
 TR: Teknik rapor §7 — servis edilen modeller. LightGBM bütün ilanlarla, 5-fold CV'de erken durdurmanın
     seçtiği ağaç sayılarının medyanıyla eğitilir (servis edilen model ölçülen ayarla aynı olsun diye); yanında
-    iki CatBoost varyantı. Servis dosyalarını (yerel model biçimleri + encoders.pkl + README) yazar ve üç örnek
-    ilanı tahmin eder (her fiyat üçte birinde en iyi tahmin edilen hasarsız ilan).
+    iki CatBoost varyantı. Servis dosyalarını (yerel model biçimleri + encoders.pkl + README) yazar.
+    2026-09-29 (ikinci sadeleştirme listesi): üç "en iyi durum" örnek tahmini §7'den çıktı, hesaplanmıyor.
     07_model_comparison'ın OOF artefaktına ihtiyaç duyar (ağaç sayıları, OOF hataları, conformal q).
 Output / Çıktı: metrics/07_final_model.json · data/serving/final_model.pkl · data/serving/serve/*
 """
@@ -25,13 +25,11 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 from lib import segment_rule as SR
 from lib.common import CAT, FEATURES, NUM, ROOT, TEXT, load_clean, save_metrics
-from lib.cv import (CB_PARAMS, LGB_PARAMS, N_JOBS, PRICE_CAP, SEED, TEXT_SVD, catboost_device, catboost_task,
+from lib.cv import (CB_PARAMS, LGB_PARAMS, N_JOBS, SEED, TEXT_SVD, catboost_device, catboost_task,
                 conformal_q, load_oof)
 
 SERVING_DIR = ROOT / "data" / "serving"
 SERVE_DIR = SERVING_DIR / "serve"
-TIER_NAMES = ["economy", "mid", "premium"]
-MAX_ABS_RESID = 5                     # a sample must be predicted within ±5% OOF | örnek OOF'ta ±%5 içinde olmalı
 CONFORMAL_DEF = ("OOF log-hatalarinin %90 yuzdeligi; aralik = expm1(tahmin_log ± q), "
                  "alt uc 0, ust uc log1p(1.5e7) ile kirpilir")
 
@@ -81,51 +79,6 @@ def train_models(X, Xf, yl, trees, task):
     native.fit(Pool(X, yl, cat_features=[X.columns.get_loc(c) for c in CAT],
                     text_features=[X.columns.get_loc(c) for c in TEXT]))
     return {"lgb": final_lgb, "cb": final_cb, "cb_native": native, "cat_idx": cat_idx}
-
-
-def predict_one(listings, X, idx, models, enc, which):
-    """
-    EN: Price prediction of one listing by one served model, built the way serving builds it (unseen
-        category → −1, text through the stored TF-IDF + SVD), clipped to [0, 15M].
-        which: "lgb", "cb" or "cb_native".
-    TR: Bir ilanın bir servis modeliyle fiyat tahmini; servisin kurduğu gibi kurulur (görülmemiş kategori → −1,
-        metin saklanan TF-IDF + SVD'den), [0, 15M]'ye kırpılır. which: "lgb", "cb" ya da "cb_native".
-    """
-    if which == "cb_native":
-        pool = Pool(X.iloc[[idx]], cat_features=[X.columns.get_loc(c) for c in CAT],
-                    text_features=[X.columns.get_loc(c) for c in TEXT])
-        return float(np.expm1(np.clip(models["cb_native"].predict(pool)[0], 0, np.log1p(PRICE_CAP))))
-    rec = listings.iloc[idx]
-    row = {c: enc["cat_maps"][c].get(str(rec[c]), -1) for c in CAT}
-    row.update({c: float(rec[c]) for c in NUM})
-    for txt in TEXT:
-        t = enc["tfidf"][txt]
-        emb = t["svd"].transform(t["vec"].transform([str(rec[txt])]))
-        row.update({f"{txt}_{i}": emb[0, i] for i in range(t["n"])})
-    Xr = pd.DataFrame([row])[enc["feat_cols"]]
-    pl = models["lgb"].predict(Xr)[0] if which == "lgb" else models["cb"].predict(Pool(Xr, cat_features=models["cat_idx"]))[0]
-    return float(np.expm1(np.clip(pl, 0, np.log1p(PRICE_CAP))))
-
-
-def pick_examples(price, oof_price, heavy):
-    """
-    EN: One sample per price third: among undamaged listings predicted within ±5% OOF, the one with the
-        smallest |OOF residual %| — best cases, which the report presents as such (typical error is MAPE).
-        Returns: [(row index, tier name, OOF residual %), ...].
-    TR: Her fiyat üçte biri için bir örnek: OOF'ta ±%5 içinde tahmin edilen hasarsız ilanlar arasında
-        |OOF artık %|'si en küçük olan — en iyi durumlar; rapor onları öyle sunar (tipik hata MAPE'dir).
-        Döndürür: [(satır indeksi, dilim adı, OOF artık %), ...].
-    """
-    resid_pct = (price - oof_price) / price * 100
-    abs_r = np.abs(resid_pct)
-    q = np.quantile(price, [1 / 3, 2 / 3])
-    out = []
-    for lo, hi, name in zip([-np.inf, q[0], q[1]], [q[0], q[1], np.inf], TIER_NAMES):
-        c = np.where((price > lo) & (price <= hi) & (~heavy) & (abs_r <= MAX_ABS_RESID))[0]
-        if len(c):
-            i = int(c[np.argmin(abs_r[c])])
-            out.append((i, name, float(resid_pct[i])))
-    return out[:3]
 
 
 def serving_readme(trees):
@@ -184,17 +137,10 @@ Modeller native (.txt/.cbm) — sürüm-dayanıklı. TF-IDF/SVD'nin native forma
 # %% [3] Metrics assembly | Metrik derleme — naming and rounding only | yalnız adlandırma ve yuvarlama
 def to_metrics(res):
     """
-    EN: Published in the site tree: meta.repro.final_lgb_trees and domain.final_results sample predictions.
-    TR: Site ağacında yayımlanır: meta.repro.final_lgb_trees ve domain.final_results örnek tahminleri.
+    EN: Published in the site tree: meta.repro.final_lgb_trees (technical report §7 names the served model's rule).
+    TR: Site ağacında yayımlanır: meta.repro.final_lgb_trees (teknik rapor §7 servis edilen modelin kuralını anar).
     """
-    samples = [{"vehicle": s["model"], "segment": s["segment"], "price_band": s["tier"], "age": s["age"], "km": s["km"],
-                "actual": round(s["actual"], 0), "lightgbm_pred": round(s["lgb"], 0),
-                "catboost_pred": round(s["cb"], 0), "catboost_native_pred": round(s["cb_native"], 0),
-                "lgb_dev_pct": round(abs(s["lgb"] - s["actual"]) / s["actual"] * 100, 1),
-                "oof_resid_pct": round(s["oof_resid"], 1)} for s in res["samples"]]
-    return {"meta": {"repro": {"final_lgb_trees": res["trees"]}},
-            "domain": {"final_results": {"example_predictions": samples,
-                                         "example_prediction": samples[0] if samples else None}}}
+    return {"meta": {"repro": {"final_lgb_trees": res["trees"]}}}
 
 
 # %% [4] Load | Yükle — the only cells that read files | dosya okuyan tek hücreler
@@ -210,15 +156,8 @@ q = conformal_q(yl, oof["lgb"].values)
 Xf, enc = full_matrix(listings)
 enc["feat_cols"] = list(Xf.columns)
 models = train_models(X, Xf, yl, trees, catboost_task(catboost_device()))
-heavy = pd.to_numeric(listings["is_heavy_damaged"], errors="coerce").fillna(0).values.astype(bool)
-samples = []
-for i, tier, resid in pick_examples(price, np.clip(oof["lgb"].values, 0, PRICE_CAP), heavy):
-    rec = listings.iloc[i]
-    samples.append({"model": str(rec["model"]), "segment": str(rec["segment"]), "tier": tier, "age": int(rec["vehicle_age"]),
-                    "km": int(rec["gb_mileage"]), "actual": float(price[i]), "oof_resid": resid,
-                    **{w: predict_one(listings, X, i, models, enc, w) for w in ("lgb", "cb", "cb_native")}})
-res = {"trees": trees, "samples": samples}
-print(f"trees | ağaç {trees} · q {q:.4f} ·", [(s["tier"], round(s["lgb"])) for s in samples])
+res = {"trees": trees}
+print(f"trees | ağaç {trees} · q {q:.4f}")
 
 # %% [6] Save | Kaydet — the only cell that writes files | dosya yazan tek hücre
 SERVE_DIR.mkdir(parents=True, exist_ok=True)

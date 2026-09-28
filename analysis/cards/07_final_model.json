@@ -1,16 +1,16 @@
 {
  "script": "analysis/07_final_model.py",
  "question": {
-  "tr": "Serviste kullanılan son modeller hangileri ve örnek ilanlarda ne tahmin ediyorlar?",
-  "en": "Which final models are served, and what do they predict on sample listings?"
+  "tr": "Serviste kullanılan son modeller hangileri ve nasıl eğitiliyor?",
+  "en": "Which final models are served, and how are they trained?"
  },
  "data": {
   "tr": "load_clean() (29.988 ilan) + 07_model_comparison'ın OOF artefaktı (ağaç sayıları, OOF artıkları).",
   "en": "load_clean() (29,988 listings) + 07_model_comparison's OOF artefact (tree counts, OOF residuals)."
  },
  "method": {
-  "tr": "LightGBM (ağaç = CV medyanı), CatBoost ve native CatBoost bütün ilanlarda eğitilir; servis dosyaları yazılır. Örnekler: her fiyat üçte birinde OOF artığı ±%5 içindeki hasarsız ilanlardan biri.",
-  "en": "LightGBM (trees = CV median), CatBoost and native CatBoost are trained on all listings; the serving files are written. Samples: per price third, one undamaged listing with OOF residual within ±5%."
+  "tr": "LightGBM (ağaç = CV medyanı), CatBoost ve native CatBoost bütün ilanlarda eğitilir; servis dosyaları yazılır.",
+  "en": "LightGBM (trees = CV median), CatBoost and native CatBoost are trained on all listings; the serving files are written."
  },
  "split": "none",
  "leakage": {
@@ -28,8 +28,8 @@
   "fit_on_full_data": {
    "status": "present",
    "note": {
-    "tr": "Bilerek: servis modeli bütün veride eğitilir. Örnek tahminler eğitim verisinde (içeriden) tahmin; rapor örnekleri 'en iyi durum' diye sunar, tipik hata OOF MAPE'dir.",
-    "en": "By design: the served model is trained on all data. The sample predictions are in-sample; the report presents them as best cases, the typical error is the OOF MAPE."
+    "tr": "Tasarım gereği: servis edilen model bütün veride eğitilir. Raporun bütün doğruluk sayıları OOF'tan gelir; bu betik rapora yalnız ağaç kuralını verir.",
+    "en": "By design: the served model is trained on all data. Every accuracy number in the report comes from the OOF; this script gives the report only the tree rule."
    }
   },
   "temporal": {
@@ -39,13 +39,10 @@
  },
  "evidence": {
   "tests": [
-   "tests/analysis/test_07_final_model.py::test_tree_count_is_cv_median",
-   "tests/analysis/test_07_final_model.py::test_sample_deviation_matches_prediction",
-   "tests/analysis/test_07_final_model.py::test_samples_keep_the_oof_promise"
+   "tests/analysis/test_07_final_model.py::test_tree_count_is_cv_median"
   ],
   "report_keys": [
-   "meta.repro.final_lgb_trees",
-   "domain.final_results.example_predictions"
+   "meta.repro.final_lgb_trees"
   ]
  },
  "status": "complete"

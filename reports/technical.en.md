@@ -154,16 +154,7 @@ Theil's U(a | b) gives how much of a's uncertainty is gone once b is known (0–
 
 ![Series × segment — median price (₺M); 3 series span more than one segment · • = single listing](figures/en-19-series-segment.png)
 
-### Theil's U asymmetry
-
-| direction | reads as | U |
-|---|---|---:|
-| U(series \| model) | how much model pins down series | 0.999 |
-| U(model \| series) | how much series pins down model | 0.387 |
-| U(brand \| model) | brand given model | 1.000 |
-| U(brand \| series) | brand given series | 1.000 |
-
-Model determines series at 1.00; series determines model only at 0.39. Brand is fully readable from either model or series → brand carries no separate information (the brand ablation below measures the same thing).
+In the other direction series determines model only at 0.39. Brand is fully readable from either model or series (U(brand | model) = 1.00): brand carries no separate information; the brand ablation below measures the same thing.
 
 Spearman correlation (rank association) among the numeric features, in the map below. Pairs with |ρ| > 0.5: Age (years)–Mileage 0.74, Power (hp)–Engine (cc) 0.61, Door Painted–Fender Painted 0.60. Collinearity in the hedonic model is measured with VIF in §6; door and fender paint enter there as the total painted-part count, not separately.
 
@@ -195,35 +186,9 @@ Raw price is right-skewed (skew 1.62); a log transform pulls it toward symmetry 
 
 ![Median price by body style (types with 80+ listings; the 291 listings with no body style and the 101 in smaller types left out)](figures/en-01-body-median.png)
 
-## 5. Market structure — segmentation (KMeans + PCA)
+## 5. Market structure — no clear clusters
 
-**k=3 was not chosen by silhouette.** Silhouette at k=3 is 0.188 — rank 7 of the 7 values tried; the highest is k=2 (0.242). All sit below 0.25: the data has no pronounced natural clusters. k=3 was fixed for interpretability; read the clusters through the axes below, not as "the market's natural structure".
-
-![k selection — Elbow + Silhouette](figures/en-24-k-selection.png)
-
-![PCA — PC1 19.7% × PC2 12.4%](figures/en-22-pca-scatter.png)
-
-![PCA — PC1 19.7% × PC3 11.0%](figures/en-23-pca-scatter-13.png)
-
-### Axes separating the clusters
-
-| cluster | listings | top 3 axes vs the mean |
-|---|---:|---|
-| Cluster 1 · 5% heavy damage | 9,046 | Mileage ↑ · Fender Local Paint ↑ · Engine (cc) ↑ |
-| Cluster 2 · 2% heavy damage | 15,976 | Mileage ↓ · Age (years) ↓ · Engine (cc) ↓ |
-| Cluster 3 · 13% heavy damage | 4,966 | Door Painted ↑ · Fender Painted ↑ · Fender Changed ↑ |
-
-↑/↓ = cluster mean above/below the overall mean (top 3 by z-score magnitude). The clusters are not named: k was fixed for interpretability, so read them through this column.
-
-### PCA loadings
-
-| PC | variance | top 4 loadings |
-|---|---:|---|
-| PC1 | 19.7% | Mileage (+0.46) · Age (years) (+0.45) · Fender Painted (+0.41) · Door Painted (+0.41) |
-| PC2 | 12.4% | Power (hp) (+0.65) · Engine (cc) (+0.61) · Fender Painted (-0.24) · Door Painted (-0.24) |
-| PC3 | 11.0% | Fender Local Paint (+0.58) · Door Local Paint (+0.57) · Power (hp) (-0.28) · Bumper Local Paint (+0.22) |
-
-The first 3 components explain 43.1% of variance. PC1 ≈ Mileage + Age (years) + Fender Painted + Door Painted · PC2 ≈ Power (hp) + Engine (cc) · PC3 ≈ Fender Local Paint + Door Local Paint.
+The data has no clear natural clusters: on the standardised numeric features KMeans stays below a silhouette of 0.25 for all seven values of k tried (2–8; the highest is k=2, 0.242). Clusters and PCA are therefore not used in the analysis; market structure is read through explicit features such as segment and body type.
 
 ## 6. Hedonic model — controlled effects
 
@@ -283,7 +248,7 @@ The report's model: **LightGBM (model/series name TF-IDF+SVD)** — MAPE **6.49%
 | CatBoost (model/series name native text) | 6.58% | 0.9739 | ₺112,925 | ₺77,660 | ₺178,312 |
 | comparable median (baseline, laddered) | 11.20% | 0.9235 | ₺191,224 | ₺130,000 | ₺305,050 |
 
-★ = winner under the MAPE-only rule: **CatBoost (model/series name TF-IDF+SVD)**. But the two TF-IDF+SVD variants differ by 0.05 MAPE points and ₺309 MAE; LightGBM leads on MAE, CatBoost on MAPE, MedAE, RMSE → in practice they are **tied**. Throughout this report "the model" is LightGBM: deterministic on CPU, whereas CatBoost's trees depend on the device (GPU/CPU) — an earlier GPU run had the MAPE order reversed. The conformal interval, brand ablation and sample predictions all come from LightGBM.
+★ = winner under the MAPE-only rule: **CatBoost (model/series name TF-IDF+SVD)**. But the two TF-IDF+SVD variants differ by 0.05 MAPE points and ₺309 MAE; LightGBM leads on MAE, CatBoost on MAPE, MedAE, RMSE → in practice they are **tied**. Throughout this report "the model" is LightGBM: deterministic on CPU, whereas CatBoost's trees depend on the device (GPU/CPU) — an earlier GPU run had the MAPE order reversed. The conformal interval and the brand ablation come from LightGBM.
 
 ### Baseline tier breakdown
 
@@ -297,15 +262,7 @@ Ladder: (model, year) median → (model) median — all years → global median.
 
 **Model limitations and observations.** Information that never reaches the form fields and hides in the free text — modifications, special equipment, tax-exemption status — does not enter the model; listings whose text mentions a conversion or modification have a raw large-error rate of 4.9% against 3.9% for the rest; with age, mileage, price, performance family, comparable count and brand held fixed the odds ratio is 1.14 (95% CI 0.94–1.37): no significant difference was measured. The wording appears in 43.6% of performance-family listings. Without comparables the error grows markedly: with no other listing of the same model and year the large-error rate is 19.0%, with 100+ comparables 2.9%; the largest lira errors sit at this end too (§8). No extensive hyperparameter optimisation was run, by choice; its payoff was not measured in this report.
 
-### Sample predictions
-
-| band | car | age | km | actual | LightGBM | dev. | OOF resid. | CatBoost (model/series name SVD) |
-|---|---|---:|---:|---:|---:|---:|---:|---:|
-| economy | 116i Comfort | 17 | 174,000 | ₺718,000 | ₺714,062 | 0.5% | 0.0% | ₺709,186 |
-| mid | 520d Premium | 14 | 300,000 | ₺1,480,000 | ₺1,490,900 | 0.7% | 0.0% | ₺1,437,492 |
-| premium | 520i Luxury Line | 4 | 96,000 | ₺3,680,000 | ₺3,640,718 | 1.1% | 0.0% | ₺3,615,892 |
-
-> **These are best-case examples, not typical ones.** In each price band the pick is the non-heavy-damaged listing with the smallest |OOF residual|. "dev." is the final model trained on all data (it saw the listing); the leak-free measure is "OOF resid.". For typical error see MAPE.
+The served LightGBM is trained on all listings with the median of the tree counts early stopping chose in CV (258 trees), i.e. at the setting measured above.
 
 ## 8. Calibration, residuals and where it is weak
 
@@ -497,8 +454,8 @@ This table is not temporal: every row is plain 5-fold OOF with no new-listings-o
 
 ### When to retrain
 
-- **Watch drift, retrain the model.** Run a **drift service** in production that watches PSI · KS · EMD, and retrain the model on new snapshots. A fixed PSI threshold is not enough: today's highest PSI is 0.0049, yet on the same new listings the model trained on the oldest snapshot (01-18) errs +0.40 points [+0.27, +0.52] more than the latest one: the model ages while the distribution barely moves.
-- **Watch the error directly.** The price arrives with every snapshot, so the model's error on new listings can be measured directly; the backtest above does exactly that. The drift measures (PSI · KS · EMD) stay as diagnostics.
+- **Watch the error directly, retrain on new snapshots.** The price arrives with every snapshot, so the model's error on new listings can be measured directly; the backtest above does exactly that. On the same new listings the model trained on the oldest snapshot (01-18) errs +0.40 points [+0.27, +0.52] more than the latest one.
+- **Watch drift as a diagnostic.** PSI · KS · EMD show what changed but do not trigger retraining on their own: today's highest PSI is 0.0049, and the model ages while the distribution barely moves. There is no fixed PSI threshold.
 - **Events that reset the pricing regime.** A tax or excise change, an incentive, an import rule, a currency move or a sudden market anomaly can shift the distribution before a monitoring window closes; treat those as **triggers** as well and plan retraining around them.
 - **Keep the old snapshots.** In the paired comparison on the same test listings, accumulating lowers the error significantly in one of the three comparisons and raises it significantly in none (the intervals carry the sampling of the test listings, not the variability of training). Retrain by **adding** snapshots, not by discarding the old ones.
 

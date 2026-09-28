@@ -435,7 +435,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-27T21:32:12+03:00",
+  "_meta.generated_at": "2026-09-29T00:03:03+03:00",
   "_meta.run_id": null,
   "_meta.script": "05_segmentation.py",
   "domain.age_depreciation": {
@@ -462,35 +462,13 @@
   },
   "domain.km_price_scope.outside": 653,
   "domain.km_price_scope.upper_limit": 400000,
-  "domain.kmeans": {
-   "len": 3,
-   "sha256": "2f3de941d5b1821f6eb1e5da0004facd79cd6cbd0fcf870083b7999871c14764"
-  },
-  "domain.pca_scatter": {
-   "len": 29988,
-   "sha256": "b33226026ba511b1a4fe109d44f3e012484b3d32a9c156021e19aea2c179b2ac"
-  },
-  "domain.pca_scatter_13": {
-   "len": 29988,
-   "sha256": "4da37cd26bbf5f7cf161d9d73aec52d9468451acb9ecfeed05a69f86d6409717"
-  },
   "domain.segment_ladder": {
    "len": 6,
    "sha256": "c7a1fe2b01f5f4316f77242999aac2118d0b806efda7c14af58166ad75687871"
   },
-  "methodology.kmeans_selection.chosen_k": 3,
-  "methodology.kmeans_selection.elbow": {
-   "len": 7,
-   "sha256": "c4c341d2ab92dc29ba430a85df28d74c8fed6e2b8492dafb232c260a6a6738fd"
-  },
-  "methodology.kmeans_selection.note": "Silhouette en yüksek k=2 (0.242); k=3 için 0.188. k=3 silhouette ile değil, yorumlanabilirlik için sabit seçildi.",
   "methodology.kmeans_selection.silhouette": {
    "len": 7,
    "sha256": "91ca8e5f3985625fe3da8913cb05caffcae23a6d69fec6602ee1719227673ceb"
-  },
-  "methodology.pca_axes": {
-   "len": 3,
-   "sha256": "19b0a14b85b746f79ec369004e8d899be441114bbbdbeba1ba35eaa6c6aece9d"
   }
  },
  "06_hedonic": {
@@ -562,24 +540,9 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-27T21:50:33+03:00",
+  "_meta.generated_at": "2026-09-29T00:03:52+03:00",
   "_meta.run_id": "601741517e09",
   "_meta.script": "07_final_model.py",
-  "domain.final_results.example_prediction.actual": 718000.0,
-  "domain.final_results.example_prediction.age": 17,
-  "domain.final_results.example_prediction.catboost_native_pred": 712107.0,
-  "domain.final_results.example_prediction.catboost_pred": 709186.0,
-  "domain.final_results.example_prediction.km": 174000,
-  "domain.final_results.example_prediction.lgb_dev_pct": 0.5,
-  "domain.final_results.example_prediction.lightgbm_pred": 714062.0,
-  "domain.final_results.example_prediction.oof_resid_pct": 0.0,
-  "domain.final_results.example_prediction.price_band": "economy",
-  "domain.final_results.example_prediction.segment": "C",
-  "domain.final_results.example_prediction.vehicle": "116i Comfort",
-  "domain.final_results.example_predictions": {
-   "len": 3,
-   "sha256": "6b4987607a9f9bb728e162302206de464f6b84d4efa6d072adb0cdcfa94b3dea"
-  },
   "meta.repro.final_lgb_trees": 258
  },
  "07_lofo": {
@@ -1324,12 +1287,12 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-27T22:00:32+03:00",
+  "_meta.generated_at": "2026-09-29T00:05:25+03:00",
   "_meta.run_id": null,
   "_meta.script": "shap/04_variants.py",
   "domain.shap.catboost_native": {
    "len": 12,
-   "sha256": "1e4766d2394e4c2261669632eaad9567f78a24b4ccea25a29478893797dfcfde"
+   "sha256": "4553977365074fa50b285bdefc88dbcf6d9449dfa126a0459f2672b6b0ef3b99"
   },
   "domain.shap.catboost_tfidf_svd": {
    "len": 11,
@@ -1350,15 +1313,15 @@
   "shap_final.base_log": 14.299831654389688,
   "shap_final.catboost_native": {
    "len": 12,
-   "sha256": "1e4766d2394e4c2261669632eaad9567f78a24b4ccea25a29478893797dfcfde"
+   "sha256": "4553977365074fa50b285bdefc88dbcf6d9449dfa126a0459f2672b6b0ef3b99"
   },
   "shap_final.catboost_native_combined": {
    "len": 11,
-   "sha256": "4522c3429f11542cd972343ec793b04a0ec058a1928f36349bfea7c46210a2b0"
+   "sha256": "863705dfe9704e6fa76d8a4fea52bc70016087315c4343af95c324f0cad521b8"
   },
   "shap_final.catboost_native_separate": {
    "len": 12,
-   "sha256": "cfe82e2da4614fea5d322c7fd3f2af20f0d855ab4d16301b18765a7aeb834bb1"
+   "sha256": "9094470c4f1d6ca0ac854d56eeeb0eabaf0975dee5d98104b039ac80794dacc7"
   },
   "shap_final.catboost_tfidf_svd": {
    "len": 11,

@@ -43,6 +43,7 @@ cümle ölçümle çelişiyordu; rapor artık bu notları değil sayıları okur
 
 - `kmeans_selection.not` "silhouette k=3'te en yüksek" diyordu; ölçümde k=3 silhouette'in en yüksek
   olduğu yer değil. k=3 silhouette ile değil, yorumlanabilirlik için sabit. Not artık veriden kuruluyor.
+  2026-09-29'dan beri kümeler hiç kurulmuyor; §5 yalnız silhouette taramasını tek paragrafla veriyor.
 - `numeric_correlation.not` "VIF hepsi <3" diyordu. 2026-09-23'ten beri VIF kurulan hedonik modelin kendi
   tasarım matrisinden hesaplanıyor; 2026-09-28'den beri teknik rapor en yüksek değerini (ortalanmış ve ortalanmamış)
   tek cümleyle veriyor.
@@ -109,6 +110,13 @@ Dışarıda hazırlanan bir sadeleştirme listesi madde madde değerlendirildi. 
     ölçüt kodu sınadı, yöntemi değil. Asıl soru yeni bir ön kayıtla soruldu (`plans/09-forward-coverage`): servis
     tarifi ileriye uygulanınca banda göre pay en ucuz bandı her kurulumda düzeltiyor (H1 doğrulandı), ama her bantta
     %88'i tutmuyor (H2 çürüdü) ve emsalsiz ilanlarda kapsamayı düşürüyor. Karar notunun önerisi bu sonuca göre yazıldı.
+- **İkinci liste (2026-09-29, kullanıcı onayı):**
+  - §5 tek paragraf: veride belirgin küme yok (silhouette hep 0,25 altında); sabit k'li kümeler, PCA ve üç figür
+    kalktı, numaralar kaymadı.
+  - §3'teki Theil's U tablosu iki cümleye indi.
+  - §7'deki "en iyi durum" örnek tahmin tablosu kalktı; yerine servis edilen modelin ağaç kuralı.
+  - İki raporda da yeniden eğitim önce hataya bakar (sabit test kümesindeki fark), kayma tanı içindir.
+  - §1 motor alt bölümü olduğu gibi kaldı (2026-09-26 kararı yinelendi); LOFO'daki altı öznitelik açılmadı.
 
 ## İş / teknik ayrımı
 

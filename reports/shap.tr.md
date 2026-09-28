@@ -79,17 +79,17 @@ Renk aracın yaşı. Aynı **150–250 bin km** bandında kilometre katkısını
 
 | öznitelik | LightGBM | CatBoost (SVD) | CatBoost (native) |
 |---|---:|---:|---:|
-| Yaş (yıl) | %43.9 | %30.9 | %33.0 |
-| Motor (hp + cc) | %20.8 | %17.2 | %17.6 |
-| Kilometre | %12.9 | %22.1 | %22.9 |
-| Model/seri adı | %8.8 | %13.7 | %17.2 |
-| Hasar (panel + ağır hasar) | %6.5 | %7.6 | %6.9 |
+| Yaş (yıl) | %43.9 | %30.9 | %32.1 |
+| Motor (hp + cc) | %20.8 | %17.2 | %17.1 |
+| Kilometre | %12.9 | %22.1 | %22.3 |
+| Model/seri adı | %8.8 | %13.7 | %16.7 |
+| Hasar (panel + ağır hasar) | %6.5 | %7.6 | %5.5 |
 | Segment | %5.2 | %7.1 | %0.1 |
-| Kasa tipi | %1.0 | %0.4 | %1.2 |
-| Vites | %0.7 | %0.9 | %0.1 |
-| Yakıt | %0.1 | %0.1 | %0.0 |
-| Çekiş | %0.0 | %0.1 | %0.3 |
-| Marka | %0.0 | %0.0 | %0.6 |
+| Kasa tipi | %1.0 | %0.4 | %2.9 |
+| Vites | %0.7 | %0.9 | %1.4 |
+| Yakıt | %0.1 | %0.1 | %0.3 |
+| Çekiş | %0.0 | %0.1 | %0.5 |
+| Marka | %0.0 | %0.0 | %1.1 |
 
 Doğrulukta üç varyant birbirine yakın (MAPE %6.49 · %6.44 · %6.58). Gerekçede ayrılıyorlar: LightGBM yaşa %43.9 pay veriyor, CatBoost (SVD) %30.9 (13.0 puan fark); kilometrede durum tersine dönüyor (%12.9 · %22.1). Yaş ile kilometre birlikte hareket ettiği için payın hangisine yazılacağı modelin tercihi. **Sonuç:** ilk üç kalem üç modelde de aynı (Yaş (yıl), Motor (hp + cc), Kilometre), ama sıraları ve payları modele bağlı; CatBoost (native) modelinde 3. ile 4. kalem arasındaki fark yalnız 0.4 puan.
 

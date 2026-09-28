@@ -243,6 +243,9 @@ def fmt_business(v, F, lang):
     _pc = {c_: i_ for i_, c_ in enumerate(v["bt_columns"]["paired"])}
     _accumulates = (any(r_[_pc["ci_hi"]] < 0 for r_ in v["bt_paired"])
                     and not any(r_[_pc["ci_lo"]] > 0 for r_ in v["bt_paired"]))
+    # 2026-09-29: yeniden egitim gerekcesi teknik §9'un sabit test kumesindeki en eski egitim farki; anlamli degilse durur.
+    _old = v["bt_horizon"]["vs_latest"][0]
+    assert _old[2] > 0, f"en eski egitim farki anlamli degil: {_old}"
     _acc_tr = (" Eski dönemleri atma: aynı ilanlarda birikimli eğitim hatayı hiçbir karşılaştırmada anlamlı artırmadı, "
                "bir kısmında düşürdü." if _accumulates else "")
     _acc_en = (" Do not discard old snapshots: on the same listings, accumulating never raised the error significantly "
@@ -259,16 +262,16 @@ def fmt_business(v, F, lang):
            f"geçirme model hatasına değil, formun göremediği bilgiye karşı.\n")
         +
         # 2026-09-27 (kullanici): oneri sabit bir PSI esigine baglanmiyor; "az kayiyor" yargisi yine esikle kapili.
-        f"- **Kaymayı izle ve modeli yeniden eğit:** canlıda fiyat dağılımını izleyen bir servis kur, model yeni "
-        f"verilerle yeniden eğitilsin. "
-        + (f"Fiyat dağılımı bugün az kayıyor (en yüksek PSI {v['psi_max']:.3f}), " if v["psi_max"] < v["psi_safe"]
-           else f"Fiyat dağılımı belirgin kayıyor (en yüksek PSI {v['psi_max']:.3f}); ")
-        + f"ama piyasa seviyesi {v['n_snapshots']} dönemde "
+        # 2026-09-29 (ikinci sadelestirme listesi): teknik §9 ile ayni sira — once hata, sonra kayma (tani).
+        f"- **Hatayı doğrudan izle, modeli yeni taramalarla yeniden eğit:** fiyat her taramada geldiği için modelin "
+        f"yeni ilanlardaki hatası doğrudan ölçülebilir. Aynı yeni ilanlarda en eski taramayla eğitilen model en "
+        f"yenisinden {_old[1]:.2f} puan daha çok yanılıyor; piyasa seviyesi {v['n_snapshots']} dönemde "
         f"{P(v['ed']['period_shift']['live'][-1][1], lang, 1, sign=True)} kaydı ve model zamanı görmüyor.\n"
-        # 2026-09-28 (kullanici karari): esiksiz performans izleme — fiyat her taramada geliyor.
-        f"- **Hatayı doğrudan izle:** fiyat her taramada geldiği için modelin yeni ilanlardaki hatası doğrudan "
-        f"ölçülebilir; fiyat dağılımını izlemek tanı için kalır.\n"
-        f"- **Fiyat rejimini değiştiren gelişmeleri takip et** (vergi/ÖTV düzenlemesi, teşvik, ani "
+        + (f"- **Fiyat dağılımını tanı için izle:** dağılım bugün az kayıyor (en yüksek PSI {v['psi_max']:.3f}); "
+           f"yeniden eğitimi tek başına tetiklemez.\n" if v["psi_max"] < v["psi_safe"] else
+           f"- **Fiyat dağılımını tanı için izle:** dağılım belirgin kayıyor (en yüksek PSI {v['psi_max']:.3f}); "
+           f"neyin değiştiğini gösterir, yeniden eğitim kararı yine hataya bakar.\n")
+        + f"- **Fiyat rejimini değiştiren gelişmeleri takip et** (vergi/ÖTV düzenlemesi, teşvik, ani "
         f"piyasa hareketi gibi) — eğitim planı bunlara göre yapılmalı." + _acc_tr,
         f"- Compute the range's margin per price band: wider on cheap cars, narrower on expensive ones — don't "
         f"trust a point estimate. On cars without a comparable, don't trust the range either.\n"
@@ -279,16 +282,16 @@ def fmt_business(v, F, lang):
            f"live: that information is not in the form. With vehicle attributes held fixed no significant difference "
            f"in its error rate was measured; the review guards against what the form cannot see, not against model error.\n")
         +
-        f"- **Watch drift and retrain the model:** run a service that tracks the price distribution, and "
-        f"retrain the model on new data. "
-        + (f"The price distribution moves little today (highest PSI {v['psi_max']:.3f}), but the "
-           if v["psi_max"] < v["psi_safe"] else f"The price distribution moves clearly (highest PSI {v['psi_max']:.3f}) and the ")
-        +
-        f"market level moved {P(v['ed']['period_shift']['live'][-1][1], lang, 1, sign=True)}"
-        f" over {number_word(v['n_snapshots'], 'en')} snapshots and the model is time-blind.\n"
-        f"- **Watch the error directly:** the price arrives with every snapshot, so the model's error on new "
-        f"listings can be measured directly; watching the price distribution stays as a diagnostic.\n"
-        f"- **Watch for events that reset the pricing regime** (a tax or excise change, an incentive, "
+        f"- **Watch the error directly, retrain on new snapshots:** the price arrives with every snapshot, so the "
+        f"model's error on new listings can be measured directly. On the same new listings the model trained on the "
+        f"oldest snapshot errs {_old[1]:.2f} points more than the latest one; the market level moved "
+        f"{P(v['ed']['period_shift']['live'][-1][1], lang, 1, sign=True)} over {number_word(v['n_snapshots'], 'en')} "
+        f"snapshots and the model is time-blind.\n"
+        + (f"- **Watch the price distribution as a diagnostic:** it moves little today (highest PSI "
+           f"{v['psi_max']:.3f}); it does not trigger retraining on its own.\n" if v["psi_max"] < v["psi_safe"] else
+           f"- **Watch the price distribution as a diagnostic:** it moves clearly (highest PSI {v['psi_max']:.3f}); it "
+           f"shows what changed, while the retraining decision still looks at the error.\n")
+        + f"- **Watch for events that reset the pricing regime** (a tax or excise change, an incentive, "
         f"a sudden market move) — plan retraining around them." + _acc_en))
     A("")
     A(f"![{F[15][1]}](figures/{F[15][0]})")

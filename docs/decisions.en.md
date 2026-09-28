@@ -46,7 +46,8 @@ sentences in the producers contradicted the measurements; the reports now read n
 notes:
 
 - `kmeans_selection.not` said "silhouette is highest at k=3"; in the measurement k=3 is not where
-  silhouette peaks. k=3 is fixed for interpretability, not chosen by silhouette. The note is now built
+  silhouette peaks. k=3 is fixed for interpretability, not chosen by silhouette. Since 2026-09-29 no clusters
+  are built at all; §5 gives only the silhouette scan in one paragraph. The note is now built
   from the data.
 - `numeric_correlation.not` said "VIF all <3". Since 2026-09-23 VIF is computed from the fitted hedonic
   model's own design matrix; since 2026-09-28 the technical report gives its highest value (centred and
@@ -121,6 +122,13 @@ the report's markdown.
     (`plans/09-forward-coverage`): applied forward, the per-band margin fixes the cheapest band in every setup (H1
     confirmed), but does not hold 88% in every band (H2 refuted) and lowers coverage on listings without a comparable.
     The decision note's advice was written from that result.
+- **Second list (2026-09-29, owner approved):**
+  - §5 is one paragraph: the data has no clear clusters (silhouette always below 0.25); the fixed-k clusters, PCA
+    and three figures left, and the numbering did not shift.
+  - The Theil's U table in §3 became two sentences.
+  - The best-case sample prediction table in §7 left; the served model's tree rule replaces it.
+  - In both reports retraining looks at the error first (the fixed-test-set gap); drift is a diagnostic.
+  - The §1 engine subsection stays as it is (the 2026-09-26 decision, repeated); LOFO's six features stay unmeasured.
 
 ## Business / technical split
 

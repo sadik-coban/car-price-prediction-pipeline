@@ -15,9 +15,9 @@ from datetime import date
 
 import numpy as np
 
-from report_lib.report_common import (BAND_LABEL, EXAMPLE_NOTES, FUEL_EN, HED_TERM, LADDER_EN,
+from report_lib.report_common import (EXAMPLE_NOTES, FUEL_EN, HED_TERM, LADDER_EN,
                            LOFO_FLAT_KEYS, LOFO_GROUPS, P, REPORTS_DIR, TECHNICAL_FIGS, TIER_LABEL, VARIANTS, VARIANTS_EN,
-                           _Ctx, build_figures, cluster_labels, col, derive, fp, fraction_words, id_label, load_report_view,
+                           _Ctx, build_figures, col, derive, fp, fraction_words, id_label, load_report_view,
                            lofo_name, num, number_word, tl, tlm, tlx, tx, write_md)
 
 
@@ -604,26 +604,14 @@ def section_redundancy(c):
 
     tm = met["theils_matrix"]
     U = lambda a, b: tm["matrix"][tm["labels"].index(a)][tm["labels"].index(b)]   # U(a | b)
-    A(L("### Theil's U asimetrisi", "### Theil's U asymmetry"))
-    A("")
-    T([L("yön", "direction"), L("okunuşu", "reads as"), "U"], [
-        ["U(seri \\| model)" if lang == "tr" else "U(series \\| model)",
-         L("model bilinince seri ne kadar belli", "how much model pins down series"), f"{U('series', 'model'):.3f}"],
-        ["U(model \\| seri)" if lang == "tr" else "U(model \\| series)",
-         L("seri bilinince model ne kadar belli", "how much series pins down model"), f"{U('model', 'series'):.3f}"],
-        ["U(marka \\| model)" if lang == "tr" else "U(brand \\| model)",
-         L("model bilinince marka", "brand given model"), f"{U('brand', 'model'):.3f}"],
-        ["U(marka \\| seri)" if lang == "tr" else "U(brand \\| series)",
-         L("seri bilinince marka", "brand given series"), f"{U('brand', 'series'):.3f}"],
-    ], "llr")
+    # 2026-09-29 (ikinci sadelestirme listesi): asimetri tablosu iki cumleye indi; marka ablasyonu ayni seyi olcuyor.
     _full = min(U("brand", "model"), U("brand", "series")) >= 0.99
-    A(L(f"Model seriyi {U('series', 'model'):.2f} belirliyor, seri modeli yalnız {U('model', 'series'):.2f}."
-        + (" Marka hem modelden hem seriden tamamen okunuyor → marka ayrı bilgi taşımaz "
-           "(aşağıdaki marka ablasyonu aynı sonucu ölçer)." if _full else ""),
-        f"Model determines series at {U('series', 'model'):.2f}; series determines model only at "
-        f"{U('model', 'series'):.2f}."
-        + (" Brand is fully readable from either model or series → brand carries no separate information "
-           "(the brand ablation below measures the same thing)." if _full else "")))
+    A(L(f"Ters yönde seri modeli yalnız {U('model', 'series'):.2f} belirliyor."
+        + (f" Marka hem modelden hem seriden tamamen okunuyor (U(marka | model) = {U('brand', 'model'):.2f}): marka ayrı "
+           f"bilgi taşımaz; aşağıdaki marka ablasyonu aynı sonucu ölçer." if _full else ""),
+        f"In the other direction series determines model only at {U('model', 'series'):.2f}."
+        + (f" Brand is fully readable from either model or series (U(brand | model) = {U('brand', 'model'):.2f}): brand "
+           f"carries no separate information; the brand ablation below measures the same thing." if _full else "")))
     A("")
 
     # 2026-09-28 (sadelestirme listesi): Pearson haritasi ve |r|>0.5 tablosu cikti; ciftler Spearman'dan tek cumle.
@@ -745,59 +733,26 @@ def section_target(c):
 
 def section_segment(c):
     """
-    EN: §5 — market structure: KMeans clusters, k selection, PCA axes.
-    TR: §5 — piyasa yapısı: KMeans kümeleri, k seçimi, PCA eksenleri.
+    EN: §5 — market structure: do the listings form natural clusters? One paragraph from the KMeans silhouette scan.
+    TR: §5 — piyasa yapısı: ilanlar doğal kümeler oluşturuyor mu? KMeans silhouette taramasından tek paragraf.
     """
     v, d, dom, met, meta, hr, lang = c.v, c.d, c.dom, c.met, c.meta, c.hr, c.lang
     L, A, T, figs = c.L, c.A, c.T, c.figs
-    ks = met["kmeans_selection"]
-    sil = ks["silhouette"]
-    K = ks["chosen_k"]
+    # 2026-09-29 (ikinci sadelestirme listesi): bulgu "belirgin kume yok"; uc figur, iki tablo ve sabit k'li kumeler
+    # cikti. Iddia veriyle kapili: silhouette 0.25'i asarsa paragraf yanlis olur -> uretec durur.
+    sil = met["kmeans_selection"]["silhouette"]
     best_k, best_s = max(sil, key=lambda r: r[1])
-    k_s = dict(sil)[K]
-    rank = sorted([s for _, s in sil], reverse=True).index(k_s) + 1 if k_s is not None else None
-    # 2026-09-23: "hasar sinyali hedonik, PCA ve KMeans'te bagimsizca cikiyor" cumlesi kalkti — PCA ve KMeans
-    # ayni standartlastirilmis matriste ve girdilerinin cogu hasar kolonu; orada hasarin cikmasi kuruluştan.
-    A(L(f"**k={K} silhouette ile seçilmedi.** k={K} için silhouette {k_s} — denenen {len(sil)} değer içinde "
-        f"{rank}. sırada; en yüksek k={best_k} ({best_s})."
-        + (" Hepsi 0.25'in altında: veride belirgin doğal küme yok. " if best_s < 0.25 else " ") +
-        f"k={K} yorumlanabilirlik için sabit seçildi; kümeler aşağıdaki eksenleriyle okunmalı, \"piyasanın doğal "
-        f"yapısı\" olarak değil.",
-        f"**k={K} was not chosen by silhouette.** Silhouette at k={K} is {k_s} — rank {rank} of the {len(sil)} values "
-        f"tried; the highest is k={best_k} ({best_s})."
-        + (" All sit below 0.25: the data has no pronounced natural clusters. " if best_s < 0.25 else " ")
-        + f"k={K} was fixed for interpretability; read the clusters through the axes below, not as \"the "
-        f"market's natural structure\"."))
-    A("")
-    figs(24, 22, 23)
-
-    arrow = {"+": "↑", "-": "↓"}
-    A(L("### Kümeleri ayıran eksenler", "### Axes separating the clusters"))
-    A("")
-    labs = cluster_labels(dom["kmeans"], lang)
-    T([L("küme", "cluster"), L("ilan", "listings"), L("ortalamadan en çok ayrıldığı 3 eksen", "top 3 axes vs the mean")],
-      [[lab, num(c["n"], lang), " · ".join(f"{col(d, k, lang)} {arrow.get(s, s)}" for k, s in c["distinguishing"])]
-       for lab, c in zip(labs, dom["kmeans"])], "lrl")
-    A(L("↑/↓ = kümenin ortalaması genelin üstünde/altında (z-skoru büyüklüğüne göre ilk 3). "
-        "Kümelere ad verilmedi: k yorumlanabilirlik için sabitlendi, ayrım bu sütunda okunur.",
-        "↑/↓ = cluster mean above/below the overall mean (top 3 by z-score magnitude). The clusters "
-        "are not named: k was fixed for interpretability, so read them through this column."))
+    assert best_s < 0.25, f"silhouette {best_s} >= 0.25 — 'belirgin kume yok' cumlesi bayat"
+    A(L(f"Veride belirgin doğal küme yok: standartlaştırılmış sayısal özniteliklerde KMeans, denenen "
+        f"{number_word(len(sil), lang)} k değerinin ({sil[0][0]}–{sil[-1][0]}) hepsinde silhouette 0.25'in altında "
+        f"kalıyor (en yüksek k={best_k}, {best_s}). Kümeler ve PCA bu yüzden analizde kullanılmadı; piyasa yapısı "
+        f"segment ve kasa tipi gibi açık özniteliklerle okunuyor.",
+        f"The data has no clear natural clusters: on the standardised numeric features KMeans stays below a silhouette "
+        f"of 0.25 for all {number_word(len(sil), 'en')} values of k tried ({sil[0][0]}–{sil[-1][0]}; the highest is "
+        f"k={best_k}, {best_s}). Clusters and PCA are therefore not used in the analysis; market structure is read "
+        f"through explicit features such as segment and body type."))
     A("")
 
-    A(L("### PCA yükleri", "### PCA loadings"))
-    A("")
-    T(["PC", L("varyans", "variance"), L("en büyük 4 yük", "top 4 loadings")],
-      [[a["pc"], P(a["var_pct"], lang), " · ".join(f"{col(d, n, lang)} ({w:+.2f})" for n, w in a["top"])]
-       for a in met["pca_axes"]], "lrl")
-    tot = sum(a["var_pct"] for a in met["pca_axes"])
-    # 2026-09-23: etiket yalniz ilk iki yukten kuruluyordu; PC1'de boya yukleri (0.41) km/yasa (0.46/0.45) cok
-    # yakin. En buyuk yukun en az %80'i olan butun yukler yazilir.
-    _ax = " · ".join(f"{a['pc']} ≈ " + " + ".join(col(d, n_, lang) for n_, w_ in a["top"]
-                                                   if abs(w_) >= .8 * abs(a["top"][0][1]))
-                     for a in met["pca_axes"])
-    A(L(f"İlk {len(met['pca_axes'])} bileşenin açıkladığı varyans: {P(tot, lang)}. {_ax}.",
-        f"The first {len(met['pca_axes'])} components explain {P(tot, lang)} of variance. {_ax}."))
-    A("")
 
 def section_hedonic(c):
     """
@@ -1066,14 +1021,14 @@ def section_model(c):
         f"LightGBM şu metriklerde önde: {', '.join(lg_w) or '—'}; CatBoost şunlarda: {', '.join(cb_w) or '—'} → "
         f"pratikte **eşitler**. "
         f"Rapor boyunca \"model\" LightGBM'dir: CPU'da deterministik, CatBoost'un ağaçları ise cihaza "
-        f"(GPU/CPU) göre değişir — önceki bir GPU koşumunda MAPE sırası tersti. Conformal aralık, "
-        f"marka ablasyonu ve örnek tahminler LightGBM'den.",
+        f"(GPU/CPU) göre değişir — önceki bir GPU koşumunda MAPE sırası tersti. Conformal aralık ve "
+        f"marka ablasyonu LightGBM'den.",
         f"★ = winner under the MAPE-only rule: **{win_name}**. But the two TF-IDF+SVD variants differ by "
         f"{abs(lg['MAPE'] - cb['MAPE']):.2f} MAPE points and {tl(abs(lg['MAE'] - cb['MAE']))} MAE; LightGBM leads on "
         f"{', '.join(lg_w) or '—'}, CatBoost on {', '.join(cb_w) or '—'} → in practice they are **tied**. Throughout "
         f"this report \"the model\" is LightGBM: deterministic on CPU, whereas CatBoost's trees depend on "
         f"the device (GPU/CPU) — an earlier GPU run had the MAPE order reversed. The conformal "
-        f"interval, brand ablation and sample predictions all come from LightGBM."))
+        f"interval and the brand ablation come from LightGBM."))
     A("")
 
     year_med = dom["model_year_median"]
@@ -1129,21 +1084,14 @@ def section_model(c):
         f"not measured in this report."))
     A("")
 
-    A(L("### Örnek tahminler", "### Sample predictions"))
+    # 2026-09-29 (ikinci sadelestirme listesi): "en iyi durum" ornek tahmin tablosu cikti; yerine servis edilen
+    # modelin egitim kurali (07_final_model).
+    A(L(f"Servis edilen LightGBM bütün ilanlarla, CV'de erken durdurmanın seçtiği ağaç sayılarının medyanıyla "
+        f"({num(meta['repro']['final_lgb_trees'], lang)} ağaç) eğitiliyor; yani yukarıdaki ölçümle aynı ayarda.",
+        f"The served LightGBM is trained on all listings with the median of the tree counts early stopping chose in "
+        f"CV ({num(meta['repro']['final_lgb_trees'], lang)} trees), i.e. at the setting measured above."))
     A("")
-    T([L("bant", "band"), L("araç", "car"), L("yaş", "age"), "km", L("gerçek", "actual"), "LightGBM",
-       L("sapma", "dev."), L("OOF artık", "OOF resid."),
-       L("CatBoost (model/seri adı SVD)", "CatBoost (model/series name SVD)")],
-      [[id_label(BAND_LABEL, o["price_band"], lang), o["vehicle"], o["age"], num(o["km"], lang), tlx(o["actual"], lang),
-        tlx(o["lightgbm_pred"], lang), P(o["lgb_dev_pct"], lang), P(o["oof_resid_pct"], lang),
-        tlx(o["catboost_pred"], lang)] for o in dom["final_results"]["example_predictions"]], "llrrrrrrr")
-    A(L("> **Bunlar tipik değil, en iyi durum örnekleri.** Her fiyat diliminde ağır hasarsız ve |OOF artık|'ı "
-        "en küçük ilanı seçer. \"sapma\" tüm veriyle eğitilmiş final modelin tahminidir (ilanı eğitimde görmüştür); "
-        "sızıntısız ölçü \"OOF artık\". Tipik hata için MAPE'ye bakın.",
-        "> **These are best-case examples, not typical ones.** In each price band the pick is the "
-        "non-heavy-damaged listing with the smallest |OOF residual|. \"dev.\" is the final model trained on all data "
-        "(it saw the listing); the leak-free measure is \"OOF resid.\". For typical error see MAPE."))
-    A("")
+
 
 def section_calibration(c):
     """
@@ -1846,13 +1794,14 @@ def section_time(c):
     assert _pr and _better and not _worse, f"birikim onerisi bayat: {_pr}"
     A(L("### Yeniden eğitim ne zaman", "### When to retrain"))
     A("")
-    A(L(f"- **Kaymayı izle, modeli yeniden eğit.** Canlıda bir **kayma servisi** PSI · KS · EMD'yi izlesin ve "
-        f"model yeni taramalarla yeniden eğitilsin. Sabit bir PSI eşiği yetmez: bugünkü en yüksek PSI "
-        f"{psi_max:.4f}, ama aynı yeni ilanlarda en eski taramayla ({_old[0]}) eğitilen model en yenisinden "
-        f"{_old[1]:+.2f} puan [{_old[2]:+.2f}, {_old[3]:+.2f}] daha çok yanılıyor: dağılım neredeyse kıpırdamazken "
-        f"model eskiyor.\n"
-        f"- **Hatayı doğrudan izle.** Fiyat her taramada geldiği için modelin yeni ilanlardaki hatası doğrudan "
-        f"ölçülebilir; yukarıdaki backtest tam bunu yapıyor. Kayma ölçüleri (PSI · KS · EMD) tanı için kalır.\n"
+    # 2026-09-29 (ikinci sadelestirme listesi): iki raporda da once hata, sonra kayma (tani).
+    A(L(f"- **Hatayı doğrudan izle, modeli yeni taramalarla yeniden eğit.** Fiyat her taramada geldiği için modelin "
+        f"yeni ilanlardaki hatası doğrudan ölçülebilir; yukarıdaki backtest tam bunu yapıyor. Aynı yeni ilanlarda en "
+        f"eski taramayla ({_old[0]}) eğitilen model en yenisinden {_old[1]:+.2f} puan [{_old[2]:+.2f}, "
+        f"{_old[3]:+.2f}] daha çok yanılıyor.\n"
+        f"- **Kaymayı tanı için izle.** PSI · KS · EMD neyin değiştiğini gösterir ama yeniden eğitimi tek başına "
+        f"tetiklemez: bugünkü en yüksek PSI {psi_max:.4f}, dağılım neredeyse kıpırdamazken model eskiyor. Sabit bir "
+        f"PSI eşiği yok.\n"
         f"- **Fiyat rejimini değiştiren gelişmeler.** Vergi/ÖTV düzenlemesi, teşvik, ithalat "
         f"kuralı, kur hareketi ya da ani piyasa anomalisi gibi dışsal olaylar kaymayı bir ölçüm "
         f"penceresi dolmadan yaratabilir; bunlar ayrıca **tetikleyici** sayılmalı ve "
@@ -1861,14 +1810,13 @@ def section_time(c):
         f"{number_word(len(_pr), lang)} karşılaştırmanın {number_word(len(_better), lang)} tanesinde hatayı anlamlı "
         f"düşürüyor, hiçbirinde anlamlı artırmıyor (aralıklar test ilanlarının örneklemesini taşır, eğitimin "
         f"değişkenliğini değil). Yeniden eğitim eski dönemleri atarak değil, **üstüne ekleyerek** yapılmalı.",
-        f"- **Watch drift, retrain the model.** Run a **drift service** in production that watches "
-        f"PSI · KS · EMD, and retrain the model on new snapshots. A fixed PSI threshold is not enough: today's "
-        f"highest PSI is {psi_max:.4f}, yet on the same new listings the model trained on the oldest snapshot "
-        f"({_old[0]}) errs {_old[1]:+.2f} points [{_old[2]:+.2f}, {_old[3]:+.2f}] more than the latest one: the model "
-        f"ages while the distribution barely moves.\n"
-        f"- **Watch the error directly.** The price arrives with every snapshot, so the model's error on new "
-        f"listings can be measured directly; the backtest above does exactly that. The drift measures (PSI · KS · "
-        f"EMD) stay as diagnostics.\n"
+        f"- **Watch the error directly, retrain on new snapshots.** The price arrives with every snapshot, so the "
+        f"model's error on new listings can be measured directly; the backtest above does exactly that. On the same "
+        f"new listings the model trained on the oldest snapshot ({_old[0]}) errs {_old[1]:+.2f} points "
+        f"[{_old[2]:+.2f}, {_old[3]:+.2f}] more than the latest one.\n"
+        f"- **Watch drift as a diagnostic.** PSI · KS · EMD show what changed but do not trigger retraining on their "
+        f"own: today's highest PSI is {psi_max:.4f}, and the model ages while the distribution barely moves. There is "
+        f"no fixed PSI threshold.\n"
         f"- **Events that reset the pricing regime.** A tax or excise change, an incentive, an "
         f"import rule, a currency move or a sudden market anomaly can shift the distribution "
         f"before a monitoring window closes; treat those as **triggers** as well and plan "
@@ -1932,7 +1880,7 @@ SECTIONS = [
     ("missing", "Eksiklik rastgele değil", "Missingness isn't random", section_missing),
     ("redundancy", "Fazlalık, bağıntı ve marka", "Redundancy, dependence and brand", section_redundancy),
     ("target", "Hedef ve önişleme", "Target and preprocessing", section_target),
-    ("segment", "Piyasa yapısı — segmentasyon (KMeans + PCA)", "Market structure — segmentation (KMeans + PCA)", section_segment),
+    ("segment", "Piyasa yapısı — belirgin küme yok", "Market structure — no clear clusters", section_segment),
     ("hedonic", "Hedonik model — kontrollü etkiler", "Hedonic model — controlled effects", section_hedonic),
     ("model", "Model karşılaştırma ve kısıtlar", "Model comparison and limitations", section_model),
     ("calibration", "Kalibrasyon, artıklar ve zayıflık", "Calibration, residuals and where it is weak", section_calibration),

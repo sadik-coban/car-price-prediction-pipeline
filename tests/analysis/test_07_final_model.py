@@ -1,17 +1,13 @@
 """
 test_07_final_model.py
 EN: Invariants of metrics/07_final_model.json (technical report §7, the served models): the final LightGBM uses
-    the median of the CV fold tree counts; every sample prediction's published deviation equals |prediction −
-    actual| / actual; the samples are the ones the script promises (OOF residual within ±5%).
+    the median of the CV fold tree counts.
 TR: metrics/07_final_model.json'un değişmezleri (teknik rapor §7, servis modelleri): son LightGBM CV fold ağaç
-    sayılarının medyanını kullanıyor; her örnek tahminin yayımlanan sapması |tahmin − gerçek| / gerçek; örnekler
-    betiğin söz verdikleri (OOF artığı ±%5 içinde).
+    sayılarının medyanını kullanıyor.
 """
 import statistics
 
 import pytest
-
-MAX_ABS_RESID = 5          # the script's promise | betiğin sözü
 
 
 @pytest.fixture(scope="module")
@@ -24,20 +20,3 @@ def test_tree_count_is_cv_median(final, metrics):
     """EN: final trees = int(median of the 5 fold tree counts). / TR: son ağaç = int(5 fold ağaç sayısının medyanı)."""
     cv_trees = metrics("07_model_comparison")["meta"]["repro"]["cv_trees"]
     assert final["meta"]["repro"]["final_lgb_trees"] == int(statistics.median(cv_trees))
-
-
-def test_sample_deviation_matches_prediction(final):
-    """EN: lgb_sapma_pct = |LightGBM − actual| / actual, 1 decimal. / TR: lgb_sapma_pct = |LightGBM − gerçek| / gerçek."""
-    for s in final["domain"]["final_results"]["example_predictions"]:
-        assert s["lgb_dev_pct"] == pytest.approx(abs(s["lightgbm_pred"] - s["actual"]) / s["actual"] * 100,
-                                                   abs=0.051), s["vehicle"]
-
-
-def test_samples_keep_the_oof_promise(final):
-    """
-    EN: Every sample was predicted within ±5% out of fold, and the headline sample is one of them.
-    TR: Her örnek fold dışında ±%5 içinde tahmin edilmiş ve manşet örnek onlardan biri.
-    """
-    res = final["domain"]["final_results"]
-    assert res["example_predictions"] and all(abs(s["oof_resid_pct"]) <= MAX_ABS_RESID for s in res["example_predictions"])
-    assert res["example_prediction"] in res["example_predictions"]

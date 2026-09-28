@@ -154,16 +154,7 @@ Theil's U(a | b), b bilinince a'nın belirsizliğinin ne kadarının gittiğini 
 
 ![Seri × segment — medyan fiyat (₺M); 3 seri birden fazla segmente düşüyor · • = tek ilan](figures/tr-19-series-segment.png)
 
-### Theil's U asimetrisi
-
-| yön | okunuşu | U |
-|---|---|---:|
-| U(seri \| model) | model bilinince seri ne kadar belli | 0.999 |
-| U(model \| seri) | seri bilinince model ne kadar belli | 0.387 |
-| U(marka \| model) | model bilinince marka | 1.000 |
-| U(marka \| seri) | seri bilinince marka | 1.000 |
-
-Model seriyi 1.00 belirliyor, seri modeli yalnız 0.39. Marka hem modelden hem seriden tamamen okunuyor → marka ayrı bilgi taşımaz (aşağıdaki marka ablasyonu aynı sonucu ölçer).
+Ters yönde seri modeli yalnız 0.39 belirliyor. Marka hem modelden hem seriden tamamen okunuyor (U(marka | model) = 1.00): marka ayrı bilgi taşımaz; aşağıdaki marka ablasyonu aynı sonucu ölçer.
 
 Sayısal öznitelikler arasında Spearman korelasyonu (sıra ilişkisi; aşağıdaki harita). |ρ| > 0.5 olan çiftler: Yaş (yıl)–Kilometre 0.74, Motor Gücü (hp)–Motor Hacmi (cc) 0.61, Kapı Boyalı–Çamurluk Boyalı 0.60. Hedonik modeldeki çoklu bağlantı §6'da VIF ile ölçülüyor; orada kapı ve çamurluk boyaları ayrı değil, toplam boyalı parça sayısı olarak giriyor.
 
@@ -195,35 +186,9 @@ Ham fiyat sağa çarpık (çarpıklık 1.62); log dönüşümü simetriğe yakla
 
 ![Kasa tipine göre medyan fiyat (en az 80 ilanlı tipler; kasa tipi verilmeyen 291 ve daha az ilanlı tiplerdeki 101 ilan dışarıda)](figures/tr-01-body-median.png)
 
-## 5. Piyasa yapısı — segmentasyon (KMeans + PCA)
+## 5. Piyasa yapısı — belirgin küme yok
 
-**k=3 silhouette ile seçilmedi.** k=3 için silhouette 0.188 — denenen 7 değer içinde 7. sırada; en yüksek k=2 (0.242). Hepsi 0.25'in altında: veride belirgin doğal küme yok. k=3 yorumlanabilirlik için sabit seçildi; kümeler aşağıdaki eksenleriyle okunmalı, "piyasanın doğal yapısı" olarak değil.
-
-![k seçimi — dirsek + siluet](figures/tr-24-k-selection.png)
-
-![PCA — PC1 %19.7 × PC2 %12.4](figures/tr-22-pca-scatter.png)
-
-![PCA — PC1 %19.7 × PC3 %11.0](figures/tr-23-pca-scatter-13.png)
-
-### Kümeleri ayıran eksenler
-
-| küme | ilan | ortalamadan en çok ayrıldığı 3 eksen |
-|---|---:|---|
-| Küme 1 · ağır hasar %5 | 9.046 | Kilometre ↑ · Çamurluk Lokal Boya ↑ · Motor Hacmi (cc) ↑ |
-| Küme 2 · ağır hasar %2 | 15.976 | Kilometre ↓ · Yaş (yıl) ↓ · Motor Hacmi (cc) ↓ |
-| Küme 3 · ağır hasar %13 | 4.966 | Kapı Boyalı ↑ · Çamurluk Boyalı ↑ · Çamurluk Değişen ↑ |
-
-↑/↓ = kümenin ortalaması genelin üstünde/altında (z-skoru büyüklüğüne göre ilk 3). Kümelere ad verilmedi: k yorumlanabilirlik için sabitlendi, ayrım bu sütunda okunur.
-
-### PCA yükleri
-
-| PC | varyans | en büyük 4 yük |
-|---|---:|---|
-| PC1 | %19.7 | Kilometre (+0.46) · Yaş (yıl) (+0.45) · Çamurluk Boyalı (+0.41) · Kapı Boyalı (+0.41) |
-| PC2 | %12.4 | Motor Gücü (hp) (+0.65) · Motor Hacmi (cc) (+0.61) · Çamurluk Boyalı (-0.24) · Kapı Boyalı (-0.24) |
-| PC3 | %11.0 | Çamurluk Lokal Boya (+0.58) · Kapı Lokal Boya (+0.57) · Motor Gücü (hp) (-0.28) · Tampon Lokal Boya (+0.22) |
-
-İlk 3 bileşenin açıkladığı varyans: %43.1. PC1 ≈ Kilometre + Yaş (yıl) + Çamurluk Boyalı + Kapı Boyalı · PC2 ≈ Motor Gücü (hp) + Motor Hacmi (cc) · PC3 ≈ Çamurluk Lokal Boya + Kapı Lokal Boya.
+Veride belirgin doğal küme yok: standartlaştırılmış sayısal özniteliklerde KMeans, denenen yedi k değerinin (2–8) hepsinde silhouette 0.25'in altında kalıyor (en yüksek k=2, 0.242). Kümeler ve PCA bu yüzden analizde kullanılmadı; piyasa yapısı segment ve kasa tipi gibi açık özniteliklerle okunuyor.
 
 ## 6. Hedonik model — kontrollü etkiler
 
@@ -283,7 +248,7 @@ Rapordaki model: **LightGBM (model/seri adı TF-IDF+SVD)** — MAPE **%6.49**, R
 | CatBoost (model/seri adı native text) | %6.58 | 0.9739 | ₺112.925 | ₺77.660 | ₺178.312 |
 | emsal medyanı (taban, merdivenli) | %11.20 | 0.9235 | ₺191.224 | ₺130.000 | ₺305.050 |
 
-★ = yalnız MAPE'ye bakan kuralın kazananı: **CatBoost (model/seri adı TF-IDF+SVD)**. Ama iki TF-IDF+SVD varyantı arasındaki fark 0.05 MAPE puanı ve ₺309 MAE; LightGBM şu metriklerde önde: MAE; CatBoost şunlarda: MAPE, MedAE, RMSE → pratikte **eşitler**. Rapor boyunca "model" LightGBM'dir: CPU'da deterministik, CatBoost'un ağaçları ise cihaza (GPU/CPU) göre değişir — önceki bir GPU koşumunda MAPE sırası tersti. Conformal aralık, marka ablasyonu ve örnek tahminler LightGBM'den.
+★ = yalnız MAPE'ye bakan kuralın kazananı: **CatBoost (model/seri adı TF-IDF+SVD)**. Ama iki TF-IDF+SVD varyantı arasındaki fark 0.05 MAPE puanı ve ₺309 MAE; LightGBM şu metriklerde önde: MAE; CatBoost şunlarda: MAPE, MedAE, RMSE → pratikte **eşitler**. Rapor boyunca "model" LightGBM'dir: CPU'da deterministik, CatBoost'un ağaçları ise cihaza (GPU/CPU) göre değişir — önceki bir GPU koşumunda MAPE sırası tersti. Conformal aralık ve marka ablasyonu LightGBM'den.
 
 ### Taban basamak kırılımı
 
@@ -297,15 +262,7 @@ Merdiven: (model, yıl) medyanı → (model) medyanı — tüm yıllar → globa
 
 **Model Kısıtları ve Gözlemler.** Modifiye, özel donanım veya ÖTV muafiyeti gibi form alanlarında yer almayıp serbest metne gizlenen bilgiler modele girmiyor; metninde dönüşüm ya da modifiye ifadesi geçen ilanlarda büyük hata oranı ham olarak %4.9, diğerlerinde %3.9; yaş, km, fiyat, performans ailesi, emsal sayısı ve marka sabitken olasılık oranı 1.14 (%95 GA 0.94–1.37): anlamlı bir fark ölçülmedi. Bu ifade performans ailelerindeki ilanların %43.6 kadarında geçiyor. Emsali olmayan ilanlarda hata belirgin şekilde büyüyor: aynı model ve yıldan başka ilan yoksa büyük hata oranı %19.0, 100+ emsal varsa %2.9; lira ölçeğindeki en büyük hatalar da bu uçta (§8). Kapsamlı bir hiperparametre optimizasyonuna bilinçli olarak gidilmedi; getirisi bu raporda ölçülmedi.
 
-### Örnek tahminler
-
-| bant | araç | yaş | km | gerçek | LightGBM | sapma | OOF artık | CatBoost (model/seri adı SVD) |
-|---|---|---:|---:|---:|---:|---:|---:|---:|
-| ekonomik | 116i Comfort | 17 | 174.000 | ₺718.000 | ₺714.062 | %0.5 | %0.0 | ₺709.186 |
-| orta | 520d Premium | 14 | 300.000 | ₺1.480.000 | ₺1.490.900 | %0.7 | %0.0 | ₺1.437.492 |
-| premium | 520i Luxury Line | 4 | 96.000 | ₺3.680.000 | ₺3.640.718 | %1.1 | %0.0 | ₺3.615.892 |
-
-> **Bunlar tipik değil, en iyi durum örnekleri.** Her fiyat diliminde ağır hasarsız ve |OOF artık|'ı en küçük ilanı seçer. "sapma" tüm veriyle eğitilmiş final modelin tahminidir (ilanı eğitimde görmüştür); sızıntısız ölçü "OOF artık". Tipik hata için MAPE'ye bakın.
+Servis edilen LightGBM bütün ilanlarla, CV'de erken durdurmanın seçtiği ağaç sayılarının medyanıyla (258 ağaç) eğitiliyor; yani yukarıdaki ölçümle aynı ayarda.
 
 ## 8. Kalibrasyon, artıklar ve zayıflık
 
@@ -497,8 +454,8 @@ Bu tablo zamansal değil: her satır düz 5-fold OOF, yeni ilan kuralı yok. Son
 
 ### Yeniden eğitim ne zaman
 
-- **Kaymayı izle, modeli yeniden eğit.** Canlıda bir **kayma servisi** PSI · KS · EMD'yi izlesin ve model yeni taramalarla yeniden eğitilsin. Sabit bir PSI eşiği yetmez: bugünkü en yüksek PSI 0.0049, ama aynı yeni ilanlarda en eski taramayla (01-18) eğitilen model en yenisinden +0.40 puan [+0.27, +0.52] daha çok yanılıyor: dağılım neredeyse kıpırdamazken model eskiyor.
-- **Hatayı doğrudan izle.** Fiyat her taramada geldiği için modelin yeni ilanlardaki hatası doğrudan ölçülebilir; yukarıdaki backtest tam bunu yapıyor. Kayma ölçüleri (PSI · KS · EMD) tanı için kalır.
+- **Hatayı doğrudan izle, modeli yeni taramalarla yeniden eğit.** Fiyat her taramada geldiği için modelin yeni ilanlardaki hatası doğrudan ölçülebilir; yukarıdaki backtest tam bunu yapıyor. Aynı yeni ilanlarda en eski taramayla (01-18) eğitilen model en yenisinden +0.40 puan [+0.27, +0.52] daha çok yanılıyor.
+- **Kaymayı tanı için izle.** PSI · KS · EMD neyin değiştiğini gösterir ama yeniden eğitimi tek başına tetiklemez: bugünkü en yüksek PSI 0.0049, dağılım neredeyse kıpırdamazken model eskiyor. Sabit bir PSI eşiği yok.
 - **Fiyat rejimini değiştiren gelişmeler.** Vergi/ÖTV düzenlemesi, teşvik, ithalat kuralı, kur hareketi ya da ani piyasa anomalisi gibi dışsal olaylar kaymayı bir ölçüm penceresi dolmadan yaratabilir; bunlar ayrıca **tetikleyici** sayılmalı ve eğitim planı bunlara göre yapılmalı.
 - **Eski dönemleri atma.** Aynı test ilanlarındaki eşli karşılaştırmada birikimli eğitim üç karşılaştırmanın bir tanesinde hatayı anlamlı düşürüyor, hiçbirinde anlamlı artırmıyor (aralıklar test ilanlarının örneklemesini taşır, eğitimin değişkenliğini değil). Yeniden eğitim eski dönemleri atarak değil, **üstüne ekleyerek** yapılmalı.
 

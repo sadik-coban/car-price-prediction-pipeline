@@ -42,13 +42,13 @@ REQUIRED = [
     "domain.hedonic_reliability.center", "domain.brand_ablation.validation",
     "methodology.column_accounting", "methodology.kb_gb_twins", "domain.hedonic_reliability.columns",
     "domain.segment_ladder", "domain.model_year_median.ladder", "domain.price_dist.p10", "domain.price_dist.p90",
-    "domain.final_results.training.target", "domain.shap.lightgbm_tfidf_svd", "domain.kmeans",
+    "domain.final_results.training.target", "domain.shap.lightgbm_tfidf_svd", "methodology.kmeans_selection",
     "methodology.theils_matrix", "methodology.column_missing",
     "methodology.backtest.per_snapshot", "methodology.backtest.insample", "methodology.backtest.protocol", "methodology.backtest.paired",
     "methodology.backtest.horizon", "methodology.backtest.forward_coverage",
     "methodology.backtest.columns",
     "methodology.systematic_missing.systematic_groups", "methodology.systematic_missing.note",
-    "methodology.pca_axes", "meta.repro", "meta.brands", "column_labels"] + [f"error_drivers.{p_}" for p_ in [
+    "meta.repro", "meta.brands", "column_labels"] + [f"error_drivers.{p_}" for p_ in [
     "plate_scope", "segment_quality", "hedonic_dropped", "per_model_error", "per_model_buckets", "lira_quartile",
     "lira_scaled", "scope", "price_changes", "unspecified", "baseline_equal_terms", "text_flag",
     "age_sensitivity", "age_cuts", "spec_outliers.blind_spot", "period_shift",
@@ -234,10 +234,6 @@ def derive(d):
         "dup_loose_n": met["content_duplicates"]["loose_extra"],
         "dup_loose_pct": met["content_duplicates"]["loose_pct"],
         "n_missing_cols": len(met["systematic_missing"]["column_missing_all"]),
-        # kumeler
-        "k": met["kmeans_selection"]["chosen_k"],
-        "clusters": dom["kmeans"],
-        "pca": met["pca_axes"],
     }
     # EN: the model's OOF R² on log price, comparable with the hedonic R² (08_residuals)
     # TR: modelin log fiyattaki OOF R²'si, hedonik R² ile karşılaştırılabilir (08_residuals)
@@ -251,6 +247,7 @@ def derive(d):
     v["psi_safe"], v["psi_retrain"] = float(_th.group(1)), float(_th.group(2))
     v["bt_paired"], v["bt_columns"] = met["backtest"]["paired"], met["backtest"]["columns"]
     v["bt_forward"] = met["backtest"]["forward_coverage"]
+    v["bt_horizon"] = met["backtest"]["horizon"]
     v["lofo"] = met["lofo"]                      # karar notu "farki kapatan" siralamasi (2026-09-23)
     # EN: OOF error distribution: bands, median/mean error, extremes (08_residuals)
     # TR: OOF hata dağılımı: bantlar, medyan/ortalama hata, uçlar (08_residuals)
@@ -706,43 +703,7 @@ def build_figures(d, v, lang, only=None):
         nm = L("Spearman korelasyonu", "Spearman correlation")
         reg(21, heatmap(f"{p}-21-spearman", _nl, _nl, nc["spearman"], nm, -1, 1, cmap="RdYlGn"), nm)
 
-    # 22/23 PCA  [TEKNIK]
-    if want(22) or want(23):
-        pca = {a["pc"]: a for a in met["pca_axes"]}
-        # 2026-09-23: lejant uretilen ADLARI kullaniyordu; K=3'te iki kume ayni adi aldi. Tablodaki
-        # numarali etiketlerle ayni (cluster_labels) — figur ve tablo birbirine baglanir.
-        clusters = {c["cluster"]: lab for c, lab in zip(dom["kmeans"], cluster_labels(dom["kmeans"], lang))}
-        for no, key, pcy in [(22, "pca_scatter", "PC2"), (23, "pca_scatter_13", "PC3")]:
-            pts = np.array(dom[key], dtype=float)
-            v1 = pca["PC1"]["var_pct"]; v2 = pca[pcy]["var_pct"]
-            t = L(f"PCA — PC1 %{v1} × {pcy} %{v2}", f"PCA — PC1 {v1}% × {pcy} {v2}%")
-            fig, ax = plt.subplots(figsize=(6.2, 4.6))
-            for cid, nmc in clusters.items():
-                m = pts[:, 2] == cid
-                ax.scatter(pts[m, 0], pts[m, 1], s=3, alpha=.25, lw=0, label=nmc)
-            ax.set_xlabel("PC1"); ax.set_ylabel(pcy); ax.set_title(t)
-            ax.legend(frameon=False, fontsize=7, markerscale=3)
-            ax.grid(color=GRID, lw=.7); ax.set_axisbelow(True)
-            reg(no, _save(fig, f"{p}-{no}-{key.replace('_', '-')}"), t)
-
-    # 24 k secimi  [TEKNIK]
-    if want(24):
-        ks = met["kmeans_selection"]
-        t = L("k seçimi — dirsek + siluet", "k selection — Elbow + Silhouette")
-        fig, ax = plt.subplots(figsize=(7, 3.2))
-        ax.plot([r[0] for r in ks["elbow"]], [r[1] / 1e3 for r in ks["elbow"]], "o-", color=C1,
-                label=L("dirsek (atalet, bin)", "elbow (inertia, thousands)"))
-        ax2 = ax.twinx()
-        ax2.plot([r[0] for r in ks["silhouette"]], [r[1] for r in ks["silhouette"]], "s--",
-                 color=C3, label=L("siluet", "silhouette"))
-        ax.axvline(ks["chosen_k"], color=C2, ls=":", lw=1.2)
-        ax.set_ylabel(L("atalet (bin)", "inertia (thousands)")); ax2.set_ylabel(L("siluet", "silhouette"))
-        ax.set_xlabel(L("k (küme sayısı) · noktalı çizgi = seçilen k", "k (number of clusters) · dotted = chosen k"))
-        ax.set_title(t)
-        ax.grid(color=GRID, lw=.7); ax.set_axisbelow(True)
-        fig.legend(frameon=False, loc="upper right", bbox_to_anchor=(.98, .95), fontsize=8)
-        reg(24, _save(fig, f"{p}-24-k-selection"), t)
-
+    # 22/23 PCA ve 24 k secimi 2026-09-29'da cikti (ikinci sadelestirme listesi); numaralar bos kalir.
     # 25 fiyat histogrami  [TEKNIK]
     if want(25):
         rows = dom["price_histogram"]
@@ -908,7 +869,8 @@ def build_figures(d, v, lang, only=None):
 BUSINESS_FIGS = [0, 5, 6, 7, 10, 12, 15, 27]        # 2 (segment medyani) 2026-09-22'de cikti
 # 10/12/15 iki raporda da: karar notunda karar icin, teknik raporda kanit olarak (bilincli tekrar).
 # 2026-09-28 (sadelestirme listesi): 17/18/20 cikti; 27 yalniz karar notunda.
-TECHNICAL_FIGS = [1, 3, 4, 8, 9, 10, 11, 12, 13, 14, 15, 16, 19, 21, 22, 23, 24, 25, 26, 28, 29, 30]
+# 2026-09-29 (ikinci sadelestirme listesi): 22/23/24 (PCA ve k secimi) cikti; §5 tek paragraf.
+TECHNICAL_FIGS = [1, 3, 4, 8, 9, 10, 11, 12, 13, 14, 15, 16, 19, 21, 25, 26, 28, 29, 30]
 
 
 def num(x, lang="tr"):
@@ -959,10 +921,7 @@ HED_TERM = {"age": ("yaş", "age"), "age_sq": ("yaş²", "age²"), "km100k": ("k
 # EN: ids the metrics publish -> (TR, EN) display; id_label stops on an unknown id
 # TR: metriklerin yayımladığı kimlikler -> (TR, EN) görünen ad; id_label bilinmeyen kimlikte durur
 TIER_LABEL = {"model_year": ("model+yıl", "model + year"), "model": ("model", "model"), "global": ("global", "global")}
-BAND_LABEL = {"economy": ("ekonomik", "economy"), "mid": ("orta", "mid"), "premium": ("premium", "premium")}
 FUEL_EN = {"Benzin": "Petrol", "Dizel": "Diesel", "LPG & Benzin": "LPG & Petrol", "Hibrit": "Hybrid"}
-CLUSTER_EN = {"Yaşlı & yüksek-km ekonomik": "Older, high-km economy", "Genç & temiz premium": "Newer, clean premium",
-              "Hasarlı": "Damaged", "Orta segment": "Mid segment"}
 LADDER_EN = {"(model, yıl) medyanı": "(model, year) median", "(model) medyanı — tüm yıllar": "(model) median — all years",
              "global medyan": "global median"}
 # final_results.model_comparison anahtari -> (kazanan kodu, gorunen ad)
@@ -1078,18 +1037,6 @@ def col(d, key, lang):
     TR: Ham kolonun lang dilindeki görünen etiketi (etiketsizse ham ad).
     """
     return (d.get("column_labels", {}).get(key) or {}).get(lang) or key
-
-
-def cluster_labels(clusters, lang):
-    """
-    EN: Clusters are numbered, not named (generated names clashed and contradicted the axes); the label keeps
-        the measured heavy-damage share.
-    TR: Kümeler adlandırılmaz, numaralanır (üretilen adlar çakışıyor ve eksenlerle çelişiyordu); etikette
-        ölçülen ağır hasar payı kalır.
-    """
-    return [(f"Küme {i} · ağır hasar %{c['heavy_damage_pct']:.0f}" if lang == "tr"
-             else f"Cluster {i} · {c['heavy_damage_pct']:.0f}% heavy damage")
-            for i, c in enumerate(clusters, 1)]
 
 
 # ============================================================================

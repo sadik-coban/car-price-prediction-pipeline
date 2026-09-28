@@ -303,15 +303,8 @@
   "domain.km_price": "list",
   "domain.km_price_scope.outside": "int",
   "domain.km_price_scope.upper_limit": "int",
-  "domain.kmeans": "list",
-  "domain.pca_scatter": "list",
-  "domain.pca_scatter_13": "list",
   "domain.segment_ladder": "list",
-  "methodology.kmeans_selection.chosen_k": "int",
-  "methodology.kmeans_selection.elbow": "list",
-  "methodology.kmeans_selection.note": "str",
-  "methodology.kmeans_selection.silhouette": "list",
-  "methodology.pca_axes": "list"
+  "methodology.kmeans_selection.silhouette": "list"
  },
  "06_hedonic": {
   "_meta.data_until": "str",
@@ -367,18 +360,6 @@
   "_meta.generated_at": "str",
   "_meta.run_id": "str",
   "_meta.script": "str",
-  "domain.final_results.example_prediction.actual": "float",
-  "domain.final_results.example_prediction.age": "int",
-  "domain.final_results.example_prediction.catboost_native_pred": "float",
-  "domain.final_results.example_prediction.catboost_pred": "float",
-  "domain.final_results.example_prediction.km": "int",
-  "domain.final_results.example_prediction.lgb_dev_pct": "float",
-  "domain.final_results.example_prediction.lightgbm_pred": "float",
-  "domain.final_results.example_prediction.oof_resid_pct": "float",
-  "domain.final_results.example_prediction.price_band": "str",
-  "domain.final_results.example_prediction.segment": "str",
-  "domain.final_results.example_prediction.vehicle": "str",
-  "domain.final_results.example_predictions": "list",
   "meta.repro.final_lgb_trees": "int"
  },
  "07_lofo": {

@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "07_final_model.py",
-  "generated_at": "2026-09-27T21:50:33+03:00",
+  "generated_at": "2026-09-29T00:03:52+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": "601741517e09",
   "source": {
    "script": {
-    "analysis/07_final_model.py": "c43e6be80b4689df5d76f85db8a5dd8f0aafad563617f391184123e97f3e9b59"
+    "analysis/07_final_model.py": "3ed65799480120e82476af37ed89427d643374c4906f27da948f0e3de94dff9f"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -24,64 +24,6 @@
  "meta": {
   "repro": {
    "final_lgb_trees": 258
-  }
- },
- "domain": {
-  "final_results": {
-   "example_predictions": [
-    {
-     "vehicle": "116i Comfort",
-     "segment": "C",
-     "price_band": "economy",
-     "age": 17,
-     "km": 174000,
-     "actual": 718000.0,
-     "lightgbm_pred": 714062.0,
-     "catboost_pred": 709186.0,
-     "catboost_native_pred": 712107.0,
-     "lgb_dev_pct": 0.5,
-     "oof_resid_pct": 0.0
-    },
-    {
-     "vehicle": "520d Premium",
-     "segment": "E",
-     "price_band": "mid",
-     "age": 14,
-     "km": 300000,
-     "actual": 1480000.0,
-     "lightgbm_pred": 1490900.0,
-     "catboost_pred": 1437492.0,
-     "catboost_native_pred": 1451109.0,
-     "lgb_dev_pct": 0.7,
-     "oof_resid_pct": -0.0
-    },
-    {
-     "vehicle": "520i Luxury Line",
-     "segment": "E",
-     "price_band": "premium",
-     "age": 4,
-     "km": 96000,
-     "actual": 3680000.0,
-     "lightgbm_pred": 3640718.0,
-     "catboost_pred": 3615892.0,
-     "catboost_native_pred": 3659807.0,
-     "lgb_dev_pct": 1.1,
-     "oof_resid_pct": -0.0
-    }
-   ],
-   "example_prediction": {
-    "vehicle": "116i Comfort",
-    "segment": "C",
-    "price_band": "economy",
-    "age": 17,
-    "km": 174000,
-    "actual": 718000.0,
-    "lightgbm_pred": 714062.0,
-    "catboost_pred": 709186.0,
-    "catboost_native_pred": 712107.0,
-    "lgb_dev_pct": 0.5,
-    "oof_resid_pct": 0.0
-   }
   }
  }
 }

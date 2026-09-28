@@ -2,12 +2,10 @@
 test_05_segmentation.py
 EN: Invariants of metrics/05_segmentation.json (technical report §5 market structure): the two brands add up to the
     listings and to meta.brands; the price tables cover the listings (segments fully, mileage with its cut-off,
-    body and age within them); the clusters are 0..k−1 for the chosen k and cover every PCA point; the k search
-    holds the chosen k; the PCA axes are ordered and their loadings sorted by size.
+    body and age within them); the silhouette scan covers consecutive k with scores in [−1, 1].
 TR: metrics/05_segmentation.json'un değişmezleri (teknik rapor §5 piyasa yapısı): iki marka ilanlara ve
     meta.brands'e toplanıyor; fiyat tabloları ilanları kapsıyor (segmentler tamamen, km kesimiyle birlikte, kasa ve
-    yaş içinde); kümeler seçilen k için 0..k−1 ve her PCA noktasını kapsıyor; k araması seçilen k'yi içeriyor; PCA
-    eksenleri sıralı, yükleri büyüklüğe göre dizili.
+    yaş içinde); silhouette taraması ardışık k'leri [−1, 1] skorlarla kapsıyor.
 """
 import pytest
 
@@ -46,38 +44,11 @@ def test_price_tables_cover_listings(doc, n):
     assert sum(r[2] for r in d["body_median"]) <= n and sum(r[2] for r in d["age_depreciation"]) <= n
 
 
-def test_clusters(doc, n):
-    """
-    EN: Clusters 0..k−1 for the chosen k, their sizes cover every PCA point, names unique, three distinguishing axes.
-    TR: Seçilen k için 0..k−1 kümeler, boyları her PCA noktasını kapsıyor, adlar tekil, üç ayırt edici eksen.
-    """
-    d, k = doc["domain"], doc["methodology"]["kmeans_selection"]["chosen_k"]
-    km = d["kmeans"]
-    assert [c["cluster"] for c in km] == list(range(k))
-    assert sum(c["n"] for c in km) == len(d["pca_scatter"]) == len(d["pca_scatter_13"]) == n
-    assert {p[2] for p in d["pca_scatter"]} <= set(range(k))
-    assert len({c["name"] for c in km}) == k
-    for c in km:
-        assert 0 <= c["heavy_damage_pct"] <= 100 and len(c["distinguishing"]) == 3
-        assert all(s in ("+", "-") for _, s in c["distinguishing"])
-
-
 def test_k_selection(doc):
-    """EN: Elbow and silhouette cover the same k, including the chosen one. / TR: Aynı k'ler, seçilen dahil."""
-    ks = doc["methodology"]["kmeans_selection"]
-    ks_elbow = [k for k, _ in ks["elbow"]]
-    assert ks_elbow == [k for k, _ in ks["silhouette"]] and ks["chosen_k"] in ks_elbow
-    assert all(-1 <= s <= 1 for _, s in ks["silhouette"])
-
-
-def test_pca_axes(doc):
     """
-    EN: Explained variance falls from axis to axis and sums to at most 100; loadings sorted by |w|.
-    TR: Açıklanan varyans eksenden eksene düşüyor, toplamı en çok 100; yükler |w|'ye göre sıralı.
+    EN: The silhouette scan covers consecutive k from 2, each score in [−1, 1].
+    TR: Silhouette taraması 2'den başlayan ardışık k'leri kapsıyor, her skor [−1, 1].
     """
-    axes = doc["methodology"]["pca_axes"]
-    var = [a["var_pct"] for a in axes]
-    assert var == sorted(var, reverse=True) and sum(var) <= 100
-    for a in axes:
-        w = [abs(x) for _, x in a["top"]]
-        assert w == sorted(w, reverse=True)
+    sil = doc["methodology"]["kmeans_selection"]["silhouette"]
+    assert [k for k, _ in sil] == list(range(2, 2 + len(sil))) and len(sil) >= 2
+    assert all(-1 <= s <= 1 for _, s in sil)
