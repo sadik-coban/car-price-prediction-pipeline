@@ -1,16 +1,16 @@
 {
  "script": "analysis/08_large_errors.py",
  "question": {
-  "tr": "Büyük hatalar (|OOF artık| > %20) nereden geliyor: emsal sayısı, model, yaş, segment, tarama, lira ölçeğinde en kötüler, katalog uyuşmazlığı?",
-  "en": "Where do the large errors (|OOF residual| > 20%) come from: number of comparables, model, age, segment, snapshot, the worst in lira, catalogue mismatches?"
+  "tr": "Büyük hatalar (|OOF artık| > %20) nereden geliyor: emsal sayısı, model, yaş, segment, tarama, lira ölçeğinde en büyük hataların yeri, katalog uyuşmazlığı?",
+  "en": "Where do the large errors (|OOF residual| > 20%) come from: number of comparables, model, age, segment, snapshot, where the largest lira errors sit, catalogue mismatches?"
  },
  "data": {
   "tr": "load_clean() (29.988 ilan) ve 07_model_comparison'ın OOF tahminleri (data/analysis/oof.parquet).",
   "en": "load_clean() (29,988 listings) and 07_model_comparison's OOF predictions (data/analysis/oof.parquet)."
  },
  "method": {
-  "tr": "Büyük hata oranı emsal sayısına, modele, yaşa (her yaş ve her kesim), F/S segmente, son görüldüğü taramaya ve canlı/kaybolan ayrımına göre; lira farkına göre en kötü ilanlar; kendi modelinin medyanından sapan motor değerleri; notlarının dayandığı karşılaştırmalarla üç örnek (her koşuda hesaplanır).",
-  "en": "The large-error rate by comparables, model, age (every age and every cut), F/S segment, last snapshot seen and live vs gone; the worst listings by lira gap; engine values far from their model's median; three examples with the comparisons their notes rest on (computed on every run)."
+  "tr": "Büyük hata oranı emsal sayısına, modele, yaşa (her yaş ve her kesim), F/S segmente, son görüldüğü taramaya ve canlı/kaybolan ayrımına göre; en büyük 100 lira hatasının düşük/fazla, en pahalı çeyrek ve performans ailesi dağılımı; kendi modelinin medyanından sapan motor değerleri; notlarının dayandığı karşılaştırmalarla üç örnek (her koşuda hesaplanır).",
+  "en": "The large-error rate by comparables, model, age (every age and every cut), F/S segment, last snapshot seen and live vs gone; how the 100 largest lira errors split into under/over, top price quartile and performance families; engine values far from their model's median; three examples with the comparisons their notes rest on (computed on every run)."
  },
  "split": "oof_input",
  "leakage": {
@@ -49,7 +49,7 @@
   "report_keys": [
    "error_drivers.overall",
    "error_drivers.live_vs_gone",
-   "error_drivers.lira_scaled.worst",
+   "error_drivers.lira_scaled.top_n_under",
    "error_drivers.spec_outliers.blind_spot",
    "error_drivers.examples"
   ]

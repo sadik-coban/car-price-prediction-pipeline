@@ -3,13 +3,15 @@
 EN: Technical report §8 — how the OOF errors are distributed. Median % error per price quartile; the same in
     lira (where the lira error sits, and the mean bias by actual vs predicted quartile — grouping by the actual
     price produces regression to the mean); the calibration slope (actual ~ a + b·predicted); error bands;
-    the best and worst predictions; median error per model against its number of listings; and the points of
-    the predicted-vs-actual and residual figures. Needs 07_model_comparison's OOF artefact.
+    median error per model against its number of listings; and the points of the predicted-vs-actual and
+    residual figures. Needs 07_model_comparison's OOF artefact. 2026-09-28: the best/worst listing tables left
+    the report (simplification list), so they are not computed.
 TR: Teknik rapor §8 — OOF hataları nasıl dağılıyor. Fiyat çeyreği başına medyan % hata; aynısı lira olarak
     (lira hatası nerede toplanıyor, gerçek ve tahmin çeyreğine göre ortalama sapma — gerçek fiyata göre
-    gruplamak ortalamaya dönüş üretir); kalibrasyon eğimi (gerçek ~ a + b·tahmin); hata bantları; en iyi ve en
-    kötü tahminler; model başına medyan hatanın ilan sayısına karşı dağılımı; tahmin-gerçek ve artık
-    figürlerinin noktaları. 07_model_comparison'ın OOF artefaktına ihtiyaç duyar.
+    gruplamak ortalamaya dönüş üretir); kalibrasyon eğimi (gerçek ~ a + b·tahmin); hata bantları; model başına
+    medyan hatanın ilan sayısına karşı dağılımı; tahmin-gerçek ve artık figürlerinin noktaları.
+    07_model_comparison'ın OOF artefaktına ihtiyaç duyar. 2026-09-28: en iyi/en kötü ilan tabloları rapordan
+    çıktı (sadeleştirme listesi), hesaplanmıyor.
 Output / Çıktı: metrics/08_residuals.json
 """
 
@@ -45,17 +47,6 @@ def quartile_median_ape(price, ape):
     """
     qb = pd.qcut(price, 4, labels=QUARTILES, duplicates="drop").astype(str)
     return [[b, float(np.nanmedian(ape[qb == b]))] for b in QUARTILES]
-
-
-def listing_rows(listings, pred, ape, n, largest):
-    """
-    EN: The n listings with the largest (or smallest) % error: model, age, km, actual, prediction, % error.
-    TR: % hatası en büyük (ya da en küçük) n ilan: model, yaş, km, gerçek, tahmin, % hata.
-    """
-    d = listings.reset_index(drop=True).assign(pred=pred, ape=ape).dropna(subset=["ape"])
-    d = d.nlargest(n, "ape") if largest else d.nsmallest(n, "ape")
-    return [[str(r["model"])[:35], float(r["vehicle_age"]), float(r["gb_mileage"]), float(r["price"]), float(r["pred"]),
-             float(r["ape"])] for _, r in d.iterrows()]
 
 
 def error_by_model(listings, ape, min_n):
@@ -124,20 +115,16 @@ def log_r2(price, pred):
 # %% [3] Metrics assembly | Metrik derleme — naming and rounding only | yalnız adlandırma ve yuvarlama
 def to_metrics(res):
     """
-    EN: Published in the site tree (domain: quantile_error, oof_outliers, oof_best, residual_vs_n,
-        pred_vs_true, residual_scatter), the report inputs (error_drivers: lira_ceyrek, tahmin_ceyrek,
-        kalibrasyon) and report-only numbers (report).
-    TR: Site ağacında (domain: quantile_error, oof_outliers, oof_best, residual_vs_n, pred_vs_true,
-        residual_scatter), rapor girdilerinde (error_drivers: lira_ceyrek, tahmin_ceyrek, kalibrasyon) ve
-        yalnız rapor sayılarında (report) yayımlanır.
+    EN: Published in the site tree (domain: quantile_error, residual_vs_n, pred_vs_true, residual_scatter), the
+        report inputs (error_drivers: lira_quartile, pred_quartile, calibration) and report-only numbers (report).
+    TR: Site ağacında (domain: quantile_error, residual_vs_n, pred_vs_true, residual_scatter), rapor girdilerinde
+        (error_drivers: lira_quartile, pred_quartile, calibration) ve yalnız rapor sayılarında (report) yayımlanır.
     """
     price, pred, resid = res["price"], res["pred"], res["resid"]
-    row = lambda r: r[:5] + [round(r[5], 1)]                              # noqa: E731
     snap_med = res["snap_median"]
     return {
         "domain": {
             "quantile_error": [[b, round(v, 2)] for b, v in res["quartile_ape"]],
-            "oof_outliers": [row(r) for r in res["worst"]], "oof_best": [row(r) for r in res["best"]],
             "residual_vs_n": [[n, round(m, 2), p] for n, m, p in res["by_model"]],
             "pred_vs_true": {
                 "points": [[float(a), float(b)] for a, b in zip(price, pred)],
@@ -172,7 +159,6 @@ ape = ape_values(price, pred)
 resid = residual_pct(price, oof["lgb"].values)
 slope, intercept = np.polyfit(pred, price, 1)
 res = {"price": price, "pred": pred, "resid": resid, "quartile_ape": quartile_median_ape(price, ape),
-       "worst": listing_rows(listings, pred, ape, 10, largest=True), "best": listing_rows(listings, pred, ape, 5, largest=False),
        "by_model": error_by_model(listings, ape, MIN_MODEL_N),
        "snap_median": pd.Series(resid).groupby(listings["snap"].values).median().tolist(),
        "lira": lira_by_quartile(price, pred, np.minimum(np.abs(resid), APE_CAP)),

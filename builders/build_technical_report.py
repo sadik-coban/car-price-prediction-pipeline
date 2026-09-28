@@ -578,80 +578,29 @@ def section_missing(c):
 
 def section_redundancy(c):
     """
-    EN: §3 — redundancy and dependence: Cramér's V / Theil's U with permutation floors, the derived segment, the
-        brand ablation.
-    TR: §3 — fazlalık ve bağıntı: permütasyon tabanlı Cramér's V / Theil's U, türetilen segment, marka
+    EN: §3 — redundancy and dependence: the Theil's U asymmetry, the numeric Spearman pairs, the derived segment,
+        the brand ablation.
+    TR: §3 — fazlalık ve bağıntı: Theil's U asimetrisi, sayısal Spearman çiftleri, türetilen segment, marka
         ablasyonu.
     """
     v, d, dom, met, meta, hr, lang = c.v, c.d, c.dom, c.met, c.meta, c.hr, c.lang
     L, A, T, figs = c.L, c.A, c.T, c.figs
-    # 2026-09-23: "model digerlerini neredeyse tam belirliyor" yalniz marka/seri/segment icin dogruydu (U>=0.99);
-    # hasar durumlarinda U 0.10-0.23. Liste U matrisinden.
+    # 2026-09-23: "model digerlerini neredeyse tam belirliyor" yalniz marka/seri/segment icin dogruydu (U>=0.99).
+    # 2026-09-28 (sadelestirme listesi): Cramer's V ve iki matris figuru, permutasyon tabani paragrafi cikti;
+    # bulguyu asagidaki asimetri tablosu tasiyor.
     _tm_ = met["theils_matrix"]
     _lb_, _M_ = _tm_["labels"], _tm_["matrix"]
     _Um = {x_: _M_[i_][_lb_.index("model")] for i_, x_ in enumerate(_lb_) if x_ != "model"}
     _pinned = [x_ for x_, u_ in _Um.items() if u_ >= .99]
-    _lowest = min((x_ for x_ in _Um if x_ not in _pinned), key=_Um.get)
     assert "series" in _pinned, "model seriyi belirlemiyor — 'kabalastirilmis hali' cumlesi bayat"
-    A(L("Cramér's V ilişkinin gücünü (simetrik), Theil's U yönünü (asimetrik) verir. Asimetri bulgunun "
-        f"kendisi: `model` {', '.join(f'`{x_}`' for x_ in _pinned)} değerini neredeyse tam belirliyor (U ≥ 0.99) ama "
-        f"tersi değil — yani `seri`, `model`in kabalaştırılmış hâli, bağımsız bilgi değil. Öteki kolonlarda U "
-        f"daha düşük; en düşüğü {col(d, _lowest, lang)} ({_Um[_lowest]:.2f}).",
-        "Cramér's V gives association strength (symmetric); Theil's U its direction (asymmetric). The "
+    A(L("Theil's U(a | b), b bilinince a'nın belirsizliğinin ne kadarının gittiğini verir (0–1) ve yönlüdür. Asimetri "
+        f"bulgunun kendisi: `model` {', '.join(f'`{x_}`' for x_ in _pinned)} değerini neredeyse tam belirliyor "
+        f"(U ≥ 0.99) ama tersi değil — yani `seri`, `model`in kabalaştırılmış hâli, bağımsız bilgi değil.",
+        "Theil's U(a | b) gives how much of a's uncertainty is gone once b is known (0–1), and it is directional. The "
         f"asymmetry is the finding: `model` almost fully determines {', '.join(f'`{x_}`' for x_ in _pinned)} "
-        f"(U ≥ 0.99) but not vice-versa — `series` is a coarsened view of `model`, not independent information. "
-        f"For the other columns U is lower; the lowest is {col(d, _lowest, lang)} ({_Um[_lowest]:.2f})."))
+        f"(U ≥ 0.99) but not vice-versa — `series` is a coarsened view of `model`, not independent information."))
     A("")
-    # 2026-09-23: "745" elle yaziliydi; ve U, Cramer'in yanliliginin CARESI diye sunuluyordu — degil.
-    # Permutasyon temeli site_data'dan: saf gurultuyle `model` karsisinda alinan deger.
-    _n_mod = len(v["ed"]["per_model_error"])
-    _cn, _tn = met["cramers_null"], met["theils_null"]
-    if _cn and _tn:
-        _li = _cn["labels"].index("model")
-        _cv0 = max(r[_li] for k, r in enumerate(_cn["matrix"]) if k != _li)
-        _tu = [r[_li] for k, r in enumerate(_tn["matrix"]) if k != _li]
-        # 2026-09-27 (kullanici: "bias kismini cok anlamadim"): yanliligin nedeni, tabanin nasil kuruldugu ve iki
-        # ornek. U ornegi yukaridaki en dusuk U alani; V ornegi temeline en yakin alan. Ikisi de metrikten.
-        assert _tn["labels"] == _cn["labels"] == _lb_ == met["cramers_matrix"]["labels"], "matris etiketleri farkli"
-        _cm_ = met["cramers_matrix"]["matrix"]
-        _u_ex = (_lowest, _Um[_lowest], _tn["matrix"][_lb_.index(_lowest)][_li])
-        _v_key = min((x_ for x_ in _lb_ if x_ != "model"),
-                     key=lambda x_: _cm_[_lb_.index(x_)][_li] - _cn["matrix"][_lb_.index(x_)][_li])
-        _v_ex = (_v_key, _cm_[_lb_.index(_v_key)][_li], _cn["matrix"][_lb_.index(_v_key)][_li])
-        assert _v_ex[1] - _v_ex[2] < .05, f"'farkin neredeyse tamami sans' cumlesi bayat: {_v_ex}"
-        A(L(f"**Neden tabanla okunmalı?** `model` {num(_n_mod, lang)} farklı değer taşıyor ve çoğunun yalnız birkaç "
-            f"ilanı var. Birkaç ilanlık bir grupta başka bir alanın değerleri şans eseri aynı çıkabilir (ör. iki ilanın "
-            f"ikisinin de kaputu orijinal); ölçü bunu \"model kaputu belirliyor\" diye sayar. Bu yüzden `model`le "
-            f"eşleşen her alan, gerçek bir ilişki olmasa da yüksek görünür: iki ölçü de yüksek kardinalitede "
-            f"**üste yanlı**. Bu şişmenin boyunu görmek için `model` sütunu ilanlar arasında rastgele karıştırıldı ve "
-            f"ölçü yeniden hesaplandı; karıştırma her değerin sayısını korur ama gerçek ilişkiyi yok eder. "
-            f"{_tn['P']} karıştırmanın ortalaması permütasyon tabanı: Cramér's V'de ~{_cv0:.2f}, Theil's U'da alana "
-            f"göre {min(_tu):.2f}–{max(_tu):.2f}. `model` sütunundaki değer bu tabanın üstünde kalan kadar anlam "
-            f"taşır:",
-            f"**Why read against a floor?** `model` has {num(_n_mod, lang)} distinct values and most of them have only a "
-            f"few listings. In a group of a few listings another field's values can match by chance (e.g. both of two "
-            f"listings have an original hood), and the measure counts that as \"model determines the hood\". So any "
-            f"field paired with `model` looks high even without a real relationship: both measures are **biased "
-            f"upward** at high cardinality. To see how large that inflation is, the `model` column was shuffled at "
-            f"random across listings and the measure recomputed; shuffling keeps every value's count but destroys "
-            f"any real relationship. The mean of {_tn['P']} shuffles is the permutation floor: ~{_cv0:.2f} on "
-            f"Cramér's V and {min(_tu):.2f}–{max(_tu):.2f} on Theil's U, depending on the field. A value in the "
-            f"`model` column means only as much as it rises above that floor:"))
-        A("")
-        A(L(f"- {col(d, _u_ex[0], lang)}: Theil's U {_u_ex[1]:.2f}, tabanı {_u_ex[2]:.2f}.\n"
-            f"- {col(d, _v_ex[0], lang)}: Cramér's V {_v_ex[1]:.2f}, tabanı {_v_ex[2]:.2f}; farkın neredeyse tamamı "
-            f"şans.",
-            f"- {col(d, _u_ex[0], lang)}: Theil's U {_u_ex[1]:.2f}, floor {_u_ex[2]:.2f}.\n"
-            f"- {col(d, _v_ex[0], lang)}: Cramér's V {_v_ex[1]:.2f}, floor {_v_ex[2]:.2f}; almost all of the gap is "
-            f"chance."))
-        A("")
-        A(L("Theil's U'nun yön vermesi bu şişmeyi gidermez, onun da kendi tabanı var. Hasar sayaçları ile motor "
-            "(hp/cc) sayısal olduğu için bu iki matriste yok — onların karşılığı aşağıdaki korelasyon tablosu.",
-            "Theil's U giving direction does not remove this inflation; it has its own floor. The damage counts and "
-            "the engine fields (hp/cc) are numeric, so they are absent from these matrices — the correlation table "
-            "below covers them."))
-    A("")
-    figs(17, 18, 19)
+    figs(19)
 
     tm = met["theils_matrix"]
     U = lambda a, b: tm["matrix"][tm["labels"].index(a)][tm["labels"].index(b)]   # U(a | b)
@@ -677,16 +626,19 @@ def section_redundancy(c):
            "(the brand ablation below measures the same thing)." if _full else "")))
     A("")
 
-    A(L("Sayısal öznitelikler arası korelasyon — yukarıdaki kategorik bağıntının sayısal karşılığı. "
-        f"|r|>0.5 çiftler çoklu-bağlantı için işaretlendi. §{section_no('hedonic')}'nın VIF tablosu yalnız hedonik "
-        f"modelin terimlerini sınar; kapı ve çamurluk boyaları orada ayrı değil, toplam boyalı parça sayısı olarak "
-        f"girer.",
-        "Correlation among numeric features — the numeric counterpart to the categorical dependence "
-        f"above. |r|>0.5 pairs are flagged for collinearity. The VIF table in §{section_no('hedonic')} only covers "
-        f"the hedonic model's terms; door and fender paint enter there as the total painted-part count, not "
+    # 2026-09-28 (sadelestirme listesi): Pearson haritasi ve |r|>0.5 tablosu cikti; ciftler Spearman'dan tek cumle.
+    _hp = dom["numeric_correlation"]["high_pairs"]
+    assert _hp, "0.5'i asan sayisal cift yok — 'su ciftler' cumlesi bayat"
+    _pairs = lambda lg: ", ".join(f"{col(d, a, lg)}–{col(d, b, lg)} {r:.2f}" for a, b, r in _hp)   # noqa: E731
+    A(L(f"Sayısal öznitelikler arasında Spearman korelasyonu (sıra ilişkisi; aşağıdaki harita). |ρ| > 0.5 olan "
+        f"çiftler: {_pairs('tr')}. Hedonik modeldeki çoklu bağlantı §{section_no('hedonic')}'da VIF ile ölçülüyor; "
+        f"orada kapı ve çamurluk boyaları ayrı değil, toplam boyalı parça sayısı olarak giriyor.",
+        f"Spearman correlation (rank association) among the numeric features, in the map below. Pairs with "
+        f"|ρ| > 0.5: {_pairs('en')}. Collinearity in the hedonic model is measured with VIF in "
+        f"§{section_no('hedonic')}; door and fender paint enter there as the total painted-part count, not "
         f"separately."))
     A("")
-    figs(20, 21)
+    figs(21)
     _seg_q = v["ed"]["segment_quality"]
     if _seg_q:
         _g_seg, _mismatch, _paths = _seg_q["g_segment"], _seg_q["mismatch"], _seg_q["paths"]
@@ -728,12 +680,6 @@ def section_redundancy(c):
             + (f", and the next largest source is {num(_non_g[2], lang)} listings the feed calls "
                f"{_non_g[0]} and the derivation calls {_non_g[1]}." if _non_g else ".")))
         A("")
-
-    A(L("### Yüksek korelasyon çiftleri (|r| > 0.5)", "### High-correlation pairs (|r| > 0.5)"))
-    A("")
-    T([L("öznitelik A", "feature A"), L("öznitelik B", "feature B"), "Pearson r"],
-      [[col(d, a, lang), col(d, b, lang), f"{r:.3f}"] for a, b, r in dom["numeric_correlation"]["high_pairs"]],
-      "llr")
 
     ba = dom["brand_ablation"]
     A(L("### Marka ablasyonu", "### Brand ablation"))
@@ -1390,6 +1336,9 @@ def section_calibration(c):
         if note:
             A(f"- **{e['name']} · {e['year']}:** {note(e, lang)}")
     A("")
+    A(L("Tahminler OOF; ilan kimliği (`ad_id`) bilerek yazılmadı.",
+        "Predictions are OOF; the listing id (`ad_id`) is deliberately not published."))
+    A("")
     figs(9)
     figs(11)
     _bk = ed["per_model_buckets"]
@@ -1453,25 +1402,16 @@ def section_calibration(c):
         f"everywhere; Q1 coverage, for instance, is {P(v['cov_q1'], lang)}."))
     A("")
     figs(10)
+    # 2026-09-28 (sadelestirme listesi): lira paneli (fig 27) ve gercek fiyata gore sapma cumlesi (ortalamaya
+    # donus) teknik rapordan cikti; fig 27 karar notunda kaliyor. Tahmine gore sapma §8 girisinde.
     _lira_q = v["ed"]["lira_quartile"]
     _q4, _q1 = _lira_q[-1], _lira_q[0]
-    _stl = lambda x_: ("−" if x_ < 0 else "+") + tl(abs(x_))   # noqa: E731
-    _tc = v["ed"]["pred_quartile"]
     A(L(f"Liraya çevrilince tablo değişiyor: toplam lira hatasının {P(_q4[2], lang)} kadarı en pahalı "
-        f"çeyrekte, {P(_q1[2], lang)} kadarı en ucuzda; ortalama mutlak hata {tl(_q4[3])} ile {tl(_q1[3])}. "
-        f"Gerçek fiyata göre gruplanınca ortalama sapma (tahmin − gerçek) en ucuz çeyrekte {_stl(_q1[4])}, en "
-        f"pahalıda {_stl(_q4[4])}; bu, gürültülü her tahminde gerçek değere göre gruplamanın ürettiği ortalamaya "
-        f"dönüş. Tahmin edilen fiyata göre gruplanınca (bir fiyatlama aracının bildiği tek şey) ortalama sapma "
-        f"{_stl(min(r[2] for r in _tc))} ile {_stl(max(r[2] for r in _tc))} arasında (sağdaki panel).",
+        f"çeyrekte, {P(_q1[2], lang)} kadarı en ucuzda; ortalama mutlak hata {tl(_q4[3])} ile {tl(_q1[3])}.",
         f"In lira the picture changes: {P(_q4[2], lang)} of total lira error sits in the most expensive "
         f"quartile and {P(_q1[2], lang)} in the cheapest; mean absolute error {tl(_q4[3])} against "
-        f"{tl(_q1[3])}. Grouped by the actual price the mean bias (predicted − actual) is {_stl(_q1[4])} in the "
-        f"cheapest quartile and {_stl(_q4[4])} in the most expensive; that is regression to the mean, which any "
-        f"noisy prediction shows when grouped by the true value. Grouped by the predicted price (the only thing a "
-        f"pricing tool knows) the mean bias ranges from {_stl(min(r[2] for r in _tc))} to "
-        f"{_stl(max(r[2] for r in _tc))} (right panel)."))
+        f"{tl(_q1[3])}."))
     A("")
-    figs(27)
     figs(12)
     # Kapsama grafiğinin sayısal karşılığı (2026-09-19, kullanıcı isteği). Hiçbir sayı elle yazılmaz:
     # sınırlar gerçek fiyatın çeyrekleri (üreticinin pd.qcut(y, 4) ile aynı kesim), kapsamalar
@@ -1500,104 +1440,46 @@ def section_calibration(c):
         + (" — the finding does not depend on the grouping." if _cp1 < v["cov_target"] else ".")))
     A("")
 
-    ohead = [L("model", "model"), L("yaş", "age"), "km", L("gerçek", "actual"), L("OOF tahmin", "OOF pred."),
-             L("hata", "error")]
-    orow = lambda r: [r[0], f"{r[1]:.0f}", num(r[2], lang), tlx(r[3], lang), tlx(r[4], lang), P(r[5], lang)]
-    A(L("### En iyi 5 tahmin", "### Best 5 predictions"))
-    A("")
-    T(ohead, [orow(r) for r in dom["oof_best"][:5]], "lrrrrr")
-    A(L(f"{num(v['n_dedup'], lang)} ilanda birkaç tahminin gerçeğe liralar düzeyinde denk gelmesi şans eseri de "
-        f"beklenir; bu tablo modelin tipik kalitesini değil, hata dağılımının sıfır ucunu gösterir.",
-        f"Across {num(v['n_dedup'], lang)} listings a few predictions landing within a few lira of the truth is "
-        f"expected by chance alone; this table shows the zero end of the error distribution, not typical quality."))
-    A("")
-    A(L("### Yüzde hatası en büyük 6 ilan", "### Six largest percentage errors"))
-    A("")
-    T(ohead, [orow(r) for r in dom["oof_outliers"][:6]], "lrrrrr")
-    worst = dom["oof_outliers"][:6]
-    n_over = sum(1 for r in worst if r[4] > r[3])
-    med_age = float(np.median([r[1] for r in worst]))
+    # 2026-09-28 (sadelestirme listesi, kullanici karari): "en iyi 5" ve iki "en kotu 6" tablosu cikti; satira
+    # dayanmayan bulgu cumleleri kaldi. Gerekceli ornekleri yukaridaki "Ornekler" veriyor.
     _spec = v["ed"]["spec_outliers"]
     _lira = v["ed"]["lira_scaled"]
-    # B9: en_kotu_6_* artik KONUMLA eslesiyor (error_drivers, ureticinin siralamasiyla alan alan kapili).
-    _thin = sum(1 for _m, _n in _spec["worst6_comparables"] if _n <= 2)
-    _worst_off = _spec["worst6_inside"]
-    # Iki kategori ayrik: bozuk-oznitelik bayragi yalniz en az min_grup ilanli modelde kalkabiliyor.
-    assert _spec["min_group"] > 2, "kategoriler ortusebilir: min_grup <= 2"
-    _other_n = len(worst) - _worst_off - _thin
     _blind = _spec["blind_spot"]
-    A(L((f"En kötü {number_word(len(worst), lang)} ilanın hepsinde" if n_over == len(worst) else
-         f"En kötü {number_word(len(worst), lang)} ilanın {number_word(n_over, lang)} tanesinde")
-        + f" model gerçek fiyatın **üstünü** söylüyor; medyan yaş "
-        f"{med_age:g}. Bu yön büyük ölçüde sıralamanın kendisinden geliyor: model düşük söylediğinde yüzde hata "
-        f"%100'ü geçemez (bu veride en yüksek {P(_lira['under_ape_max'], lang)}), bu listenin ilk 10'una girmek için "
-        f"ise {P(_lira['ape_top10_threshold'], lang)} gerekiyor. Lira ölçeğindeki sıralama aşağıda.",
-        (f"In all {number_word(len(worst), 'en')} of the worst" if n_over == len(worst) else
-         f"In {n_over} of the worst {len(worst)}")
-        + f" the model says **more** than the actual price; median age "
-        f"{med_age:g}. That direction comes largely from the ranking itself: when the model says too little the "
-        f"percentage error cannot exceed 100% (the highest here is {P(_lira['under_ape_max'], lang)}), while the "
-        f"top 10 of this list needs {P(_lira['ape_top10_threshold'], lang)}. The lira ranking follows below."))
+    _costly = _spec["median_error_pct"] > _spec["other_median_error_pct"]
+    _perf_ratio = (_lira["top_n_perf"] / _lira["top_n"] * 100) / _lira["perf_overall_pct"]
+    assert _lira["top_n_under"] > _lira["top_n_over"], "lira ucunda dusuk tahmin baskin degil — paragraf bayat"
+    A(L("### En büyük hatalar", "### The largest errors"))
     A("")
-    _parts_tr, _parts_en = [], []
-    if _worst_off:
-        _costly = _spec["median_error_pct"] > _spec["other_median_error_pct"]
-        _parts_tr.append(
-            f"**{number_word(_worst_off, lang, cap=True)} ilanda sebep veri:** motor gücü ya da hacmi kendi emsal grubunun "
-            f"medyanından {_spec['threshold']} kattan fazla sapıyor — katalog eşleşmesi çökmüş, model olmayan bir motoru "
-            f"fiyatlıyor. Veride böyle {num(_spec['n'], lang)} ilan var ({P(_spec['pct'], lang, 2)})"
-            + (f" ve pahalıya mal oluyorlar: medyan hataları {P(_spec['median_error_pct'], lang)}, geri kalanınki "
-               f"{P(_spec['other_median_error_pct'], lang)}." if _costly else ".")
-            + f" Bu kontrol yalnız en az {_spec['min_group']} ilanı olan modellerde çalışıyor: daha az ilanlı "
-            f"{num(_blind['model'], lang)} modelin {num(_blind['listings'], lang)} ilanı ({P(_blind['pct'], lang, 2)}) "
-            f"onun kör noktası — emsalsizliğin en yoğun olduğu yer.")
-        _parts_en.append(
-            f"**In {_worst_off} the cause is the data:** engine power or displacement deviates more than "
-            f"{_spec['threshold']}× from the median of its comparable group — the catalogue match collapsed and the model "
-            f"is pricing an engine the car does not have. There are {num(_spec['n'], lang)} such listings "
-            f"({P(_spec['pct'], lang, 2)})"
-            + (f" and they are expensive: their median error is {P(_spec['median_error_pct'], lang)} against "
-               f"{P(_spec['other_median_error_pct'], lang)} for the rest." if _costly else ".")
-            + f" The check only works on models with at least {_spec['min_group']} listings: the "
-            f"{num(_blind['listings'], lang)} listings ({P(_blind['pct'], lang, 2)}) of the {num(_blind['model'], lang)} "
-            f"smaller models are its blind spot — exactly where comparables are scarcest.")
-    if _thin:
-        _parts_tr.append(f"**{number_word(_thin, lang, cap=True)} ilanda sebep emsalsizlik:** aynı modelden veride en fazla "
-                       f"iki ilan var.")
-        _parts_en.append(f"**In {_thin} the cause is having no comparables:** at most two listings of that model "
-                       f"exist.")
-    if _other_n:
-        _parts_tr.append(f"Kalan {number_word(_other_n, lang)} ilan iki açıklamaya da girmiyor.")
-        _parts_en.append(f"The remaining {number_word(_other_n, 'en')} {'fits' if _other_n == 1 else 'fit'} neither explanation.")
-    _parts_tr.append("Tüm tahminler OOF; ilan kimliği (`ad_id`) bilerek yazılmadı.")
-    _parts_en.append("All predictions are OOF; the listing id (`ad_id`) is deliberately not published.")
-    A(L(" ".join(_parts_tr), " ".join(_parts_en)))
+    A(L(f"**Motor değeri tutarsız ilanlar.** Motor gücü ya da hacmi kendi modelinin medyanından {_spec['threshold']} "
+        f"kattan fazla sapan {num(_spec['n'], lang)} ilan var ({P(_spec['pct'], lang, 2)}): katalog eşleşmesi çökmüş, "
+        f"model aracın sahip olmadığı bir motoru fiyatlıyor"
+        + (f"; medyan hataları {P(_spec['median_error_pct'], lang)}, geri kalanınki "
+           f"{P(_spec['other_median_error_pct'], lang)}." if _costly else ".")
+        + f" Bu kontrol yalnız en az {_spec['min_group']} ilanı olan modellerde çalışıyor: daha az ilanlı "
+        f"{num(_blind['model'], lang)} modelin {num(_blind['listings'], lang)} ilanı ({P(_blind['pct'], lang, 2)}) "
+        f"onun kör noktası — emsalsizliğin en yoğun olduğu yer.",
+        f"**Listings with an inconsistent engine value.** {num(_spec['n'], lang)} listings ({P(_spec['pct'], lang, 2)}) "
+        f"have a power or displacement more than {_spec['threshold']}× off their own model's median: the catalogue match "
+        f"collapsed and the model is pricing an engine the car does not have"
+        + (f"; their median error is {P(_spec['median_error_pct'], lang)} against "
+           f"{P(_spec['other_median_error_pct'], lang)} for the rest." if _costly else ".")
+        + f" The check only works on models with at least {_spec['min_group']} listings: the "
+        f"{num(_blind['listings'], lang)} listings ({P(_blind['pct'], lang, 2)}) of the {num(_blind['model'], lang)} "
+        f"smaller models are its blind spot — exactly where comparables are scarcest."))
     A("")
-
-    # B1 (2026-09-23): ayni OOF lira hatasiyla siralaninca liste tersine donuyor.
-    A(L("### Lira hatası en büyük 6 ilan", "### Six largest errors in lira"))
-    A("")
-    T([L("model", "model"), L("yaş", "age"), "km", L("gerçek", "actual"), L("OOF tahmin", "OOF pred."),
-       L("tahmin − gerçek", "pred. − actual")],
-      [[r[0], f"{r[1]:.0f}", num(r[2], lang) if r[2] is not None else "—", tlx(r[3], lang), tlx(r[4], lang),
-        ("−" if r[6] < 0 else "+") + tl(abs(r[6]))] for r in _lira["worst"]], "lrrrrr")
-    _n6d = sum(1 for r in _lira["worst"] if r[6] < 0)
-    _perf_ratio = (_lira["top_n_perf"] / _lira["top_n"] * 100) / _lira["perf_overall_pct"] if _lira["perf_overall_pct"] else 0
-    A(L(f"Lira ölçeğinde liste tersine dönüyor: ilk altının {number_word(_n6d, lang)} tanesinde model **düşük** söylüyor. "
-        f"İlk {_lira['top_n']} lira hatasından {num(_lira['top_n_under'], lang)} tanesi düşük, "
-        f"{num(_lira['top_n_over'], lang)} tanesi fazla tahmin; {num(_lira['top_n_q4'], lang)} tanesi en pahalı "
-        f"çeyrekte. Segmentini model adından alan seriler ({', '.join(_lira['perf_series'])}) verinin "
-        f"{P(_lira['perf_overall_pct'], lang, 2)} kadarı ama ilk {_lira['top_n']} içinde {num(_lira['top_n_perf'], lang)} ilan"
+    A(L(f"**Lira ölçeğinde en büyük hatalar düşük tahmin.** İlk {_lira['top_n']} lira hatasından "
+        f"{num(_lira['top_n_under'], lang)} tanesi düşük, {num(_lira['top_n_over'], lang)} tanesi fazla tahmin; "
+        f"{num(_lira['top_n_q4'], lang)} tanesi en pahalı çeyrekte. Segmentini model adından alan seriler "
+        f"({', '.join(_lira['perf_series'])}) verinin {P(_lira['perf_overall_pct'], lang, 2)} kadarı ama ilk "
+        f"{_lira['top_n']} içinde {num(_lira['top_n_perf'], lang)} ilan"
         + (f" — verideki paylarının {_perf_ratio:.0f} katı." if _perf_ratio >= 2 else ".")
         + f" Fiyat tavanı ({tl(v['ed']['scope']['price_max'])}) bu uçta modelin "
         f"öğrendiği aralığı da kesiyor; en pahalı ilanlardaki düşük tahmin bu sınırla birlikte okunmalı.",
-        f"In lira the list flips: in {_n6d} of the top six the model says **too little**. Of the top "
-        f"{_lira['top_n']} lira errors {num(_lira['top_n_under'], lang)} are under- and "
-        f"{num(_lira['top_n_over'], lang)} over-predictions; {num(_lira['top_n_q4'], lang)} sit in the most "
-        f"expensive quartile. The series that take their segment from the model name "
-        f"({', '.join(_lira['perf_series'])}) "
-        f"are {P(_lira['perf_overall_pct'], lang, 2)} of the data but {num(_lira['top_n_perf'], lang)} of the top "
-        f"{_lira['top_n']}"
+        f"**In lira the largest errors are under-predictions.** Of the top {_lira['top_n']} lira errors "
+        f"{num(_lira['top_n_under'], lang)} are under- and {num(_lira['top_n_over'], lang)} over-predictions; "
+        f"{num(_lira['top_n_q4'], lang)} sit in the most expensive quartile. The series that take their segment from "
+        f"the model name ({', '.join(_lira['perf_series'])}) are {P(_lira['perf_overall_pct'], lang, 2)} of the data "
+        f"but {num(_lira['top_n_perf'], lang)} of the top {_lira['top_n']}"
         + (f" — {_perf_ratio:.0f}× their share of the data." if _perf_ratio >= 2 else ".")
         + f" The price cap ({tl(v['ed']['scope']['price_max'])}) also truncates the range the "
         f"model learns at this end; under-prediction on the most expensive listings should be read with that "
@@ -1650,7 +1532,7 @@ def section_time(c):
     base_snap = snaps[0][5:]
     _shift = v["ed"]["period_shift"]
     _live_by = {r[0]: r for r in _shift["live"]}
-    _emd = {p.split("→")[1]: e for p, _ks, _pp, _ps, e in dom["drift"]["all_pairs"]
+    _emd = {p.split("→")[1]: e for p, _ks, _ps, e, _sh in dom["drift"]["all_pairs"]
             if p.split("→")[0] == base_snap}
     # 2026-09-23: donem etkisi hedonik modelden cikarildi (kullanici karari) -> hedonik sutun, dedup
     # karsilastirmasi ve donem CI'i da cikti. Iki olcu kaldi: canli hucre karsilastirmasi ve EMD.
@@ -1677,10 +1559,14 @@ def section_time(c):
     A(L("### Zamansal backtest", "### Temporal backtest"))
     A("")
     rows = []
+    # 2026-09-28 (sadelestirme listesi): ilk egitim taramasinin kumulatif hucreleri tek donemle AYNI deney; iki
+    # kez sayi yazmak yerine "=" isaretlenir (asagidaki cumle veriden kapili).
     for s, c in zip(bt["single"], bt["cumulative"]):
         assert s[1] == c[1], f"backtest hizasi bozuk: {s} / {c}"
+        _dup = s[0] == bt["single"][0][0] and (s[2], s[3]) == (c[2], c[3])
         rows.append([f"{s[0]} → {s[1]}", P(s[2], lang, 2), num(s[3], lang),
-                     f"≤{c[0].lstrip('→')} → {c[1]}", P(c[2], lang, 2), num(c[3], lang)])
+                     f"≤{c[0].lstrip('→')} → {c[1]}", L("= tek dönem", "= single") if _dup else P(c[2], lang, 2),
+                     "=" if _dup else num(c[3], lang)])
     T([L("tek dönem: eğitim → test", "single: train → test"), "MAPE", "n",
        L("kümülatif: eğitim → test", "cumulative: train → test"), "MAPE", "n"], rows, "lrrlrr")
     _by_train = {}
@@ -1716,14 +1602,13 @@ def section_time(c):
     A(L("Bu tablonun iki kolu da ana modelden hafif bir kurulumla ölçülür: model ve seri adı TF-IDF/SVD'den "
         f"geçmeden ham kategorik girer, {_trees_bt.group(1)} ağaç, erken durdurma yok. Mutlak düzey manşet MAPE ile değil, "
         "satırlar birbiriyle karşılaştırılmalı."
-        + (f" Kümülatif kolun ilk {number_word(len(_first), lang)} satırı tek dönem koluyla aynı deneydir (ilk taramaya "
-           f"kadar birikim tek bir taramadır); bağımsız ikinci bir ölçüm sayılmamalı." if _same_first else ""),
+        + (" \"=\" işaretli kümülatif hücreler tek dönem koluyla aynı deneydir (ilk taramaya kadar birikim tek bir "
+           "taramadır)." if _same_first else ""),
         "Both arms of this table use a lighter setup than the main model: model and series names enter as raw "
         f"categoricals without TF-IDF/SVD, {_trees_bt.group(1)} trees, no early stopping. Compare rows with each other, not the "
         "absolute level with the headline MAPE."
-        + (f" The first {number_word(len(_first), 'en')} rows of the cumulative arm are the same experiment as the single "
-           f"arm (accumulating up to the first snapshot is one snapshot); they are not a second, independent "
-           f"measurement." if _same_first else "")))
+        + (" The cumulative cells marked \"=\" are the same experiment as the single arm (accumulating up to the "
+           "first snapshot is one snapshot)." if _same_first else "")))
     A("")
 
     A(L("### Dönem başına OOF", "### Per-snapshot OOF"))
@@ -1753,36 +1638,31 @@ def section_time(c):
 
     A(L("### Dağılım kayması", "### Distribution drift"))
     A("")
+    # 2026-09-28 (sadelestirme listesi): taramalar ilan paylasiyor, anlamlilik testi bagimsizlik varsayar ->
+    # p-degeri, ayrik tablo ve Holm cikti. Tablo farkin buyuklugunu ve ortak ilan payini verir.
     pairs = dr["all_pairs"]
-    T([L("dönem çifti", "snapshot pair"), "KS", "KS p", "PSI", "EMD (₺)"],
-      [[pr, f"{ks:.4f}", fp(p_), f"{psi:.4f}", tlx(emd, lang)] for pr, ks, p_, psi, emd in pairs], "lrrrr")
-    # Dort olcunun ne isе yaradigi + tablonun okunusu. Esikler ureticinin notundan (regex), sayilarin
-    # tamami all_pairs / per_snapshot / medyan fiyattan; hicbiri elle yazilmadi.
+    T([L("dönem çifti", "snapshot pair"), L("ortak ilan (ilk taramanın payı)", "shared (share of first)"), "KS", "PSI",
+       "EMD (₺)"],
+      [[pr, P(sh, lang), f"{ks:.4f}", f"{psi:.4f}", tlx(emd, lang)] for pr, ks, psi, emd, sh in pairs], "lrrrr")
+    # Olculerin okunusu. Esikler ureticinin notundan (regex), sayilarin tamami all_pairs / per_snapshot / medyan
+    # fiyattan; hicbiri elle yazilmadi.
     th = re.search(r"PSI<([\d.]+).*?>([\d.]+)", dr["note"])
     assert th, "drift notunda PSI esikleri bulunamadi | PSI thresholds missing from the drift note"
     _safe, _retrain = float(th.group(1)), float(th.group(2))
-    psi_max = max(r[3] for r in pairs)
+    psi_max = max(r[2] for r in pairs)
     ks_max = max(r[1] for r in pairs)
-    # 2026-09-23: taramalar ayni ilanlari tasiyor, ks_2samp bagimsizlik varsayiyor. Anlamlilik sayisi
-    # artik ORTAK ILANLAR CIKARILMIS (ayrik) alt kumeden; ortusme orani ayrica yayimlaniyor.
-    _overlap = dr["overlap"]
-    # EN: significance of the disjoint pairs and the Holm correction come from 09_drift
-    # TR: ayrık çiftlerin anlamlılığı ve Holm düzeltmesi 09_drift'ten
-    _hm_ = d["report"]["drift_holm"]
-    n_sig, n_tests, n_holm = _hm_["n_sig"], _hm_["n_tests"], _hm_["n_holm"]
-    _holm_c = ", ".join(_hm_["pairs"])   # Holm'la kalan ciftler
-    _overlap_max = max(_overlap, key=lambda r: r[1]) if _overlap else None
     _pern = [r[2] for r in bt["per_snapshot"]]
     _navg = round(sum(_pern) / len(_pern) / 1000)                 # donem basina ~kac bin ilan
     _snap = {sp[5:]: date.fromisoformat(sp) for sp in meta["snapshots"]}
     _gap = lambda lab: (_snap[lab.split("→")[1]] - _snap[lab.split("→")[0]]).days
     _short, _long = min(pairs, key=lambda r: _gap(r[0])), max(pairs, key=lambda r: _gap(r[0]))
-    _emd_k = lambda r: round(r[4] / 1000)
-    _long_pct = _long[4] / v["median"] * 100
+    _emd_k = lambda r: round(r[3] / 1000)
+    _long_pct = _long[3] / v["median"] * 100
+    _shared_max = max(pairs, key=lambda r: r[4])
 
-    A(L(f"**Sütunlar ne ölçüyor.** Dördü de iki dönemin **ilan fiyatı dağılımını** karşılaştırır "
+    A(L(f"**Sütunlar ne ölçüyor.** Üç ölçü de iki dönemin **ilan fiyatı dağılımını** karşılaştırır "
         f"(ham fiyat, ₺; her dönemin o gün ilanda olan tüm ilanları, dönem başına ~{_navg} bin).",
-        f"**What the columns measure.** All four compare the **asking-price distribution** of two snapshots "
+        f"**What the columns measure.** All three compare the **asking-price distribution** of two snapshots "
         f"(raw price, ₺; every listing live on that day, ~{_navg}k per snapshot)."))
     A("")
     T([L("ölçü", "measure"), L("ne ölçer, nasıl okunur", "what it measures, how to read it")], [
@@ -1791,11 +1671,6 @@ def section_time(c):
            f"dönemde en fazla ne kadar farklı? {ks_max:.3f} = en ayrık noktada {ks_max * 100:.1f} puan fark.",
            f"The point where the two distributions differ most; 0–1. How different is \"the share of listings "
            f"below this price\" at worst? {ks_max:.3f} = {ks_max * 100:.1f} points apart at the widest point.")],
-        [L("**KS p**", "**KS p**"),
-         L(f"Bu fark şans eseri olabilir mi? 0.05'in altı → fark gerçek. Ama **büyüklüğünü söylemez**: "
-           f"~{_navg} bin ilanlık örneklemlerde çok küçük bir fark bile anlamlı çıkar.",
-           f"Could the difference be chance? Below 0.05 → it is real. But it says **nothing about size**: with "
-           f"samples of ~{_navg}k listings even a tiny difference comes out significant.")],
         ["**PSI**",
          L(f"Fark pratikte büyük mü? İlk dönemin fiyatları 10 dilime bölünür; ikinci dönemde bu dilimlerin "
            f"payı ne kadar kaymış? < {_safe:.2f} kayma yok · {_safe:.2f}–{_retrain:.2f} orta · > {_retrain:.2f} "
@@ -1809,61 +1684,32 @@ def section_time(c):
            "How many lira is the difference? How far prices must move on average to turn one snapshot's "
            "distribution into the other's. The only measure in lira, so the most directly readable one.")],
     ], "ll")
-    _m0, _m1 = (_snap[_long[0].split("→")[i]].month for i in (0, 1))   # en uzak ciftin iki ucu
-    _emd_s = [r_[5] for r_ in sorted(_overlap, key=lambda r_: _gap(r_[0]))]
-    _emd_rising = all(a_ <= b_ for a_, b_ in zip(_emd_s, _emd_s[1:]))
-    _overlap_short = min(_overlap, key=lambda r_: _gap(r_[0]))
-    if _overlap:
-        A(L(f"**Taramalar bağımsız örneklem değil.** Aynı ilan birkaç taramada birden görülüyor: ilk taramadaki "
-            f"ilanların {P(_overlap_max[1], lang)} kadarı ({_overlap_max[0]}) ikinci taramada da var. KS iki örneklemin "
-            f"bağımsız olduğunu varsayar, bu yüzden yukarıdaki p-değerleri geçerli değil. Aşağıda her çift için "
-            f"iki taramada da görülen ilanlar çıkarılıp KS yeniden hesaplandı. Bu ayrık karşılaştırma "
-            f"bağımsızlığı sağlar ama başka bir şeyi ölçer: ilk taramadan sonra kalkan ilanlarla sonradan gelen "
-            f"ilanları.",
-            f"**The snapshots are not independent samples.** The same listing shows up in several of them: up to "
-            f"{P(_overlap_max[1], lang)} of the first snapshot's listings ({_overlap_max[0]}) are still there in the second. "
-            f"KS assumes two independent samples, so the p-values above are not valid. Below, the listings seen in "
-            f"both snapshots are removed from each pair and KS is recomputed. That disjoint comparison restores "
-            f"independence but measures something else: listings that left after the first snapshot against "
-            f"listings that arrived later."))
-        A("")
-        T([L("dönem çifti", "snapshot pair"), L("ortak ilan (ilk taramanın payı)", "shared (share of first)"),
-           L("KS (ayrık)", "KS (disjoint)"), L("KS p (ayrık)", "KS p (disjoint)"),
-           L("EMD (ayrık, ₺)", "EMD (disjoint, ₺)")],
-          [[r[0], P(r[1], lang), f"{r[2]:.4f}", fp(r[3]), tlx(r[5], lang)] for r in _overlap], "lrrrr")
-    _disjoint_tr, _disjoint_en = (" (ayrık)", " (disjoint)") if _overlap else ("", "")
-    A(L(f"**Kayma tablosunun söylediği.** {number_word(n_sig, lang, cap=True)} çiftte ayrık KS p 0.05'in altında "
-        f"({number_word(n_tests, lang)} test için Holm düzeltmesiyle {number_word(n_holm, lang)}"
-        + (f": {_holm_c}) — bu çiftlerde taramalar arasında kalkan ilanlarla sonradan gelen ilanların fiyat "
-           f"dağılımı farklı. " if n_holm else "): düzeltmeden sonra anlamlı fark kalmıyor. ")
-        + "Tam taramalar arasındaki fark ise küçük: "
+    A(L(f"**Taramalar bağımsız örneklem değil.** Aynı ilan birkaç taramada birden görülüyor: ilk taramadaki "
+        f"ilanların {P(_shared_max[4], lang)} kadarı ({_shared_max[0]}) ikinci taramada da var. Anlamlılık testleri "
+        f"(ör. KS p-değeri) iki örneklemin bağımsız olduğunu varsayar; bu yüzden p-değeri verilmiyor, tablo farkın "
+        f"büyüklüğünü gösteriyor.",
+        f"**The snapshots are not independent samples.** The same listing shows up in several of them: up to "
+        f"{P(_shared_max[4], lang)} of the first snapshot's listings ({_shared_max[0]}) are still there in the second. "
+        f"Significance tests (e.g. a KS p-value) assume two independent samples, so no p-value is given; the table "
+        f"shows the size of the difference."))
+    A("")
+    A(L(f"**Kayma tablosunun söylediği.** Tam taramalar arasındaki fark küçük: "
         + (f"en yüksek PSI {psi_max:.4f}, \"kayma yok\" eşiğinin ({_safe:.2f}) {fraction_words(_safe / psi_max, lang)}. "
            if psi_max < _safe else f"en yüksek PSI {psi_max:.4f}, \"kayma yok\" eşiğinin ({_safe:.2f}) üstünde. ")
-        + f"EMD bunu liraya çeviriyor (tam taramalar, ortak ilanlar dahil): {number_word(_gap(_short[0]), lang)} günde "
+        + f"EMD bunu liraya çeviriyor: {number_word(_gap(_short[0]), lang)} günde "
         f"~₺{_emd_k(_short)} bin, {number_word(round(_gap(_long[0]) / 30), lang)} ayda ~₺{_emd_k(_long)} bin — medyan ilan "
         f"fiyatının ({tlm(v['median'])}) yaklaşık %{_long_pct:.0f} kadarı."
-        + (f" En yakın iki taramada ilkindeki ilanların {P(_overlap_short[1], lang)} kadarı ikincisinde de var, bu "
-           f"yüzden aralarındaki "
-           f"mesafe küçük çıkıyor." if _overlap_short[1] > 50 else "")
-        + (" Ayrık alt kümelerde EMD aralıkla düzenli büyümüyor." if not _emd_rising else
-           " Ayrık alt kümelerde de EMD aralıkla büyüyor."),
-        f"**What the drift table says.** {number_word(n_sig, lang, cap=True)} pairs have a disjoint KS p below 0.05 "
-        f"({number_word(n_holm, lang)} after a Holm correction for {number_word(n_tests, 'en')} tests"
-        + (f": {_holm_c}) — in those pairs the price distribution of listings that left between snapshots "
-           f"differs from that of listings that arrived later. " if n_holm else
-           "): after the correction no significant difference remains. ")
-        + "Between full snapshots the difference is small: "
+        + (f" En yakın iki taramada ilkindeki ilanların {P(_short[4], lang)} kadarı ikincisinde de var, bu yüzden "
+           f"aralarındaki mesafe küçük çıkıyor." if _short[4] > 50 else ""),
+        f"**What the drift table says.** Between full snapshots the difference is small: "
         + (f"the highest PSI is {psi_max:.4f}, about {_safe / psi_max:.0f}× below the \"no drift\" threshold "
            f"({_safe:.2f}). " if psi_max < _safe else
            f"the highest PSI, {psi_max:.4f}, is above the \"no drift\" threshold ({_safe:.2f}). ")
-        + f"EMD puts it in lira (full snapshots, shared listings included): ~₺{_emd_k(_short)}k over "
-        f"{number_word(_gap(_short[0]), lang)} days, ~₺{_emd_k(_long)}k over {number_word(round(_gap(_long[0]) / 30), lang)} months "
-        f"— about {_long_pct:.0f}% of the median asking price ({tlm(v['median'])})."
-        + (f" Of the listings in the first of the two closest snapshots, {P(_overlap_short[1], lang)} are still in "
-           f"the second, so their distance comes "
-           f"out small." if _overlap_short[1] > 50 else "")
-        + (" On the disjoint subsets EMD does not grow steadily with the gap." if not _emd_rising else
-           " On the disjoint subsets EMD grows with the gap as well.")))
+        + f"EMD puts it in lira: ~₺{_emd_k(_short)}k over {number_word(_gap(_short[0]), lang)} days, "
+        f"~₺{_emd_k(_long)}k over {number_word(round(_gap(_long[0]) / 30), lang)} months — about {_long_pct:.0f}% of the "
+        f"median asking price ({tlm(v['median'])})."
+        + (f" Of the listings in the first of the two closest snapshots, {P(_short[4], lang)} are still in the "
+           f"second, so their distance comes out small." if _short[4] > 50 else "")))
     A("")
     figs(13, 14)
 
@@ -1871,8 +1717,9 @@ def section_time(c):
     # Butun sayilar yukaridaki tablolardan (psi_max/_safe ve bt["insample"]/["per_snapshot"]).
     _pmin = min(r[1] for r in bt["per_snapshot"])
     _pmax = max(r[1] for r in bt["per_snapshot"])
-    # bt['single'] satiri: [egitim donemi, test donemi, MAPE, n]. AYNI egitim doneminden
-    # (ilk tarama) en yakin ve en uzak test ufku — saf zaman etkisini bu ikisi verir.
+    # bt['single'] satiri: [egitim donemi, test donemi, MAPE, n]. AYNI egitim doneminden (ilk tarama) en yakin ve
+    # en uzak test ufku. 2026-09-28 (sadelestirme listesi): bu fark "saf zaman etkisi" degil — test ilanlari,
+    # bilesim ve test dalgasi da degisiyor.
     _s0 = bt["single"][0][0]
     _same = [r for r in bt["single"] if r[0] == _s0]
     _bt0, _bt2 = _same[0], _same[-1]
@@ -1886,8 +1733,9 @@ def section_time(c):
     A(L(f"- **Kaymayı izle, modeli yeniden eğit.** Canlıda bir **kayma servisi** PSI · KS · EMD'yi izlesin ve "
         f"model yeni taramalarla yeniden eğitilsin. Sabit bir PSI eşiği yetmez: bugünkü en yüksek PSI "
         f"{psi_max:.4f}, ama yukarıdaki backtest'te aynı eğitim döneminden test ufku uzadıkça MAPE "
-        f"%{_bt0[2]:.2f} → %{_bt2[2]:.2f} artıyor. Dönem başına bağımsız OOF sabit kaldığına göre bu saf zaman "
-        f"etkisi: dağılım neredeyse kıpırdamazken bile model eskiyor.\n"
+        f"%{_bt0[2]:.2f} → %{_bt2[2]:.2f} artıyor. Bu artış yalnız zamana bağlanamaz: her ufkun test ilanları "
+        f"farklı, ilan bileşimi ve test taraması da değişiyor. Ama dağılım neredeyse kıpırdamazken bile eski "
+        f"taramayla eğitilmiş modelin hatası büyüyor.\n"
         f"- **Fiyat rejimini değiştiren gelişmeler.** Vergi/ÖTV düzenlemesi, teşvik, ithalat "
         f"kuralı, kur hareketi ya da ani piyasa anomalisi gibi dışsal olaylar kaymayı bir ölçüm "
         f"penceresi dolmadan yaratabilir; bunlar ayrıca **tetikleyici** sayılmalı ve "
@@ -1899,8 +1747,9 @@ def section_time(c):
         f"- **Watch drift, retrain the model.** Run a **drift service** in production that watches "
         f"PSI · KS · EMD, and retrain the model on new snapshots. A fixed PSI threshold is not enough: today's "
         f"highest PSI is {psi_max:.4f}, yet in the backtest above MAPE rises {_bt0[2]:.2f}% → {_bt2[2]:.2f}% as "
-        f"the test horizon lengthens from the same training snapshot. Per-snapshot standalone OOF is flat, so "
-        f"that is pure time: the model ages even while the distribution barely moves.\n"
+        f"the test horizon lengthens from the same training snapshot. That rise cannot be put on time alone: "
+        f"each horizon tests different listings, and the listing mix and the test snapshot change too. Still, "
+        f"a model trained on an old snapshot errs more even while the distribution barely moves.\n"
         f"- **Events that reset the pricing regime.** A tax or excise change, an incentive, an "
         f"import rule, a currency move or a sudden market anomaly can shift the distribution "
         f"before a monitoring window closes; treat those as **triggers** as well and plan "
@@ -2007,7 +1856,7 @@ def fmt_technical(v, F, lang, d):
         f"medyan) göre ortalama mutlak hatada (MAE) "
         f"**%{v['better_pct']:.0f}** daha iyi sonuç verir. Paylaşılan tüm metrikler, modelin "
         f"daha önce görmediği veriler üzerinden **5-fold out-of-fold** kurgusuyla "
-        f"hesaplanmıştır.",
+        f"hesaplanmıştır. Hedef ilan fiyatıdır, satış fiyatı değil: satış fiyatı pazarlıkla bundan ayrılır.",
         f"This report answers two questions: what sets a used-car price, and how accurately the "
         f"model can predict it. The analysis runs over **{num(v['n_dedup'], lang)}** "
         f"Turkish-plated BMW/Audi listings — from cleaning and leakage checks through controlled "
@@ -2015,7 +1864,8 @@ def fmt_technical(v, F, lang, d):
         f"**{v['model_mape']}%** on average (MAE: **{tl(v['model_mae'])}**, "
         f"R²: **{v['model_r2']}**), with a **{v['better_pct']:.0f}%** lower mean absolute error than the comparable median "
         f"(same model and year, falling back to a wider median when there is none). Every metric here is computed **5-fold out-of-fold**, on data the "
-        f"model never saw in training."))
+        f"model never saw in training. The target is the asking price, not the sale price: the sale price moves "
+        f"away from it through bargaining."))
     A("")
     for i, (_key, tr, en, fn) in enumerate(SECTIONS, 1):
         A(f"## {i}. {L(tr, en)}")

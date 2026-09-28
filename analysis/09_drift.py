@@ -1,17 +1,19 @@
 """
 09_drift.py
 EN: Technical report §9 — did the market move between snapshots? The price distribution of every live
-    snapshot (all listings on screen that day, not deduplicated) is compared with the first one and with every
-    other (KS, PSI, EMD). Consecutive snapshots share most listings and KS assumes independent samples, so each
-    pair is also measured on the disjoint part (shared listings removed). The market level shift is the median
+    snapshot (all listings on screen that day, not deduplicated) is compared with every other one by the size of
+    the difference (KS statistic, PSI, EMD) and the share of listings the two share. Snapshots share many listings
+    and a significance test assumes independent samples, so no p-value is published (2026-09-28, simplification
+    list; the disjoint-part test and its Holm correction went with it). The market level shift is the median
     change of (model, year) cell medians between the first and each later snapshot (cells with ≥3 listings on
     both sides; composition held fixed, no model). Plus the KDE/histogram points of the figures.
 TR: Teknik rapor §9 — piyasa taramalar arasında kaydı mı? Her canlı taramanın (o gün ekrandaki bütün ilanlar,
-    tekilleştirilmemiş) fiyat dağılımı ilk taramayla ve her biriyle karşılaştırılır (KS, PSI, EMD). Ardışık
-    taramalar ilanların çoğunu paylaşır ve KS bağımsız örneklem varsayar; bu yüzden her çift ayrık kısımda da
-    (ortak ilanlar çıkarılarak) ölçülür. Piyasa seviyesi kayması: ilk tarama ile her sonraki arasında (model,
-    yıl) hücre medyanlarının medyan değişimi (iki tarafta ≥3 ilanlı hücreler; bileşim sabit, model yok).
-    Ayrıca figürlerin KDE/histogram noktaları.
+    tekilleştirilmemiş) fiyat dağılımı her biriyle farkın büyüklüğüyle (KS istatistiği, PSI, EMD) ve iki
+    taramanın paylaştığı ilan payıyla karşılaştırılır. Taramalar ilanların çoğunu paylaşır, anlamlılık testi ise
+    bağımsız örneklem varsayar; bu yüzden p-değeri yayımlanmaz (2026-09-28, sadeleştirme listesi; ayrık kısım
+    testi ve Holm düzeltmesi onunla kalktı). Piyasa seviyesi kayması: ilk tarama ile her sonraki arasında
+    (model, yıl) hücre medyanlarının medyan değişimi (iki tarafta ≥3 ilanlı hücreler; bileşim sabit, model
+    yok). Ayrıca figürlerin KDE/histogram noktaları.
 Output / Çıktı: metrics/09_drift.json
 """
 
@@ -42,32 +44,31 @@ def psi(expected, actual, bins=PSI_BINS):
 
 def compare(a, b):
     """
-    EN: KS statistic and p, PSI and EMD (₺) between two price samples. Returns: [KS, p, PSI, EMD].
-    TR: İki fiyat örneklemi arasında KS istatistiği ve p, PSI ve EMD (₺). Döndürür: [KS, p, PSI, EMD].
+    EN: KS statistic, PSI and EMD (₺) between two price samples — sizes of the difference, no p-value.
+        Returns: [KS, PSI, EMD].
+    TR: İki fiyat örneklemi arasında KS istatistiği, PSI ve EMD (₺) — farkın büyüklükleri, p-değeri yok.
+        Döndürür: [KS, PSI, EMD].
     """
-    ks, p = stats.ks_2samp(a, b)
-    return [round(float(ks), 4), float(p), round(psi(a, b), 4), round(float(stats.wasserstein_distance(a, b)), 0)]
+    return [round(float(stats.ks_2samp(a, b).statistic), 4), round(psi(a, b), 4),
+            round(float(stats.wasserstein_distance(a, b)), 0)]
 
 
-def drift_tables(rows, snaps):
+def drift_pairs(rows, snaps):
     """
-    EN: Each later snapshot against the first; every ordered pair; and every pair on the disjoint part
-        (shared ad_ids removed) with the shared share. Returns: (table, all_pairs, overlap).
-    TR: Her sonraki tarama ilkine karşı; her sıralı çift; ve her çift ayrık kısımda (ortak ad_id'ler
-        çıkarılmış) ortak payıyla. Döndürür: (tablo, all_pairs, örtüşme).
+    EN: Every ordered pair of snapshots: compare() on the full snapshots and the share of the earlier snapshot's
+        listings (ad_id) still in the later one. Returns: [[MM-DD→MM-DD, KS, PSI, EMD, shared %], ...].
+    TR: Her sıralı tarama çifti: tam taramalarda compare() ve önceki taramanın ilanlarından (ad_id) sonrakinde de
+        olanların payı. Döndürür: [[AA-GG→AA-GG, KS, PSI, EMD, ortak %], ...].
     """
     by = {s: rows[rows["snap"] == s] for s in snaps}
-    table = [[s[5:]] + compare(by[snaps[0]]["price"].values, by[s]["price"].values) for s in snaps[1:]]
-    pairs, overlap = [], []
+    pairs = []
     for i in range(len(snaps)):
         for j in range(i + 1, len(snaps)):
             A, B = by[snaps[i]], by[snaps[j]]
-            name = snaps[i][5:] + "→" + snaps[j][5:]
-            pairs.append([name] + compare(A["price"].values, B["price"].values))
             shared = np.intersect1d(A["ad_id"].values, B["ad_id"].values)
-            a_d, b_d = A.loc[~A["ad_id"].isin(shared), "price"].values, B.loc[~B["ad_id"].isin(shared), "price"].values
-            overlap.append([name, round(len(shared) / len(A) * 100, 1)] + compare(a_d, b_d) + [int(len(a_d)), int(len(b_d))])
-    return table, pairs, overlap
+            pairs.append([snaps[i][5:] + "→" + snaps[j][5:]] + compare(A["price"].values, B["price"].values)
+                         + [round(len(shared) / len(A) * 100, 1)])
+    return pairs
 
 
 def density_points(rows, snaps, listing_price):
@@ -105,40 +106,17 @@ def cell_shift(rows, snaps, min_n):
     return out
 
 
-def holm(overlap, alpha=0.05):
-    """
-    EN: Significance of the disjoint pairs: how many have KS p < alpha, and how many survive a Holm correction
-        over all pairs (and which). Returns: {"n_sig", "n_tests", "n_holm", "pairs"}.
-    TR: Ayrık çiftlerin anlamlılığı: kaçında KS p < alpha ve bütün çiftler üzerinden Holm düzeltmesinden
-        kaçı (hangileri) geçiyor. Döndürür: {"n_sig", "n_tests", "n_holm", "pairs"}.
-    """
-    ps = sorted(r[3] for r in overlap)
-    n_holm = 0
-    for i, p in enumerate(ps):
-        if p > alpha / (len(ps) - i):
-            break
-        n_holm += 1
-    return {"n_sig": sum(1 for r in overlap if r[3] < alpha), "n_tests": len(ps), "n_holm": n_holm,
-            "pairs": [r[0] for r in sorted(overlap, key=lambda r: r[3])[:n_holm]]}
-
-
 # %% [3] Metrics assembly | Metrik derleme — naming and rounding only | yalnız adlandırma ve yuvarlama
 def to_metrics(res):
     """
-    EN: Published in the site tree (domain.drift), the report inputs (error_drivers.period_shift) and
-        report.drift_holm.
-    TR: Site ağacında (domain.drift), rapor girdilerinde (error_drivers.period_shift) ve report.drift_holm'da
-        yayımlanır.
+    EN: Published in the site tree (domain.drift) and the report inputs (error_drivers.period_shift).
+    TR: Site ağacında (domain.drift) ve rapor girdilerinde (error_drivers.period_shift) yayımlanır.
     """
     return {"domain": {"drift": {
-                "table": res["table"], "all_pairs": res["pairs"], "kde_raw": res["kde_raw"], "overlap": res["overlap"],
-                "overlap_note": ("[cift, ortak ilan %, KS_ayrik, p_ayrik, PSI_ayrik, EMD_ayrik, n_a, n_b]. "
-                                "Ayrik = iki taramada da gorulen ilanlar cikarildiktan sonra."),
-                "kde_log": res["kde_log"], "hist": res["hist"],
+                "all_pairs": res["pairs"], "kde_raw": res["kde_raw"], "kde_log": res["kde_log"], "hist": res["hist"],
                 "note": ("KS=maks dağılım farkı, PSI<0.10 güvenli/>0.25 retrain, EMD=kayma mesafesi (₺). "
                         "hist.edges = bin kenarları (39 bin, 40 kenar); hist[snapshot] = yükseklikler.")}},
-            "error_drivers": {"period_shift": {"min_cell_n": MIN_CELL, "live": res["shift"]}},
-            "report": {"drift_holm": res["holm"]}}
+            "error_drivers": {"period_shift": {"min_cell_n": MIN_CELL, "live": res["shift"]}}}
 
 
 # %% [4] Load | Yükle — the only cells that read files | dosya okuyan tek hücreler
@@ -147,11 +125,10 @@ listings = load_clean()
 
 # %% [5] Compute | Hesapla — look at the results here | sonuçlara burada bak
 snaps = sorted(listings["snap"].unique())
-table, pairs, overlap = drift_tables(rows, snaps)
+pairs = drift_pairs(rows, snaps)
 kde_raw, kde_log, hist = density_points(rows, snaps, listings["price"].values.astype(float))
-res = {"table": table, "pairs": pairs, "overlap": overlap, "kde_raw": kde_raw, "kde_log": kde_log, "hist": hist,
-       "shift": cell_shift(rows, snaps, MIN_CELL), "holm": holm(overlap)}
-print("max PSI:", max(p[3] for p in pairs), "· cell shift | hücre kayması:", res["shift"])
+res = {"pairs": pairs, "kde_raw": kde_raw, "kde_log": kde_log, "hist": hist, "shift": cell_shift(rows, snaps, MIN_CELL)}
+print("max PSI:", max(p[2] for p in pairs), "· cell shift | hücre kayması:", res["shift"])
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
 print("written | yazıldı:", save_metrics("09_drift", to_metrics(res)))

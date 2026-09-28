@@ -1,6 +1,6 @@
 # Used Car Market Analysis — Technical Report
 
-This report answers two questions: what sets a used-car price, and how accurately the model can predict it. The analysis runs over **29,988** Turkish-plated BMW/Audi listings — from cleaning and leakage checks through controlled price effects, market structure, model comparison and time tests. LightGBM is off by **6.49%** on average (MAE: **₺110K**, R²: **0.9745**), with a **43%** lower mean absolute error than the comparable median (same model and year, falling back to a wider median when there is none). Every metric here is computed **5-fold out-of-fold**, on data the model never saw in training.
+This report answers two questions: what sets a used-car price, and how accurately the model can predict it. The analysis runs over **29,988** Turkish-plated BMW/Audi listings — from cleaning and leakage checks through controlled price effects, market structure, model comparison and time tests. LightGBM is off by **6.49%** on average (MAE: **₺110K**, R²: **0.9745**), with a **43%** lower mean absolute error than the comparable median (same model and year, falling back to a wider median when there is none). Every metric here is computed **5-fold out-of-fold**, on data the model never saw in training. The target is the asking price, not the sale price: the sale price moves away from it through bargaining.
 
 ## 1. Data cleaning and leakage detection
 
@@ -150,18 +150,7 @@ Missingness is not an issue in the 25 features that remain: the worst is `kb_dri
 
 ## 3. Redundancy, dependence and brand
 
-Cramér's V gives association strength (symmetric); Theil's U its direction (asymmetric). The asymmetry is the finding: `model` almost fully determines `brand`, `segment`, `series` (U ≥ 0.99) but not vice-versa — `series` is a coarsened view of `model`, not independent information. For the other columns U is lower; the lowest is Hood State (0.10).
-
-**Why read against a floor?** `model` has 745 distinct values and most of them have only a few listings. In a group of a few listings another field's values can match by chance (e.g. both of two listings have an original hood), and the measure counts that as "model determines the hood". So any field paired with `model` looks high even without a real relationship: both measures are **biased upward** at high cardinality. To see how large that inflation is, the `model` column was shuffled at random across listings and the measure recomputed; shuffling keeps every value's count but destroys any real relationship. The mean of 5 shuffles is the permutation floor: ~0.16 on Cramér's V and 0.02–0.15 on Theil's U, depending on the field. A value in the `model` column means only as much as it rises above that floor:
-
-- Hood State: Theil's U 0.10, floor 0.04.
-- Roof State: Cramér's V 0.18, floor 0.16; almost all of the gap is chance.
-
-Theil's U giving direction does not remove this inflation; it has its own floor. The damage counts and the engine fields (hp/cc) are numeric, so they are absent from these matrices — the correlation table below covers them.
-
-![Theil's U (row | column): how much the column pins down the row](figures/en-17-theils-u.png)
-
-![Cramér's V (symmetric association)](figures/en-18-cramers-v.png)
+Theil's U(a | b) gives how much of a's uncertainty is gone once b is known (0–1), and it is directional. The asymmetry is the finding: `model` almost fully determines `brand`, `segment`, `series` (U ≥ 0.99) but not vice-versa — `series` is a coarsened view of `model`, not independent information.
 
 ![Series × segment — median price (₺M); 3 series span more than one segment · • = single listing](figures/en-19-series-segment.png)
 
@@ -176,9 +165,7 @@ Theil's U giving direction does not remove this inflation; it has its own floor.
 
 Model determines series at 1.00; series determines model only at 0.39. Brand is fully readable from either model or series → brand carries no separate information (the brand ablation below measures the same thing).
 
-Correlation among numeric features — the numeric counterpart to the categorical dependence above. |r|>0.5 pairs are flagged for collinearity. The VIF table in §6 only covers the hedonic model's terms; door and fender paint enter there as the total painted-part count, not separately.
-
-![Pearson correlation](figures/en-20-pearson.png)
+Spearman correlation (rank association) among the numeric features, in the map below. Pairs with |ρ| > 0.5: Age (years)–Mileage 0.74, Power (hp)–Engine (cc) 0.61, Door Painted–Fender Painted 0.60. Collinearity in the hedonic model is measured with VIF in §6; door and fender paint enter there as the total painted-part count, not separately.
 
 ![Spearman correlation](figures/en-21-spearman.png)
 
@@ -189,14 +176,6 @@ The raw `gb_segment` is not used, and missingness is not the only reason: the fe
 29,832 listings take their segment straight from the series. In some families (`M Serisi`, `RS`, `S`, `i Serisi`) the segment is resolved from the model name, not the series — e.g. M3 → 3 Series, S3 → A3 — 156 listings in all. So segment is a function of (series, model), not series alone: U(segment | series) = 0.997, not exactly 1. If any series or model cannot be resolved the generator stops; there is no silent default segment.
 
 The derived label differs from the feed on 404 of the 21,723 listings that have a raw segment (1.9%); 215 of those are the deliberate G fix, and the next largest source is 95 listings the feed calls E and the derivation calls D.
-
-### High-correlation pairs (|r| > 0.5)
-
-| feature A | feature B | Pearson r |
-|---|---|---:|
-| Age (years) | Mileage | 0.737 |
-| Power (hp) | Engine (cc) | 0.730 |
-| Door Painted | Fender Painted | 0.670 |
 
 ### Brand ablation
 
@@ -413,6 +392,8 @@ Association; not verified listing by listing. Information absent from the form (
 - **Audi 4.2 FSI Quattro R-tronic (R8) · 2008:** The only R8 in the data. Its model name on the form is just "4.2 FSI Quattro R-tronic"; the S5 4.2 FSI Quattros sharing that engine name have a median of ₺2.62M (4 listings), and the model's estimate is close to that. With no comparable, the model priced a supercar like the similarly named S5.
 - **BMW 750i Long · 2007:** There are 2 listings under this name; the other is a ₺5.30M converted 2009 car. This listing is in line with same-year 730ds (15 listings, median ₺1.18M) and its text says well-maintained with no pending costs. The listing is priced right and the model is wrong: lacking a comparable, it is probably pulled up by the name's other, expensive listing.
 
+Predictions are OOF; the listing id (`ad_id`) is deliberately not published.
+
 ![Residual% vs Predicted](figures/en-09-residual.png)
 
 ![Fewer comparables, larger error — median error per model](figures/en-11-n-vs-error.png)
@@ -431,9 +412,7 @@ Each point is a model; the y axis is the median error across that model's listin
 
 ![Median error by price quartile (%)](figures/en-10-quartile-error.png)
 
-In lira the picture changes: 39.7% of total lira error sits in the most expensive quartile and 17.5% in the cheapest; mean absolute error ₺176K against ₺77K. Grouped by the actual price the mean bias (predicted − actual) is +₺25K in the cheapest quartile and −₺38K in the most expensive; that is regression to the mean, which any noisy prediction shows when grouped by the true value. Grouped by the predicted price (the only thing a pricing tool knows) the mean bias ranges from −₺12K to −₺3K (right panel).
-
-![Lira error by price quartile](figures/en-27-quartile-lira.png)
+In lira the picture changes: 39.7% of total lira error sits in the most expensive quartile and 17.5% in the cheapest; mean absolute error ₺176K against ₺77K.
 
 ![How often the 90% range held (target 90%)](figures/en-12-coverage.png)
 
@@ -446,45 +425,11 @@ In lira the picture changes: 39.7% of total lira error sits in the most expensiv
 
 **Note:** The price quartiles are cut on actual values. Overall coverage is 90.0% by construction; only Q1 falls below the target. Cutting the quartiles on the predicted price gives 81.0% coverage in the cheapest one — the finding does not depend on the grouping.
 
-### Best 5 predictions
+### The largest errors
 
-| model | age | km | actual | OOF pred. | error |
-|---|---:|---:|---:|---:|---:|
-| 520d Premium | 14 | 300,000 | ₺1,480,000 | ₺1,480,003 | 0.0% |
-| 520i Luxury Line | 4 | 96,000 | ₺3,680,000 | ₺3,680,013 | 0.0% |
-| 520i Premium | 11 | 200,000 | ₺1,595,000 | ₺1,594,991 | 0.0% |
-| A4 Sedan 40 TDI Advanced | 6 | 149,000 | ₺2,680,000 | ₺2,680,017 | 0.0% |
-| 116i Comfort | 17 | 174,000 | ₺718,000 | ₺717,993 | 0.0% |
+**Listings with an inconsistent engine value.** 15 listings (0.05%) have a power or displacement more than 1.5× off their own model's median: the catalogue match collapsed and the model is pricing an engine the car does not have; their median error is 12.8% against 4.7% for the rest. The check only works on models with at least 5 listings: the 632 listings (2.11%) of the 307 smaller models are its blind spot — exactly where comparables are scarcest.
 
-Across 29,988 listings a few predictions landing within a few lira of the truth is expected by chance alone; this table shows the zero end of the error distribution, not typical quality.
-
-### Six largest percentage errors
-
-| model | age | km | actual | OOF pred. | error |
-|---|---:|---:|---:|---:|---:|
-| A4 Sedan 2.0 TDI | 20 | 355,000 | ₺644,000 | ₺1,790,840 | 178.1% |
-| 750i Long | 19 | 271,000 | ₺1,190,000 | ₺2,831,842 | 138.0% |
-| 745i Long | 21 | 280,000 | ₺885,000 | ₺1,921,635 | 117.1% |
-| 1.8 1.8 T | 20 | 96,000 | ₺950,000 | ₺1,836,127 | 93.3% |
-| M2 | 10 | 153,000 | ₺1,650,000 | ₺3,130,227 | 89.7% |
-| 316Ci | 21 | 234,500 | ₺345,000 | ₺621,147 | 80.0% |
-
-In all six of the worst the model says **more** than the actual price; median age 20. That direction comes largely from the ranking itself: when the model says too little the percentage error cannot exceed 100% (the highest here is 56.5%), while the top 10 of this list needs 72.7%. The lira ranking follows below.
-
-**In 1 the cause is the data:** engine power or displacement deviates more than 1.5× from the median of its comparable group — the catalogue match collapsed and the model is pricing an engine the car does not have. There are 15 such listings (0.05%) and they are expensive: their median error is 12.8% against 4.7% for the rest. The check only works on models with at least 5 listings: the 632 listings (2.11%) of the 307 smaller models are its blind spot — exactly where comparables are scarcest. **In 4 the cause is having no comparables:** at most two listings of that model exist. The remaining one fits neither explanation. All predictions are OOF; the listing id (`ad_id`) is deliberately not published.
-
-### Six largest errors in lira
-
-| model | age | km | actual | OOF pred. | pred. − actual |
-|---|---:|---:|---:|---:|---:|
-| M3 | 17 | 182,980 | ₺5,850,000 | ₺2,547,649 | −₺3.30M |
-| M4 | 12 | 65,000 | ₺6,500,000 | ₺3,285,609 | −₺3.21M |
-| M3 | 12 | 50,000 | ₺5,999,000 | ₺2,785,950 | −₺3.21M |
-| 520d xDrive M Sport | 8 | 88,200 | ₺6,050,000 | ₺3,203,694 | −₺2.85M |
-| M5 | 20 | 97,172 | ₺5,669,000 | ₺3,069,790 | −₺2.60M |
-| M6 | 19 | 169,000 | ₺5,750,000 | ₺3,246,669 | −₺2.50M |
-
-In lira the list flips: in 6 of the top six the model says **too little**. Of the top 100 lira errors 73 are under- and 27 over-predictions; 91 sit in the most expensive quartile. The series that take their segment from the model name (M Serisi, RS, S, i Serisi) are 0.52% of the data but 23 of the top 100 — 44× their share of the data. The price cap (₺6.50M) also truncates the range the model learns at this end; under-prediction on the most expensive listings should be read with that limit in mind.
+**In lira the largest errors are under-predictions.** Of the top 100 lira errors 73 are under- and 27 over-predictions; 91 sit in the most expensive quartile. The series that take their segment from the model name (M Serisi, RS, S, i Serisi) are 0.52% of the data but 23 of the top 100 — 44× their share of the data. The price cap (₺6.50M) also truncates the range the model learns at this end; under-prediction on the most expensive listings should be read with that limit in mind.
 
 ![Error in lira — predicted − actual](figures/en-28-residual-lira.png)
 
@@ -507,16 +452,16 @@ The two columns answer two different questions. **Live market**: how the median 
 
 | single: train → test | MAPE | n | cumulative: train → test | MAPE | n |
 |---|---:|---:|---|---:|---:|
-| 01-18 → 01-27 | 6.53% | 2,960 | ≤01-18 → 01-27 | 6.53% | 2,960 |
-| 01-18 → 03-21 | 6.81% | 8,182 | ≤01-18 → 03-21 | 6.81% | 8,182 |
-| 01-18 → 06-27 | 7.56% | 10,529 | ≤01-18 → 06-27 | 7.56% | 10,529 |
+| 01-18 → 01-27 | 6.53% | 2,960 | ≤01-18 → 01-27 | = single | = |
+| 01-18 → 03-21 | 6.81% | 8,182 | ≤01-18 → 03-21 | = single | = |
+| 01-18 → 06-27 | 7.56% | 10,529 | ≤01-18 → 06-27 | = single | = |
 | 01-27 → 03-21 | 6.59% | 7,413 | ≤01-27 → 03-21 | 6.57% | 7,238 |
 | 01-27 → 06-27 | 7.30% | 10,313 | ≤01-27 → 06-27 | 7.36% | 10,257 |
 | 03-21 → 06-27 | 7.06% | 9,099 | ≤03-21 → 06-27 | 6.94% | 8,889 |
 
 Single = train on one snapshot, predict a later one. Cumulative = train on every snapshot up to t. The test set holds only `ad_id`s never seen in training (leak-free); **n** is the number of those listings and MAPE is over them. E.g. of the 11,254 listings in the 01-27 snapshot, 8,294 were already live in the 01-18 snapshot; the other 2,960 were tested. Cumulative drops every listing seen in any snapshot up to t, so its n is at most the single n. From the same training snapshot, error grows as the test horizon lengthens.
 
-Both arms of this table use a lighter setup than the main model: model and series names enter as raw categoricals without TF-IDF/SVD, 800 trees, no early stopping. Compare rows with each other, not the absolute level with the headline MAPE. The first three rows of the cumulative arm are the same experiment as the single arm (accumulating up to the first snapshot is one snapshot); they are not a second, independent measurement.
+Both arms of this table use a lighter setup than the main model: model and series names enter as raw categoricals without TF-IDF/SVD, 800 trees, no early stopping. Compare rows with each other, not the absolute level with the headline MAPE. The cumulative cells marked "=" are the same experiment as the single arm (accumulating up to the first snapshot is one snapshot).
 
 ### Per-snapshot OOF
 
@@ -533,36 +478,26 @@ This table is not temporal: every row is plain 5-fold OOF with no new-listings-o
 
 ### Distribution drift
 
-| snapshot pair | KS | KS p | PSI | EMD (₺) |
+| snapshot pair | shared (share of first) | KS | PSI | EMD (₺) |
 |---|---:|---:|---:|---:|
-| 01-18→01-27 | 0.0055 | 0.996 | 0.0004 | ₺10,109 |
-| 01-18→03-21 | 0.0173 | 0.070 | 0.0015 | ₺20,560 |
-| 01-18→06-27 | 0.0309 | <0.001 | 0.0049 | ₺48,059 |
-| 01-27→03-21 | 0.0161 | 0.104 | 0.0011 | ₺15,717 |
-| 01-27→06-27 | 0.0301 | <0.001 | 0.0038 | ₺39,115 |
-| 03-21→06-27 | 0.0157 | 0.118 | 0.0017 | ₺28,620 |
+| 01-18→01-27 | 76.1% | 0.0055 | 0.0004 | ₺10,109 |
+| 01-18→03-21 | 30.2% | 0.0173 | 0.0015 | ₺20,560 |
+| 01-18→06-27 | 9.1% | 0.0309 | 0.0049 | ₺48,059 |
+| 01-27→03-21 | 36.1% | 0.0161 | 0.0011 | ₺15,717 |
+| 01-27→06-27 | 10.8% | 0.0301 | 0.0038 | ₺39,115 |
+| 03-21→06-27 | 21.1% | 0.0157 | 0.0017 | ₺28,620 |
 
-**What the columns measure.** All four compare the **asking-price distribution** of two snapshots (raw price, ₺; every listing live on that day, ~11k per snapshot).
+**What the columns measure.** All three compare the **asking-price distribution** of two snapshots (raw price, ₺; every listing live on that day, ~11k per snapshot).
 
 | measure | what it measures, how to read it |
 |---|---|
 | **KS** | The point where the two distributions differ most; 0–1. How different is "the share of listings below this price" at worst? 0.031 = 3.1 points apart at the widest point. |
-| **KS p** | Could the difference be chance? Below 0.05 → it is real. But it says **nothing about size**: with samples of ~11k listings even a tiny difference comes out significant. |
 | **PSI** | Is the difference practically large? The first snapshot's prices are cut into 10 bins; how much did those bin shares move in the second? < 0.10 no drift · 0.10–0.25 moderate · > 0.25 large. |
 | **EMD (₺)** | How many lira is the difference? How far prices must move on average to turn one snapshot's distribution into the other's. The only measure in lira, so the most directly readable one. |
 
-**The snapshots are not independent samples.** The same listing shows up in several of them: up to 76.1% of the first snapshot's listings (01-18→01-27) are still there in the second. KS assumes two independent samples, so the p-values above are not valid. Below, the listings seen in both snapshots are removed from each pair and KS is recomputed. That disjoint comparison restores independence but measures something else: listings that left after the first snapshot against listings that arrived later.
+**The snapshots are not independent samples.** The same listing shows up in several of them: up to 76.1% of the first snapshot's listings (01-18→01-27) are still there in the second. Significance tests (e.g. a KS p-value) assume two independent samples, so no p-value is given; the table shows the size of the difference.
 
-| snapshot pair | shared (share of first) | KS (disjoint) | KS p (disjoint) | EMD (disjoint, ₺) |
-|---|---:|---:|---:|---:|
-| 01-18→01-27 | 76.1% | 0.0161 | 0.860 | ₺35,324 |
-| 01-18→03-21 | 30.2% | 0.0229 | 0.031 | ₺26,389 |
-| 01-18→06-27 | 9.1% | 0.0334 | <0.001 | ₺51,115 |
-| 01-27→03-21 | 36.1% | 0.0247 | 0.022 | ₺24,206 |
-| 01-27→06-27 | 10.8% | 0.0331 | <0.001 | ₺42,804 |
-| 03-21→06-27 | 21.1% | 0.0210 | 0.036 | ₺37,666 |
-
-**What the drift table says.** Five pairs have a disjoint KS p below 0.05 (two after a Holm correction for six tests: 01-18→06-27, 01-27→06-27) — in those pairs the price distribution of listings that left between snapshots differs from that of listings that arrived later. Between full snapshots the difference is small: the highest PSI is 0.0049, about 20× below the "no drift" threshold (0.10). EMD puts it in lira (full snapshots, shared listings included): ~₺10k over nine days, ~₺48k over five months — about 3% of the median asking price (₺1.55M). Of the listings in the first of the two closest snapshots, 76.1% are still in the second, so their distance comes out small. On the disjoint subsets EMD does not grow steadily with the gap.
+**What the drift table says.** Between full snapshots the difference is small: the highest PSI is 0.0049, about 20× below the "no drift" threshold (0.10). EMD puts it in lira: ~₺10k over nine days, ~₺48k over five months — about 3% of the median asking price (₺1.55M). Of the listings in the first of the two closest snapshots, 76.1% are still in the second, so their distance comes out small.
 
 ![Price distribution by snapshot](figures/en-13-drift-hist.png)
 
@@ -570,7 +505,7 @@ This table is not temporal: every row is plain 5-fold OOF with no new-listings-o
 
 ### When to retrain
 
-- **Watch drift, retrain the model.** Run a **drift service** in production that watches PSI · KS · EMD, and retrain the model on new snapshots. A fixed PSI threshold is not enough: today's highest PSI is 0.0049, yet in the backtest above MAPE rises 6.53% → 7.56% as the test horizon lengthens from the same training snapshot. Per-snapshot standalone OOF is flat, so that is pure time: the model ages even while the distribution barely moves.
+- **Watch drift, retrain the model.** Run a **drift service** in production that watches PSI · KS · EMD, and retrain the model on new snapshots. A fixed PSI threshold is not enough: today's highest PSI is 0.0049, yet in the backtest above MAPE rises 6.53% → 7.56% as the test horizon lengthens from the same training snapshot. That rise cannot be put on time alone: each horizon tests different listings, and the listing mix and the test snapshot change too. Still, a model trained on an old snapshot errs more even while the distribution barely moves.
 - **Events that reset the pricing regime.** A tax or excise change, an incentive, an import rule, a currency move or a sudden market anomaly can shift the distribution before a monitoring window closes; treat those as **triggers** as well and plan retraining around them.
 - **Accumulated data pays.** Per-snapshot OOF stays flat at 6.99%–7.25% while the cumulative figure falls 7.07% → 6.53% (n 10,901 → 29,988). Retrain by **adding** snapshots, not by discarding the old ones.
 

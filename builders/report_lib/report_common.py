@@ -38,12 +38,12 @@ RESID_VIEW = 40
 # EN: every path the report text reads; a missing one stops the build instead of silently dropping a paragraph
 # TR: rapor metninin okuduğu her yol; eksik olan paragrafı sessizce düşürmek yerine derlemeyi durdurur
 REQUIRED = [
-    "domain.drift.all_pairs", "domain.drift.overlap", "domain.drift.note",
+    "domain.drift.all_pairs", "domain.drift.note",
     "domain.hedonic_reliability.center", "domain.brand_ablation.validation",
     "methodology.column_accounting", "methodology.kb_gb_twins", "domain.hedonic_reliability.with_model",
     "domain.segment_ladder", "domain.model_year_median.ladder", "domain.price_dist.p10", "domain.price_dist.p90",
     "domain.final_results.training.target", "domain.shap.lightgbm_tfidf_svd", "domain.kmeans",
-    "methodology.cramers_null", "methodology.theils_null", "methodology.column_missing",
+    "methodology.theils_matrix", "methodology.column_missing",
     "methodology.backtest.per_snapshot", "methodology.backtest.insample", "methodology.backtest.protocol",
     "methodology.systematic_missing.systematic_groups", "methodology.systematic_missing.note",
     "methodology.pca_axes", "meta.repro", "meta.brands", "column_labels"] + [f"error_drivers.{p_}" for p_ in [
@@ -53,7 +53,7 @@ REQUIRED = [
     "by_model_year_n", "by_segment_FS", "by_age", "by_snapshot", "raw_columns", "examples",
     "engine_rule.engine_cc", "engine_rule.power_hp", "unspecified.structure", "live_vs_gone"]] + [
     f"report.{p_}" for p_ in ["q_bounds", "model_r2_log", "err_bands", "conformal_q", "conformal_all",
-                              "conformal_by_pred", "drift_holm", "text_ablation"]]
+                              "conformal_by_pred", "text_ablation"]]
 
 
 def write_md(path, text):
@@ -244,7 +244,7 @@ def derive(d):
     # not bicimi degisirse sessizce varsayilana dusmez, durur.
     _th = re.search(r"PSI<([\d.]+).*?>([\d.]+)", dom["drift"]["note"])
     assert _th, "drift notunda PSI esikleri bulunamadi"
-    v["psi_max"] = max(r[3] for r in dom["drift"]["all_pairs"])
+    v["psi_max"] = max(r[2] for r in dom["drift"]["all_pairs"])    # [pair, KS, PSI, EMD, shared %]
     v["psi_safe"], v["psi_retrain"] = float(_th.group(1)), float(_th.group(2))
     v["bt_insample"] = met["backtest"]["insample"]
     v["lofo"] = met["lofo"]                      # karar notu "farki kapatan" siralamasi (2026-09-23)
@@ -651,23 +651,7 @@ def build_figures(d, v, lang, only=None):
         reg(16, bar(f"{p}-16-missing", [_col16(r[0]) for r in rows], [r[1] for r in rows], t,
                     L("eksik %", "missing %"), horizontal=True, color=[_member_color.get(r[0], "#b8bec8") for r in rows]), t)
 
-    # 17 Theil's U  [TEKNIK]
-    if want(17):
-        tm = met["theils_matrix"]
-        t = L("Theil's U (satır | sütun): sütun bilinince satır ne kadar belli",
-              "Theil's U (row | column): how much the column pins down the row")
-        _tl = [col(d, k, lang) for k in tm["labels"]]
-        reg(17, heatmap(f"{p}-17-theils-u", _tl, _tl, tm["matrix"], t,
-                        0, 1, cmap="Blues"), t)
-
-    # 18 Cramer's V  [TEKNIK]
-    if want(18):
-        cm = met["cramers_matrix"]
-        t = L("Cramér's V (simetrik ilişki gücü)", "Cramér's V (symmetric association)")
-        _cl = [col(d, k, lang) for k in cm["labels"]]
-        reg(18, heatmap(f"{p}-18-cramers-v", _cl, _cl, cm["matrix"], t,
-                        0, 1, cmap="Blues"), t)
-
+    # 17 Theil's U ve 18 Cramer's V matrisleri 2026-09-28'de cikti (sadelestirme listesi); numaralar bos kalir.
     # 19 seri x segment  [TEKNIK]
     if want(19):
         rows = dom["series_segment_matrix"]
@@ -689,14 +673,12 @@ def build_figures(d, v, lang, only=None):
         _f19 = heatmap(f"{p}-19-series-segment", series, segs, M, t, cmap="YlGnBu", marks=_single_cells)
         reg(19, _f19, t)
 
-    # 20/21 Pearson + Spearman  [TEKNIK]
-    if want(20) or want(21):
+    # 21 Spearman  [TEKNIK] — 20 Pearson 2026-09-28'de cikti (sadelestirme listesi).
+    if want(21):
         nc = dom["numeric_correlation"]
         _nl = [col(d, k, lang) for k in nc["labels"]]
-        for no, key, nm in [(20, "pearson", L("Pearson korelasyonu", "Pearson correlation")),
-                            (21, "spearman", L("Spearman korelasyonu", "Spearman correlation"))]:
-            reg(no, heatmap(f"{p}-{no}-{key}", _nl, _nl, nc[key],
-                            nm, -1, 1, cmap="RdYlGn"), nm)
+        nm = L("Spearman korelasyonu", "Spearman correlation")
+        reg(21, heatmap(f"{p}-21-spearman", _nl, _nl, nc["spearman"], nm, -1, 1, cmap="RdYlGn"), nm)
 
     # 22/23 PCA  [TEKNIK]
     if want(22) or want(23):
@@ -899,7 +881,8 @@ def build_figures(d, v, lang, only=None):
 # ============================================================================
 BUSINESS_FIGS = [0, 5, 6, 7, 10, 12, 15, 27]        # 2 (segment medyani) 2026-09-22'de cikti
 # 10/12/15 iki raporda da: karar notunda karar icin, teknik raporda kanit olarak (bilincli tekrar).
-TECHNICAL_FIGS = [1, 3, 4, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
+# 2026-09-28 (sadelestirme listesi): 17/18/20 cikti; 27 yalniz karar notunda.
+TECHNICAL_FIGS = [1, 3, 4, 8, 9, 10, 11, 12, 13, 14, 15, 16, 19, 21, 22, 23, 24, 25, 26, 28, 29, 30]
 
 
 def num(x, lang="tr"):

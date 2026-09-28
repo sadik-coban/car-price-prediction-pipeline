@@ -2,15 +2,15 @@
 08_large_errors.py
 EN: Technical report §8 — where the large errors (|OOF residual| > 20%) come from. Rates by the number of
     comparables (same model + year), by model, by age (every age and every cut point — 18 is not a hard
-    break), by segment F/S, by snapshot and for listings still live vs gone; the worst listings ranked by lira
-    (a percentage ranking can never show an under-prediction beyond 100%); engine specs that break away from
+    break), by segment F/S, by snapshot and for listings still live vs gone; where the 100 largest lira errors
+    sit (under/over, top price quartile, performance families); engine specs that break away from
     their own model's median (a catalogue mismatch prices an engine the car does not have); and three example
     listings with the comparisons their report notes rest on, computed on every run (EXAMPLE_PEERS). Needs
     07_model_comparison's OOF artefact.
 TR: Teknik rapor §8 — büyük hatalar (|OOF artık| > %20) nereden geliyor. Emsal sayısına (aynı model + yıl),
     modele, yaşa (her yaş ve her kesim noktası — 18 sert bir kırılma değil), F/S segmentine, taramaya ve hâlâ
-    yayında olan/kalkan ilana göre oranlar; lira ile sıralanan en kötü ilanlar (yüzde sıralaması %100'ü aşan
-    düşük tahmini hiç gösteremez); kendi modelinin medyanından kopan motor değerleri (katalog uyuşmazlığı
+    yayında olan/kalkan ilana göre oranlar; en büyük 100 lira hatasının nerede toplandığı (düşük/fazla, en
+    pahalı çeyrek, performans aileleri); kendi modelinin medyanından kopan motor değerleri (katalog uyuşmazlığı
     aracın sahip olmadığı bir motoru fiyatlar); ve rapor notlarının dayandığı karşılaştırmalarıyla üç örnek ilan,
     her koşuda hesaplanır (EXAMPLE_PEERS). 07_model_comparison'ın OOF artefaktına ihtiyaç duyar.
 Output / Çıktı: metrics/08_large_errors.json
@@ -40,7 +40,7 @@ EXAMPLE_PEERS = {("4.2 FSI Quattro R-tronic", 2008, 4_690_000): {"model": "S5 4.
 BRAND = {"bmw": "BMW", "audi": "Audi"}
 COUNT_BINS = [("1", 1, 1), ("2–4", 2, 4), ("5–19", 5, 19), ("20–99", 20, 99), ("100+", 100, 10**9)]
 OLD_AGE, FIRST_CUT = 18, 8
-TOP_N_LIRA, APE_CAP = 100, 500
+TOP_N_LIRA = 100
 SPEC_MIN_GROUP, SPEC_RATIO = 5, 1.5
 
 
@@ -114,44 +114,30 @@ def by_age(age, big):
     return each, cuts
 
 
-def lira_ranking(listings, price, pred, resid, path):
+def lira_ranking(listings, price, pred, path):
     """
-    EN: The worst listings by lira error (prediction − actual) next to the % ranking: the six worst rows, and
-        in the top 100 how many are under/over-predicted, in the top price quartile or in a performance family.
-        Returns: (dict, top-10 % error rows).
-    TR: Lira hatasına (tahmin − gerçek) göre en kötü ilanlar ve yüzde sıralaması: en kötü altı satır; ilk
-        100'de kaçı düşük/fazla tahmin, en pahalı çeyrekte ya da performans ailesinde.
-        Döndürür: (sözlük, % hatası en büyük 10 satır).
+    EN: Where the largest lira errors (|prediction − actual|) sit: of the top 100, how many are under- or
+        over-predicted, in the top price quartile or in a performance family (segment from the model name).
+    TR: En büyük lira hataları (|tahmin − gerçek|) nerede: ilk 100'ün kaçı düşük ya da fazla tahmin, en pahalı
+        fiyat çeyreğinde ya da bir performans ailesinde (segmenti model adından).
     """
-    age = pd.to_numeric(listings["vehicle_age"], errors="coerce").values.astype(float)
-    km = pd.to_numeric(listings["gb_mileage"], errors="coerce").values
     dev = pred - price
-    ape = np.minimum(np.abs(resid), APE_CAP)
-    order = np.argsort(-np.abs(dev), kind="stable")
-    ape_top = pd.Series(ape).nlargest(10).index.values
-    top = order[:TOP_N_LIRA]
+    top = np.argsort(-np.abs(dev), kind="stable")[:TOP_N_LIRA]
     q75 = float(np.quantile(price, .75))
-    row = lambda i: [str(listings["model"].iat[i]), int(age[i]), None if np.isnan(km[i]) else int(km[i]),   # noqa: E731
-                     float(price[i]), round(float(pred[i]), 0), round(float(-resid[i]), 1), round(float(dev[i]), 0),
-                     str(path[i])]
     perf = path != SR.PATH_SERIES_MAP
-    return {"worst": [row(i) for i in order[:6]], "top_n": TOP_N_LIRA,
-            "top_n_under": int((dev[top] < 0).sum()), "top_n_over": int((dev[top] > 0).sum()),
+    return {"top_n": TOP_N_LIRA, "top_n_under": int((dev[top] < 0).sum()), "top_n_over": int((dev[top] > 0).sum()),
             "top_n_q4": int((price[top] >= q75).sum()), "top_n_perf": int(perf[top].sum()),
             "perf_overall_pct": round(100 * float(perf.mean()), 2),
-            "ape_top10_under": int((dev[ape_top] < 0).sum()), "ape_top10_threshold": round(float(ape[ape_top[-1]]), 1),
-            "under_ape_max": round(float(np.abs(resid[dev < 0]).max()), 1),
-            "perf_series": sorted({str(x) for x in listings.loc[perf, "series"]})}, ape_top
+            "perf_series": sorted({str(x) for x in listings.loc[perf, "series"]})}
 
 
-def spec_outliers(listings, resid, big):
+def spec_outliers(listings, resid):
     """
     EN: Listings whose power or size is more than 1.5× off the median of their own model (models with ≥5
-        listings); their error against the rest. Models with <5 listings cannot be flagged at all — that blind
-        spot is counted. Returns: (dict, mask).
+        listings); their median error against the rest. Models with <5 listings cannot be flagged at all — that
+        blind spot is counted.
     TR: Gücü ya da hacmi kendi modelinin medyanından 1.5 kattan fazla sapan ilanlar (≥5 ilanlı modeller);
-        hataları geri kalanla. <5 ilanlı modellerde bayrak hiç kalkamaz — bu kör nokta sayılır.
-        Döndürür: (sözlük, maske).
+        medyan hataları geri kalanla. <5 ilanlı modellerde bayrak hiç kalkamaz — bu kör nokta sayılır.
     """
     hp = listings[["power_hp_low", "power_hp_up"]].apply(pd.to_numeric, errors="coerce").mean(axis=1)
     cc = pd.to_numeric(listings["engine_cc_up"], errors="coerce")
@@ -164,12 +150,10 @@ def spec_outliers(listings, resid, big):
     blind = (n_model < SPEC_MIN_GROUP).values
     return {"threshold": SPEC_RATIO, "min_group": SPEC_MIN_GROUP,
             "blind_spot": {"listings": int(blind.sum()), "pct": round(100 * float(blind.mean()), 2),
-                          "model": int(listings.loc[blind, "model"].nunique()),
-                          "median_error_pct": round(float(np.median(err[blind])), 1) if blind.any() else None},
+                           "model": int(listings.loc[blind, "model"].nunique())},
             "n": int(off.sum()), "pct": round(100 * float(off.mean()), 2),
-            "median_error_pct": round(float(np.median(err[off])), 1), "big_error_pct": round(100 * float(big[off].mean()), 1),
-            "other_median_error_pct": round(float(np.median(err[~off])), 1),
-            "other_big_error_pct": round(100 * float(big[~off].mean()), 1)}, off
+            "median_error_pct": round(float(np.median(err[off])), 1),
+            "other_median_error_pct": round(float(np.median(err[~off])), 1)}
 
 
 def example_compare(listings, price, i, peer):
@@ -257,11 +241,9 @@ path = np.array([SR.resolve(s, m)[1] for s, m in zip(listings["series"], listing
 per_model, buckets = error_per_model(listings["model"].values, resid)
 snaps, live = by_snapshot(listings["snap"], resid)
 age_each, age_cuts = by_age(age, big)
-lira, ape_top = lira_ranking(listings, price, pred, resid, path)
-spec, off = spec_outliers(listings, resid, big)
-spec["worst6_inside"] = int(off[ape_top[:6]].sum())
-spec["worst6_comparables"] = [[str(listings["model"].iat[i])[:35], int(n_model[i])] for i in ape_top[:6]]
-fs = np.isin(listings["segment"].values, ["F", "S"])
+lira = lira_ranking(listings, price, pred, path)
+spec = spec_outliers(listings, resid)
+fs =np.isin(listings["segment"].values, ["F", "S"])
 res = {"overall": {"n": len(listings), "n_big": int(big.sum()), "n_over": int(over.sum()), "n_under": int(under.sum()),
                    "big_pct": round(100 * float(big.mean()), 2)},
        "by_comparables": by_comparables(n_model_year, big, over, under), "per_model": per_model, "buckets": buckets,

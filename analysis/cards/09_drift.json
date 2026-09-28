@@ -9,16 +9,16 @@
   "en": "load_clean(all_snapshots=True) (every listing live on each snapshot day) + load_clean()."
  },
  "method": {
-  "tr": "Fiyat dağılımları KS, PSI, EMD ile karşılaştırılır; ardışık taramalar ilanların çoğunu paylaştığı için anlamlılık ayrık kısımda KS + Holm ile. (model, yıl) hücre medyanlarının değişimi.",
-  "en": "Price distributions compared with KS, PSI, EMD; consecutive snapshots share most listings, so significance uses KS + Holm on the disjoint part. Change of (model, year) cell medians."
+  "tr": "Fiyat dağılımları farkın büyüklüğüyle (KS istatistiği, PSI, EMD) ve ortak ilan payıyla karşılaştırılır; taramalar ilan paylaştığı için p-değeri yayımlanmaz. (model, yıl) hücre medyanlarının değişimi.",
+  "en": "Price distributions compared by the size of the difference (KS statistic, PSI, EMD) and the shared-listing share; snapshots share listings, so no p-value is published. Change of (model, year) cell medians."
  },
  "split": "none",
  "leakage": {
   "duplicate_ad_id": {
    "status": "present",
    "note": {
-    "tr": "Aynı ilan birden çok taramada: KS bağımsız örnek varsayar. Anlamlılık bu yüzden yalnız ayrık kısımda sınanıyor (ortusme).",
-    "en": "The same listing appears in several snapshots and KS assumes independent samples, so significance is tested on the disjoint part only (ortusme)."
+    "tr": "Aynı ilan birden çok taramada: bir anlamlılık testi bağımsız örnek varsayardı. Bu yüzden yalnız farkın büyüklüğü ve ortak ilan payı yayımlanıyor, p-değeri yok.",
+    "en": "The same listing appears in several snapshots and a significance test would assume independent samples, so only the size of the difference and the shared-listing share are published, no p-value."
    }
   },
   "target_in_features": {
@@ -37,13 +37,10 @@
  "evidence": {
   "tests": [
    "tests/analysis/test_09_drift.py::test_every_pair_once",
-   "tests/analysis/test_09_drift.py::test_distances_in_range",
-   "tests/analysis/test_09_drift.py::test_holm_follows_from_p_values",
-   "tests/analysis/test_09_drift.py::test_overlap_shares_in_range"
+   "tests/analysis/test_09_drift.py::test_distances_in_range"
   ],
   "report_keys": [
-   "report.drift_holm.n_holm",
-   "domain.drift.table",
+   "domain.drift.all_pairs",
    "error_drivers.period_shift.live"
   ]
  },

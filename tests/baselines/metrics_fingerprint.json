@@ -317,45 +317,21 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-27T21:30:44+03:00",
+  "_meta.generated_at": "2026-09-28T20:44:49+03:00",
   "_meta.run_id": null,
   "_meta.script": "03_association.py",
   "domain.numeric_correlation.high_pairs": {
    "len": 3,
-   "sha256": "285e430609c76b829e8dc5ef600260f349c165a53501b558d1c5bc773b94ad55"
+   "sha256": "6139b22b9064bbac5dfec782108de9267ecb6355f6a7a6af5a306f01cf4ac8de"
   },
   "domain.numeric_correlation.labels": {
    "len": 14,
    "sha256": "dbec2fd90bab90de11cefca2448b8353c285a8627e2936844bfdad5e2180f9c3"
   },
-  "domain.numeric_correlation.note": "Sayısal feature korelasyonu (kategorik için Cramér/Theil ayrı). Pearson=lineer, Spearman=monotonik ilişki. |r|>0.5 çiftler dikkat çeker; çoklu-bağlantı VIF ile ayrıca kontrol edildi (değerler: hedonic_reliability.vif).",
-  "domain.numeric_correlation.pearson": {
-   "len": 14,
-   "sha256": "0f998c259785acb8d34437a291cc7ba9d31a3b200752c4b382a80cb990c8082f"
-  },
   "domain.numeric_correlation.spearman": {
    "len": 14,
    "sha256": "b7d9e3d76b1fcd3a5154e7856eb3b4844c35ef2d370bfca3f3a0f867f4b1ebfc"
   },
-  "methodology.assoc_model": "Kategorik ilişki Cramér's V (simetrik) + Theil's U (asimetrik) ile ölçüldü. model/series yüksek-kardinaliteli (Cramér's V üste-yanlı olabilir); Theil's U yönlü — model markayı/segmenti ~belirler, tersi değil. Etiketler column_labels ile TR/EN.",
-  "methodology.cramers_matrix.labels": {
-   "len": 11,
-   "sha256": "870d99fbdb00b1fb4e052117a8cf8c1e548f712ce870a654711daff4a6d538e9"
-  },
-  "methodology.cramers_matrix.matrix": {
-   "len": 11,
-   "sha256": "ed6edd7c44ae165f7fb1e2e45d92455c840675d6a788d221890f652bde521c34"
-  },
-  "methodology.cramers_null.P": 5,
-  "methodology.cramers_null.labels": {
-   "len": 11,
-   "sha256": "870d99fbdb00b1fb4e052117a8cf8c1e548f712ce870a654711daff4a6d538e9"
-  },
-  "methodology.cramers_null.matrix": {
-   "len": 11,
-   "sha256": "675b9a2a37aea9031d1de48498a15d83f882133e32c7eda9f600294f3963d381"
-  },
-  "methodology.g_mpv": "Segment seri ve model adından türetildi (segment_of, deterministik; çözülemeyen kalırsa durur). Ham gb_segment kirli olduğu için kullanılmadı.",
   "methodology.theils_matrix.labels": {
    "len": 11,
    "sha256": "870d99fbdb00b1fb4e052117a8cf8c1e548f712ce870a654711daff4a6d538e9"
@@ -363,15 +339,6 @@
   "methodology.theils_matrix.matrix": {
    "len": 11,
    "sha256": "598211766c94e2628b8f2dab67c58e42c81454b90b145f909b0559948b54c6fc"
-  },
-  "methodology.theils_null.P": 5,
-  "methodology.theils_null.labels": {
-   "len": 11,
-   "sha256": "870d99fbdb00b1fb4e052117a8cf8c1e548f712ce870a654711daff4a6d538e9"
-  },
-  "methodology.theils_null.matrix": {
-   "len": 11,
-   "sha256": "41c753249df0e6527233274b865b527f8a83d2378b786efb8bfe5ac389e8dccf"
   }
  },
  "03_brand_ablation": {
@@ -902,7 +869,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-27T21:56:43+03:00",
+  "_meta.generated_at": "2026-09-28T20:44:52+03:00",
   "_meta.run_id": "601741517e09",
   "_meta.script": "08_large_errors.py",
   "error_drivers.age_cuts": {
@@ -933,8 +900,6 @@
    "len": 3,
    "sha256": "3b3deacc8c98cd36c224a2f1971187c4a66da2d0b73c90617d317a3b0ef77a61"
   },
-  "error_drivers.lira_scaled.ape_top10_threshold": 72.7,
-  "error_drivers.lira_scaled.ape_top10_under": 0,
   "error_drivers.lira_scaled.perf_overall_pct": 0.52,
   "error_drivers.lira_scaled.perf_series": {
    "len": 4,
@@ -945,11 +910,6 @@
   "error_drivers.lira_scaled.top_n_perf": 23,
   "error_drivers.lira_scaled.top_n_q4": 91,
   "error_drivers.lira_scaled.top_n_under": 73,
-  "error_drivers.lira_scaled.under_ape_max": 56.5,
-  "error_drivers.lira_scaled.worst": {
-   "len": 6,
-   "sha256": "0d6b2744d8adbdb4a2a27e5fd9ff97d36ef8c932dd6eda7f2e3028ad8bfeb40a"
-  },
   "error_drivers.live_vs_gone.gone_median_resid": -1.24,
   "error_drivers.live_vs_gone.gone_n": 18462,
   "error_drivers.live_vs_gone.last_snapshot": "2026-06-27",
@@ -968,23 +928,15 @@
    "len": 745,
    "sha256": "4f8aed661e88760bc22e51c955053533cc81c856533768507261dc45a4d76e4c"
   },
-  "error_drivers.spec_outliers.big_error_pct": 40.0,
   "error_drivers.spec_outliers.blind_spot.listings": 632,
-  "error_drivers.spec_outliers.blind_spot.median_error_pct": 8.3,
   "error_drivers.spec_outliers.blind_spot.model": 307,
   "error_drivers.spec_outliers.blind_spot.pct": 2.11,
   "error_drivers.spec_outliers.median_error_pct": 12.8,
   "error_drivers.spec_outliers.min_group": 5,
   "error_drivers.spec_outliers.n": 15,
-  "error_drivers.spec_outliers.other_big_error_pct": 4.0,
   "error_drivers.spec_outliers.other_median_error_pct": 4.7,
   "error_drivers.spec_outliers.pct": 0.05,
   "error_drivers.spec_outliers.threshold": 1.5,
-  "error_drivers.spec_outliers.worst6_comparables": {
-   "len": 6,
-   "sha256": "979e0c55dd37d9e329324845d138a929a1ecca9abb7924f4f9e0bde92fa1fe42"
-  },
-  "error_drivers.spec_outliers.worst6_inside": 1,
   "error_drivers.threshold_pct": 20.0
  },
  "08_residuals": {
@@ -992,17 +944,9 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-27T21:56:41+03:00",
+  "_meta.generated_at": "2026-09-28T20:44:50+03:00",
   "_meta.run_id": "601741517e09",
   "_meta.script": "08_residuals.py",
-  "domain.oof_best": {
-   "len": 5,
-   "sha256": "c5878462bdcdf5f4457f3cb1ce4868f96a2e2f08455d7acf73dc4bc2edab280d"
-  },
-  "domain.oof_outliers": {
-   "len": 10,
-   "sha256": "769c7be9f670c24c4307d8578fe76c70aca8dda1c0a42fd1ca2b552e612547dc"
-  },
   "domain.pred_vs_true.ideal_line": {
    "len": 2,
    "sha256": "0fbb8c5925985b4343ccd54017700d9a9c214e1661d634a0f702270209c44a0c"
@@ -1098,12 +1042,12 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-27T21:56:45+03:00",
+  "_meta.generated_at": "2026-09-28T20:44:55+03:00",
   "_meta.run_id": null,
   "_meta.script": "09_drift.py",
   "domain.drift.all_pairs": {
    "len": 6,
-   "sha256": "cc9cce56609519b8db1bff98c443885b62d03f7cd433eeb346df48198a64d672"
+   "sha256": "40afa3cbf074baa35e053a18c20e7750f76ffe7374babbcdefac494b7c402d4c"
   },
   "domain.drift.hist.2026-01-18": {
    "len": 39,
@@ -1166,27 +1110,11 @@
    "sha256": "aabc32ed42af1802c25deb7cba7a0c24f42039d85c3dfe22d89f9fdb76414b74"
   },
   "domain.drift.note": "KS=maks dağılım farkı, PSI<0.10 güvenli/>0.25 retrain, EMD=kayma mesafesi (₺). hist.edges = bin kenarları (39 bin, 40 kenar); hist[snapshot] = yükseklikler.",
-  "domain.drift.overlap": {
-   "len": 6,
-   "sha256": "df338809385eafcaef0a534fa97121ee8aa5ee27aed678c45884ee0daca367e9"
-  },
-  "domain.drift.overlap_note": "[cift, ortak ilan %, KS_ayrik, p_ayrik, PSI_ayrik, EMD_ayrik, n_a, n_b]. Ayrik = iki taramada da gorulen ilanlar cikarildiktan sonra.",
-  "domain.drift.table": {
-   "len": 3,
-   "sha256": "306279678bd83f0ee395f50744b77486e81acbb5d6ed5efbd4bc4b1390073ae8"
-  },
   "error_drivers.period_shift.live": {
    "len": 3,
    "sha256": "1f85423bb1120b9a7aa2e4b25d3aa69dcfb196a23733b4268a3db38154700b3a"
   },
-  "error_drivers.period_shift.min_cell_n": 3,
-  "report.drift_holm.n_holm": 2,
-  "report.drift_holm.n_sig": 5,
-  "report.drift_holm.n_tests": 6,
-  "report.drift_holm.pairs": {
-   "len": 2,
-   "sha256": "c5c1f4b3c0fc6105bcb72ddbd42777c89d824a10fa32259f510f7b6cdaeac60a"
-  }
+  "error_drivers.period_shift.min_cell_n": 3
  },
  "10_free_text": {
   "_meta.data_until": "2026-06-27",

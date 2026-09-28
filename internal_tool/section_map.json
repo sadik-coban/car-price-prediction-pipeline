@@ -26,10 +26,7 @@
   "14": "09_drift.py",
   "15": "09_backtest.py",
   "16": "02_missingness.py",
-  "17": "03_association.py",
-  "18": "03_association.py",
   "19": "03_segment_quality.py",
-  "20": "03_association.py",
   "21": "03_association.py",
   "22": "05_segmentation.py",
   "23": "05_segmentation.py",
@@ -79,8 +76,7 @@
     "scripts": [
      "03_association.py",
      "03_segment_quality.py",
-     "03_brand_ablation.py",
-     "08_large_errors.py"
+     "03_brand_ablation.py"
     ]
    },
    {
