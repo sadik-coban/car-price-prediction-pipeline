@@ -1,17 +1,17 @@
 {
  "_meta": {
   "script": "09_backtest.py",
-  "generated_at": "2026-09-27T21:57:41+03:00",
+  "generated_at": "2026-09-28T21:43:04+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
    "sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
    "rows": 45315
   },
-  "run_id": null,
+  "run_id": "601741517e09",
   "source": {
    "script": {
-    "analysis/09_backtest.py": "88cdc34a3e3a110a0c8dfd65cc4862e374e3e7face44427de91b49b9af50ecbd"
+    "analysis/09_backtest.py": "b35d27376483a71e4b9c2ce12f255596f0b81614e940548d4cb15a1ff2354c64"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -27,122 +27,215 @@
     [
      "01-18",
      "01-27",
-     6.53,
-     2960
+     6.29,
+     2960,
+     5.9,
+     6.73,
+     163
     ],
     [
      "01-18",
-     "03-21",
-     6.81,
-     8182
-    ],
-    [
-     "01-18",
-     "06-27",
-     7.56,
-     10529
-    ],
-    [
-     "01-27",
      "03-21",
      6.59,
-     7413
+     8182,
+     6.24,
+     6.96,
+     163
+    ],
+    [
+     "01-18",
+     "06-27",
+     7.34,
+     10529,
+     6.95,
+     7.73,
+     163
+    ],
+    [
+     "01-27",
+     "03-21",
+     6.54,
+     7413,
+     6.18,
+     6.91,
+     161
     ],
     [
      "01-27",
      "06-27",
-     7.3,
-     10313
+     7.18,
+     10313,
+     6.82,
+     7.6,
+     161
     ],
     [
      "03-21",
      "06-27",
-     7.06,
-     9099
+     6.9,
+     9099,
+     6.49,
+     7.33,
+     195
     ]
    ],
    "cumulative": [
     [
      "→01-18",
      "01-27",
-     6.53,
-     2960
+     6.29,
+     2960,
+     5.9,
+     6.73,
+     163
     ],
     [
      "→01-18",
      "03-21",
-     6.81,
-     8182
+     6.59,
+     8182,
+     6.24,
+     6.96,
+     163
     ],
     [
      "→01-18",
      "06-27",
-     7.56,
-     10529
+     7.34,
+     10529,
+     6.95,
+     7.73,
+     163
     ],
     [
      "→01-27",
      "03-21",
-     6.57,
-     7238
+     6.47,
+     7238,
+     6.09,
+     6.83,
+     162
     ],
     [
      "→01-27",
      "06-27",
-     7.36,
-     10257
+     7.23,
+     10257,
+     6.85,
+     7.64,
+     162
     ],
     [
      "→03-21",
      "06-27",
-     6.94,
-     8889
+     6.78,
+     8889,
+     6.42,
+     7.17,
+     211
+    ]
+   ],
+   "paired": [
+    [
+     "03-21",
+     "01-27",
+     "→01-27",
+     7238,
+     6.52,
+     6.47,
+     -0.04,
+     -0.12,
+     0.03
+    ],
+    [
+     "06-27",
+     "01-27",
+     "→01-27",
+     10257,
+     7.17,
+     7.23,
+     0.06,
+     -0.01,
+     0.12
+    ],
+    [
+     "06-27",
+     "03-21",
+     "→03-21",
+     8889,
+     6.89,
+     6.78,
+     -0.11,
+     -0.2,
+     -0.02
     ]
    ],
    "insample": [
     [
      "01-18",
-     7.07,
+     6.91,
      10901
     ],
     [
      "→01-27",
-     6.77,
+     6.67,
      13861
     ],
     [
      "→03-21",
-     6.53,
+     6.45,
      21099
     ],
     [
      "→06-27",
-     6.53,
+     6.49,
      29988
     ]
    ],
    "per_snapshot": [
     [
      "01-18",
-     7.07,
+     6.91,
      10901
     ],
     [
      "01-27",
-     6.99,
+     6.92,
      11254
     ],
     [
      "03-21",
-     7.02,
+     6.93,
      11478
     ],
     [
      "06-27",
-     7.25,
+     7.09,
      11526
     ]
    ],
+   "columns": {
+    "forward": [
+     "train",
+     "test",
+     "MAPE",
+     "n",
+     "ci_lo",
+     "ci_hi",
+     "trees"
+    ],
+    "paired": [
+     "test",
+     "single_train",
+     "cumulative_train",
+     "n_common",
+     "single_MAPE",
+     "cumulative_MAPE",
+     "difference",
+     "ci_lo",
+     "ci_hi"
+    ]
+   },
    "protocol": {
     "leak_free": [
      "single",
@@ -152,10 +245,14 @@
      "insample",
      "per_snapshot"
     ],
-    "same_experiment": "cumulative ilk blok (<= ilk tarama) single ilk blokla ayni",
-    "light_model": "tum kollar ana modelden hafif: TF-IDF/SVD yok (ad ham kategorik), erken durdurma yok; single/cumulative 800 agac, insample/per_snapshot 500 agac"
-   },
-   "note": "single: tek taramada eğit, sonraki taramaların yalnız YENİ ad_id'lerinde test et (sızıntısız). cumulative: t'ye kadarki taramalarda eğit, aynı kural; ilk bloğu single ile aynı deneydir. insample: kümülatif birikimde düz 5-fold OOF, zaman boyutu yok. per_snapshot: her tarama izole, düz 5-fold OOF. Dört kol da ana modelden hafif: TF-IDF/SVD yok, erken durdurma yok (single/cumulative 800, insample/per_snapshot 500 ağaç)."
+    "same_experiment": "cumulative first block (<= first snapshot) equals the single first block",
+    "setup": "headline: cv.fold_matrices + cv.LGB_PARAMS; forward trees = median of an inner 5-fold early-stopping CV on the training set, then one fit without early stopping",
+    "interval": {
+     "level": 0.95,
+     "n_boot": 1000,
+     "resample": "model"
+    }
+   }
   }
  }
 }

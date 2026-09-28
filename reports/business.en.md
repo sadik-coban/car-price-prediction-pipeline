@@ -69,9 +69,10 @@ That is why the output is a **90% range**, not one number. With one margin the r
 - Price rare and edge cars by hand; the model scatters there.
 - Review a listing whose text mentions a conversion, an engine swap or modifications before it goes live: that information is not in the form. With vehicle attributes held fixed no significant difference in its error rate was measured; the review guards against what the form cannot see, not against model error.
 - **Watch drift and retrain the model:** run a service that tracks the price distribution, and retrain the model on new data. The price distribution moves little today (highest PSI 0.005), but the market level moved +2.0% over four snapshots and the model is time-blind.
-- **Watch for events that reset the pricing regime** (a tax or excise change, an incentive, a sudden market move) — plan retraining around them. Do not discard old snapshots: more data means less error.
+- **Watch the error directly:** the price arrives with every snapshot, so the model's error on new listings can be measured directly; watching the price distribution stays as a diagnostic.
+- **Watch for events that reset the pricing regime** (a tax or excise change, an incentive, a sudden market move) — plan retraining around them. Do not discard old snapshots: accumulating never raised the error and sometimes lowered it.
 
-![More data, less error — single period vs pooled periods](figures/en-15-backtest.png)
+![Single period and pooled periods — mean percentage error](figures/en-15-backtest.png)
 
 ## What this model does not give you
 

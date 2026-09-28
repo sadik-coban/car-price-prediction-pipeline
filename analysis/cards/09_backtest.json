@@ -9,8 +9,8 @@
   "en": "load_clean(all_snapshots=True): every row of every snapshot; the test uses only ad_ids unseen in training."
  },
  "method": {
-  "tr": "Dört kol: single (bir taramada eğit, sonrakilerin yeni ilanlarında test), cumulative (t'ye kadar hepsinde eğit), insample ve per_snapshot (düz 5-fold, karşılaştırma için). Hafif model: TF-IDF/SVD yok.",
-  "en": "Four arms: single (train on one snapshot, test on the new listings of later ones), cumulative (train on all up to t), insample and per_snapshot (plain 5-fold, for comparison). Light model: no TF-IDF/SVD."
+  "tr": "Dört kol, hepsi manşet kurulumla (cv.fold_matrices + cv.LGB_PARAMS): single (bir taramada eğit, sonrakilerin yeni ilanlarında test), cumulative (t'ye kadar hepsinde eğit), insample ve per_snapshot (5-fold OOF, karşılaştırma için; insample'ın son bloğu manşet OOF'un kendisi). İleri kollarda ağaç = eğitim kümesinde erken durdurmalı iç 5-fold CV'nin medyanı. Her ileri satıra test ilanlarını modele göre yeniden örnekleyen bootstrap'ten %95 aralık; single ile cumulative aynı ilanlarda eşli karşılaştırılır.",
+  "en": "Four arms, all with the headline setup (cv.fold_matrices + cv.LGB_PARAMS): single (train on one snapshot, test on the new listings of later ones), cumulative (train on all up to t), insample and per_snapshot (5-fold OOF, for comparison; insample's last block is the headline OOF itself). Forward trees = median of an inner early-stopping 5-fold CV on the training set. Every forward row carries a 95% interval from a bootstrap that resamples the test listings by model; single and cumulative are compared paired on the same listings."
  },
  "split": "temporal",
  "leakage": {
@@ -31,8 +31,8 @@
   "fit_on_full_data": {
    "status": "none",
    "note": {
-    "tr": "Her kol yalnız kendi eğitim bloğunda kurulur.",
-    "en": "Each arm is fitted on its own training block only."
+    "tr": "Her kol yalnız kendi eğitim bloğunda kurulur; ileri kollarda ağaç sayısını eğitim kümesinin iç CV'si seçer, test taraması erken durdurmada kullanılmaz.",
+    "en": "Each arm is fitted on its own training block only; in the forward arms the tree count is chosen by an inner CV on the training set, never by early stopping on the test snapshot."
    }
   },
   "temporal": {
@@ -47,11 +47,13 @@
   "tests": [
    "tests/analysis/test_09_backtest.py::test_train_before_test",
    "tests/analysis/test_09_backtest.py::test_cumulative_first_block_is_single",
-   "tests/analysis/test_09_backtest.py::test_insample_ends_on_all_listings"
+   "tests/analysis/test_09_backtest.py::test_paired_is_cumulative_minus_single",
+   "tests/analysis/test_09_backtest.py::test_insample_ends_on_the_headline"
   ],
   "report_keys": [
    "methodology.backtest.single",
    "methodology.backtest.cumulative",
+   "methodology.backtest.paired",
    "methodology.backtest.insample"
   ]
  },

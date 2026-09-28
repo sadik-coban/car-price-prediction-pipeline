@@ -977,35 +977,49 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-27T21:57:41+03:00",
-  "_meta.run_id": null,
+  "_meta.generated_at": "2026-09-28T21:43:04+03:00",
+  "_meta.run_id": "601741517e09",
   "_meta.script": "09_backtest.py",
+  "methodology.backtest.columns.forward": {
+   "len": 7,
+   "sha256": "cad79f89987cfbbcfd65302f8fd842b94c10833549fcd574910d52399c61b5de"
+  },
+  "methodology.backtest.columns.paired": {
+   "len": 9,
+   "sha256": "e62f92c32f19d3c3fb25c0bba02548b3be121268a0ea4623d5fb4570cb13438b"
+  },
   "methodology.backtest.cumulative": {
    "len": 6,
-   "sha256": "83b0721d5bc74b7e535b9d727d6eb9ee8e6e81c0e97016f1a07587a471a09676"
+   "sha256": "f1b6ee3af019538660a8db1e23f0e9fb9883c4c73e6e0280b676050d6ebd6896"
   },
   "methodology.backtest.insample": {
    "len": 4,
-   "sha256": "5658a8065e63f6a908f413e7c37772651b898ebf0595d84f7cad3c91dedf3ff5"
+   "sha256": "b0f57ca9b25b7b669906559cdf0ce390bb8d326071861ff9d69d1fa61bd0ea37"
   },
-  "methodology.backtest.note": "single: tek taramada eğit, sonraki taramaların yalnız YENİ ad_id'lerinde test et (sızıntısız). cumulative: t'ye kadarki taramalarda eğit, aynı kural; ilk bloğu single ile aynı deneydir. insample: kümülatif birikimde düz 5-fold OOF, zaman boyutu yok. per_snapshot: her tarama izole, düz 5-fold OOF. Dört kol da ana modelden hafif: TF-IDF/SVD yok, erken durdurma yok (single/cumulative 800, insample/per_snapshot 500 ağaç).",
+  "methodology.backtest.paired": {
+   "len": 3,
+   "sha256": "2d754d4757724d514aacbf687e6cdf90672950d0d31a7ce4c28774cbf6656d71"
+  },
   "methodology.backtest.per_snapshot": {
    "len": 4,
-   "sha256": "21a4e89d5bbd3444fe8adef957687bd40850115774f50dcabbc6c7cb6dad5950"
+   "sha256": "3cb4e90b6feb33f366b27751b3d9bd34da4fdeaf8953ac101a59523cb8c89757"
   },
+  "methodology.backtest.protocol.interval.level": 0.95,
+  "methodology.backtest.protocol.interval.n_boot": 1000,
+  "methodology.backtest.protocol.interval.resample": "model",
   "methodology.backtest.protocol.leak_free": {
    "len": 2,
    "sha256": "157d3646b52e16d28f83ad1478017eaf6ac1a2e2555c20e385e7e76fd61c791d"
   },
-  "methodology.backtest.protocol.light_model": "tum kollar ana modelden hafif: TF-IDF/SVD yok (ad ham kategorik), erken durdurma yok; single/cumulative 800 agac, insample/per_snapshot 500 agac",
   "methodology.backtest.protocol.plain_kfold": {
    "len": 2,
    "sha256": "b3b9d739d449faff118fb799a07ebe369bd4c05e7365ad873acc47cb57ca354a"
   },
-  "methodology.backtest.protocol.same_experiment": "cumulative ilk blok (<= ilk tarama) single ilk blokla ayni",
+  "methodology.backtest.protocol.same_experiment": "cumulative first block (<= first snapshot) equals the single first block",
+  "methodology.backtest.protocol.setup": "headline: cv.fold_matrices + cv.LGB_PARAMS; forward trees = median of an inner 5-fold early-stopping CV on the training set, then one fit without early stopping",
   "methodology.backtest.single": {
    "len": 6,
-   "sha256": "1bbefbedb625b64a8cd4b378c90f227e892c9da3cfa4d9135de9afe61bae89cf"
+   "sha256": "d9d65de8c27543843defda3f8c5c45f893691e42023446e162c46f2ad3380f3c"
   }
  },
  "09_drift": {

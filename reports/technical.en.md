@@ -403,7 +403,7 @@ In lira the picture changes: 38.9% of total lira error sits in the most expensiv
 
 ## 9. Time — period effect, distribution drift and backtest
 
-Two measurements. **Distribution drift:** the price distribution moves little between snapshots (highest PSI 0.005, "no drift" threshold 0.10). **Temporal backtest:** trained on an earlier snapshot and tested only on a later snapshot's new listings, the error grows with the horizon (6.53% → 7.56%). Within the same model and year the market level moved +2.0% and the model is time-blind → retraining should follow **measured drift**, not the calendar (end of this section).
+Two measurements. **Distribution drift:** the price distribution moves little between snapshots (highest PSI 0.005, "no drift" threshold 0.10). **Temporal backtest:** trained on an earlier snapshot and tested only on a later snapshot's new listings, the error grows with the horizon (6.29% → 7.34%). Within the same model and year the market level moved +2.0% and the model is time-blind → retraining should follow **measured error and drift**, not the calendar (end of this section).
 
 ### Period effect
 
@@ -418,31 +418,41 @@ The two columns answer two different questions. **Live market**: how the median 
 
 ### Temporal backtest
 
-| single: train → test | MAPE | n | cumulative: train → test | MAPE | n |
+| single: train → test | MAPE [95% CI] | n | cumulative: train → test | MAPE [95% CI] | n |
 |---|---:|---:|---|---:|---:|
-| 01-18 → 01-27 | 6.53% | 2,960 | ≤01-18 → 01-27 | = single | = |
-| 01-18 → 03-21 | 6.81% | 8,182 | ≤01-18 → 03-21 | = single | = |
-| 01-18 → 06-27 | 7.56% | 10,529 | ≤01-18 → 06-27 | = single | = |
-| 01-27 → 03-21 | 6.59% | 7,413 | ≤01-27 → 03-21 | 6.57% | 7,238 |
-| 01-27 → 06-27 | 7.30% | 10,313 | ≤01-27 → 06-27 | 7.36% | 10,257 |
-| 03-21 → 06-27 | 7.06% | 9,099 | ≤03-21 → 06-27 | 6.94% | 8,889 |
+| 01-18 → 01-27 | 6.29% [5.90, 6.73] | 2,960 | ≤01-18 → 01-27 | = single | = |
+| 01-18 → 03-21 | 6.59% [6.24, 6.96] | 8,182 | ≤01-18 → 03-21 | = single | = |
+| 01-18 → 06-27 | 7.34% [6.95, 7.73] | 10,529 | ≤01-18 → 06-27 | = single | = |
+| 01-27 → 03-21 | 6.54% [6.18, 6.91] | 7,413 | ≤01-27 → 03-21 | 6.47% [6.09, 6.83] | 7,238 |
+| 01-27 → 06-27 | 7.18% [6.82, 7.60] | 10,313 | ≤01-27 → 06-27 | 7.23% [6.85, 7.64] | 10,257 |
+| 03-21 → 06-27 | 6.90% [6.49, 7.33] | 9,099 | ≤03-21 → 06-27 | 6.78% [6.42, 7.17] | 8,889 |
 
-Single = train on one snapshot, predict a later one. Cumulative = train on every snapshot up to t. The test set holds only `ad_id`s never seen in training (leak-free); **n** is the number of those listings and MAPE is over them. E.g. of the 11,254 listings in the 01-27 snapshot, 8,294 were already live in the 01-18 snapshot; the other 2,960 were tested. Cumulative drops every listing seen in any snapshot up to t, so its n is at most the single n. From the same training snapshot, error grows as the test horizon lengthens.
+Single = train on one snapshot, predict a later one. Cumulative = train on every snapshot up to t. The test set holds only `ad_id`s never seen in training (leak-free); **n** is the number of those listings and MAPE is over them. E.g. of the 11,254 listings in the 01-27 snapshot, 8,294 were already live in the 01-18 snapshot; the other 2,960 were tested. Cumulative drops every listing seen in any snapshot up to t, so its n is at most the single n. The cumulative cells marked "=" are the same experiment as the single arm (accumulating up to the first snapshot is one snapshot).
 
-Both arms of this table use a lighter setup than the main model: model and series names enter as raw categoricals without TF-IDF/SVD, 800 trees, no early stopping. Compare rows with each other, not the absolute level with the headline MAPE. The cumulative cells marked "=" are the same experiment as the single arm (accumulating up to the first snapshot is one snapshot).
+The setup is the headline model's: model and series names as TF-IDF+SVD, the same LightGBM settings. The tree count is chosen, as for the served model, by a 5-fold early-stopping CV inside the training set (161–211 trees); the test snapshot is never used to stop. Brackets are the 95% confidence interval: the test listings resampled by model (listings of one model are not independent), 1,000 times.
+
+From the same training snapshot (01-18) MAPE goes 6.29% → 7.34% as the test horizon lengthens; the confidence intervals do not overlap. But each horizon tests different listings: other listings, another mix, another test snapshot. The gap cannot be put on time alone.
+
+| test | single training | cumulative training | shared listings | single | cumulative | difference [95% CI] |
+|---|---|---|---:|---:|---:|---:|
+| 03-21 | 01-27 | ≤01-27 | 7,238 | 6.52% | 6.47% | -0.04 [-0.12, +0.03] |
+| 06-27 | 01-27 | ≤01-27 | 10,257 | 7.17% | 7.23% | +0.06 [-0.01, +0.12] |
+| 06-27 | 03-21 | ≤03-21 | 8,889 | 6.89% | 6.78% | -0.11 [-0.20, -0.02] |
+
+Single and cumulative were compared paired, on the listings both tested in the same test snapshot (the same resamples). In one of the three comparisons accumulating lowers the error with the interval below zero; in the remaining two the gap is within sampling error.
 
 ### Per-snapshot OOF
 
 | snapshot (standalone) | MAPE | n | cumulative | MAPE | n |
 |---|---:|---:|---|---:|---:|
-| 01-18 | 7.07% | 10,901 | ≤01-18 | 7.07% | 10,901 |
-| 01-27 | 6.99% | 11,254 | ≤01-27 | 6.77% | 13,861 |
-| 03-21 | 7.02% | 11,478 | ≤03-21 | 6.53% | 21,099 |
-| 06-27 | 7.25% | 11,526 | ≤06-27 | 6.53% | 29,988 |
+| 01-18 | 6.91% | 10,901 | ≤01-18 | 6.91% | 10,901 |
+| 01-27 | 6.92% | 11,254 | ≤01-27 | 6.67% | 13,861 |
+| 03-21 | 6.93% | 11,478 | ≤03-21 | 6.45% | 21,099 |
+| 06-27 | 7.09% | 11,526 | ≤06-27 | 6.49% | 29,988 |
 
-This table is not temporal: every row is plain 5-fold OOF with no new-listings-only rule. The setup is again lighter (no TF-IDF/SVD, 500 trees, no early stopping). The last cumulative row covers the same listings as the headline model and gives 6.53% against a headline MAPE of 6.49%; the setups differ in more than one place, so the gap cannot be attributed to a single change.
+This table is not temporal: every row is plain 5-fold OOF with no new-listings-only rule. The last cumulative row is the headline model's OOF itself (6.49%, 29,988 listings). The first forward test (01-18 → 01-27, 6.29%) is lower than the same snapshot's own OOF (6.91%). That is not a contradiction but two different measurements: the forward model trains on the whole snapshot (in OOF each fold sees four fifths of it), and its test is only the listings new in the next snapshot — a different set of listings.
 
-![More data, less error — single period vs pooled periods](figures/en-15-backtest.png)
+![Single period and pooled periods — mean percentage error](figures/en-15-backtest.png)
 
 ### Distribution drift
 
@@ -473,9 +483,10 @@ This table is not temporal: every row is plain 5-fold OOF with no new-listings-o
 
 ### When to retrain
 
-- **Watch drift, retrain the model.** Run a **drift service** in production that watches PSI · KS · EMD, and retrain the model on new snapshots. A fixed PSI threshold is not enough: today's highest PSI is 0.0049, yet in the backtest above MAPE rises 6.53% → 7.56% as the test horizon lengthens from the same training snapshot. That rise cannot be put on time alone: each horizon tests different listings, and the listing mix and the test snapshot change too. Still, a model trained on an old snapshot errs more even while the distribution barely moves.
+- **Watch drift, retrain the model.** Run a **drift service** in production that watches PSI · KS · EMD, and retrain the model on new snapshots. A fixed PSI threshold is not enough: today's highest PSI is 0.0049, yet in the backtest above MAPE rises 6.29% → 7.34% as the test horizon lengthens from the same training snapshot. That rise cannot be put on time alone: each horizon tests different listings, and the listing mix and the test snapshot change too. Still, a model trained on an old snapshot errs more even while the distribution barely moves.
+- **Watch the error directly.** The price arrives with every snapshot, so the model's error on new listings can be measured directly; the backtest above does exactly that. The drift measures (PSI · KS · EMD) stay as diagnostics.
 - **Events that reset the pricing regime.** A tax or excise change, an incentive, an import rule, a currency move or a sudden market anomaly can shift the distribution before a monitoring window closes; treat those as **triggers** as well and plan retraining around them.
-- **Accumulated data pays.** Per-snapshot OOF stays flat at 6.99%–7.25% while the cumulative figure falls 7.07% → 6.53% (n 10,901 → 29,988). Retrain by **adding** snapshots, not by discarding the old ones.
+- **Keep the old snapshots.** In the paired comparison on the same test listings, accumulating lowers the error significantly in one of the three comparisons and raises it in none. Retrain by **adding** snapshots, not by discarding the old ones.
 
 ## 10. Free text: measured, left out
 

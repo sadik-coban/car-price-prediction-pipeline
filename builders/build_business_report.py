@@ -238,10 +238,14 @@ def fmt_business(v, F, lang):
               if _flag_sig else "")
     _flag_en = (f", and with age, mileage, price and performance family held fixed the odds of a large error are "
               f"still {_flag_ctl['or']:.2f}×" if _flag_sig else "")
-    _ins = [r[1] for r in v["bt_insample"]]
-    _accumulates = all(a >= b for a, b in zip(_ins, _ins[1:])) and _ins[-1] < _ins[0]
-    _acc_tr = " Eski dönemleri atma: veri biriktikçe hata düşüyor." if _accumulates else ""
-    _acc_en = " Do not discard old snapshots: more data means less error." if _accumulates else ""
+    # 2026-09-28: oneri teknik §9'un ayni test ilanlarindaki esli karsilastirmasina kapili (birikim en az bir
+    # yerde anlamli kazandiriyor, hicbir yerde anlamli kaybettirmiyor).
+    _pc = {c_: i_ for i_, c_ in enumerate(v["bt_columns"]["paired"])}
+    _accumulates = (any(r_[_pc["ci_hi"]] < 0 for r_ in v["bt_paired"])
+                    and not any(r_[_pc["ci_lo"]] > 0 for r_ in v["bt_paired"]))
+    _acc_tr = " Eski dönemleri atma: birikimli eğitim hatayı artırmıyor, bazen düşürüyor." if _accumulates else ""
+    _acc_en = " Do not discard old snapshots: accumulating never raised the error and sometimes lowered it." \
+        if _accumulates else ""
     A(L("**Ne yapmalı**", "**What to do**"))
     A("")
     A(L(f"- Aralığın hata payını fiyat bandına göre ayrı hesapla: ucuz araçta daha geniş, pahalıda daha dar — tek "
@@ -260,6 +264,9 @@ def fmt_business(v, F, lang):
            else f"Fiyat dağılımı belirgin kayıyor (en yüksek PSI {v['psi_max']:.3f}); ")
         + f"ama piyasa seviyesi {v['n_snapshots']} dönemde "
         f"{P(v['ed']['period_shift']['live'][-1][1], lang, 1, sign=True)} kaydı ve model zamanı görmüyor.\n"
+        # 2026-09-28 (kullanici karari): esiksiz performans izleme — fiyat her taramada geliyor.
+        f"- **Hatayı doğrudan izle:** fiyat her taramada geldiği için modelin yeni ilanlardaki hatası doğrudan "
+        f"ölçülebilir; fiyat dağılımını izlemek tanı için kalır.\n"
         f"- **Fiyat rejimini değiştiren gelişmeleri takip et** (vergi/ÖTV düzenlemesi, teşvik, ani "
         f"piyasa hareketi gibi) — eğitim planı bunlara göre yapılmalı." + _acc_tr,
         f"- Compute the range's margin per price band: wider on cheap cars, narrower on expensive ones — don't "
@@ -278,6 +285,8 @@ def fmt_business(v, F, lang):
         +
         f"market level moved {P(v['ed']['period_shift']['live'][-1][1], lang, 1, sign=True)}"
         f" over {number_word(v['n_snapshots'], 'en')} snapshots and the model is time-blind.\n"
+        f"- **Watch the error directly:** the price arrives with every snapshot, so the model's error on new "
+        f"listings can be measured directly; watching the price distribution stays as a diagnostic.\n"
         f"- **Watch for events that reset the pricing regime** (a tax or excise change, an incentive, "
         f"a sudden market move) — plan retraining around them." + _acc_en))
     A("")

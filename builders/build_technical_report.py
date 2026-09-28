@@ -1489,7 +1489,7 @@ def section_time(c):
            f"ufukla büyümüyor ({P(_s0[0][2], lang, 2)} → {P(_s0[-1][2], lang, 2)}). ")
         + f"Aynı model ve yılın ilanlarında piyasa seviyesi "
         f"{P(v['ed']['period_shift']['live'][-1][1], lang, 1, sign=True)} kaydı ve model zamanı görmüyor → "
-        f"yeniden eğitim takvime değil **ölçülen kaymaya** "
+        f"yeniden eğitim takvime değil **ölçülen hataya ve kaymaya** "
         f"bağlanmalı (bölümün sonu).",
         f"Two measurements. **Distribution drift:** "
         + (f"the price distribution moves little between snapshots (highest PSI {v['psi_max']:.3f}, \"no drift\" "
@@ -1501,7 +1501,7 @@ def section_time(c):
            f"does not grow with the horizon ({P(_s0[0][2], lang, 2)} → {P(_s0[-1][2], lang, 2)}). ")
         + f"Within the same model and year the market level moved "
         f"{P(v['ed']['period_shift']['live'][-1][1], lang, 1, sign=True)} and the model is time-blind → "
-        f"retraining should follow **measured drift**, not the "
+        f"retraining should follow **measured error and drift**, not the "
         f"calendar (end of this section)."))
     A("")
 
@@ -1537,58 +1537,90 @@ def section_time(c):
 
     A(L("### Zamansal backtest", "### Temporal backtest"))
     A("")
+    # 2026-09-28 (sadelestirme listesi): kurulum manset modelinki (hafif kurulum ve "yalniz satirlari karsilastirin"
+    # uyarisi kalkti); her ileri satirda modele gore kumeli bootstrap %95 GA; ilk egitim taramasinin kumulatif
+    # hucreleri tek donemle AYNI deney -> "=".
+    fc = {c_: i_ for i_, c_ in enumerate(bt["columns"]["forward"])}
+    _ci = lambda r_: f"{P(r_[fc['MAPE']], lang, 2)} [{r_[fc['ci_lo']]:.2f}, {r_[fc['ci_hi']]:.2f}]"   # noqa: E731
     rows = []
-    # 2026-09-28 (sadelestirme listesi): ilk egitim taramasinin kumulatif hucreleri tek donemle AYNI deney; iki
-    # kez sayi yazmak yerine "=" isaretlenir (asagidaki cumle veriden kapili).
     for s, c in zip(bt["single"], bt["cumulative"]):
         assert s[1] == c[1], f"backtest hizasi bozuk: {s} / {c}"
-        _dup = s[0] == bt["single"][0][0] and (s[2], s[3]) == (c[2], c[3])
-        rows.append([f"{s[0]} → {s[1]}", P(s[2], lang, 2), num(s[3], lang),
-                     f"≤{c[0].lstrip('→')} → {c[1]}", L("= tek dönem", "= single") if _dup else P(c[2], lang, 2),
-                     "=" if _dup else num(c[3], lang)])
-    T([L("tek dönem: eğitim → test", "single: train → test"), "MAPE", "n",
-       L("kümülatif: eğitim → test", "cumulative: train → test"), "MAPE", "n"], rows, "lrrlrr")
-    _by_train = {}
-    for s in bt["single"]:
-        _by_train.setdefault(s[0], []).append(s[2])
-    _grows = all(all(a <= b for a, b in zip(xs, xs[1:])) for xs in _by_train.values() if len(xs) > 1)
+        _dup = s[0] == bt["single"][0][0] and s[2:] == c[2:]
+        rows.append([f"{s[0]} → {s[1]}", _ci(s), num(s[3], lang), f"≤{c[0].lstrip('→')} → {c[1]}",
+                     L("= tek dönem", "= single") if _dup else _ci(c), "=" if _dup else num(c[3], lang)])
+    T([L("tek dönem: eğitim → test", "single: train → test"), L("MAPE [%95 GA]", "MAPE [95% CI]"), "n",
+       L("kümülatif: eğitim → test", "cumulative: train → test"), L("MAPE [%95 GA]", "MAPE [95% CI]"), "n"],
+      rows, "lrrlrr")
     # 2026-09-27 (kullanici: "buradaki n'ler neyi gosteriyor"): n'in tanimi ve ilk satirdan bir ornek. Test
     # taramasinin butun ilanlari per_snapshot'tan; fark = egitim taramasinda da yayinda olanlar.
     _ex = bt["single"][0]
     _ex_all = {r_[0]: r_[2] for r_ in bt["per_snapshot"]}[_ex[1]]
     assert _ex_all > _ex[3], f"ornek satir tutarsiz: test taramasi {_ex_all}, test n {_ex[3]}"
+    _first = [s_ for s_ in bt["single"] if s_[0] == bt["single"][0][0]]
+    _same_first = _first == [[c_[0].lstrip("→")] + c_[1:] for c_ in bt["cumulative"][:len(_first)]]
+    _trees = sorted({r_[fc["trees"]] for r_ in bt["single"] + bt["cumulative"]})
     A(L("Tek dönem = yalnız bir taramada eğit, sonrakini tahmin et. Kümülatif = t'ye kadarki tüm taramalarda "
         "eğit. Test kümesi yalnız eğitimde hiç görülmemiş `ad_id`'ler (sızıntısız); **n** bu ilanların sayısı ve "
         f"MAPE bu ilanlarda. Ör. {_ex[1]} taramasındaki {num(_ex_all, lang)} ilanın {num(_ex_all - _ex[3], lang)} "
         f"tanesi {_ex[0]} taramasında da yayındaydı; test edilen kalan {num(_ex[3], lang)} ilan. Kümülatifte t'ye "
         "kadarki her taramada görülen ilan çıktığı için n tek dönemden küçük ya da eşit."
-        + (" Aynı eğitim döneminden test ufku uzadıkça hata büyüyor." if _grows else ""),
+        + (" \"=\" işaretli kümülatif hücreler tek dönem koluyla aynı deneydir (ilk taramaya kadar birikim tek bir "
+           "taramadır)." if _same_first else ""),
         "Single = train on one snapshot, predict a later one. Cumulative = train on every snapshot up to t. The test "
         "set holds only `ad_id`s never seen in training (leak-free); **n** is the number of those listings and MAPE "
         f"is over them. E.g. of the {num(_ex_all, lang)} listings in the {_ex[1]} snapshot, "
         f"{num(_ex_all - _ex[3], lang)} were already live in the {_ex[0]} snapshot; the other {num(_ex[3], lang)} "
         "were tested. Cumulative drops every listing seen in any snapshot up to t, so its n is at most the single n."
-        + (" From the same training snapshot, error grows as the test horizon lengthens." if _grows else "")))
-    # 2026-09-23: kumulatif sutunun ilk blogu (<= ilk tarama) tek donemle AYNI deneydir; veriden sinanir.
-    # 2026-09-23: "800 / 500 agac" elle yaziliydi; protocol metninden (JSON) okunur.
-    _light_note = bt["protocol"]["light_model"]
-    _trees_bt = re.search(r"single/cumulative (\d+) agac", _light_note)
-    _trees_ins = re.search(r"insample/per_snapshot (\d+) agac", _light_note)
-    assert _trees_bt and _trees_ins, f"backtest protokolunde agac sayisi okunamadi: {_light_note}"
-    _first = [(s_[1], s_[2], s_[3]) for s_ in bt["single"] if s_[0] == bt["single"][0][0]]
-    _same_first = len(_first) > 0 and _first == [(c_[1], c_[2], c_[3]) for c_ in bt["cumulative"][:len(_first)]]
-    A("")
-    A(L("Bu tablonun iki kolu da ana modelden hafif bir kurulumla ölçülür: model ve seri adı TF-IDF/SVD'den "
-        f"geçmeden ham kategorik girer, {_trees_bt.group(1)} ağaç, erken durdurma yok. Mutlak düzey manşet MAPE ile değil, "
-        "satırlar birbiriyle karşılaştırılmalı."
-        + (" \"=\" işaretli kümülatif hücreler tek dönem koluyla aynı deneydir (ilk taramaya kadar birikim tek bir "
-           "taramadır)." if _same_first else ""),
-        "Both arms of this table use a lighter setup than the main model: model and series names enter as raw "
-        f"categoricals without TF-IDF/SVD, {_trees_bt.group(1)} trees, no early stopping. Compare rows with each other, not the "
-        "absolute level with the headline MAPE."
         + (" The cumulative cells marked \"=\" are the same experiment as the single arm (accumulating up to the "
            "first snapshot is one snapshot)." if _same_first else "")))
     A("")
+    A(L(f"Kurulum manşet modelinki: model ve seri adı TF-IDF+SVD, aynı LightGBM ayarları. Ağaç sayısını, servis edilen "
+        f"modeldeki gibi, eğitim kümesinin kendi içindeki 5 katlı erken durdurma seçiyor ({'–'.join(str(t_) for t_ in (_trees[0], _trees[-1]))} "
+        f"ağaç); test taraması durdurmak için hiç kullanılmıyor. Köşeli parantez %95 güven aralığı: test ilanları "
+        f"modele göre yeniden örneklenerek (bir modelin ilanları birbirinden bağımsız değil) "
+        f"{num(bt['protocol']['interval']['n_boot'], lang)} kez hesaplandı.",
+        f"The setup is the headline model's: model and series names as TF-IDF+SVD, the same LightGBM settings. The "
+        f"tree count is chosen, as for the served model, by a 5-fold early-stopping CV inside the training set "
+        f"({'–'.join(str(t_) for t_ in (_trees[0], _trees[-1]))} trees); the test snapshot is never used to stop. "
+        f"Brackets are the 95% confidence interval: the test listings resampled by model (listings of one model are "
+        f"not independent), {num(bt['protocol']['interval']['n_boot'], lang)} times."))
+    A("")
+    # 2.6: ufuk karsilastirmasinin test ilanlari farkli; "saf zaman etkisi" denemez. Araliklar veriden okunur.
+    _a, _b = _first[0], _first[-1]
+    _apart = _a[fc["ci_hi"]] < _b[fc["ci_lo"]]
+    A(L(f"Aynı eğitim taramasından ({_a[0]}) test ufku uzadıkça MAPE {P(_a[fc['MAPE']], lang, 2)} → "
+        f"{P(_b[fc['MAPE']], lang, 2)}; güven aralıkları " + ("örtüşmüyor" if _apart else "örtüşüyor")
+        + ". Ama her ufkun test ilanları farklı: başka ilanlar, başka bileşim, başka test taraması. Bu fark yalnız "
+        "zamana bağlanamaz.",
+        f"From the same training snapshot ({_a[0]}) MAPE goes {P(_a[fc['MAPE']], lang, 2)} → {P(_b[fc['MAPE']], lang, 2)} "
+        f"as the test horizon lengthens; the confidence intervals " + ("do not overlap" if _apart else "overlap")
+        + ". But each horizon tests different listings: other listings, another mix, another test snapshot. The gap "
+        "cannot be put on time alone."))
+    A("")
+    pc = {c_: i_ for i_, c_ in enumerate(bt["columns"]["paired"])}
+    _pr = bt["paired"]
+    if _pr:
+        T([L("test", "test"), L("tek dönem eğitimi", "single training"), L("kümülatif eğitimi", "cumulative training"),
+           L("ortak ilan", "shared listings"), L("tek dönem", "single"), L("kümülatif", "cumulative"),
+           L("fark [%95 GA]", "difference [95% CI]")],
+          [[r_[pc["test"]], r_[pc["single_train"]], "≤" + r_[pc["cumulative_train"]].lstrip("→"),
+            num(r_[pc["n_common"]], lang), P(r_[pc["single_MAPE"]], lang, 2), P(r_[pc["cumulative_MAPE"]], lang, 2),
+            f"{r_[pc['difference']]:+.2f} [{r_[pc['ci_lo']]:+.2f}, {r_[pc['ci_hi']]:+.2f}]"] for r_ in _pr], "lllrrrr")
+        _better = [r_ for r_ in _pr if r_[pc["ci_hi"]] < 0]
+        _worse = [r_ for r_ in _pr if r_[pc["ci_lo"]] > 0]
+        A(L(f"Tek dönem ile kümülatif, aynı test taramasında ikisinin de test ettiği aynı ilanlarda eşli "
+            f"karşılaştırıldı (aynı yeniden örneklemeler). {number_word(len(_pr), lang, cap=True)} karşılaştırmanın "
+            f"{number_word(len(_better), lang)} tanesinde birikim hatayı güven aralığı sıfırın altında kalacak kadar "
+            f"düşürüyor" + (f", {number_word(len(_worse), lang)} tanesinde artırıyor" if _worse else "")
+            + (f"; kalan {number_word(len(_pr) - len(_better) - len(_worse), lang)} tanesinde fark örnekleme hatası "
+               f"içinde." if len(_pr) - len(_better) - len(_worse) else "."),
+            f"Single and cumulative were compared paired, on the listings both tested in the same test snapshot "
+            f"(the same resamples). In {number_word(len(_better), 'en')} of the {number_word(len(_pr), 'en')} "
+            f"comparisons accumulating lowers the error with the interval below zero"
+            + (f", in {number_word(len(_worse), 'en')} it raises it" if _worse else "")
+            + (f"; in the remaining {number_word(len(_pr) - len(_better) - len(_worse), 'en')} the gap is within "
+               f"sampling error." if len(_pr) - len(_better) - len(_worse) else ".")))
+        A("")
 
     A(L("### Dönem başına OOF", "### Per-snapshot OOF"))
     A("")
@@ -1597,21 +1629,22 @@ def section_time(c):
             for p_, i_ in zip(bt["per_snapshot"], bt["insample"])]
     T([L("dönem (bağımsız)", "snapshot (standalone)"), "MAPE", "n",
        L("kümülatif", "cumulative"), "MAPE", "n"], rows, "lrrlrr")
-    # 2026-09-23: bu iki sutun ana modelden farkli bir protokol; eskiden "sizintisiz" diye geciyordu.
     _last_ins, _last_n = bt["insample"][-1][1], bt["insample"][-1][2]
-    _same_set = _last_n == v["n_dedup"]
-    A(L(f"Bu tablo zamansal değil: her satır düz 5-fold OOF, yalnız yeni ilan kuralı yok. Kurulum yine hafif "
-        f"(TF-IDF/SVD yok, {_trees_ins.group(1)} ağaç, erken durdurma yok). Son kümülatif satır "
-        + ("manşet modelle aynı ilanları kapsıyor ve " if _same_set else f"{num(_last_n, lang)} ilanda ")
-        + f"{P(_last_ins, lang, 2)} veriyor, manşet MAPE {P(v['model_mape'], lang, 2)}; kurulumlar "
-        f"birden fazla noktada ayrıldığı için fark tek bir değişikliğe atfedilemez.",
-        f"This table is not temporal: every row is plain 5-fold OOF with no new-listings-only rule. The setup is "
-        f"again lighter (no TF-IDF/SVD, {_trees_ins.group(1)} trees, no early stopping). The last cumulative row "
-        + ("covers the same listings as the headline model and " if _same_set else
-           f"covers {num(_last_n, 'en')} listings and ")
-        + f"gives {P(_last_ins, lang, 2)} against a headline MAPE of "
-        f"{P(v['model_mape'], lang, 2)}; the setups differ in more than one place, so the gap cannot be "
-        f"attributed to a single change."))
+    assert _last_n == v["n_dedup"] and abs(_last_ins - v["model_mape"]) < .005, "son kumulatif satir manset degil"
+    _own = {r_[0]: r_[1] for r_ in bt["per_snapshot"]}[_a[0]]
+    _below = _a[fc["MAPE"]] < _own
+    A(L(f"Bu tablo zamansal değil: her satır düz 5-fold OOF, yeni ilan kuralı yok. Son kümülatif satır manşet modelin "
+        f"OOF'unun kendisi ({P(_last_ins, lang, 2)}, {num(_last_n, lang)} ilan)."
+        + (f" İlk ileri test ({_a[0]} → {_a[1]}, {P(_a[fc['MAPE']], lang, 2)}) aynı taramanın kendi içindeki OOF'undan "
+           f"({P(_own, lang, 2)}) düşük. Bu bir çelişki değil, iki ayrı ölçüm: ileri model taramanın tamamıyla "
+           f"eğitiliyor (OOF'ta her kat beşte dördüyle), test ise yalnız sonraki taramaya yeni gelen ilanlar — başka "
+           f"bir ilan kümesi." if _below else ""),
+        f"This table is not temporal: every row is plain 5-fold OOF with no new-listings-only rule. The last cumulative "
+        f"row is the headline model's OOF itself ({P(_last_ins, lang, 2)}, {num(_last_n, lang)} listings)."
+        + (f" The first forward test ({_a[0]} → {_a[1]}, {P(_a[fc['MAPE']], lang, 2)}) is lower than the same "
+           f"snapshot's own OOF ({P(_own, lang, 2)}). That is not a contradiction but two different measurements: the "
+           f"forward model trains on the whole snapshot (in OOF each fold sees four fifths of it), and its test is only "
+           f"the listings new in the next snapshot — a different set of listings." if _below else "")))
     A("")
     figs(15)
 
@@ -1692,21 +1725,21 @@ def section_time(c):
     A("")
     figs(13, 14)
 
-    # Yeniden egitim tavsiyesi: takvim degil, olculen kayma + dissal olaylar + biriken veri.
-    # Butun sayilar yukaridaki tablolardan (psi_max/_safe ve bt["insample"]/["per_snapshot"]).
-    _pmin = min(r[1] for r in bt["per_snapshot"])
-    _pmax = max(r[1] for r in bt["per_snapshot"])
-    # bt['single'] satiri: [egitim donemi, test donemi, MAPE, n]. AYNI egitim doneminden (ilk tarama) en yakin ve
-    # en uzak test ufku. 2026-09-28 (sadelestirme listesi): bu fark "saf zaman etkisi" degil — test ilanlari,
+    # Yeniden egitim tavsiyesi: takvim degil, olculen hata ve kayma + dissal olaylar + biriken veri.
+    # Butun sayilar yukaridaki tablolardan (psi_max/_safe, bt["single"], esli karsilastirma).
+    # bt['single'] satiri: [egitim donemi, test donemi, MAPE, n, ...]. AYNI egitim doneminden (ilk tarama) en yakin
+    # ve en uzak test ufku. 2026-09-28 (sadelestirme listesi): bu fark "saf zaman etkisi" degil — test ilanlari,
     # bilesim ve test dalgasi da degisiyor.
     _s0 = bt["single"][0][0]
     _same = [r for r in bt["single"] if r[0] == _s0]
     _bt0, _bt2 = _same[0], _same[-1]
-    _c0, _cN = bt["insample"][0], bt["insample"][-1]
     # 2026-09-27 (kullanici: "0.10 esigi yerine drift izlensin ve egitilsin"): oneri sabit bir PSI esigine
     # baglanmiyor. Gerekce veride: PSI esigin cok altindayken bile hata ufukla buyuyor; kapi tutmazsa uretec durur.
     assert psi_max < _safe and _bt2[2] > _bt0[2], (
         f"'sabit esik yetmez' maddesi bayat: PSI {psi_max} (esik {_safe}), MAPE {_bt0[2]} -> {_bt2[2]}")
+    # 2026-09-28: "eski donemleri atma" onerisi ayni test ilanlarindaki esli karsilastirmaya kapili (farkli ilan
+    # kumelerindeki kumulatif OOF'a degil); birikim bir yerde anlamli zarar ederse uretec durur.
+    assert _pr and _better and not _worse, f"birikim onerisi bayat: {_pr}"
     A(L("### Yeniden eğitim ne zaman", "### When to retrain"))
     A("")
     A(L(f"- **Kaymayı izle, modeli yeniden eğit.** Canlıda bir **kayma servisi** PSI · KS · EMD'yi izlesin ve "
@@ -1715,28 +1748,32 @@ def section_time(c):
         f"%{_bt0[2]:.2f} → %{_bt2[2]:.2f} artıyor. Bu artış yalnız zamana bağlanamaz: her ufkun test ilanları "
         f"farklı, ilan bileşimi ve test taraması da değişiyor. Ama dağılım neredeyse kıpırdamazken bile eski "
         f"taramayla eğitilmiş modelin hatası büyüyor.\n"
+        f"- **Hatayı doğrudan izle.** Fiyat her taramada geldiği için modelin yeni ilanlardaki hatası doğrudan "
+        f"ölçülebilir; yukarıdaki backtest tam bunu yapıyor. Kayma ölçüleri (PSI · KS · EMD) tanı için kalır.\n"
         f"- **Fiyat rejimini değiştiren gelişmeler.** Vergi/ÖTV düzenlemesi, teşvik, ithalat "
         f"kuralı, kur hareketi ya da ani piyasa anomalisi gibi dışsal olaylar kaymayı bir ölçüm "
         f"penceresi dolmadan yaratabilir; bunlar ayrıca **tetikleyici** sayılmalı ve "
         f"eğitim planı bunlara göre yapılmalı.\n"
-        f"- **Veri biriktikçe kazanç.** Dönem başına bağımsız OOF %{_pmin:.2f}–%{_pmax:.2f} "
-        f"bandında sabit kalırken kümülatif %{_c0[1]:.2f} → %{_cN[1]:.2f} "
-        f"(n {num(_c0[2], lang)} → {num(_cN[2], lang)}). Yeniden eğitim eski dönemleri atarak "
-        f"değil, **üstüne ekleyerek** yapılmalı.",
+        f"- **Eski dönemleri atma.** Aynı test ilanlarındaki eşli karşılaştırmada birikimli eğitim "
+        f"{number_word(len(_pr), lang)} karşılaştırmanın {number_word(len(_better), lang)} tanesinde hatayı anlamlı "
+        f"düşürüyor, hiçbirinde artırmıyor. Yeniden eğitim eski dönemleri atarak değil, **üstüne ekleyerek** "
+        f"yapılmalı.",
         f"- **Watch drift, retrain the model.** Run a **drift service** in production that watches "
         f"PSI · KS · EMD, and retrain the model on new snapshots. A fixed PSI threshold is not enough: today's "
         f"highest PSI is {psi_max:.4f}, yet in the backtest above MAPE rises {_bt0[2]:.2f}% → {_bt2[2]:.2f}% as "
         f"the test horizon lengthens from the same training snapshot. That rise cannot be put on time alone: "
         f"each horizon tests different listings, and the listing mix and the test snapshot change too. Still, "
         f"a model trained on an old snapshot errs more even while the distribution barely moves.\n"
+        f"- **Watch the error directly.** The price arrives with every snapshot, so the model's error on new "
+        f"listings can be measured directly; the backtest above does exactly that. The drift measures (PSI · KS · "
+        f"EMD) stay as diagnostics.\n"
         f"- **Events that reset the pricing regime.** A tax or excise change, an incentive, an "
         f"import rule, a currency move or a sudden market anomaly can shift the distribution "
         f"before a monitoring window closes; treat those as **triggers** as well and plan "
         f"retraining around them.\n"
-        f"- **Accumulated data pays.** Per-snapshot OOF stays flat at {_pmin:.2f}%–{_pmax:.2f}% "
-        f"while the cumulative figure falls {_c0[1]:.2f}% → {_cN[1]:.2f}% "
-        f"(n {num(_c0[2], lang)} → {num(_cN[2], lang)}). Retrain by **adding** snapshots, not by "
-        f"discarding the old ones."))
+        f"- **Keep the old snapshots.** In the paired comparison on the same test listings, accumulating "
+        f"lowers the error significantly in {number_word(len(_better), 'en')} of the {number_word(len(_pr), 'en')} "
+        f"comparisons and raises it in none. Retrain by **adding** snapshots, not by discarding the old ones."))
     A("")
 
 

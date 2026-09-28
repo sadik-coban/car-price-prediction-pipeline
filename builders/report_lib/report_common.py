@@ -44,7 +44,8 @@ REQUIRED = [
     "domain.segment_ladder", "domain.model_year_median.ladder", "domain.price_dist.p10", "domain.price_dist.p90",
     "domain.final_results.training.target", "domain.shap.lightgbm_tfidf_svd", "domain.kmeans",
     "methodology.theils_matrix", "methodology.column_missing",
-    "methodology.backtest.per_snapshot", "methodology.backtest.insample", "methodology.backtest.protocol",
+    "methodology.backtest.per_snapshot", "methodology.backtest.insample", "methodology.backtest.protocol", "methodology.backtest.paired",
+    "methodology.backtest.columns",
     "methodology.systematic_missing.systematic_groups", "methodology.systematic_missing.note",
     "methodology.pca_axes", "meta.repro", "meta.brands", "column_labels"] + [f"error_drivers.{p_}" for p_ in [
     "plate_scope", "segment_quality", "hedonic_dropped", "per_model_error", "per_model_buckets", "lira_quartile",
@@ -247,7 +248,7 @@ def derive(d):
     assert _th, "drift notunda PSI esikleri bulunamadi"
     v["psi_max"] = max(r[2] for r in dom["drift"]["all_pairs"])    # [pair, KS, PSI, EMD, shared %]
     v["psi_safe"], v["psi_retrain"] = float(_th.group(1)), float(_th.group(2))
-    v["bt_insample"] = met["backtest"]["insample"]
+    v["bt_paired"], v["bt_columns"] = met["backtest"]["paired"], met["backtest"]["columns"]
     v["lofo"] = met["lofo"]                      # karar notu "farki kapatan" siralamasi (2026-09-23)
     # EN: OOF error distribution: bands, median/mean error, extremes (08_residuals)
     # TR: OOF hata dağılımı: bantlar, medyan/ortalama hata, uçlar (08_residuals)
@@ -622,8 +623,10 @@ def build_figures(d, v, lang, only=None):
         # yesil noktalarin altina n yazilir, turuncunun aciklamasina tek donemin n araligi.
         bt = met["backtest"]
         ps, ins = bt["per_snapshot"], bt["insample"]
-        t = L("Daha çok veri, daha az hata — tek dönem vs biriken dönemler",
-              "More data, less error — single period vs pooled periods")
+        # 2026-09-28: baslik iddia tasimiyor (iki cizgi farkli ilan kumeleri); birikimin etkisi §9'un eşli
+        # karsilastirmasinda, ayni test ilanlarinda olculuyor.
+        t = L("Tek dönem ve biriken dönemler — ortalama yüzde hata",
+              "Single period and pooled periods — mean percentage error")
         fig, ax = plt.subplots(figsize=(7, 3.4))
         xs = list(range(len(ps)))
         _nps = [r[2] for r in ps]

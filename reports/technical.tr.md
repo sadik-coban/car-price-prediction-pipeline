@@ -403,7 +403,7 @@ Liraya çevrilince tablo değişiyor: toplam lira hatasının %38.9 kadarı tahm
 
 ## 9. Zaman — dönem etkisi, dağılım kayması ve backtest
 
-İki ölçü var. **Dağılım kayması:** dönemler arası fiyat dağılımı az kayıyor (en yüksek PSI 0.005, "kayma yok" eşiği 0.10). **Zamansal backtest:** eski dönemde eğitip sonraki dönemin yalnızca yeni ilanlarında test edince hata ufuk uzadıkça büyüyor (%6.53 → %7.56). Aynı model ve yılın ilanlarında piyasa seviyesi +%2.0 kaydı ve model zamanı görmüyor → yeniden eğitim takvime değil **ölçülen kaymaya** bağlanmalı (bölümün sonu).
+İki ölçü var. **Dağılım kayması:** dönemler arası fiyat dağılımı az kayıyor (en yüksek PSI 0.005, "kayma yok" eşiği 0.10). **Zamansal backtest:** eski dönemde eğitip sonraki dönemin yalnızca yeni ilanlarında test edince hata ufuk uzadıkça büyüyor (%6.29 → %7.34). Aynı model ve yılın ilanlarında piyasa seviyesi +%2.0 kaydı ve model zamanı görmüyor → yeniden eğitim takvime değil **ölçülen hataya ve kaymaya** bağlanmalı (bölümün sonu).
 
 ### Dönem etkisi
 
@@ -418,31 +418,41 @@ Liraya çevrilince tablo değişiyor: toplam lira hatasının %38.9 kadarı tahm
 
 ### Zamansal backtest
 
-| tek dönem: eğitim → test | MAPE | n | kümülatif: eğitim → test | MAPE | n |
+| tek dönem: eğitim → test | MAPE [%95 GA] | n | kümülatif: eğitim → test | MAPE [%95 GA] | n |
 |---|---:|---:|---|---:|---:|
-| 01-18 → 01-27 | %6.53 | 2.960 | ≤01-18 → 01-27 | = tek dönem | = |
-| 01-18 → 03-21 | %6.81 | 8.182 | ≤01-18 → 03-21 | = tek dönem | = |
-| 01-18 → 06-27 | %7.56 | 10.529 | ≤01-18 → 06-27 | = tek dönem | = |
-| 01-27 → 03-21 | %6.59 | 7.413 | ≤01-27 → 03-21 | %6.57 | 7.238 |
-| 01-27 → 06-27 | %7.30 | 10.313 | ≤01-27 → 06-27 | %7.36 | 10.257 |
-| 03-21 → 06-27 | %7.06 | 9.099 | ≤03-21 → 06-27 | %6.94 | 8.889 |
+| 01-18 → 01-27 | %6.29 [5.90, 6.73] | 2.960 | ≤01-18 → 01-27 | = tek dönem | = |
+| 01-18 → 03-21 | %6.59 [6.24, 6.96] | 8.182 | ≤01-18 → 03-21 | = tek dönem | = |
+| 01-18 → 06-27 | %7.34 [6.95, 7.73] | 10.529 | ≤01-18 → 06-27 | = tek dönem | = |
+| 01-27 → 03-21 | %6.54 [6.18, 6.91] | 7.413 | ≤01-27 → 03-21 | %6.47 [6.09, 6.83] | 7.238 |
+| 01-27 → 06-27 | %7.18 [6.82, 7.60] | 10.313 | ≤01-27 → 06-27 | %7.23 [6.85, 7.64] | 10.257 |
+| 03-21 → 06-27 | %6.90 [6.49, 7.33] | 9.099 | ≤03-21 → 06-27 | %6.78 [6.42, 7.17] | 8.889 |
 
-Tek dönem = yalnız bir taramada eğit, sonrakini tahmin et. Kümülatif = t'ye kadarki tüm taramalarda eğit. Test kümesi yalnız eğitimde hiç görülmemiş `ad_id`'ler (sızıntısız); **n** bu ilanların sayısı ve MAPE bu ilanlarda. Ör. 01-27 taramasındaki 11.254 ilanın 8.294 tanesi 01-18 taramasında da yayındaydı; test edilen kalan 2.960 ilan. Kümülatifte t'ye kadarki her taramada görülen ilan çıktığı için n tek dönemden küçük ya da eşit. Aynı eğitim döneminden test ufku uzadıkça hata büyüyor.
+Tek dönem = yalnız bir taramada eğit, sonrakini tahmin et. Kümülatif = t'ye kadarki tüm taramalarda eğit. Test kümesi yalnız eğitimde hiç görülmemiş `ad_id`'ler (sızıntısız); **n** bu ilanların sayısı ve MAPE bu ilanlarda. Ör. 01-27 taramasındaki 11.254 ilanın 8.294 tanesi 01-18 taramasında da yayındaydı; test edilen kalan 2.960 ilan. Kümülatifte t'ye kadarki her taramada görülen ilan çıktığı için n tek dönemden küçük ya da eşit. "=" işaretli kümülatif hücreler tek dönem koluyla aynı deneydir (ilk taramaya kadar birikim tek bir taramadır).
 
-Bu tablonun iki kolu da ana modelden hafif bir kurulumla ölçülür: model ve seri adı TF-IDF/SVD'den geçmeden ham kategorik girer, 800 ağaç, erken durdurma yok. Mutlak düzey manşet MAPE ile değil, satırlar birbiriyle karşılaştırılmalı. "=" işaretli kümülatif hücreler tek dönem koluyla aynı deneydir (ilk taramaya kadar birikim tek bir taramadır).
+Kurulum manşet modelinki: model ve seri adı TF-IDF+SVD, aynı LightGBM ayarları. Ağaç sayısını, servis edilen modeldeki gibi, eğitim kümesinin kendi içindeki 5 katlı erken durdurma seçiyor (161–211 ağaç); test taraması durdurmak için hiç kullanılmıyor. Köşeli parantez %95 güven aralığı: test ilanları modele göre yeniden örneklenerek (bir modelin ilanları birbirinden bağımsız değil) 1.000 kez hesaplandı.
+
+Aynı eğitim taramasından (01-18) test ufku uzadıkça MAPE %6.29 → %7.34; güven aralıkları örtüşmüyor. Ama her ufkun test ilanları farklı: başka ilanlar, başka bileşim, başka test taraması. Bu fark yalnız zamana bağlanamaz.
+
+| test | tek dönem eğitimi | kümülatif eğitimi | ortak ilan | tek dönem | kümülatif | fark [%95 GA] |
+|---|---|---|---:|---:|---:|---:|
+| 03-21 | 01-27 | ≤01-27 | 7.238 | %6.52 | %6.47 | -0.04 [-0.12, +0.03] |
+| 06-27 | 01-27 | ≤01-27 | 10.257 | %7.17 | %7.23 | +0.06 [-0.01, +0.12] |
+| 06-27 | 03-21 | ≤03-21 | 8.889 | %6.89 | %6.78 | -0.11 [-0.20, -0.02] |
+
+Tek dönem ile kümülatif, aynı test taramasında ikisinin de test ettiği aynı ilanlarda eşli karşılaştırıldı (aynı yeniden örneklemeler). Üç karşılaştırmanın bir tanesinde birikim hatayı güven aralığı sıfırın altında kalacak kadar düşürüyor; kalan iki tanesinde fark örnekleme hatası içinde.
 
 ### Dönem başına OOF
 
 | dönem (bağımsız) | MAPE | n | kümülatif | MAPE | n |
 |---|---:|---:|---|---:|---:|
-| 01-18 | %7.07 | 10.901 | ≤01-18 | %7.07 | 10.901 |
-| 01-27 | %6.99 | 11.254 | ≤01-27 | %6.77 | 13.861 |
-| 03-21 | %7.02 | 11.478 | ≤03-21 | %6.53 | 21.099 |
-| 06-27 | %7.25 | 11.526 | ≤06-27 | %6.53 | 29.988 |
+| 01-18 | %6.91 | 10.901 | ≤01-18 | %6.91 | 10.901 |
+| 01-27 | %6.92 | 11.254 | ≤01-27 | %6.67 | 13.861 |
+| 03-21 | %6.93 | 11.478 | ≤03-21 | %6.45 | 21.099 |
+| 06-27 | %7.09 | 11.526 | ≤06-27 | %6.49 | 29.988 |
 
-Bu tablo zamansal değil: her satır düz 5-fold OOF, yalnız yeni ilan kuralı yok. Kurulum yine hafif (TF-IDF/SVD yok, 500 ağaç, erken durdurma yok). Son kümülatif satır manşet modelle aynı ilanları kapsıyor ve %6.53 veriyor, manşet MAPE %6.49; kurulumlar birden fazla noktada ayrıldığı için fark tek bir değişikliğe atfedilemez.
+Bu tablo zamansal değil: her satır düz 5-fold OOF, yeni ilan kuralı yok. Son kümülatif satır manşet modelin OOF'unun kendisi (%6.49, 29.988 ilan). İlk ileri test (01-18 → 01-27, %6.29) aynı taramanın kendi içindeki OOF'undan (%6.91) düşük. Bu bir çelişki değil, iki ayrı ölçüm: ileri model taramanın tamamıyla eğitiliyor (OOF'ta her kat beşte dördüyle), test ise yalnız sonraki taramaya yeni gelen ilanlar — başka bir ilan kümesi.
 
-![Daha çok veri, daha az hata — tek dönem vs biriken dönemler](figures/tr-15-backtest.png)
+![Tek dönem ve biriken dönemler — ortalama yüzde hata](figures/tr-15-backtest.png)
 
 ### Dağılım kayması
 
@@ -473,9 +483,10 @@ Bu tablo zamansal değil: her satır düz 5-fold OOF, yalnız yeni ilan kuralı 
 
 ### Yeniden eğitim ne zaman
 
-- **Kaymayı izle, modeli yeniden eğit.** Canlıda bir **kayma servisi** PSI · KS · EMD'yi izlesin ve model yeni taramalarla yeniden eğitilsin. Sabit bir PSI eşiği yetmez: bugünkü en yüksek PSI 0.0049, ama yukarıdaki backtest'te aynı eğitim döneminden test ufku uzadıkça MAPE %6.53 → %7.56 artıyor. Bu artış yalnız zamana bağlanamaz: her ufkun test ilanları farklı, ilan bileşimi ve test taraması da değişiyor. Ama dağılım neredeyse kıpırdamazken bile eski taramayla eğitilmiş modelin hatası büyüyor.
+- **Kaymayı izle, modeli yeniden eğit.** Canlıda bir **kayma servisi** PSI · KS · EMD'yi izlesin ve model yeni taramalarla yeniden eğitilsin. Sabit bir PSI eşiği yetmez: bugünkü en yüksek PSI 0.0049, ama yukarıdaki backtest'te aynı eğitim döneminden test ufku uzadıkça MAPE %6.29 → %7.34 artıyor. Bu artış yalnız zamana bağlanamaz: her ufkun test ilanları farklı, ilan bileşimi ve test taraması da değişiyor. Ama dağılım neredeyse kıpırdamazken bile eski taramayla eğitilmiş modelin hatası büyüyor.
+- **Hatayı doğrudan izle.** Fiyat her taramada geldiği için modelin yeni ilanlardaki hatası doğrudan ölçülebilir; yukarıdaki backtest tam bunu yapıyor. Kayma ölçüleri (PSI · KS · EMD) tanı için kalır.
 - **Fiyat rejimini değiştiren gelişmeler.** Vergi/ÖTV düzenlemesi, teşvik, ithalat kuralı, kur hareketi ya da ani piyasa anomalisi gibi dışsal olaylar kaymayı bir ölçüm penceresi dolmadan yaratabilir; bunlar ayrıca **tetikleyici** sayılmalı ve eğitim planı bunlara göre yapılmalı.
-- **Veri biriktikçe kazanç.** Dönem başına bağımsız OOF %6.99–%7.25 bandında sabit kalırken kümülatif %7.07 → %6.53 (n 10.901 → 29.988). Yeniden eğitim eski dönemleri atarak değil, **üstüne ekleyerek** yapılmalı.
+- **Eski dönemleri atma.** Aynı test ilanlarındaki eşli karşılaştırmada birikimli eğitim üç karşılaştırmanın bir tanesinde hatayı anlamlı düşürüyor, hiçbirinde artırmıyor. Yeniden eğitim eski dönemleri atarak değil, **üstüne ekleyerek** yapılmalı.
 
 ## 10. Serbest metin: ölçüldü, dahil edilmedi
 
