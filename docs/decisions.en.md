@@ -37,8 +37,8 @@ published work.
    a note cannot silently go stale.
 
 **Derived values.** Every number that needs the data is computed in an analysis script (the ones only the
-reports use sit in the `report` section of the metrics JSON: error bands, conformal coverage, the Holm
-correction …). The builders only do formatting-level arithmetic on published numbers (e.g. the model's
+reports use sit in the `report` section of the metrics JSON: error bands, conformal coverage, the Mondrian
+bands …). The builders only do formatting-level arithmetic on published numbers (e.g. the model's
 percentage improvement over the baseline, (base−model)/base). The noise-floor pair `1.42×` and `₺33K` left the reports on 2026-09-20 and is gone here too.
 
 **Hand-written notes that contradicted the data were fixed (2026-09-16).** Three hand-written
@@ -49,7 +49,8 @@ notes:
   silhouette peaks. k=3 is fixed for interpretability, not chosen by silhouette. The note is now built
   from the data.
 - `numeric_correlation.not` said "VIF all <3". Since 2026-09-23 VIF is computed from the fitted hedonic
-  model's own design matrix, and the technical report prints the centred and uncentred versions together.
+  model's own design matrix; since 2026-09-28 the technical report gives its highest value (centred and
+  uncentred) in one sentence.
 - The flag label in `controlled_effects` said "(hidden damage)", while the chain's own framing is
   "not hidden damage". Label now: *Contradictory 'clean' claim (seller's own form shows damage)*.
 
@@ -73,6 +74,40 @@ the collected data before the model, in order and plainly (plate, deduplication,
 range, damage flags, missing values, outliers, target). Gold is described only on the `db/` side and in
 `docs/database.en.md`; `analysis/01_gold_contract.py`, which fed §1's former gold subsection, is archived.
 
+## Simplification (2026-09-28, owner approved)
+
+An externally prepared simplification list was assessed item by item. The list looked at the site's old copy (ΔR²
+0.0015 and the hedonic period effect +5.3% came from there); the single source is the generator, and the site copies
+the report's markdown.
+
+- **Left the report:**
+  - Cramér's V, the permutation floors and the Theil's U matrix (the asymmetry table stays);
+  - the Pearson map and the |r|>0.5 table (the Spearman pairs are one sentence);
+  - the VIF table, the cc–hp table by fuel, the assumption-test paragraph (one sentence each);
+  - the best-5 and the two worst-6 tables (their findings stay);
+  - the lira panel in the technical report (it stays in the decision note);
+  - the drift p-values, the disjoint table and Holm (the snapshots share listings; a test assumes independence);
+  - the LOFO coverage table (one sentence).
+- **Method changed:**
+  - Hedonic confidence intervals come from standard errors clustered by model. The row bootstrap treated listings
+    as independent; 22 series are too few and too uneven to cluster on.
+  - The hedonic model has two columns: segment control and model control. The decision note prints the model
+    column (owner's decision).
+  - Every grouping by price level is cut on the predicted price; grouping by the actual price produces regression
+    to the mean.
+  - Coverage is cross-calibrated. The per-band margin (Mondrian) was measured under a pre-registration
+    (`plans/08-mondrian-coverage`, H1 confirmed); the single served q is unchanged.
+  - The backtest runs the headline setup (the last insample block equals the headline OOF bit for bit), with 95%
+    model-cluster bootstrap intervals and a paired single/cumulative comparison. The "pure time effect" and "more
+    data, less error" claims were cut to what the intervals support.
+- **Not taken:**
+  - a hedonic period dummy (below);
+  - EMD on the log scale and a log mean of the cell change;
+  - LOFO for the six categorical features (decision of 2026-09-25);
+  - a ±1% retraining threshold that does not come from the data.
+- `tools/snapshot_metrics.py --drop-exemption` removes the exemption of a key removed on purpose (the bootstrap run
+  time went this way).
+
 ## Business / technical split
 
 The **business note** = what to do, how much money. No method names (MAPE, R², conformal, OOF all
@@ -80,7 +115,8 @@ live in the technical report); everything in ₺ and plain percentages. The **te
 protocol, controls, limits. Both are fed by **the same computation**: shared values are derived
 once in `builders/report_lib/report_common.py::derive` and handed to both templates → a figure cannot differ between
 the two. Some
-charts (quartile error, lira quartile, coverage, backtest) appear in both: in the business note for the decision,
+charts (quartile error, coverage, backtest) appear in both (the lira quartile only in the business note since
+2026-09-28): in the business note for the decision,
 in the technical report as evidence — a deliberate repeat.
 
 ## Why the text analysis is archived
@@ -120,8 +156,9 @@ kept. Guard: `tests/repo/test_no_archive_inputs.py`. Removed under this decision
 1. `ad_id` is written into no report and no site data; it stays in the database and in
    `data/duplicate_ad_ids.csv` next to it (both local; `data/` is outside git). Ad text never reaches any
    markdown either.
-2. **Listing-level rows are published deliberately** (decision 2026-09-16): best and worst
-   predictions — model · price · age · km. A rare model plus an exact price can be found by
+2. **Listing-level rows are published deliberately** (decision 2026-09-16): the §7 sample
+   predictions and the §8 examples — model · price · age · km (the best-5 and the two worst-6 tables left
+   on 2026-09-28). A rare model plus an exact price can be found by
    searching; that is an accepted risk.
 
 ## Honest framing (must be preserved)
@@ -151,8 +188,12 @@ kept. Guard: `tests/repo/test_no_archive_inputs.py`. Removed under this decision
   same rule. Technical report §1 prints its size. The translation happens in the analysis
   (`analysis/lib/common.py`); the database keeps the information semi-raw (`NULL`).
 - **The hedonic model has no period effect** (user decision, 2026-09-23): periods are pooled; the shift in
-  market level is read in technical report §9 from live listings of the same model and year.
+  market level is read in technical report §9 from live listings of the same model and year. Proposed again on
+  2026-09-28 (+5.3%) and not taken: the number came from the site's old July data, and a "period" in this data
+  is the snapshot a listing was last seen in, so it is mixed with survival.
 - **Retraining is not tied to a fixed PSI threshold** (2026-09-27). Drift is watched and the model is
   retrained on new snapshots. The reason is in the data: with PSI far below the threshold, the error of a
-  model trained on one snapshot still grows as the test horizon lengthens (technical report §9).
+  model trained on one snapshot still grows as the test horizon lengthens (technical report §9). The price
+  arrives with every snapshot, so the model's error on new listings is watched directly; there is no fixed
+  threshold (2026-09-28).
 - Scope is BMW + Audi; how far it generalises to other brands was not measured.

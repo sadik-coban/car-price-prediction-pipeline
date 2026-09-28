@@ -59,9 +59,9 @@ tutar: `metrics_shape.json` (her anahtar yolu ve JSON tipi) ve `metrics_fingerpr
 listelerin uzunluğu ve kanonik JSON'unun sha256'sı). İlk referans `restructure-2026-09` dalındaki `b2395e0`
 commit'inin metrikleridir. Kurallar:
 - varsayılan **birebir eşitlik**. Oynamasına izin verilen anahtarlar yalnız
-  `tests/baselines/exemptions.json`'da, her biri tr/en gerekçesiyle: `_meta.generated_at` (koşum damgası),
-  `06_hedonic`'in bootstrap süresi ve `shap/04_variants`'ın `catboost_native*` anahtarları (yukarıdaki
-  kalıntı). Artık hiçbir anahtarla eşleşmeyen istisna testi düşürür; bayat istisna kalmaz;
+  `tests/baselines/exemptions.json`'da, her biri tr/en gerekçesiyle: `_meta.generated_at` (koşum damgası)
+  ve `shap/04_variants`'ın `catboost_native*` anahtarları (yukarıdaki kalıntı). `06_hedonic`'in bootstrap süresi
+  2026-09-28'de anahtarıyla birlikte kalktı (`--drop-exemption`). Artık hiçbir anahtarla eşleşmeyen istisna testi düşürür; bayat istisna kalmaz;
 - referans yalnız `python tools/snapshot_metrics.py --accept "<gerekçe>"` ile değişir. Önce `metrics_view`
   tutarlılık kapısı geçmeli, gerekçe boş olamaz; her kabul `tests/baselines/accept_log.jsonl`'a tarih,
   gerekçe, değişen anahtar sayıları ve ilk farklarla yazılır;

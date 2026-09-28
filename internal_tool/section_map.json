@@ -4,10 +4,10 @@
   "tr": "Üç raporun her bölümünü hangi analiz betiklerinin (analysis/run_all.py ORDER adları) beslediği ve her numaralı figürün hangi betikten geldiği. Derleyicilerden elle yazıldı (2026-09-25): makinece okunur bir eşleme yok. Bölümler konuma göre anahtarlanır: 0 = ilk '## ' başlığından önceki kısım. 'title' İngilizce başlıktır. tests/internal_tool/test_tool_section_map.py başlıkları, betikleri ve figürleri raporlara göre sınar; reviewed_against eşlemenin okunduğu derleyici dosyalarının sha256'sını tutar (gözden geçirdikten sonra python internal_tool/catalog.py --stamp) ve araç, o zamandan beri bir derleyici değiştiyse uyarı gösterir."
  },
  "reviewed_against": {
-  "builders/build_technical_report.py": "dd1af8618714a9a56429a68dfaabedb14b8531328ee4ebf1c6ab782dff58bfba",
-  "builders/build_business_report.py": "6d991b91c102dc62b30515e3b2fc848a129d38c555abf8091a6123013c8fae71",
+  "builders/build_technical_report.py": "db5aff0fe24bd1430a4c0558672a9cc8ec040f541529ca3eadba68e47717a2a5",
+  "builders/build_business_report.py": "a4e6712bcab6058095369d7c160cd455546e4afd225ec975de89e9f6712dde9b",
   "builders/build_shap_report.py": "49d0681fe7b27e3a702fc8873214e59ed84f9ad8f22841686f266f6088f1ea05",
-  "builders/report_lib/report_common.py": "875eb5a6507b875c47d99029fbe5967ccaf6cb9da0bf2db97db65def9fcb33dc"
+  "builders/report_lib/report_common.py": "8a003f52b6768f86d9df3fc103dd49e2bbef5333df0e025041691f2a953d8568"
  },
  "figures": {
   "00": "07_model_comparison.py",
@@ -99,7 +99,6 @@
      "07_lofo.py",
      "shap/04_variants.py",
      "02_missingness.py",
-     "08_large_errors.py",
      "08_residuals.py"
     ]
    },

@@ -71,8 +71,8 @@ python tools/verify.py --full                 # run_all.py first (~16 min), then
 > `PYTHONIOENCODING=utf-8 PYTHONUTF8=1` is required, otherwise cp1252 raises `UnicodeEncodeError`.
 
 **If the data hasn't changed, regenerating the reports takes about a minute** — the heavy compute stays in
-the analysis scripts (heaviest: `07_lofo` ~6 min, `07_model_comparison` ~4 min, the `06_hedonic` bootstrap
-~1.5 min, `shap/02` and `shap/04` ~1 min).
+the analysis scripts (heaviest: `07_lofo` ~6 min, `07_model_comparison` ~4 min, `09_backtest` ~3
+min, `shap/02` and `shap/04` ~1 min).
 
 ### Verification gate
 

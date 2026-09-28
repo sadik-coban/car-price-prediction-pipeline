@@ -72,7 +72,7 @@ python tools/verify.py --full                 # önce run_all.py (~16 dk), sonra
 > `PYTHONIOENCODING=utf-8 PYTHONUTF8=1` şarttır, yoksa cp1252 `UnicodeEncodeError` verir.
 
 **Veri değişmediyse raporları yeniden üretmek bir dakika sürer** — ağır hesap analiz betiklerinde kalır
-(en ağırları `07_lofo` ~6 dk, `07_model_comparison` ~4 dk, `06_hedonic` bootstrap ~1,5 dk, `shap/02` ve
+(en ağırları `07_lofo` ~6 dk, `07_model_comparison` ~4 dk, `09_backtest` ~3 dk, `shap/02` ve
 `shap/04` ~1 dk).
 
 ### Doğrulama kapısı

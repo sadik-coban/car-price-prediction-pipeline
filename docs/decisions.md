@@ -33,7 +33,7 @@ Arşivdeki metin raporunun üreteci de aynı desendedir; o rapor yayımlanan iş
    değişip örnek bulunamazsa ya da iddia tutmazsa üreteç **durur** — not sessizce bayatlamaz.
 
 **Türetilen değerler.** Veri gerektiren her sayı bir analiz betiğinde hesaplanır (yalnız raporun kullandıkları
-metrik JSON'unun `report` bölümünde: hata bantları, conformal kapsaması, Holm düzeltmesi …). Derleyici yalnız
+metrik JSON'unun `report` bölümünde: hata bantları, conformal kapsaması, Mondrian bantları …). Derleyici yalnız
 yayımlanmış sayılar üzerinde biçim düzeyinde aritmetik yapar (ör. modelin tabandan yüzde iyileşmesi,
 (taban−model)/taban).
 Gürültü tabanından türeyen `1.42×` ve `₺33K` 2026-09-20'de raporlardan çıktı; buradan da kalktılar.
@@ -44,7 +44,8 @@ cümle ölçümle çelişiyordu; rapor artık bu notları değil sayıları okur
 - `kmeans_selection.not` "silhouette k=3'te en yüksek" diyordu; ölçümde k=3 silhouette'in en yüksek
   olduğu yer değil. k=3 silhouette ile değil, yorumlanabilirlik için sabit. Not artık veriden kuruluyor.
 - `numeric_correlation.not` "VIF hepsi <3" diyordu. 2026-09-23'ten beri VIF kurulan hedonik modelin kendi
-  tasarım matrisinden hesaplanıyor ve teknik rapor ortalanmış ile ortalanmamış hâlini birlikte basıyor.
+  tasarım matrisinden hesaplanıyor; 2026-09-28'den beri teknik rapor en yüksek değerini (ortalanmış ve ortalanmamış)
+  tek cümleyle veriyor.
 - `controlled_effects` bayrak etiketi "(gizli hasar)" diyordu; zincirin kendi çerçevesi "gizli
   hasar değil". Etiket: *Çelişkili 'temiz' beyanı (satıcının formu hasar gösteriyor)*.
 
@@ -66,13 +67,44 @@ sırasıyla, düz bir listeyle verir (plaka, tekilleştirme, "belirtilmemiş" = 
 bayrakları, eksik değer, aykırı değer, hedef). Gold yalnız `db/` tarafında ve `docs/database.md`'de anlatılır;
 §1'in eski gold alt bölümünü besleyen `analysis/01_gold_contract.py` arşivde.
 
+## Sadeleştirme (2026-09-28, kullanıcı onayı)
+
+Dışarıda hazırlanan bir sadeleştirme listesi madde madde değerlendirildi. Liste sitenin eski kopyasına bakıyordu
+(ΔR² 0,0015 ve hedonik dönem etkisi +%5,3 oradan); tek kaynak üreteçtir, site raporun markdown'ını kopyalar.
+
+- **Rapordan çıkanlar:**
+  - Cramér's V, permütasyon tabanları ve Theil's U matrisi (asimetri tablosu kalır);
+  - Pearson haritası ve |r|>0,5 tablosu (Spearman çiftleri tek cümle);
+  - VIF tablosu, yakıta göre cc–hp tablosu, varsayım testleri paragrafı (her biri tek cümle);
+  - en iyi 5 ve iki en kötü 6 tablosu (bulgu cümleleri kaldı);
+  - teknik rapordaki lira paneli (karar notunda kalır);
+  - kayma p-değerleri, ayrık tablo ve Holm (taramalar ilan paylaşıyor, test bağımsızlık varsayar);
+  - LOFO kapsam tablosu (tek cümle).
+- **Yöntemi değişenler:**
+  - Hedonik güven aralıkları modele göre kümelenmiş standart hatalardan. Satır bootstrap'i ilanları bağımsız
+    sayıyordu; 22 seri kümelemek için az ve dengesiz.
+  - Hedonik iki sütun: segment kontrolü ve model kontrolü. Karar notu model sütununu basar (kullanıcı kararı).
+  - Fiyat düzeyine göre her gruplama tahmin edilen fiyattan; gerçek fiyata göre gruplama ortalamaya dönüş üretir.
+  - Kapsama çapraz kalibreli. Banda göre hata payı (Mondrian) ön kayıtla ölçüldü (`plans/08-mondrian-coverage`,
+    H1 doğrulandı); servis edilen tek q değişmedi.
+  - Backtest manşet kurulumla koşar (son insample bloğu manşet OOF'a birebir eşit); model kümeli bootstrap %95
+    aralıklar ve tek dönem/kümülatif eşli karşılaştırma. "Saf zaman etkisi" ve "daha çok veri, daha az hata"
+    iddiaları aralıkların taşıdığı kadara indi.
+- **Alınmayanlar:**
+  - hedonik dönem kuklası (aşağıda);
+  - log ölçekte EMD ve hücre değişiminin log ortalaması;
+  - LOFO'ya altı kategorik öznitelik (2026-09-25 kararı);
+  - veriden gelmeyen ±%1 yeniden eğitim eşiği.
+- `tools/snapshot_metrics.py --drop-exemption`, bilinçli kaldırılan bir anahtarın muafiyetini siler (bootstrap
+  süresi böyle kalktı).
+
 ## İş / teknik ayrımı
 
 **İş notu** = ne yapmalı, ne kadar para. Yöntem adı geçmez (MAPE, R², conformal, OOF hepsi
 teknikte); her şey ₺ ve sade yüzde. **Teknik rapor** = protokol, kontroller, sınırlar.
 İkisi **aynı hesaptan** beslenir: ortak değerler `builders/report_lib/report_common.py::derive`'da bir kez türetilir,
-iki şablona oradan gider → bir rakam iki raporda farklı çıkamaz. Bazı figürler (çeyrek hatası, lira çeyreği, kapsama, backtest) iki
-raporda da geçer: karar notunda karar için, teknik raporda kanıt olarak — bilinçli tekrar.
+iki şablona oradan gider → bir rakam iki raporda farklı çıkamaz. Bazı figürler (çeyrek hatası, kapsama, backtest) iki
+raporda da geçer (lira çeyreği 2026-09-28'den beri yalnız karar notunda): karar notunda karar için, teknik raporda kanıt olarak — bilinçli tekrar.
 
 ## Metin analizi neden arşivde
 
@@ -116,8 +148,9 @@ Bu kararla kalkanlar:
 1. `ad_id` hiçbir rapora ya da site verisine yazılmaz; yalnız veritabanında ve onun yanındaki
    `data/duplicate_ad_ids.csv`'de kalır (ikisi de yerel, `data/` git dışı). İlan metni de hiçbir
    markdown'a girmez.
-2. **İlan düzeyindeki satırlar bilinçli olarak yayımlanır** (karar 2026-09-16): en iyi/en kötü
-   tahminler — model · fiyat · yaş · km. Nadir model + tam fiyat aramayla bulunabilir; bu kabul
+2. **İlan düzeyindeki satırlar bilinçli olarak yayımlanır** (karar 2026-09-16): §7'deki örnek
+   tahminler ve §8'deki örnekler — model · fiyat · yaş · km (en iyi 5 ve iki en kötü 6 tablosu 2026-09-28'de
+   çıktı). Nadir model + tam fiyat aramayla bulunabilir; bu kabul
    edilmiş risk.
 
 ## Dürüst çerçeve (korunması zorunlu)
@@ -146,8 +179,11 @@ Bu kararla kalkanlar:
   rapor §1 kararın ölçüsünü basar. Çeviri analizde yapılır (`analysis/lib/common.py`); veritabanı bilgiyi
   yarı ham tutar (`NULL`).
 - **Hedonik model dönem etkisi içermez** (kullanıcı kararı, 2026-09-23): dönemler havuzlanarak kestirilir;
-  piyasa seviyesinin kayması teknik rapor §9'da aynı model ve yılın canlı ilanlarından okunur.
+  piyasa seviyesinin kayması teknik rapor §9'da aynı model ve yılın canlı ilanlarından okunur. 2026-09-28'de
+  yeniden önerildi (+%5,3) ve alınmadı: sayı sitenin eski Temmuz verisinden, veride "dönem" ilanın son görüldüğü
+  tarama olduğu için hayatta kalmayla karışık.
 - **Yeniden eğitim sabit bir PSI eşiğine bağlanmaz** (2026-09-27). Kayma izlenir, model yeni taramalarla
   yeniden eğitilir. Gerekçe veride: PSI eşiğin çok altındayken bile aynı taramada eğitilen modelin hatası
-  test ufku uzadıkça artıyor (teknik rapor §9).
+  test ufku uzadıkça artıyor (teknik rapor §9). Fiyat her taramada geldiği için modelin yeni ilanlardaki hatası
+  doğrudan izlenir; sabit bir eşik yok (2026-09-28).
 - Kapsam BMW + Audi; başka markalara ne kadar genellenebildiği ölçülmedi.

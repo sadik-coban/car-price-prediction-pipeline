@@ -61,9 +61,9 @@ files: `metrics_shape.json` (every key path and its JSON type) and `metrics_fing
 each scalar; for lists, the length and the sha256 of their canonical JSON). The first baseline is the metrics
 of commit `b2395e0` on the `restructure-2026-09` branch. Rules:
 - the default is **exact equality**. The only keys allowed to move are listed in
-  `tests/baselines/exemptions.json`, each with a tr/en reason: `_meta.generated_at` (the run stamp), the
-  bootstrap run time of `06_hedonic`, and the `catboost_native*` keys of `shap/04_variants` (the residue
-  above). An exemption that no longer matches any key fails the test, so no stale exemption stays;
+  `tests/baselines/exemptions.json`, each with a tr/en reason: `_meta.generated_at` (the run stamp) and
+  the `catboost_native*` keys of `shap/04_variants` (the residue above). The bootstrap run time of `06_hedonic`
+  left with its key on 2026-09-28 (`--drop-exemption`). An exemption that no longer matches any key fails the test, so no stale exemption stays;
 - the baseline changes only through `python tools/snapshot_metrics.py --accept "<reason>"`. The
   `metrics_view` consistency gate must pass first and the reason cannot be empty; every accept is logged in
   `tests/baselines/accept_log.jsonl` with the time, the reason, the number of changed keys and the first
