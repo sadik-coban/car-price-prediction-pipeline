@@ -117,6 +117,14 @@ Dışarıda hazırlanan bir sadeleştirme listesi madde madde değerlendirildi. 
   - §7'deki "en iyi durum" örnek tahmin tablosu kalktı; yerine servis edilen modelin ağaç kuralı.
   - İki raporda da yeniden eğitim önce hataya bakar (sabit test kümesindeki fark), kayma tanı içindir.
   - §1 motor alt bölümü olduğu gibi kaldı (2026-09-26 kararı yinelendi); LOFO'daki altı öznitelik açılmadı.
+- **Site karşılaştırması (2026-10-12 / 10-19, kullanıcı onayı):**
+  - §6'daki motor tutarlılık sayısı §8'in iki sayısını da veriyor: §8 bütün ilanlarda 15 ilan işaretliyor, hedonik
+    örneklemde 14'ü var (birinin geçerli motor hacmi yok).
+  - §9 girişi artık sabit test kümesindeki en eski eğitim farkını veriyor; yeniden eğitimi yalnız ölçülen hataya
+    bağlıyor, kayma tanı içindir. Eskiden farklı test kümelerindeki %6.29 → %7.34'ü manşet yapıyordu.
+  - §8'deki süreç dili (ön kayıt dosya yolu, "kodu sınadı" cümlesi) okuyucu diline çevrildi.
+  - Figür 15 karar notundan çıktı: "Eski dönemleri atma" maddesinin kanıtı gibi okunuyordu ama zamansal olmayan düz
+    OOF'u çiziyor; maddenin dayanağı eşli karşılaştırma. Teknik §9'da "zamansal değil" açıklamasıyla kaldı.
 
 ## İş / teknik ayrımı
 

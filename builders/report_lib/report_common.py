@@ -613,7 +613,7 @@ def build_figures(d, v, lang, only=None):
         ax.grid(color=GRID, lw=.7); ax.set_axisbelow(True)
         reg(14, _save(fig, f"{p}-14-drift-kde"), t)
 
-    # 15 veri miktari ve hata  [IS + TEKNIK]
+    # 15 veri miktari ve hata  [TEKNIK]
     if want(15):
         # Iki cizgi AYNI 4 donemde hizalanir (indeksle). Eski surum x'e yazi etiketi veriyordu;
         # insample etiketleri '→01-27' gibi okla basladigi icin matplotlib 7 ayri kategori kurup
@@ -866,8 +866,10 @@ def build_figures(d, v, lang, only=None):
 # ============================================================================
 #  METIN  (tek sozluk, iki dil - eksik anahtar = hata)
 # ============================================================================
-BUSINESS_FIGS = [0, 5, 6, 7, 10, 12, 15, 27]        # 2 (segment medyani) 2026-09-22'de cikti
-# 10/12/15 iki raporda da: karar notunda karar icin, teknik raporda kanit olarak (bilincli tekrar).
+BUSINESS_FIGS = [0, 5, 6, 7, 10, 12, 27]            # 2 (segment medyani) 2026-09-22'de cikti
+# 10/12 iki raporda da: karar notunda karar icin, teknik raporda kanit olarak (bilincli tekrar).
+# 2026-10-19 (kullanici karari): 15 karar notundan cikti — zamansal olmayan duz OOF'u ciziyor, "eski donemleri atma"
+# maddesinin kaniti gibi okunuyordu; teknik §9'da "zamansal degil" aciklamasiyla kaliyor.
 # 2026-09-28 (sadelestirme listesi): 17/18/20 cikti; 27 yalniz karar notunda.
 # 2026-09-29 (ikinci sadelestirme listesi): 22/23/24 (PCA ve k secimi) cikti; §5 tek paragraf.
 TECHNICAL_FIGS = [1, 3, 4, 8, 9, 10, 11, 12, 13, 14, 15, 16, 19, 21, 25, 26, 28, 29, 30]

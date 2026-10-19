@@ -72,8 +72,6 @@ Bu yüzden çıktı tek sayı değil, **%90 aralık**. Tek bir hata payıyla ara
 - **Fiyat dağılımını tanı için izle:** dağılım bugün az kayıyor (en yüksek PSI 0.005); yeniden eğitimi tek başına tetiklemez.
 - **Fiyat rejimini değiştiren gelişmeleri takip et** (vergi/ÖTV düzenlemesi, teşvik, ani piyasa hareketi gibi) — eğitim planı bunlara göre yapılmalı. Eski dönemleri atma: aynı ilanlarda birikimli eğitim hatayı hiçbir karşılaştırmada anlamlı artırmadı, bir kısmında düşürdü.
 
-![Tek dönem ve biriken dönemler — ortalama yüzde hata](figures/tr-15-backtest.png)
-
 ## Bu model neyi vermez
 
 - **Satış fiyatını.** İlan fiyatını tahmin eder; satış fiyatı pazarlıkla bunun altına iner.

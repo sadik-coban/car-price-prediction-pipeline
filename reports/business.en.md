@@ -72,8 +72,6 @@ That is why the output is a **90% range**, not one number. With one margin the r
 - **Watch the price distribution as a diagnostic:** it moves little today (highest PSI 0.005); it does not trigger retraining on its own.
 - **Watch for events that reset the pricing regime** (a tax or excise change, an incentive, a sudden market move) — plan retraining around them. Do not discard old snapshots: on the same listings, accumulating never raised the error significantly and lowered it in some comparisons.
 
-![Single period and pooled periods — mean percentage error](figures/en-15-backtest.png)
-
 ## What this model does not give you
 
 - **The sale price.** It predicts the asking price; the sale price lands below it after haggling.

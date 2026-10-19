@@ -337,7 +337,7 @@ Each point is a model; the y axis is the median error across that model's listin
 
 In lira the picture changes: 38.9% of total lira error sits in the most expensive predicted quartile and 17.6% in the cheapest; mean absolute error ₺171K against ₺77K.
 
-**Margin per band (Mondrian).** With the margin computed separately in each predicted-price quartile, coverage is 89.96%–90.04% in every band. With random folds that is almost by construction: the first pre-registration's criterion (88–92% in every band) tested the code, not the method; the real test is the forward coverage below. The price is width: in the cheapest band the interval widens from 28.3% to 37.1% of the estimate, in the most expensive it narrows from 28.3% to 21.4%.
+**Margin per band (Mondrian).** With the margin computed separately in each predicted-price quartile, coverage is 89.96%–90.04% in every band. The folds are random, so each band's margin is built from errors of the same distribution and the coverage holds almost by itself; the real test is the forward coverage below. The price is width: in the cheapest band the interval widens from 28.3% to 37.1% of the estimate, in the most expensive it narrows from 28.3% to 21.4%.
 
 ![How often the 90% range held (target 90%)](figures/en-12-coverage.png)
 
@@ -350,7 +350,7 @@ In lira the picture changes: 38.9% of total lira error sits in the most expensiv
 
 **Note:** The bands are cut on the predicted price, the only thing a pricing tool knows; grouping by the actual price produces regression to the mean. Width is the band's median distance between the interval's lower and upper end.
 
-**Forward coverage (pre-registered, `plans/09-forward-coverage`).** The served recipe was applied forward: q from the training snapshot's own OOF errors, tested on the next snapshot's new listings (the nine forward setups of §9). With one margin the overall coverage is 87.3%–92.4%, in the cheapest band 77.1%–85.3%. The per-band margin fixes the cheapest band in every setup (88.8%–92.5%) but does not hold 88% in every band: the lowest is 84.9%. On listings whose model and year never occur in training, coverage is low in both arms (one margin 64.3%–76.2%, per band 63.0%–73.0%); there the per-band margin lowers it further in every setup.
+**Forward coverage (criterion written before the result).** The served recipe was applied forward: q from the training snapshot's own OOF errors, tested on the next snapshot's new listings (the nine forward setups of §9). With one margin the overall coverage is 87.3%–92.4%, in the cheapest band 77.1%–85.3%. The per-band margin fixes the cheapest band in every setup (88.8%–92.5%) but does not hold 88% in every band: the lowest is 84.9%. On listings whose model and year never occur in training, coverage is low in both arms (one margin 64.3%–76.2%, per band 63.0%–73.0%); there the per-band margin lowers it further in every setup.
 
 | band | one margin | per band |
 |---|---:|---:|
@@ -372,7 +372,7 @@ Cells are the lowest–highest coverage over the nine forward setups.
 
 ## 9. Time — period effect, distribution drift and backtest
 
-Two measurements. **Distribution drift:** the price distribution moves little between snapshots (highest PSI 0.005, "no drift" threshold 0.10). **Temporal backtest:** trained on an earlier snapshot and tested only on a later snapshot's new listings, the error grows with the horizon (6.29% → 7.34%). Within the same model and year the market level moved +2.0% and the model is time-blind → retraining should follow **measured error and drift**, not the calendar (end of this section).
+Two measurements. **Distribution drift:** the price distribution moves little between snapshots (highest PSI 0.005, "no drift" threshold 0.10). **Temporal backtest:** the same 8,889 listings new in the 06-27 snapshot were priced by a model trained on each earlier snapshot separately; the model trained on the oldest snapshot (01-18) errs more than the one trained on the latest (03-21): +0.40 [+0.27, +0.52] points. Within the same model and year the market level moved +2.0% and the model is time-blind → retraining should follow the **measured error**, not the calendar; distribution drift is watched as a diagnostic (end of this section).
 
 ### Period effect
 

@@ -337,7 +337,7 @@ Her nokta bir model; y ekseni o modelin ilanlarındaki medyan hata. Kova medyan�
 
 Liraya çevrilince tablo değişiyor: toplam lira hatasının %38.9 kadarı tahmini en pahalı çeyrekte, %17.6 kadarı en ucuzda; ortalama mutlak hata ₺171K ile ₺77K.
 
-**Hata payı banda göre (Mondrian).** Hata payı tahmin edilen fiyatın dört çeyreğinde ayrı ayrı hesaplanınca kapsama her bantta %89.96–%90.04. Rastgele katlarda bu neredeyse tanım gereği: ilk ön kayıttaki ölçüt (her bantta %88–%92) kodu sınadı, yöntemi değil; asıl sınav aşağıdaki ileri kapsama. Bedeli genişlik: en ucuz bantta aralık tahminin %28.3 kadarından %37.1 kadarına genişliyor, en pahalıda %28.3 kadarından %21.4 kadarına daralıyor.
+**Hata payı banda göre (Mondrian).** Hata payı tahmin edilen fiyatın dört çeyreğinde ayrı ayrı hesaplanınca kapsama her bantta %89.96–%90.04. Katlar rastgele olduğu için her bandın payı aynı dağılımdan gelen hatalarla kuruluyor; kapsama bu yüzden neredeyse kendiliğinden tutuyor, asıl sınav aşağıdaki ileri kapsama. Bedeli genişlik: en ucuz bantta aralık tahminin %28.3 kadarından %37.1 kadarına genişliyor, en pahalıda %28.3 kadarından %21.4 kadarına daralıyor.
 
 ![%90 aralık kaç ilanda tuttu (hedef %90)](figures/tr-12-coverage.png)
 
@@ -350,7 +350,7 @@ Liraya çevrilince tablo değişiyor: toplam lira hatasının %38.9 kadarı tahm
 
 **Not:** Bantlar tahmin edilen fiyattan kesildi: bir fiyatlama aracının bildiği tek şey o. Gerçek fiyata göre gruplamak ortalamaya dönüş üretir. Genişlik, aralığın alt ve üst ucu arasındaki farkın o banttaki medyanı.
 
-**İleri kapsama (ön kayıt `plans/09-forward-coverage`).** Servis edilen tarif ileriye uygulandı: q eğitim taramasının kendi OOF hatalarından, test sonraki taramanın yeni ilanlarında (§9'daki dokuz ileri kurulum). Tek payla genel kapsama %87.3–%92.4, en ucuz bantta %77.1–%85.3. Banda göre pay en ucuz bandı her kurulumda düzeltiyor (%88.8–%92.5) ama her bantta %88'i tutmuyor: en düşük %84.9. Aynı model ve yılı eğitimde hiç olmayan ilanlarda kapsama iki kolda da düşük (tek pay %64.3–%76.2, banda göre %63.0–%73.0); banda göre pay orada her kurulumda kapsamayı daha da düşürüyor.
+**İleri kapsama (ölçüt sonuçtan önce yazıldı).** Servis edilen tarif ileriye uygulandı: q eğitim taramasının kendi OOF hatalarından, test sonraki taramanın yeni ilanlarında (§9'daki dokuz ileri kurulum). Tek payla genel kapsama %87.3–%92.4, en ucuz bantta %77.1–%85.3. Banda göre pay en ucuz bandı her kurulumda düzeltiyor (%88.8–%92.5) ama her bantta %88'i tutmuyor: en düşük %84.9. Aynı model ve yılı eğitimde hiç olmayan ilanlarda kapsama iki kolda da düşük (tek pay %64.3–%76.2, banda göre %63.0–%73.0); banda göre pay orada her kurulumda kapsamayı daha da düşürüyor.
 
 | bant | tek pay | banda göre |
 |---|---:|---:|
@@ -372,7 +372,7 @@ Hücreler dokuz ileri kurulumdaki kapsamanın en düşüğü–en yükseği.
 
 ## 9. Zaman — dönem etkisi, dağılım kayması ve backtest
 
-İki ölçü var. **Dağılım kayması:** dönemler arası fiyat dağılımı az kayıyor (en yüksek PSI 0.005, "kayma yok" eşiği 0.10). **Zamansal backtest:** eski dönemde eğitip sonraki dönemin yalnızca yeni ilanlarında test edince hata ufuk uzadıkça büyüyor (%6.29 → %7.34). Aynı model ve yılın ilanlarında piyasa seviyesi +%2.0 kaydı ve model zamanı görmüyor → yeniden eğitim takvime değil **ölçülen hataya ve kaymaya** bağlanmalı (bölümün sonu).
+İki ölçü var. **Dağılım kayması:** dönemler arası fiyat dağılımı az kayıyor (en yüksek PSI 0.005, "kayma yok" eşiği 0.10). **Zamansal backtest:** 06-27 taramasına yeni gelen aynı 8.889 ilan, önceki her taramayla ayrı ayrı eğitilen modelle fiyatlandı; en eski taramayla (01-18) eğitilen model en yenisiyle (03-21) eğitilenden +0.40 [+0.27, +0.52] puan daha çok yanılıyor. Aynı model ve yılın ilanlarında piyasa seviyesi +%2.0 kaydı ve model zamanı görmüyor → yeniden eğitim takvime değil **ölçülen hataya** bağlanmalı; dağılım kayması tanı için izlenir (bölümün sonu).
 
 ### Dönem etkisi
 

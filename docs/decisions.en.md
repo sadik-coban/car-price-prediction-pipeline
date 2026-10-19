@@ -129,6 +129,15 @@ the report's markdown.
   - The best-case sample prediction table in §7 left; the served model's tree rule replaces it.
   - In both reports retraining looks at the error first (the fixed-test-set gap); drift is a diagnostic.
   - The §1 engine subsection stays as it is (the 2026-09-26 decision, repeated); LOFO's six features stay unmeasured.
+- **Site comparison (2026-10-12 / 10-19, owner approved):**
+  - The engine-consistency count in §6 gives both of §8's numbers: §8 flags 15 listings over all listings, 14 of them
+    are in the hedonic sample (one has no valid engine size).
+  - The §9 lead now gives the oldest-training gap on the fixed test set and ties retraining to the measured error
+    only; drift is a diagnostic. It used to headline the 6.29% → 7.34% from different test sets.
+  - The process wording in §8 (the pre-registration file path, the "tested the code" sentence) became reader wording.
+  - Figure 15 left the decision note: it read as the evidence for "do not discard old snapshots" but draws the
+    non-temporal plain OOF; that advice rests on the paired comparison. It stays in technical §9 with its "not
+    temporal" note.
 
 ## Business / technical split
 

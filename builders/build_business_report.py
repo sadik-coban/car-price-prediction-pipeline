@@ -294,8 +294,8 @@ def fmt_business(v, F, lang):
         + f"- **Watch for events that reset the pricing regime** (a tax or excise change, an incentive, "
         f"a sudden market move) — plan retraining around them." + _acc_en))
     A("")
-    A(f"![{F[15][1]}](figures/{F[15][0]})")
-    A("")
+    # 2026-10-19 (kullanici karari): figur 15 buradan cikti. "Eski donemleri atma"nin altinda duruyor ama zamansal
+    # olmayan duz OOF'u ciziyordu; maddenin dayanagi esli karsilastirma. Teknik §9'da aciklamasiyla kaliyor.
 
     # --- 4. Neyi vermez
     A(L("## Bu model neyi vermez", "## What this model does not give you"))

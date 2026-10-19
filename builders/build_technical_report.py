@@ -1384,16 +1384,16 @@ def section_calibration(c):
     assert all(_acc_lo <= c_ <= _acc_hi for c_ in _cov_m), f"Mondrian H1 tutmuyor: {_cov_m} — paragraf yeniden yazilmali"
     _w = lambda b_, c_: _mb[b_][_col[c_]]                                                   # noqa: E731
     A(L(f"**Hata payı banda göre (Mondrian).** Hata payı tahmin edilen fiyatın dört çeyreğinde ayrı ayrı "
-        f"hesaplanınca kapsama her bantta {P(min(_cov_m), lang, 2)}–{P(max(_cov_m), lang, 2)}. Rastgele katlarda bu "
-        f"neredeyse tanım gereği: ilk ön kayıttaki ölçüt (her bantta %{_acc_lo}–%{_acc_hi}) kodu sınadı, yöntemi "
-        f"değil; asıl sınav aşağıdaki ileri kapsama. Bedeli genişlik: en ucuz bantta aralık tahminin "
+        f"hesaplanınca kapsama her bantta {P(min(_cov_m), lang, 2)}–{P(max(_cov_m), lang, 2)}. Katlar rastgele olduğu "
+        f"için her bandın payı aynı dağılımdan gelen hatalarla kuruluyor; kapsama bu yüzden neredeyse kendiliğinden "
+        f"tutuyor, asıl sınav aşağıdaki ileri kapsama. Bedeli genişlik: en ucuz bantta aralık tahminin "
         f"{P(_w('Q1', 'width_pct_global'), lang)} kadarından {P(_w('Q1', 'width_pct_band'), lang)} kadarına genişliyor, "
         f"en pahalıda {P(_w('Q4', 'width_pct_global'), lang)} kadarından {P(_w('Q4', 'width_pct_band'), lang)} kadarına "
         f"daralıyor.",
         f"**Margin per band (Mondrian).** With the margin computed separately in each predicted-price quartile, "
-        f"coverage is {P(min(_cov_m), lang, 2)}–{P(max(_cov_m), lang, 2)} in every band. With random folds that is "
-        f"almost by construction: the first pre-registration's criterion ({_acc_lo}–{_acc_hi}% in every band) tested the "
-        f"code, not the method; the real test is the forward coverage below. The price is width: in the cheapest band "
+        f"coverage is {P(min(_cov_m), lang, 2)}–{P(max(_cov_m), lang, 2)} in every band. The folds are random, so each "
+        f"band's margin is built from errors of the same distribution and the coverage holds almost by itself; the real "
+        f"test is the forward coverage below. The price is width: in the cheapest band "
         f"the interval widens from "
         f"{P(_w('Q1', 'width_pct_global'), lang)} to {P(_w('Q1', 'width_pct_band'), lang)} of the estimate, in the most "
         f"expensive it narrows from {P(_w('Q4', 'width_pct_global'), lang)} to {P(_w('Q4', 'width_pct_band'), lang)}."))
@@ -1428,7 +1428,7 @@ def section_calibration(c):
     _nc_b = [c_["no_comparable"]["coverage_band"] for c_ in fcv]
     _nc_worse = sum(b_ < g_ for g_, b_ in zip(_nc_g, _nc_b))
     _h2 = min(_all_band) >= 88
-    A(L(f"**İleri kapsama (ön kayıt `plans/09-forward-coverage`).** Servis edilen tarif ileriye uygulandı: q eğitim "
+    A(L(f"**İleri kapsama (ölçüt sonuçtan önce yazıldı).** Servis edilen tarif ileriye uygulandı: q eğitim "
         f"taramasının kendi OOF hatalarından, test sonraki taramanın yeni ilanlarında (§{section_no('time')}'daki "
         f"{number_word(len(fcv), lang)} ileri kurulum). Tek payla genel kapsama {_rng_of([c_['coverage_global'] for c_ in fcv])}, "
         f"en ucuz bantta {_rng_of(_band('Q1', 2))}. Banda göre pay en ucuz bandı her kurulumda düzeltiyor "
@@ -1440,7 +1440,7 @@ def section_calibration(c):
         + ("her kurulumda" if _nc_worse == len(fcv) else
            f"{number_word(len(fcv), lang)} kurulumun {number_word(_nc_worse, lang)} tanesinde")
         + " kapsamayı daha da düşürüyor.",
-        f"**Forward coverage (pre-registered, `plans/09-forward-coverage`).** The served recipe was applied forward: q "
+        f"**Forward coverage (criterion written before the result).** The served recipe was applied forward: q "
         f"from the training snapshot's own OOF errors, tested on the next snapshot's new listings (the "
         f"{number_word(len(fcv), 'en')} forward setups of §{section_no('time')}). With one margin the overall coverage "
         f"is {_rng_of([c_['coverage_global'] for c_ in fcv])}, in the cheapest band {_rng_of(_band('Q1', 2))}. The "
@@ -1532,31 +1532,39 @@ def section_time(c):
     dr = dom["drift"]
     # 2026-09-23: acilis "iki kanit ayni karari veriyor ... SEKIL sabit" diyordu; sekil olculmuyordu ve
     # backtest hatasi ufukla BUYUYOR. Iki olcu ne diyorsa o yazilir.
-    _s0 = [r for r in bt["single"] if r[0] == bt["single"][0][0]]
-    _horizon = _s0[-1][2] > _s0[0][2]
+    # 2026-10-19 (site karsilastirmasi): acilis farkli test kumelerindeki %6.29 -> %7.34'u manset yapiyordu (govde
+    # "yalniz zamana baglanamaz" diyor) ve yeniden egitimi "hataya ve kaymaya" bagliyordu (maddeler kaymayi tani
+    # sayiyor). Artik sabit test kumesindeki en eski egitim farki; yon veriye kapili.
     _small = v["psi_max"] < v["psi_safe"]
+    _hz = bt["horizon"]
+    _o_t, _o_d, _o_lo, _o_hi = _hz["vs_latest"][0]
+    _new_t = _hz["rows"][-1][0]
+    _o_ci = f"{_o_d:+.2f} [{_o_lo:+.2f}, {_o_hi:+.2f}]"
+    _dir_tr = ("daha çok yanılıyor" if _o_lo > 0 else "daha az yanılıyor" if _o_hi < 0 else
+               "farklı yanılıyor, ama fark örnekleme hatası içinde")
+    _dir_en = ("errs more" if _o_lo > 0 else "errs less" if _o_hi < 0 else
+               "differs, but within sampling error")
     A(L(f"İki ölçü var. **Dağılım kayması:** "
         + (f"dönemler arası fiyat dağılımı az kayıyor (en yüksek PSI {v['psi_max']:.3f}, \"kayma yok\" eşiği "
            f"{v['psi_safe']:.2f}). " if _small else f"dağılım eşiğin üstünde kayıyor (en yüksek PSI {v['psi_max']:.3f}). ")
-        + f"**Zamansal backtest:** eski dönemde eğitip sonraki dönemin yalnızca yeni ilanlarında test edince hata "
-        + (f"ufuk uzadıkça büyüyor ({P(_s0[0][2], lang, 2)} → {P(_s0[-1][2], lang, 2)}). " if _horizon else
-           f"ufukla büyümüyor ({P(_s0[0][2], lang, 2)} → {P(_s0[-1][2], lang, 2)}). ")
+        + f"**Zamansal backtest:** {_hz['test']} taramasına yeni gelen aynı {num(_hz['n'], lang)} ilan, önceki her "
+        f"taramayla ayrı ayrı eğitilen modelle fiyatlandı; en eski taramayla ({_o_t}) eğitilen model en yenisiyle "
+        f"({_new_t}) eğitilenden {_o_ci} puan {_dir_tr}. "
         + f"Aynı model ve yılın ilanlarında piyasa seviyesi "
         f"{P(v['ed']['period_shift']['live'][-1][1], lang, 1, sign=True)} kaydı ve model zamanı görmüyor → "
-        f"yeniden eğitim takvime değil **ölçülen hataya ve kaymaya** "
-        f"bağlanmalı (bölümün sonu).",
+        f"yeniden eğitim takvime değil **ölçülen hataya** bağlanmalı; dağılım kayması tanı için izlenir "
+        f"(bölümün sonu).",
         f"Two measurements. **Distribution drift:** "
         + (f"the price distribution moves little between snapshots (highest PSI {v['psi_max']:.3f}, \"no drift\" "
            f"threshold {v['psi_safe']:.2f}). " if _small else
            f"the distribution drifts above the threshold (highest PSI {v['psi_max']:.3f}). ")
-        + f"**Temporal backtest:** trained on an earlier snapshot and tested only on a later snapshot's new "
-        f"listings, the error "
-        + (f"grows with the horizon ({P(_s0[0][2], lang, 2)} → {P(_s0[-1][2], lang, 2)}). " if _horizon else
-           f"does not grow with the horizon ({P(_s0[0][2], lang, 2)} → {P(_s0[-1][2], lang, 2)}). ")
+        + f"**Temporal backtest:** the same {num(_hz['n'], lang)} listings new in the {_hz['test']} snapshot were "
+        f"priced by a model trained on each earlier snapshot separately; the model trained on the oldest snapshot "
+        f"({_o_t}) {_dir_en} than the one trained on the latest ({_new_t}): {_o_ci} points. "
         + f"Within the same model and year the market level moved "
         f"{P(v['ed']['period_shift']['live'][-1][1], lang, 1, sign=True)} and the model is time-blind → "
-        f"retraining should follow **measured error and drift**, not the "
-        f"calendar (end of this section)."))
+        f"retraining should follow the **measured error**, not the calendar; distribution drift is watched as a "
+        f"diagnostic (end of this section)."))
     A("")
 
     snaps = meta["snapshots"]
