@@ -892,6 +892,24 @@ def section_hedonic(c):
     assert _wider, "model sutununda motor araliklari daha genis degil — 'araliklari genis' cumlesi bayat"
     _hw, _ws = hr["hp_within_model"], hr["without_spec_outliers"]
     _ws_hp = {r_["term"]: r_ for r_ in _ws["coefficients"]}["hp100"]
+    # 2026-10-12: §8 isaretli ilanlari butun ilanlarda sayar, §6 yalniz hedonik orneklemde; orneklem gecerli gucu ve
+    # hacmi olmayan ilanlari almadigi icin fark yalniz onlar olabilir (06_hedonic satir sayisini assert ediyor).
+    _spec_all, _spec_in = v["ed"]["spec_outliers"]["n"], _ws["n_dropped"]
+    assert _spec_in <= _spec_all, f"§6 tutarsiz motor sayisi §8'inkinden buyuk: {_spec_in} > {_spec_all}"
+    _spec_tr = (f"§{section_no('calibration')}'in motor değeri tutarsız {num(_spec_all, lang)} ilanı çıkarılınca"
+                if _spec_in == _spec_all else
+                f"§{section_no('calibration')}'in motor değeri tutarsız ilanları çıkarılınca ({num(_spec_all, lang)} "
+                f"ilandan {num(_spec_in, lang)} tanesi hedonik örneklemde; kalan {num(_spec_all - _spec_in, lang)} "
+                f"ilan geçerli motor gücü ya da hacmi olmadığı için örneklemde hiç yer almıyor)")
+    _spec_en = (f"without the {num(_spec_all, lang)} listings with an inconsistent engine value "
+                f"(§{section_no('calibration')})"
+                if _spec_in == _spec_all else
+                f"without the listings with an inconsistent engine value (§{section_no('calibration')} counts "
+                f"{num(_spec_all, lang)}; {num(_spec_in, lang)} of them are in the hedonic sample, the other "
+                f"{num(_spec_all - _spec_in, lang)} "
+                + ("has no valid power or size value and was" if _spec_all - _spec_in == 1 else
+                   "have no valid power or size value and were")
+                + " never in it)")
     A(L(f"{lab('hp100', 'tr')} segment kontrolünde **{P(_hp_s['pct_effect'], lang, sign=True)}**, model kontrolünde "
         f"**{P(_hp_m['pct_effect'], lang, sign=True)}**; {lab('litre', 'tr')} **{P(_l_s['pct_effect'], lang, sign=True)}** "
         f"ile **{P(_l_m['pct_effect'], lang, sign=True)}** (aynı regresyonda, diğeri sabitken). Model adı motoru büyük "
@@ -899,8 +917,7 @@ def section_hedonic(c):
         f"ölçülür; aralıkları bu yüzden daha geniş. Bu fark ince: model adlarının yalnız "
         f"{num(_hw['models_varying'], lang)}/{num(_hw['models'], lang)} tanesinde güç ilanlar arasında değişiyor (model "
         f"içi standart sapma {_hw['sd_within']:.1f} hp, genelde {_hw['sd_overall']:.1f} hp) ve bir kısmı katalog hatası: "
-        f"§{section_no('calibration')}'in motor değeri tutarsız {num(_ws['n_dropped'], lang)} ilanı çıkarılınca model "
-        f"sütununda {lab('hp100', 'tr')} {P(_hp_m['pct_effect'], lang, sign=True)} → "
+        f"{_spec_tr} model sütununda {lab('hp100', 'tr')} {P(_hp_m['pct_effect'], lang, sign=True)} → "
         f"{P(_ws_hp['pct_effect'], lang, sign=True)}. Hacim ve güç birbirine bağlı (Pearson korelasyonu "
         f"{hr['hp_cc_pearson']:.2f}): hacmin etkisi güç sabitken kalan kısım, iki katsayı birlikte okunmalı; "
         f"birimler farklı olduğu için doğrudan kıyaslanmaz.",
@@ -911,9 +928,8 @@ def section_hedonic(c):
         f"engine terms are measured only from power and size differences within one model name; that is why their "
         f"intervals are wider. That variation is thin: power varies across listings in only "
         f"{num(_hw['models_varying'], lang)} of {num(_hw['models'], lang)} model names (within-model standard deviation "
-        f"{_hw['sd_within']:.1f} hp, {_hw['sd_overall']:.1f} hp overall), and part of it is catalogue error: without the "
-        f"{num(_ws['n_dropped'], lang)} listings with an inconsistent engine value (§{section_no('calibration')}) the "
-        f"model column's {lab('hp100', 'en')} goes {P(_hp_m['pct_effect'], lang, sign=True)} → "
+        f"{_hw['sd_within']:.1f} hp, {_hw['sd_overall']:.1f} hp overall), and part of it is catalogue error: "
+        f"{_spec_en} the model column's {lab('hp100', 'en')} goes {P(_hp_m['pct_effect'], lang, sign=True)} → "
         f"{P(_ws_hp['pct_effect'], lang, sign=True)}. Size and power are linked (Pearson correlation "
         f"{hr['hp_cc_pearson']:.2f}): size's effect is what remains with power fixed, so read the two coefficients "
         f"together; the units differ, so they are not directly comparable."))
@@ -1096,9 +1112,9 @@ def section_model(c):
 def section_calibration(c):
     """
     EN: §8 — calibration and residuals: error bands, where the large errors come from, examples, the conformal
-        interval and its coverage, best and worst predictions.
+        interval and its coverage, the largest errors.
     TR: §8 — kalibrasyon ve artıklar: hata bantları, büyük hataların kaynağı, örnekler, conformal aralık ve
-        kapsaması, en iyi ve en kötü tahminler.
+        kapsaması, en büyük hatalar.
     """
     v, d, dom, met, meta, hr, lang = c.v, c.d, c.dom, c.met, c.meta, c.hr, c.lang
     L, A, T, figs = c.L, c.A, c.T, c.figs

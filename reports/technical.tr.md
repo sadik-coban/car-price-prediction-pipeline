@@ -223,7 +223,7 @@ Etki = exp(β)−1. Yaş ve km **medyan araca** (11 yaş, 181.000 km) ortalandı
 
 ### Motor etkisi
 
-+100 hp segment kontrolünde **+%19.9**, model kontrolünde **+%19.3**; +1 litre **+%7.5** ile **+%6.0** (aynı regresyonda, diğeri sabitken). Model adı motoru büyük ölçüde belirlediği için model sütununda motor terimleri yalnız aynı model adı içindeki güç ve hacim farkından ölçülür; aralıkları bu yüzden daha geniş. Bu fark ince: model adlarının yalnız 354/735 tanesinde güç ilanlar arasında değişiyor (model içi standart sapma 9.0 hp, genelde 43.1 hp) ve bir kısmı katalog hatası: §8'in motor değeri tutarsız 14 ilanı çıkarılınca model sütununda +100 hp +%19.3 → +%26.0. Hacim ve güç birbirine bağlı (Pearson korelasyonu 0.73): hacmin etkisi güç sabitken kalan kısım, iki katsayı birlikte okunmalı; birimler farklı olduğu için doğrudan kıyaslanmaz.
++100 hp segment kontrolünde **+%19.9**, model kontrolünde **+%19.3**; +1 litre **+%7.5** ile **+%6.0** (aynı regresyonda, diğeri sabitken). Model adı motoru büyük ölçüde belirlediği için model sütununda motor terimleri yalnız aynı model adı içindeki güç ve hacim farkından ölçülür; aralıkları bu yüzden daha geniş. Bu fark ince: model adlarının yalnız 354/735 tanesinde güç ilanlar arasında değişiyor (model içi standart sapma 9.0 hp, genelde 43.1 hp) ve bir kısmı katalog hatası: §8'in motor değeri tutarsız ilanları çıkarılınca (15 ilandan 14 tanesi hedonik örneklemde; kalan 1 ilan geçerli motor gücü ya da hacmi olmadığı için örneklemde hiç yer almıyor) model sütununda +100 hp +%19.3 → +%26.0. Hacim ve güç birbirine bağlı (Pearson korelasyonu 0.73): hacmin etkisi güç sabitken kalan kısım, iki katsayı birlikte okunmalı; birimler farklı olduğu için doğrudan kıyaslanmaz.
 
 ### LOFO — çıkarma testi
 
