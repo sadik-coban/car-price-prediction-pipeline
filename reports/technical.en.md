@@ -1,6 +1,6 @@
 # Used Car Market Analysis — Technical Report
 
-This report answers two questions: what sets a used-car price, and how accurately the model can predict it. The analysis runs over **29,988** Turkish-plated BMW/Audi listings — from cleaning and leakage checks through controlled price effects, market structure, model comparison and time tests. LightGBM is off by **6.49%** on average (MAE: **₺110K**, R²: **0.9745**), with a **43%** lower mean absolute error than the comparable median (same model and year, falling back to a wider median when there is none). Every metric here is computed **5-fold out-of-fold**, on data the model never saw in training. The target is the asking price, not the sale price: the sale price moves away from it through bargaining.
+This report answers two questions: what sets a used-car price, and how accurately the model can predict it. The analysis runs over **29,988** Turkish-plated BMW/Audi listings — from cleaning and leakage checks through controlled price effects, market structure, model comparison and a forward test on new listings. LightGBM is off by **6.49%** on average (MAE: **₺110K**, R²: **0.9745**), with a **43%** lower mean absolute error than the comparable median (same model and year, falling back to a wider median when there is none). The headline metrics are computed **5-fold out-of-fold**, on data the model never saw in training; the forward test is in §8. The target is the asking price, not the sale price: the sale price moves away from it through bargaining.
 
 ## 1. Data cleaning and leakage detection
 
@@ -45,7 +45,7 @@ Before the model, these steps were applied to the collected data, in this order:
 
 1. **Structural** — age · km · engine power/size · body · fuel · transmission · drivetrain · segment.
 2. **Damage / inspection** — 13 body panels × {changed, painted, local paint} + the heavy-damage record. Those 39 raw flags reach the model as 12 features: roof · hood · trunk are single panels, so they carry a **state** (original/local/painted/changed), while door · fender · bumper carry a within-group **count** (doors 0–4, fenders 0–4, bumpers 0–2).
-3. **Free text** — the seller's description; **not used** by the model. It was measured: it adds 0.0008 to log R²; the detail is in §10.
+3. **Free text** — the seller's description; **not used** by the model. It was measured: it adds 0.0008 to log R²; the detail is in §9.
 
 **"Unspecified" panels were counted as original.** The site gives one of five answers per panel: original, unspecified, painted, locally painted, changed. Across the listings in the model 59,651 panels (15.3%) are unspecified; on 1,235 listings all 13 are. That answer was coded as original by a deliberate decision, on the reasoning that the seller may have forgotten to list damage but no damage is the likelier case.
 
@@ -260,7 +260,7 @@ The report's model: **LightGBM (model/series name TF-IDF+SVD)** — MAPE **6.49%
 
 Ladder: (model, year) median → (model) median — all years → global median. If the test (model, year) cell is absent from the training fold, the baseline steps down a rung; error grows sharply at each step — without a comparable the baseline is weak anyway. Medians are computed on the training part of each fold only (leak-free, same 5 folds as the model).
 
-**Model limitations and observations.** Information that never reaches the form fields and hides in the free text — modifications, special equipment, tax-exemption status — does not enter the model; listings whose text mentions a conversion or modification have a raw large-error rate of 4.9% against 3.9% for the rest; with age, mileage, price, performance family, comparable count and brand held fixed the odds ratio is 1.14 (95% CI 0.94–1.37): no significant difference was measured. The wording appears in 43.6% of performance-family listings. Without comparables the error grows markedly: with no other listing of the same model and year the large-error rate is 19.0%, with 100+ comparables 2.9%; the largest lira errors sit at this end too (§8). No extensive hyperparameter optimisation was run, by choice; its payoff was not measured in this report.
+**Model limitations and observations.** Information that never reaches the form fields and hides in the free text — modifications, special equipment, tax-exemption status — does not enter the model; listings whose text mentions a conversion or modification have a raw large-error rate of 4.9% against 3.9% for the rest; with age, mileage, price, performance family, comparable count and brand held fixed the odds ratio is 1.14 (95% CI 0.94–1.37): no significant difference was measured. The wording appears in 43.6% of performance-family listings. Without comparables the error grows markedly: with no other listing of the same model and year the large-error rate is 19.0%, with 100+ comparables 2.9%; the largest lira errors sit at this end too (§8). No extensive hyperparameter optimisation was run, by choice; its payoff was not measured in this report. The model does not see time: it learns the prices of the four snapshots together, and the errors above come from a 5-fold OOF that mixes the snapshots; the error on the last snapshot's new listings is in §8.
 
 The served LightGBM is trained on all listings with the median of the tree counts early stopping chose in CV (258 trees), i.e. at the setting measured above.
 
@@ -297,7 +297,6 @@ There are 1,208 listings with an error beyond ±20% (768 over-, 440 under-predic
 
 1. **No comparable.** With no other listing of the same model and year the large-error rate is 19.0%; with 100+ comparables 2.9%.
 2. **Exotic or old car.** 19.1% in the F/S segments — but those two hold 444 listings in total (F 325 · S 119), so the riskiest bucket is also the thinnest. Others 3.8%; 12.0% at age ≥ 18 (younger 3.2%).
-3. **Time and survival.** The median residual changes with the snapshot a listing was last seen in: 2026-01-18 -3.27% → 2026-06-27 +1.38%. Part of this is the period: the model is time-blind and the market moved +1.98% over the span (§9). Part is survival: the 11,526 listings still live in the last snapshot have a median residual of +1.38%, the 18,462 that left earlier -1.24%; even between the first two snapshots, with the market flat (0.00%), the median residual moves -3.27% → -1.75% — listings that left early had been priced below the model's figure.
 
 **Age 18 is not a threshold the data picked.** The large-error rate rises with age: age 5 0.35% · age 10 1.56% · age 15 7.86% · age 18 11.69% · age 21 15.34%. The largest one-year jump is between 16 and 17 (7.79% → 12.72%). Moving the cut between 8 and 21 keeps the old/young ratio between 3.5× and 6.7×; at 18 it is 3.7×. The oldest bucket also runs into the collection limit: data starts at model year 2005, so the 18-and-over bucket holds only 4 model years.
 
@@ -327,9 +326,9 @@ Each point is a model; the y axis is the median error across that model's listin
 
 **A conformal interval** is a data-based price band the model offers alongside its single price (e.g. ₺1.34M – ₺1.78M).
 
-- **No distributional assumption:** Errors are not assumed to follow a formula (a bell curve, etc.). The model's real errors on cars it has never seen are sorted, the worst 10% are set aside, and the margin is read directly from the data. The one assumption is that new listings resemble past ones — as the market drifts (§9), that assumption weakens.
+- **No distributional assumption:** Errors are not assumed to follow a formula (a bell curve, etc.). The model's real errors on cars it has never seen are sorted, the worst 10% are set aside, and the margin is read directly from the data. The one assumption is that new listings resemble past ones; how well it holds on the last snapshot's new listings is below.
 - **Proportional:** The margin is applied as a percentage, not in lira (roughly 13% below to 15% above the estimate). So the lira band is wide for expensive cars and narrow for cheap ones.
-- **Calibrated on other listings:** Coverage is measured cross-wise: each fold's interval is built only from the other folds' errors, so no listing's own error sets its interval. The folds are random, so the overall coverage (89.99%) still lands on the target almost by itself; the real test is the forward coverage on a later snapshot's new listings (below).
+- **Calibrated on other listings:** Coverage is measured cross-wise: each fold's interval is built only from the other folds' errors, so no listing's own error sets its interval. The folds are random, so the overall coverage (89.99%) still lands on the target almost by itself; the real test is the forward coverage on the last snapshot's new listings (below).
 
 **The weakness is price-dependent:** median error is 6.95% in the cheapest predicted quartile and 3.55% in the most expensive. With one percentage for the whole market the interval is too narrow in the cheap band, where the model errs more in proportional terms: Q1 coverage is 81.0%.
 
@@ -350,17 +349,16 @@ In lira the picture changes: 38.9% of total lira error sits in the most expensiv
 
 **Note:** The bands are cut on the predicted price, the only thing a pricing tool knows; grouping by the actual price produces regression to the mean. Width is the band's median distance between the interval's lower and upper end.
 
-**Forward coverage (criterion written before the result).** The served recipe was applied forward: q from the training snapshot's own OOF errors, tested on the next snapshot's new listings (the nine forward setups of §9). With one margin the overall coverage is 87.3%–92.4%, in the cheapest band 77.1%–85.3%. The per-band margin fixes the cheapest band in every setup (88.8%–92.5%) but does not hold 88% in every band: the lowest is 84.9%. On listings whose model and year never occur in training, coverage is low in both arms (one margin 64.3%–76.2%, per band 63.0%–73.0%); there the per-band margin lowers it further in every setup.
+**On new listings: the forward test.** A model trained on the 21,099 listings seen before the last snapshot (each at its latest price) priced the 8,889 listings first seen in the last snapshot (2026-06-27). MAPE 6.78% (95% interval 6.42%–7.17%); the 5-fold OOF, which mixes the snapshots, gives 6.49%. The served interval recipe was applied as is: q and the band edges come only from the training listings' own OOF errors. Coverage is 87.4% with one margin and 88.0% with the per-band margin. On the 297 listings whose model and year never occur in training, coverage is below target either way (one margin 68.3%, per band 65.3%).
 
-| band | one margin | per band |
-|---|---:|---:|
-| Q1 | 77.1%–85.3% | 88.8%–92.5% |
-| Q2 | 88.6%–92.1% | 87.3%–91.0% |
-| Q3 | 89.8%–94.5% | 84.9%–91.6% |
-| Q4 | 92.9%–96.2% | 88.0%–92.5% |
-| no comparable (model+year not in training) | 64.3%–76.2% | 63.0%–73.0% |
+| band | listings | one margin | per band |
+|---|---:|---:|---:|
+| Q1 | 2,215 | 77.1% | 88.8% |
+| Q2 | 2,248 | 88.6% | 87.3% |
+| Q3 | 2,213 | 90.7% | 87.4% |
+| Q4 | 2,213 | 93.2% | 88.3% |
+| no comparable (model+year not in training) | 297 | 68.3% | 65.3% |
 
-Cells are the lowest–highest coverage over the nine forward setups.
 
 ### The largest errors
 
@@ -370,96 +368,7 @@ Cells are the lowest–highest coverage over the nine forward setups.
 
 ![Error in lira — predicted − actual](figures/en-28-residual-lira.png)
 
-## 9. Time — period effect, distribution drift and backtest
-
-Two measurements. **Distribution drift:** the price distribution moves little between snapshots (highest PSI 0.005, "no drift" threshold 0.10). **Temporal backtest:** the same 8,889 listings new in the 06-27 snapshot were priced by a model trained on each earlier snapshot separately; the model trained on the oldest snapshot (01-18) errs more than the one trained on the latest (03-21): +0.40 [+0.27, +0.52] points. Within the same model and year the market level moved +2.0% and the model is time-blind → retraining should follow the **measured error**, not the calendar; distribution drift is watched as a diagnostic (end of this section).
-
-### Period effect
-
-| snapshot | live market (same model+year) | distribution distance (EMD) |
-|---|---:|---:|
-| 01-18 (base) | 0.00% | — |
-| 01-27 | 0.00% (776) | ₺10,109 |
-| 03-21 | +0.85% (728) | ₺20,560 |
-| 06-27 | +1.98% (701) | ₺48,059 |
-
-The two columns answer two different questions. **Live market**: how the median price moved within the same model and year (cell count in brackets) — free of listing mix, no model assumption. **EMD**: the average shift needed to line up two periods' price distributions, mix included. The hedonic model carries no period effect; the periods are pooled. The report's model (LightGBM) is time-blind too: it takes no period feature.
-
-### Temporal backtest
-
-| single: train → test | MAPE [95% CI] | n | cumulative: train → test | MAPE [95% CI] | n |
-|---|---:|---:|---|---:|---:|
-| 01-18 → 01-27 | 6.29% [5.90, 6.73] | 2,960 | ≤01-18 → 01-27 | = single | = |
-| 01-18 → 03-21 | 6.59% [6.24, 6.96] | 8,182 | ≤01-18 → 03-21 | = single | = |
-| 01-18 → 06-27 | 7.34% [6.95, 7.73] | 10,529 | ≤01-18 → 06-27 | = single | = |
-| 01-27 → 03-21 | 6.54% [6.18, 6.91] | 7,413 | ≤01-27 → 03-21 | 6.47% [6.09, 6.83] | 7,238 |
-| 01-27 → 06-27 | 7.18% [6.82, 7.60] | 10,313 | ≤01-27 → 06-27 | 7.23% [6.85, 7.64] | 10,257 |
-| 03-21 → 06-27 | 6.90% [6.49, 7.33] | 9,099 | ≤03-21 → 06-27 | 6.78% [6.42, 7.17] | 8,889 |
-
-Single = train on one snapshot, predict a later one. Cumulative = train on every snapshot up to t. The test set holds only `ad_id`s never seen in training (leak-free); **n** is the number of those listings and MAPE is over them. E.g. of the 11,254 listings in the 01-27 snapshot, 8,294 were already live in the 01-18 snapshot; the other 2,960 were tested. Cumulative drops every listing seen in any snapshot up to t, so its n is at most the single n. The cumulative cells marked "=" are the same experiment as the single arm (accumulating up to the first snapshot is one snapshot).
-
-The setup is the headline model's: model and series names as TF-IDF+SVD, the same LightGBM settings. The tree count is chosen, as for the served model, by a 5-fold early-stopping CV inside the training set (161–211 trees); the test snapshot is never used to stop. Brackets are the 95% confidence interval: the test listings resampled by model (listings of one model are not independent), 1,000 times.
-
-From the same training snapshot (01-18) MAPE goes 6.29% → 7.34% as the test horizon lengthens; the confidence intervals do not overlap. But each horizon tests different listings: other listings, another mix, another test snapshot. The gap cannot be put on time alone.
-
-**Horizon on a fixed test set.** On the same listings that caveat goes: the 8,889 listings new in the 06-27 snapshot (seen in no earlier snapshot) were priced by the model of each earlier single snapshot. MAPE by training snapshot: 01-18 7.29%, 01-27 7.13%, 03-21 6.89%; difference from the latest training 01-18 +0.40 [+0.27, +0.52], 01-27 +0.24 [+0.13, +0.34] (paired, clustered by model). On the same listings the error grows as the training snapshot ages.
-
-| test | single training | cumulative training | shared listings | single | cumulative | difference [95% CI] |
-|---|---|---|---:|---:|---:|---:|
-| 03-21 | 01-27 | ≤01-27 | 7,238 | 6.52% | 6.47% | -0.04 [-0.12, +0.03] |
-| 06-27 | 01-27 | ≤01-27 | 10,257 | 7.17% | 7.23% | +0.06 [-0.01, +0.12] |
-| 06-27 | 03-21 | ≤03-21 | 8,889 | 6.89% | 6.78% | -0.11 [-0.20, -0.02] |
-
-Single and cumulative were compared paired, on the listings both tested in the same test snapshot (the same resamples). In one of the three comparisons accumulating lowers the error with the interval below zero; in the remaining two the gap is within sampling error.
-
-### Per-snapshot OOF
-
-| snapshot (standalone) | MAPE | n | cumulative | MAPE | n |
-|---|---:|---:|---|---:|---:|
-| 01-18 | 6.91% | 10,901 | ≤01-18 | 6.91% | 10,901 |
-| 01-27 | 6.92% | 11,254 | ≤01-27 | 6.67% | 13,861 |
-| 03-21 | 6.93% | 11,478 | ≤03-21 | 6.45% | 21,099 |
-| 06-27 | 7.09% | 11,526 | ≤06-27 | 6.49% | 29,988 |
-
-This table is not temporal: every row is plain 5-fold OOF with no new-listings-only rule. The last cumulative row is the headline model's OOF itself (6.49%, 29,988 listings). The first forward test (01-18 → 01-27, 6.29%) is lower than the same snapshot's own OOF (6.91%). That is not a contradiction but two different measurements: the forward model trains on the whole snapshot (in OOF each fold sees four fifths of it), and its test is only the listings new in the next snapshot — a different set of listings.
-
-![Single period and pooled periods — mean percentage error](figures/en-15-backtest.png)
-
-### Distribution drift
-
-| snapshot pair | shared (share of first) | KS | PSI | EMD (₺) |
-|---|---:|---:|---:|---:|
-| 01-18→01-27 | 76.1% | 0.0055 | 0.0004 | ₺10,109 |
-| 01-18→03-21 | 30.2% | 0.0173 | 0.0015 | ₺20,560 |
-| 01-18→06-27 | 9.1% | 0.0309 | 0.0049 | ₺48,059 |
-| 01-27→03-21 | 36.1% | 0.0161 | 0.0011 | ₺15,717 |
-| 01-27→06-27 | 10.8% | 0.0301 | 0.0038 | ₺39,115 |
-| 03-21→06-27 | 21.1% | 0.0157 | 0.0017 | ₺28,620 |
-
-**What the columns measure.** All three compare the **asking-price distribution** of two snapshots (raw price, ₺; every listing live on that day, ~11k per snapshot).
-
-| measure | what it measures, how to read it |
-|---|---|
-| **KS** | The point where the two distributions differ most; 0–1. How different is "the share of listings below this price" at worst? 0.031 = 3.1 points apart at the widest point. |
-| **PSI** | Is the difference practically large? The first snapshot's prices are cut into 10 bins; how much did those bin shares move in the second? < 0.10 no drift · 0.10–0.25 moderate · > 0.25 large. |
-| **EMD (₺)** | How many lira is the difference? How far prices must move on average to turn one snapshot's distribution into the other's. The only measure in lira, so the most directly readable one. |
-
-**The snapshots are not independent samples.** The same listing shows up in several of them: up to 76.1% of the first snapshot's listings (01-18→01-27) are still there in the second. Significance tests (e.g. a KS p-value) assume two independent samples, so no p-value is given; the table shows the size of the difference.
-
-**What the drift table says.** Between full snapshots the difference is small: the highest PSI is 0.0049, about 20× below the "no drift" threshold (0.10). EMD puts it in lira: ~₺10k over nine days, ~₺48k over five months — about 3% of the median asking price (₺1.55M). Of the listings in the first of the two closest snapshots, 76.1% are still in the second, so their distance comes out small.
-
-![Price distribution by snapshot](figures/en-13-drift-hist.png)
-
-![Log-price density by snapshot](figures/en-14-drift-kde.png)
-
-### When to retrain
-
-- **Watch the error directly, retrain on new snapshots.** The price arrives with every snapshot, so the model's error on new listings can be measured directly; the backtest above does exactly that. On the same new listings the model trained on the oldest snapshot (01-18) errs +0.40 points [+0.27, +0.52] more than the latest one.
-- **Watch drift as a diagnostic.** PSI · KS · EMD show what changed but do not trigger retraining on their own: today's highest PSI is 0.0049, and the model ages while the distribution barely moves. There is no fixed PSI threshold.
-- **Events that reset the pricing regime.** A tax or excise change, an incentive, an import rule, a currency move or a sudden market anomaly can shift the distribution before a monitoring window closes; treat those as **triggers** as well and plan retraining around them.
-- **Keep the old snapshots.** In the paired comparison on the same test listings, accumulating lowers the error significantly in one of the three comparisons and raises it significantly in none (the intervals carry the sampling of the test listings, not the variability of training). Retrain by **adding** snapshots, not by discarding the old ones.
-
-## 10. Free text: measured, left out
+## 9. Free text: measured, left out
 
 The seller's description does **not** enter the model. That is a measurement, not an oversight: the model of §7 scores R² **0.9699** on log price, and with the description added on the same folds **0.9707** — ΔR² **0.0008**, 2.6% of the log variance the model leaves unexplained. MAPE 6.49% → 6.41%, mean absolute error ₺109,776 → ₺108,770.
 

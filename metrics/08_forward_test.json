@@ -1,0 +1,95 @@
+{
+ "_meta": {
+  "script": "08_forward_test.py",
+  "generated_at": "2026-11-22T20:01:55+03:00",
+  "data_until": "2026-06-27",
+  "db": {
+   "path": "data/cars.duckdb",
+   "sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
+   "rows": 45315
+  },
+  "run_id": null,
+  "source": {
+   "script": {
+    "analysis/08_forward_test.py": "b713796dd0f70ac0d70c30a8c6c0fe4cd56caf30aafa9b7a4506f10997914f3b"
+   },
+   "lib": {
+    "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
+    "analysis/lib/common.py": "533eaad7a29580e93aeff01214fc024538dd6a6ab717e6b669e7e7b0a4399295",
+    "analysis/lib/conformal.py": "7ba37319d93e3006cf69f5e66c7dd212848ffe47b60b2c4ac658dd99bb510e90",
+    "analysis/lib/cv.py": "e83f615405ac012d466c9d82f698dc4145ba2df680c46ec3f529ee3ee6da56f5",
+    "analysis/lib/segment_rule.py": "9e014153906e9fb7a139099d1b581459a7b9e17bb21acb2172bd67cdb66c01cc"
+   }
+  }
+ },
+ "methodology": {
+  "forward_test": {
+   "train_until": "2026-03-21",
+   "test": "2026-06-27",
+   "n_train": 21099,
+   "n": 8889,
+   "MAPE": 6.78,
+   "ci_lo": 6.42,
+   "ci_hi": 7.17,
+   "trees": 211,
+   "coverage": {
+    "q": 0.1405,
+    "q_band": [
+     0.1834,
+     0.1349,
+     0.1221,
+     0.106
+    ],
+    "bounds": [
+     1144837.0,
+     1519016.0,
+     2243494.0
+    ],
+    "n": 8889,
+    "coverage_global": 87.4,
+    "coverage_band": 87.99,
+    "bands": [
+     [
+      "Q1",
+      2215,
+      77.07,
+      88.85
+     ],
+     [
+      "Q2",
+      2248,
+      88.57,
+      87.32
+     ],
+     [
+      "Q3",
+      2213,
+      90.74,
+      87.44
+     ],
+     [
+      "Q4",
+      2213,
+      93.22,
+      88.34
+     ]
+    ],
+    "no_comparable": {
+     "n": 297,
+     "coverage_global": 68.35,
+     "coverage_band": 65.32
+    }
+   },
+   "protocol": {
+    "train": "every listing seen before the last snapshot, latest price per ad_id",
+    "test": "listings first seen in the last snapshot",
+    "setup": "cv.fold_matrices + cv.LGB_PARAMS; trees = median of an inner 5-fold early-stopping CV on the training set, then one fit without early stopping",
+    "interval": {
+     "level": 0.95,
+     "n_boot": 1000,
+     "resample": "model"
+    }
+   }
+  }
+ }
+}

@@ -42,11 +42,11 @@ SITE_KEYS = {
     "domain": ["price_dist", "price_histogram", "segment_ladder", "body_median", "age_depreciation", "km_price_scope",
                "km_price", "brand_compare", "series_segment_matrix", "age_km_note", "numeric_correlation",
                "model_compare", "conformal", "quantile_error",
-               "residual_vs_n", "pred_vs_true", "residual_scatter", "drift", "hedonic",
+               "residual_vs_n", "pred_vs_true", "residual_scatter", "hedonic",
                "hedonic_reliability", "shap", "dealer_coverage", "model_year_median", "brand_ablation", "final_results"],
     "methodology": ["feature_kept", "feature_drop", "theils_matrix",
                     "lofo", "lofo_trees", "kmeans_selection", "column_missing",
-                    "impute_note", "backtest", "column_missing_all", "systematic_missing", "column_accounting",
+                    "impute_note", "forward_test", "column_missing_all", "systematic_missing", "column_accounting",
                     "kb_gb_twins", "content_duplicates"],
     # EN: 2026-09-27: report figures 11 (error per model), 27 (lira error by quartile) and 29/30 (engine range rule)
     #     draw from these; the rest of error_drivers is input for the report text and stays out

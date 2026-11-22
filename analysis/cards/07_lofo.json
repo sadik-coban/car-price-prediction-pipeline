@@ -38,8 +38,8 @@
   "temporal": {
    "status": "present",
    "note": {
-    "tr": "KFold dönemleri karıştırır; model zamanı görmez. Medyan artık dönemlere göre kayıyor (08_residuals); ileriye dönük hata 09_backtest'te ayrıca ölçülüyor.",
-    "en": "KFold mixes the snapshots; the model does not see time. The median residual shifts by snapshot (08_residuals); the forward error is measured separately in 09_backtest."
+    "tr": "KFold dönemleri karıştırır; model zamanı görmez. Son taramada yeni ilanlardaki hata 08_forward_test'te ayrıca ölçülüyor.",
+    "en": "KFold mixes the snapshots; the model does not see time. The error on the listings new in the last snapshot is measured separately in 08_forward_test."
    }
   }
  },

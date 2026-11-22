@@ -1,10 +1,10 @@
 """
 test_10_free_text.py
-EN: Invariants of metrics/10_free_text.json (technical report §1 and §10, pre-registered plan
+EN: Invariants of metrics/10_free_text.json (technical report §1 and the free-text section, pre-registered plan
     plans/10-text-contribution): the description features are fitted on the training fold only; the published
     gap is the text arm minus the base arm; the base arm is this run's model (08's log R², 07's MAPE, the same
     listings and 5 folds); the text arm's settings are the plan's.
-TR: metrics/10_free_text.json'un değişmezleri (teknik rapor §1 ve §10, ön kayıtlı plan plans/10-text-contribution):
+TR: metrics/10_free_text.json'un değişmezleri (teknik rapor §1 ve serbest metin bölümü, ön kayıtlı plan plans/10-text-contribution):
     açıklama öznitelikleri yalnız eğitim fold'unda kurulur; yayımlanan fark metin kolu eksi taban kol; taban kol bu
     koşunun modeli (08'in log R²'si, 07'nin MAPE'si, aynı ilanlar ve 5 fold); metin kolunun ayarları planınki.
 """

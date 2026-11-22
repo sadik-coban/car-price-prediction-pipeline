@@ -205,26 +205,28 @@ def fmt_business(v, F, lang):
         "number hides how sure the "
         "estimate is; a range states it and warns the user exactly where uncertainty is large."))
     A("")
-    # 2026-09-28 (denetim): bant basina hata payinin degeri ileri kapsamadan (plans/09-forward-coverage): sonraki
-    # taramanin yeni ilanlarinda. En ucuz banti her kurulumda duzeltmesi (H1) kapili; tutmazsa durur.
-    _fc = v["bt_forward"]
-    _q1 = lambda i_: [dict((r_[0], r_) for r_ in c_["bands"])["Q1"][i_] for c_ in _fc]   # noqa: E731
-    assert all(b_ > g_ for g_, b_ in zip(_q1(2), _q1(3))), "bant basina pay ucuz banti duzeltmiyor"
-    _rng = lambda xs_, lg_: f"{P(min(xs_), lg_)}–{P(max(xs_), lg_)}"                          # noqa: E731
-    _nc_g = [c_["no_comparable"]["coverage_global"] for c_ in _fc]
-    _nc_b = [c_["no_comparable"]["coverage_band"] for c_ in _fc]
-    _nc_worse = all(b_ < g_ for g_, b_ in zip(_nc_g, _nc_b))
+    # 2026-11-22 (kullanici karari, docs/decisions.md): ileri kapsama tek teste indi (08_forward_test): son taramadan
+    # onceki ilanlarla egitim, son taramanin yeni ilanlarinda kapsama. Banda gore payin en ucuz banti duzeltmesi ve
+    # emsalsiz aracta aralik tutmamasi veriye kapili; tutmazsa durur.
+    _fc = v["ft"]["coverage"]
+    _q1 = dict((r_[0], r_) for r_ in _fc["bands"])["Q1"]
+    assert _q1[3] > _q1[2], "bant basina pay ucuz banti duzeltmiyor"
+    _nc = _fc["no_comparable"]
+    assert max(_nc["coverage_global"], _nc["coverage_band"]) < v["cov_target"], "emsalsiz aracta aralik tutuyor"
+    _nc_worse = _nc["coverage_band"] < _nc["coverage_global"]
     A(L(f"Bu yüzden çıktı tek sayı değil, **%{v['cov_target']} aralık**. Tek bir hata payıyla aralık ucuz araçlarda "
         f"tutmuyor: tahmini en ucuz çeyrekte kapsama **{P(v['cov_q1'], lang)}**, hedefin altında. Hata payı fiyat "
-        f"bandına göre ayrı hesaplanınca, eğitimden sonraki taramanın yeni ilanlarında en ucuz bantta kapsama "
-        f"{_rng(_q1(2), 'tr')} yerine {_rng(_q1(3), 'tr')} oluyor. Emsalsiz araçta ise aralık iki yolla da tutmuyor "
-        f"({_rng(_nc_g, 'tr')})" + ("; banda göre payla kapsama orada daha da düşüyor." if _nc_worse else "."),
+        f"bandına göre ayrı hesaplanınca, son taramanın yeni ilanlarında (model ondan önceki ilanlarla eğitildi) en "
+        f"ucuz bantta kapsama {P(_q1[2], lang)} yerine {P(_q1[3], lang)} oluyor. Emsalsiz araçta ise aralık iki "
+        f"yolla da tutmuyor ({P(_nc['coverage_global'], lang)} ve {P(_nc['coverage_band'], lang)})"
+        + ("; banda göre payla kapsama orada daha da düşüyor." if _nc_worse else "."),
         f"That is why the output is a **{v['cov_target']}% range**, not one number. With one margin the range does not "
         f"hold on cheap cars: coverage in the cheapest predicted quartile is **{P(v['cov_q1'], lang)}**, below target. "
-        f"With the margin computed per price band, on the new listings of the snapshot after training the cheapest "
-        f"band covers {_rng(_q1(3), 'en')} instead of {_rng(_q1(2), 'en')}. On cars without a comparable the range "
-        f"fails either way ({_rng(_nc_g, 'en')})" + ("; with the per-band margin coverage drops further there."
-                                                      if _nc_worse else ".")))
+        f"With the margin computed per price band, on the last snapshot's new listings (the model trained on the "
+        f"listings before it) the cheapest band covers {P(_q1[3], lang)} instead of {P(_q1[2], lang)}. On cars without "
+        f"a comparable the range fails either way ({P(_nc['coverage_global'], lang)} and "
+        f"{P(_nc['coverage_band'], lang)})" + ("; with the per-band margin coverage drops further there."
+                                               if _nc_worse else ".")))
     A("")
     A(f"![{F[12][1]}](figures/{F[12][0]})")
     A("")
@@ -238,64 +240,27 @@ def fmt_business(v, F, lang):
               if _flag_sig else "")
     _flag_en = (f", and with age, mileage, price and performance family held fixed the odds of a large error are "
               f"still {_flag_ctl['or']:.2f}×" if _flag_sig else "")
-    # 2026-09-28: oneri teknik §9'un ayni test ilanlarindaki esli karsilastirmasina kapili (birikim en az bir
-    # yerde anlamli kazandiriyor, hicbir yerde anlamli kaybettirmiyor).
-    _pc = {c_: i_ for i_, c_ in enumerate(v["bt_columns"]["paired"])}
-    _accumulates = (any(r_[_pc["ci_hi"]] < 0 for r_ in v["bt_paired"])
-                    and not any(r_[_pc["ci_lo"]] > 0 for r_ in v["bt_paired"]))
-    # 2026-09-29: yeniden egitim gerekcesi teknik §9'un sabit test kumesindeki en eski egitim farki; anlamli degilse durur.
-    _old = v["bt_horizon"]["vs_latest"][0]
-    assert _old[2] > 0, f"en eski egitim farki anlamli degil: {_old}"
-    _acc_tr = (" Eski dönemleri atma: aynı ilanlarda birikimli eğitim hatayı hiçbir karşılaştırmada anlamlı artırmadı, "
-               "bir kısmında düşürdü." if _accumulates else "")
-    _acc_en = (" Do not discard old snapshots: on the same listings, accumulating never raised the error significantly "
-               "and lowered it in some comparisons." if _accumulates else "")
     A(L("**Ne yapmalı**", "**What to do**"))
     A("")
     A(L(f"- Aralığın hata payını fiyat bandına göre ayrı hesapla: ucuz araçta daha geniş, pahalıda daha dar — tek "
         f"sayıya güvenme. Emsalsiz araçta aralığa da güvenme.\n"
         f"- Nadir ve uç araçları elle fiyatla; model orada saçılıyor.\n"
         + (f"- Metninde dönüşüm, motor değişimi ya da modifiye geçen ilanı otomatik fiyatlama, "
-           f"elle incele; bu bilgi formda yok{_flag_tr}.\n" if _flag_sig else
+           f"elle incele; bu bilgi formda yok{_flag_tr}." if _flag_sig else
            f"- Metninde dönüşüm, motor değişimi ya da modifiye geçen ilanı yayına almadan önce gözden geçir: "
            f"bu bilgi formda yok. Araç özellikleri sabitken bu ilanlarda hata oranında anlamlı bir fark ölçülmedi; gözden "
-           f"geçirme model hatasına değil, formun göremediği bilgiye karşı.\n")
-        +
-        # 2026-09-27 (kullanici): oneri sabit bir PSI esigine baglanmiyor; "az kayiyor" yargisi yine esikle kapili.
-        # 2026-09-29 (ikinci sadelestirme listesi): teknik §9 ile ayni sira — once hata, sonra kayma (tani).
-        f"- **Hatayı doğrudan izle, modeli yeni taramalarla yeniden eğit:** fiyat her taramada geldiği için modelin "
-        f"yeni ilanlardaki hatası doğrudan ölçülebilir. Aynı yeni ilanlarda en eski taramayla eğitilen model en "
-        f"yenisinden {_old[1]:.2f} puan daha çok yanılıyor; piyasa seviyesi {v['n_snapshots']} dönemde "
-        f"{P(v['ed']['period_shift']['live'][-1][1], lang, 1, sign=True)} kaydı ve model zamanı görmüyor.\n"
-        + (f"- **Fiyat dağılımını tanı için izle:** dağılım bugün az kayıyor (en yüksek PSI {v['psi_max']:.3f}); "
-           f"yeniden eğitimi tek başına tetiklemez.\n" if v["psi_max"] < v["psi_safe"] else
-           f"- **Fiyat dağılımını tanı için izle:** dağılım belirgin kayıyor (en yüksek PSI {v['psi_max']:.3f}); "
-           f"neyin değiştiğini gösterir, yeniden eğitim kararı yine hataya bakar.\n")
-        + f"- **Fiyat rejimini değiştiren gelişmeleri takip et** (vergi/ÖTV düzenlemesi, teşvik, ani "
-        f"piyasa hareketi gibi) — eğitim planı bunlara göre yapılmalı." + _acc_tr,
+           f"geçirme model hatasına değil, formun göremediği bilgiye karşı."),
         f"- Compute the range's margin per price band: wider on cheap cars, narrower on expensive ones — don't "
         f"trust a point estimate. On cars without a comparable, don't trust the range either.\n"
         f"- Price rare and edge cars by hand; the model scatters there.\n"
         + (f"- Never auto-price a listing whose text mentions a conversion, an engine swap or "
-           f"modifications — price it by hand; that information is not in the form{_flag_en}.\n" if _flag_sig else
+           f"modifications — price it by hand; that information is not in the form{_flag_en}." if _flag_sig else
            f"- Review a listing whose text mentions a conversion, an engine swap or modifications before it goes "
            f"live: that information is not in the form. With vehicle attributes held fixed no significant difference "
-           f"in its error rate was measured; the review guards against what the form cannot see, not against model error.\n")
-        +
-        f"- **Watch the error directly, retrain on new snapshots:** the price arrives with every snapshot, so the "
-        f"model's error on new listings can be measured directly. On the same new listings the model trained on the "
-        f"oldest snapshot errs {_old[1]:.2f} points more than the latest one; the market level moved "
-        f"{P(v['ed']['period_shift']['live'][-1][1], lang, 1, sign=True)} over {number_word(v['n_snapshots'], 'en')} "
-        f"snapshots and the model is time-blind.\n"
-        + (f"- **Watch the price distribution as a diagnostic:** it moves little today (highest PSI "
-           f"{v['psi_max']:.3f}); it does not trigger retraining on its own.\n" if v["psi_max"] < v["psi_safe"] else
-           f"- **Watch the price distribution as a diagnostic:** it moves clearly (highest PSI {v['psi_max']:.3f}); it "
-           f"shows what changed, while the retraining decision still looks at the error.\n")
-        + f"- **Watch for events that reset the pricing regime** (a tax or excise change, an incentive, "
-        f"a sudden market move) — plan retraining around them." + _acc_en))
+           f"in its error rate was measured; the review guards against what the form cannot see, not against model error.")))
     A("")
-    # 2026-10-19 (kullanici karari): figur 15 buradan cikti. "Eski donemleri atma"nin altinda duruyor ama zamansal
-    # olmayan duz OOF'u ciziyordu; maddenin dayanagi esli karsilastirma. Teknik §9'da aciklamasiyla kaliyor.
+    # 2026-10-19 (kullanici karari): figur 15 buradan cikti; 2026-11-22'de teknik rapordan da cikti (zaman ve kayma
+    # analizden cikti, docs/decisions.md). Yeniden egitim, PSI ve rejim maddeleri de o gun kalkti.
 
     # --- 4. Neyi vermez
     A(L("## Bu model neyi vermez", "## What this model does not give you"))
@@ -307,6 +272,9 @@ def fmt_business(v, F, lang):
         f"göçük de aynı \"boyalı\" bayrağına düşüyor.\n"
         f"- **Paketin ötesindeki donanımı ve modifiyeyi.** Model adındaki donanım paketi (M Sport, S Line gibi) "
         f"okunuyor; paketin dışındaki opsiyonlar ve sonradan yapılan değişiklikler görünmüyor.\n"
+        f"- **Zamanı.** Model {number_word(v['n_snapshots'], lang)} taramanın fiyatlarını birlikte öğrenir, dönem "
+        f"farkını görmez. Son taramada yeni ilanlardaki hatası {P(v['ft']['MAPE'], lang, 2)}; yukarıdaki "
+        f"{P(v['model_mape'], lang, 2)} taramaları karıştıran ölçümden.\n"
         f"- **BMW ve Audi dışını.** Kapsam bu iki marka; başka markalara ne kadar genellenebildiği "
         f"ölçülmedi.",
         f"- **The sale price.** It predicts the asking price; the sale price lands below it after haggling.\n"
@@ -316,6 +284,9 @@ def fmt_business(v, F, lang):
         f"dent land on the same \"painted\" flag.\n"
         f"- **Equipment beyond the package, and modifications.** The trim package in the model name (M Sport, "
         f"S Line and the like) is read; options outside the package and later changes are not visible.\n"
+        f"- **Time.** The model learns the prices of the {number_word(v['n_snapshots'], 'en')} snapshots together and "
+        f"does not see the period. On the last snapshot's new listings its error is {P(v['ft']['MAPE'], lang, 2)}; the "
+        f"{P(v['model_mape'], lang, 2)} above comes from a measurement that mixes the snapshots.\n"
         f"- **Anything outside BMW and Audi.** Scope is these two brands; how far it generalises to other "
         f"brands was not measured."))
     A("")

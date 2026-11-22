@@ -16,7 +16,7 @@ sırayı değiştirmek için `SECTIONS` satırlarının yerini değiştirmek yet
 kendiliğinden doğru kalır.
 
 - **Fiyat raporu:** veri → eksiklik → fazlalık/marka → hedef ve önişleme → piyasa yapısı → hedonik →
-  model → kalibrasyon → zaman → serbest metin.
+  model → kalibrasyon → serbest metin (zaman bölümü 2026-11-22'de çıktı).
 Arşivdeki metin raporunun üreteci de aynı desendedir; o rapor yayımlanan işin parçası değil.
 
 **Bilinçli istisnalar — elle yazılanlar.**
@@ -131,7 +131,7 @@ Dışarıda hazırlanan bir sadeleştirme listesi madde madde değerlendirildi. 
 **İş notu** = ne yapmalı, ne kadar para. Yöntem adı geçmez (MAPE, R², conformal, OOF hepsi
 teknikte); her şey ₺ ve sade yüzde. **Teknik rapor** = protokol, kontroller, sınırlar.
 İkisi **aynı hesaptan** beslenir: ortak değerler `builders/report_lib/report_common.py::derive`'da bir kez türetilir,
-iki şablona oradan gider → bir rakam iki raporda farklı çıkamaz. Bazı figürler (çeyrek hatası, kapsama, backtest) iki
+iki şablona oradan gider → bir rakam iki raporda farklı çıkamaz. Bazı figürler (çeyrek hatası, kapsama) iki
 raporda da geçer (lira çeyreği 2026-09-28'den beri yalnız karar notunda): karar notunda karar için, teknik raporda kanıt olarak — bilinçli tekrar.
 
 ## Metin analizi neden arşivde
@@ -141,7 +141,7 @@ raporda da geçer (lira çeyreği 2026-09-28'den beri yalnız karar notunda): ka
 
 1. **Ana bulgusu olumsuzdu.** Yapısal modele metin öznitelikleri eklendiğinde çapraz-doğrulamalı
    doğrulukta ölçülebilir bir katkı bulunamadı. 2026-09-27'den beri bu sonuç arşivden alınmıyor: teknik raporun
-   §10'u metnin katkısını `analysis/10_free_text.py` ile her koşuda canlı ölçüyor (ön kayıt
+   serbest metin bölümü metnin katkısını `analysis/10_free_text.py` ile her koşuda canlı ölçüyor (ön kayıt
    `plans/10-text-contribution`; modelin OOF'u ve aynı fold'larda + açıklama TF-IDF/SVD).
 2. **Fiyat iddialarını üreten dedektörlerde denetimle bulunmuş kusurlar vardı**
    (`archive/experiments/regex_audit/`). Kusurlar düzeltildi, ama düzeltmeden sonra da geriye fiyat
@@ -162,14 +162,58 @@ kopyalanan veri, tablo, dondurulmuş sayı ya da elle yazılmış sayı girmez. 
 haritası, model ayarları, metin bayrağı kelime listesi) yalnız her koşuda güncel veriye uygulanıyor ve çıktısı
 kullanılıyorsa kalır, kökeni yazılır; etkisiz olan tutulmaz. Bekçi: `tests/repo/test_no_archive_inputs.py`.
 Bu kararla kalkanlar:
-- dondurulmuş metin ablasyonu (`analysis/frozen/text_ablation.json`) ve arşivdeki LLM çıkarım dosyası → §10 canlı
-  ölçüm;
+- dondurulmuş metin ablasyonu (`analysis/frozen/text_ablation.json`) ve arşivdeki LLM çıkarım dosyası → serbest metin
+  bölümünde canlı ölçüm;
 - eski DB'den taşınan `dashboard_cache` / `options_cache` → silver ve gold'dan kaldırıldı, gold sözleşmesi fazla
   tabloyu reddediyor;
 - §8 notlarındaki elle yazılmış sayılar → her koşuda hesaplanıyor;
 - etkisizler: `08_large_errors`'ın eski D serileri (`old_d_group`), kullanılmayan metin gerekçeleri,
   `tools/metric_renames.py`'nin arşivdeki P0 kopyasına karşı kanıt komutları, iki ölü veri dosyası
   (`archive/obsolete/archive-inputs-2026-09-27/`).
+
+## Kayma çıktı, tek ileri test kaldı (2026-11-22, kullanıcı kararı)
+
+Kullanıcı zaman ve kaymayı analizden çıkarmak istedi ("çok karışıyor"). Karar, verinin nasıl toplandığına
+bakılarak verildi.
+
+**Araştırma bulguları:**
+- **Taramalar stok dökümü.** Her tarama o gün sitede yayında olan bütün BMW/Audi ilanlarını alıyor: 10.901 · 11.254 ·
+  11.478 · 11.526 ilan.
+- **Aralar düzensiz.** Taramalar arasında 9, 53 ve 98 gün var. Önceki taramalarda görülmemiş ilan payı %26, %63 ve %77.
+- **`listing_date` yayın tarihi değil.** Birden çok taramada görülen 10.831 ilanın 6.057'sinde (%56) değişmiş; son
+  güncelleme günü. Taramadaki medyan "ilan yaşı" bu yüzden 10–13 gün. Tek güvenilir zaman ekseni dört tarama.
+- **İlan yaşının etkisi küçük.** OOF artığı ilan yaşına göre neredeyse düz: medyan −%0,46 ile +%0,12 arası.
+
+**Neden kayma çıktı.** Stok dökümleri akışı görmüyor. Uzun süre satılmayan ilan birçok taramaya giriyor, iki tarama
+arasında açılıp kapanan hızlı ilan hiçbirine girmiyor. İki tarama arasındaki fiyat dağılımı farkı bu yüzden üç şeyin
+karışımı: piyasanın gerçekten kayması, hangi ilanın stokta kaldığı ve bileşim. PSI, KS, EMD ve yoğunluk eğrileri
+bunları ayıramıyor; "son görüldüğü taramaya göre artık" da hayatta kalmayla karışık.
+
+**Neden tek ileri test kaldı.** "Eskiden öğren, sonra gelen yeni ilanı fiyatla" sorusu iyi tanımlı ve modelin
+kullanımına en yakın ölçüm. Aralığın emsalsiz araçlarda tutmadığının tek kanıtı da bu test.
+- **Kurulum:** son taramadan önce görülen bütün ilanlarla eğit (ilan başına son fiyat), son taramada ilk kez görülen
+  ilanlarda ölç.
+- **Ölçülenler:** MAPE ve modele göre yeniden örneklemeli %95 aralık; servis tarifinin ileri kapsaması (genel, bant
+  başına, emsalsiz).
+- **Yer:** `analysis/08_forward_test.py`; raporda §8'de bir paragraf.
+
+**Çıkanlar:**
+- `analysis/09_drift.py` ve `09_backtest`'in tek, biriken, eşli, ufuk, insample ve tarama başına kolları;
+- figür 13, 14, 15; teknik raporun "Zaman" bölümü (serbest metin §10 → §9);
+- `08_large_errors`'ın son görüldüğü taramaya göre artığı ve canlı/kalkan karşılaştırması; `08_residuals`'ın dönem
+  cümlesi;
+- iş notunun yeniden eğitim, PSI ve rejim maddeleri.
+
+Modelin zamanı görmediği raporda tek bir sınır cümlesiyle kalır. Hedonik modelde dönem etkisi zaten yoktu
+(2026-09-23).
+
+**Geri çekilen plan.** `plans/09-forward-coverage` (kilitli, 2026-09-28) dokuz ileri kurulumu ön kayda almıştı:
+- H1 doğrulandı: banda göre pay en ucuz bandı her kurulumda düzeltiyor.
+- H2 çürütüldü: her bantta %88 tutmuyor.
+- Hipotezler "her kurulumda" diye yazıldığı için tek kurulum onları taşımaz. Plan geri çekildi; dizin yerelde
+  `archive/plans-withdrawn/`'da. Dokuz kurulumun sayıları ve kanıtı commit `fd0376a`'da (`metrics/09_backtest.json`).
+- Yeni plan açılmadı: tek testin sonucu dokuz kurulumdan biri olarak zaten görülmüştü; şimdi "ön kayıt" sonradan
+  yapılmış olurdu.
 
 ## Gizlilik
 
@@ -207,11 +251,11 @@ Bu kararla kalkanlar:
   rapor §1 kararın ölçüsünü basar. Çeviri analizde yapılır (`analysis/lib/common.py`); veritabanı bilgiyi
   yarı ham tutar (`NULL`).
 - **Hedonik model dönem etkisi içermez** (kullanıcı kararı, 2026-09-23): dönemler havuzlanarak kestirilir;
-  piyasa seviyesinin kayması teknik rapor §9'da aynı model ve yılın canlı ilanlarından okunur. 2026-09-28'de
+  piyasa seviyesinin kayması 2026-11-22'den beri ölçülmüyor (aşağıda "Kayma çıktı, tek ileri test kaldı"). 2026-09-28'de
   yeniden önerildi (+%5,3) ve alınmadı: sayı sitenin eski Temmuz verisinden, veride "dönem" ilanın son görüldüğü
   tarama olduğu için hayatta kalmayla karışık.
-- **Yeniden eğitim sabit bir PSI eşiğine bağlanmaz** (2026-09-27). Kayma izlenir, model yeni taramalarla
-  yeniden eğitilir. Gerekçe veride: PSI eşiğin çok altındayken bile aynı taramada eğitilen modelin hatası
-  test ufku uzadıkça artıyor (teknik rapor §9). Fiyat her taramada geldiği için modelin yeni ilanlardaki hatası
-  doğrudan izlenir; sabit bir eşik yok (2026-09-28).
+- **Model zamanı görmez** (2026-11-22). Taramaların fiyatları birlikte öğrenilir; kayma, dönem etkisi ve yeniden
+  eğitim önerileri analizden çıktı. Raporlar bunu tek bir sınır cümlesiyle söyler; son taramanın yeni ilanlarındaki
+  hata teknik rapor §8'de (`analysis/08_forward_test.py`). Önceki kural ("yeniden eğitim sabit bir PSI eşiğine
+  bağlanmaz", 2026-09-27/28) onunla birlikte kalktı.
 - Kapsam BMW + Audi; başka markalara ne kadar genellenebildiği ölçülmedi.

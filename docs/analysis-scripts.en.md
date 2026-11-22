@@ -16,7 +16,7 @@ without `[6]` the JSON does not change.
 the technical report's sections:
 - [1_data](../notebooks/1_data.ipynb): sections 1–4;
 - [2_market_and_model](../notebooks/2_market_and_model.ipynb): 5–7;
-- [3_errors_and_time](../notebooks/3_errors_and_time.ipynb): 8–10;
+- [3_errors_and_text](../notebooks/3_errors_and_text.ipynb): 8–9;
 - [4_shap](../notebooks/4_shap.ipynb): the SHAP report.
 
 The notebooks are in Turkish. For each script a notebook shows its card, its results as tables and the report's

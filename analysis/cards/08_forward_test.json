@@ -1,0 +1,61 @@
+{
+ "script": "analysis/08_forward_test.py",
+ "question": {
+  "tr": "Son taramadan önceki ilanlarla eğitilen model, son taramada ilk kez görülen ilanları ne kadar iyi fiyatlıyor ve servis edilen %90 aralık orada ne kadar kapsıyor?",
+  "en": "How well does a model trained on the listings before the last snapshot price the listings first seen in it, and how much does the served 90% interval cover there?"
+ },
+ "data": {
+  "tr": "load_clean(all_snapshots=True): her taramanın her satırı. Eğitim: son taramadan önce görülen her ilan, son fiyatıyla. Test: son taramada ilk kez görülen ilanlar.",
+  "en": "load_clean(all_snapshots=True): every row of every snapshot. Training: every listing seen before the last snapshot, at its latest price. Test: the listings first seen in the last snapshot."
+ },
+ "method": {
+  "tr": "Manşet kurulum (cv.fold_matrices + cv.LGB_PARAMS, log1p fiyat). Ağaç sayısı eğitim kümesinde erken durdurmalı iç 5-fold CV'nin medyanı, sonra bütün eğitim kümesinde tek eğitim (servis edilen model gibi). MAPE ve test ilanlarını modele göre yeniden örnekleyen bootstrap'ten %95 aralık. Servis edilen aralık tarifi ileriye uygulanır: q eğitim kümesinin kendi OOF hatalarından, bant sınırları eğitim OOF tahminlerinden; tek q ve bant başına q ile kapsama genel, bant başına ve (model, yıl)'ı eğitimde olmayan ilanlarda. 09_backtest'in son biriken kurulumu (2026-11-22).",
+  "en": "The headline setup (cv.fold_matrices + cv.LGB_PARAMS, log1p price). Trees = median of an inner early-stopping 5-fold CV on the training set, then one fit on the whole training set (as the served model). MAPE with a 95% interval from a bootstrap that resamples the test listings by model. The served interval recipe applied forward: q from the training set's own OOF errors, band edges from the training OOF predictions; with one q and with a per-band q, coverage overall, per band and on listings whose (model, year) is not in training. The last cumulative setup of 09_backtest (2026-11-22)."
+ },
+ "split": "temporal",
+ "leakage": {
+  "duplicate_ad_id": {
+   "status": "present",
+   "note": {
+    "tr": "Test yalnız eğitimde hiç görülmemiş ad_id'ler; ama farklı ad_id ile yeniden ilan edilen aynı araç eğitimde eski fiyatıyla bulunabilir. Payı küçük, etkisi ölçülmedi (backlog/ideas.md, 2026-10-12).",
+    "en": "The test holds only ad_ids never seen in training, but the same car re-posted under a new ad_id can be in training at its old price. Its share is small; the effect was not measured (backlog/ideas.md, 2026-10-12)."
+   }
+  },
+  "target_in_features": {
+   "status": "none",
+   "note": {
+    "tr": "Öznitelik listesinde (lib/common.FEATURES) fiyat ya da fiyattan türeyen bir alan yok.",
+    "en": "No price or price-derived field in the feature list (lib/common.FEATURES)."
+   }
+  },
+  "fit_on_full_data": {
+   "status": "none",
+   "note": {
+    "tr": "Model, ağaç sayısı, q ve bant sınırları yalnız eğitim kümesinden; test taraması erken durdurmada da kullanılmaz (test_forward_coverage_calibrates_on_training_only).",
+    "en": "The model, the tree count, q and the band edges come from the training set only; the test snapshot is not used for early stopping either (test_forward_coverage_calibrates_on_training_only)."
+   }
+  },
+  "temporal": {
+   "status": "none",
+   "note": {
+    "tr": "Eğitim son taramadan önce, test son taramada: zaman sırası korunur.",
+    "en": "Training is before the last snapshot, the test is in it: time order is kept."
+   }
+  }
+ },
+ "evidence": {
+  "tests": [
+   "tests/analysis/test_08_forward_test.py::test_forward_coverage_calibrates_on_training_only",
+   "tests/analysis/test_08_forward_test.py::test_train_before_test",
+   "tests/analysis/test_08_forward_test.py::test_every_listing_is_train_or_test",
+   "tests/analysis/test_08_forward_test.py::test_coverage_adds_up"
+  ],
+  "report_keys": [
+   "methodology.forward_test.MAPE",
+   "methodology.forward_test.ci_lo",
+   "methodology.forward_test.ci_hi",
+   "methodology.forward_test.coverage"
+  ]
+ },
+ "status": "complete"
+}

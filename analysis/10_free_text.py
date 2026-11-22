@@ -1,12 +1,12 @@
 """
 10_free_text.py
-EN: Technical report §10 — what the seller's free text adds to the model, measured live on every run
+EN: Technical report, free-text section — what the seller's free text adds to the model, measured live on every run
     (pre-registered plan plans/10-text-contribution). The base arm is this run's model OOF (07_model_comparison,
     read with cv.load_oof); the text arm uses the same 5 folds, features and LightGBM settings plus the
     description as word TF-IDF (1–2 grams) reduced by SVD, both fitted on each fold's training part only. Both
     arms are scored on log R², MAPE and MAE. Replaces the ablation frozen from the archived text run (2026-09-27,
     the rule that nothing from the archive reaches the live chain); no LLM is run.
-TR: Teknik rapor §10 — satıcının serbest metni modele ne katıyor; her koşuda canlı ölçülür (ön kayıtlı plan
+TR: Teknik rapor, serbest metin bölümü — satıcının serbest metni modele ne katıyor; her koşuda canlı ölçülür (ön kayıtlı plan
     plans/10-text-contribution). Taban kol bu koşunun model OOF'u (07_model_comparison, cv.load_oof ile okunur);
     metin kolu aynı 5 fold'u, öznitelikleri ve LightGBM ayarlarını kullanır, üstüne açıklama kelime TF-IDF'i
     (1–2 gram) ve SVD ile; ikisi de her fold'un yalnız eğitim kısmında kurulur. İki kol log R², MAPE ve MAE ile
@@ -85,8 +85,8 @@ def ablation(price, yl, base_log, text_log):
 # %% [3] Metrics assembly | Metrik derleme — naming and rounding only | yalnız adlandırma ve yuvarlama
 def to_metrics(res):
     """
-    EN: Published as report.text_ablation (technical report §1 and §10).
-    TR: report.text_ablation olarak yayımlanır (teknik rapor §1 ve §10).
+    EN: Published as report.text_ablation (technical report §1 and the free-text section).
+    TR: report.text_ablation olarak yayımlanır (teknik rapor §1 ve serbest metin bölümü).
     """
     a = res["ablation"]
     return {"report": {"text_ablation": {

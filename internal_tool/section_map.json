@@ -4,10 +4,10 @@
   "tr": "Üç raporun her bölümünü hangi analiz betiklerinin (analysis/run_all.py ORDER adları) beslediği ve her numaralı figürün hangi betikten geldiği. Derleyicilerden elle yazıldı (2026-09-25): makinece okunur bir eşleme yok. Bölümler konuma göre anahtarlanır: 0 = ilk '## ' başlığından önceki kısım. 'title' İngilizce başlıktır. tests/internal_tool/test_tool_section_map.py başlıkları, betikleri ve figürleri raporlara göre sınar; reviewed_against eşlemenin okunduğu derleyici dosyalarının sha256'sını tutar (gözden geçirdikten sonra python internal_tool/catalog.py --stamp) ve araç, o zamandan beri bir derleyici değiştiyse uyarı gösterir."
  },
  "reviewed_against": {
-  "builders/build_technical_report.py": "811eb003b493c29f3f18a8238d3c4de8d8973f76fa58aa460da5e76fb55932fb",
-  "builders/build_business_report.py": "5d942f4584bee4420b4c832af52153b603c4327ae35daa887726dddaebbd2569",
+  "builders/build_technical_report.py": "f09d384efd81725d25de0f92040648bbf6d17ee6dfc4282c7bf435721ffdd399",
+  "builders/build_business_report.py": "b90a495d45669b60fe4837f3ca17ae354dcd23e0c2239e6bc599d928f23a933d",
   "builders/build_shap_report.py": "49d0681fe7b27e3a702fc8873214e59ed84f9ad8f22841686f266f6088f1ea05",
-  "builders/report_lib/report_common.py": "6c3efaed71a9294abd5062f191718552bdbd81d228b19723bcf13a86b70696f3"
+  "builders/report_lib/report_common.py": "e3182210b4ddac74eb2a56ee8c6ee2eb0f7a074db2014f44ee88f53d3db25234"
  },
  "figures": {
   "00": "07_model_comparison.py",
@@ -22,9 +22,6 @@
   "10": "08_residuals.py",
   "11": "08_large_errors.py",
   "12": "08_conformal_coverage.py",
-  "13": "09_drift.py",
-  "14": "09_drift.py",
-  "15": "09_backtest.py",
   "16": "02_missingness.py",
   "19": "03_segment_quality.py",
   "21": "03_association.py",
@@ -105,7 +102,9 @@
      "07_model_comparison.py",
      "07_final_model.py",
      "07_text_flag.py",
-     "08_large_errors.py"
+     "08_large_errors.py",
+     "08_forward_test.py",
+     "01_dedup_leakage.py"
     ]
    },
    {
@@ -115,20 +114,12 @@
      "08_large_errors.py",
      "08_conformal_coverage.py",
      "05_segmentation.py",
-     "09_drift.py",
-     "01_dedup_leakage.py"
+     "01_dedup_leakage.py",
+     "08_forward_test.py"
     ]
    },
    {
-    "title": "9. Time — period effect, distribution drift and backtest",
-    "scripts": [
-     "09_drift.py",
-     "09_backtest.py",
-     "01_dedup_leakage.py"
-    ]
-   },
-   {
-    "title": "10. Free text: measured, left out",
+    "title": "9. Free text: measured, left out",
     "scripts": [
      "10_free_text.py",
      "07_text_flag.py"
@@ -165,15 +156,16 @@
      "08_large_errors.py",
      "08_conformal_coverage.py",
      "07_text_flag.py",
-     "09_backtest.py",
-     "09_drift.py"
+     "08_forward_test.py"
     ]
    },
    {
     "title": "What this model does not give you",
     "scripts": [
      "01_dedup_leakage.py",
-     "04_target.py"
+     "04_target.py",
+     "08_forward_test.py",
+     "07_model_comparison.py"
     ]
    }
   ],

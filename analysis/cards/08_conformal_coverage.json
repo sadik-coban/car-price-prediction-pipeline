@@ -31,15 +31,15 @@
   "fit_on_full_data": {
    "status": "none",
    "note": {
-    "tr": "Çapraz kalibreli: hiçbir ilanın kendi hatası kendi aralığını kalibre etmez (test_calibration_never_sees_the_scored_fold). Ama katlar rastgele olduğu için genel ve bant başına kapsama yine neredeyse tanım gereği ~%90; ileri kullanımdaki kapsama 09_backtest'te (plans/09-forward-coverage). OOF hataları 07'nin erken durdurması yüzünden hafifçe iyimser olabilir.",
-    "en": "Cross-calibrated: no listing's own error calibrates its interval (test_calibration_never_sees_the_scored_fold). But the folds are random, so the overall and per-band coverage are still ~90% almost by construction; forward coverage is in 09_backtest (plans/09-forward-coverage). The OOF errors may be slightly optimistic because of 07's early stopping."
+    "tr": "Çapraz kalibreli: hiçbir ilanın kendi hatası kendi aralığını kalibre etmez (test_calibration_never_sees_the_scored_fold). Ama katlar rastgele olduğu için genel ve bant başına kapsama yine neredeyse tanım gereği ~%90; ileri kullanımdaki kapsama 08_forward_test'te. OOF hataları 07'nin erken durdurması yüzünden hafifçe iyimser olabilir.",
+    "en": "Cross-calibrated: no listing's own error calibrates its interval (test_calibration_never_sees_the_scored_fold). But the folds are random, so the overall and per-band coverage are still ~90% almost by construction; forward coverage is in 08_forward_test. The OOF errors may be slightly optimistic because of 07's early stopping."
    }
   },
   "temporal": {
    "status": "present",
    "note": {
-    "tr": "KFold dönemleri karıştırır; model zamanı görmez. Medyan artık dönemlere göre kayıyor (08_residuals); ileriye dönük hata 09_backtest'te ayrıca ölçülüyor.",
-    "en": "KFold mixes the snapshots; the model does not see time. The median residual shifts by snapshot (08_residuals); the forward error is measured separately in 09_backtest."
+    "tr": "KFold dönemleri karıştırır; model zamanı görmez. Son taramada yeni ilanlardaki hata 08_forward_test'te ayrıca ölçülüyor.",
+    "en": "KFold mixes the snapshots; the model does not see time. The error on the listings new in the last snapshot is measured separately in 08_forward_test."
    }
   }
  },

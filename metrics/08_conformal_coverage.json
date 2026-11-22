@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "08_conformal_coverage.py",
-  "generated_at": "2026-11-22T18:55:35+03:00",
+  "generated_at": "2026-11-22T20:01:13+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -16,7 +16,7 @@
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
     "analysis/lib/common.py": "533eaad7a29580e93aeff01214fc024538dd6a6ab717e6b669e7e7b0a4399295",
-    "analysis/lib/conformal.py": "c5e6ff2ee3b6bffac89078cf61d1dbf4c931a27c876218929fc70b891c8a96b8",
+    "analysis/lib/conformal.py": "7ba37319d93e3006cf69f5e66c7dd212848ffe47b60b2c4ac658dd99bb510e90",
     "analysis/lib/cv.py": "e83f615405ac012d466c9d82f698dc4145ba2df680c46ec3f529ee3ee6da56f5",
     "analysis/lib/segment_rule.py": "9e014153906e9fb7a139099d1b581459a7b9e17bb21acb2172bd67cdb66c01cc"
    }

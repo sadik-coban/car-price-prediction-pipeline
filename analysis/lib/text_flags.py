@@ -1,6 +1,6 @@
 """
 text_flags.py
-EN: Two signals read from a listing's own free text, used by 07_text_flag (technical report §7 and §10, business
+EN: Two signals read from a listing's own free text, used by 07_text_flag (technical report §7 and the free-text section, business
     note):
       - conversion wording ("swap", "dönüşüm", "replika" …);
       - modification wording ("modifiye", "stage 1", "coilover" …), negation-safe.
@@ -10,7 +10,7 @@ EN: Two signals read from a listing's own free text, used by 07_text_flag (techn
     because they are applied to the current descriptions on every run and their output is used; no archived data
     is read. The hp and M/RS model detectors that used to live here fed nothing and were removed (2026-09-27).
     Pure pattern matching; no LLM.
-TR: Bir ilanın kendi serbest metninden okunan iki sinyal; 07_text_flag kullanır (teknik rapor §7 ve §10, iş notu):
+TR: Bir ilanın kendi serbest metninden okunan iki sinyal; 07_text_flag kullanır (teknik rapor §7 ve serbest metin bölümü, iş notu):
       - dönüşüm ifadesi ("swap", "dönüşüm", "replika" …);
       - modifiye ifadesi ("modifiye", "stage 1", "coilover" …), olumsuzlama-güvenli.
     Köken (arşivden canlı zincire hiçbir şey girmez kuralıyla yazıldı, 2026-09-27): desenler arşivdeki metin

@@ -1082,7 +1082,10 @@ def section_model(c):
         + f" Emsali olmayan ilanlarda hata belirgin şekilde büyüyor: aynı model ve yıldan "
         f"başka ilan yoksa büyük hata oranı {P(_b1['big_pct'], lang)}, {_bm['bin']} emsal varsa "
         f"{P(_bm['big_pct'], lang)}; lira ölçeğindeki en büyük hatalar da bu uçta (§{section_no('calibration')}). "
-        f"Kapsamlı bir hiperparametre optimizasyonuna bilinçli olarak gidilmedi; getirisi bu raporda ölçülmedi.",
+        f"Kapsamlı bir hiperparametre optimizasyonuna bilinçli olarak gidilmedi; getirisi bu raporda ölçülmedi. "
+        f"Model zamanı görmez: {number_word(v['n_snapshots'], lang)} taramanın fiyatlarını birlikte öğrenir ve "
+        f"yukarıdaki hatalar taramaları karıştıran 5-fold OOF'tan; son taramada yeni ilanlardaki hata "
+        f"§{section_no('calibration')}'de.",
         "**Model limitations and observations.** Information that never reaches the form fields and hides in "
         "the free text — modifications, special equipment, tax-exemption status — does not enter the model"
         + f"; listings whose text mentions a conversion or modification have a raw large-error rate of "
@@ -1097,7 +1100,9 @@ def section_model(c):
         f"listing of the same model and year the large-error rate is {P(_b1['big_pct'], lang)}, with "
         f"{_bm['bin']} comparables {P(_bm['big_pct'], lang)}; the largest lira errors sit at this end too "
         f"(§{section_no('calibration')}). No extensive hyperparameter optimisation was run, by choice; its payoff was "
-        f"not measured in this report."))
+        f"not measured in this report. The model does not see time: it learns the prices of the "
+        f"{number_word(v['n_snapshots'], 'en')} snapshots together, and the errors above come from a 5-fold OOF that "
+        f"mixes the snapshots; the error on the last snapshot's new listings is in §{section_no('calibration')}."))
     A("")
 
     # 2026-09-29 (ikinci sadelestirme listesi): "en iyi durum" ornek tahmin tablosu cikti; yerine servis edilen
@@ -1189,17 +1194,6 @@ def section_calibration(c):
     _sl = {r[0]: r[2] for r in dom["segment_ladder"]}
     _seg_fs = " · ".join(f"{k} {num(_sl[k], lang)}" for k in ("F", "S") if k in _sl) or "F + S"
     a18, a17 = ed["by_age"]["age_18plus"], ed["by_age"]["age_under18"]
-    sn0, sn1 = ed["by_snapshot"][0], ed["by_snapshot"][-1]
-    # "once pahali, sonra ucuz" artik veriye kapili: artik = (gercek - tahmin)/gercek; eksi = pahali.
-    # 2026-09-23: "piyasa yukseldikce once pahali, sonra ucuz" yorumu kalkti — gruplar ilanin SON GORULDUGU
-    # tarama; erken kalkan ilanlarla hala yayinda olanlar ayrica olculuyor (hayatta kalma).
-    _live = v["ed"]["live_vs_gone"]
-    _gone_cheaper = _live["gone_median_resid"] < 0 < _live["live_median_resid"]
-    # Inceleme (2026-09-23): farkin bir kismi donem (model zamani gormuyor). Hayatta kalma kaniti: piyasanin yerinde
-    # saydigi ilk iki tarama arasinda da medyan artik kayiyor.
-    _shift_live = v["ed"]["period_shift"]["live"]
-    _bs = [r_["median_resid_pct"] for r_ in ed["by_snapshot"]]
-    _sk = _gone_cheaper and abs(_shift_live[0][1]) < 0.5 and _bs[1] - _bs[0] > 1
     A(L("### Büyük hatalar nereden geliyor", "### Where the large errors come from"))
     A("")
     A(L(f"Hatası ±%{ed['threshold_pct']:g} sınırını aşan {num(ov['n_big'], lang)} ilan ({num(ov['n_over'], lang)} fazla, "
@@ -1218,33 +1212,13 @@ def section_calibration(c):
         f"2. **Uç ya da yaşlı araç.** F/S segmentte {P(fs['big_pct'], lang)} — ama o iki segmentte "
         f"toplam {num(fs['n'], lang)} ilan var ({_seg_fs}), yani en riskli işaretlenen yer aynı "
         f"zamanda en ince olanı. Diğerleri {P(oth['big_pct'], lang)}; "
-        f"yaş ≥ 18'de {P(a18['big_pct'], lang)} (daha gençlerde {P(a17['big_pct'], lang)}).\n"
-        f"3. **Zaman ve hayatta kalma.** Medyan artık ilanın son görüldüğü taramaya göre değişiyor: "
-        f"{sn0['snapshot']} {P(sn0['median_resid_pct'], lang, 2, sign=True)} → {sn1['snapshot']} "
-        f"{P(sn1['median_resid_pct'], lang, 2, sign=True)}. Bunun bir kısmı dönem: model zamanı görmüyor ve piyasa bu "
-        f"aralıkta {P(_shift_live[-1][1], lang, 2, sign=True)} kaydı (§{section_no('time')}). Bir kısmı hayatta kalma: son taramada "
-        f"hâlâ yayında olan {num(_live['live_n'], lang)} ilanın medyan artığı "
-        f"{P(_live['live_median_resid'], lang, 2, sign=True)}, daha önce kalkan {num(_live['gone_n'], lang)} ilanınki "
-        f"{P(_live['gone_median_resid'], lang, 2, sign=True)}"
-        + (f"; piyasanın yerinde saydığı ilk iki tarama arasında ({P(_shift_live[0][1], lang, 2, sign=True)}) bile medyan artık "
-           f"{P(_bs[0], lang, 2, sign=True)} → {P(_bs[1], lang, 2, sign=True)} geçiyor — erken kalkan ilanlar modelin "
-           f"söylediğinden ucuza fiyatlanmıştı." if _sk else "."),
+        f"yaş ≥ 18'de {P(a18['big_pct'], lang)} (daha gençlerde {P(a17['big_pct'], lang)}).",
         f"1. **No comparable.** With no other listing of the same model and year the large-error rate is "
         f"{P(b1['big_pct'], lang)}; with {bmax['bin']} comparables {P(bmax['big_pct'], lang)}.\n"
         f"2. **Exotic or old car.** {P(fs['big_pct'], lang)} in the F/S segments — but those two hold "
         f"{num(fs['n'], lang)} listings in total ({_seg_fs}), so the riskiest bucket is also the "
         f"thinnest. Others {P(oth['big_pct'], lang)}; "
-        f"{P(a18['big_pct'], lang)} at age ≥ 18 (younger {P(a17['big_pct'], lang)}).\n"
-        f"3. **Time and survival.** The median residual changes with the snapshot a listing was last seen in: "
-        f"{sn0['snapshot']} {P(sn0['median_resid_pct'], lang, 2, sign=True)} → {sn1['snapshot']} "
-        f"{P(sn1['median_resid_pct'], lang, 2, sign=True)}. Part of this is the period: the model is time-blind "
-        f"and the market moved {P(_shift_live[-1][1], lang, 2, sign=True)} over the span (§{section_no('time')}). Part is "
-        f"survival: the {num(_live['live_n'], lang)} listings still live in the last snapshot have a median residual "
-        f"of {P(_live['live_median_resid'], lang, 2, sign=True)}, the {num(_live['gone_n'], lang)} that left earlier "
-        f"{P(_live['gone_median_resid'], lang, 2, sign=True)}"
-        + (f"; even between the first two snapshots, with the market flat ({P(_shift_live[0][1], lang, 2, sign=True)}), the "
-           f"median residual moves {P(_bs[0], lang, 2, sign=True)} → {P(_bs[1], lang, 2, sign=True)} — listings that "
-           f"left early had been priced below the model's figure." if _sk else ".")))
+        f"{P(a18['big_pct'], lang)} at age ≥ 18 (younger {P(a17['big_pct'], lang)})."))
     A("")
     # B10 (2026-09-23): 18 yas veriden secilmis bir kirilma degil. Her yas ve her kesim sayilir.
     _age_rate = {a_: p_ for a_, _n, p_ in ed["age_sensitivity"]}
@@ -1331,12 +1305,12 @@ def section_calibration(c):
     A("")
     A(L(f"- **Dağılım varsayımı yapmaz:** Hataların bir formüle (çan eğrisi vb.) uyduğu varsayılmaz. "
         f"Modelin daha önce hiç görmediği araçlardaki gerçek hataları sıralanır, en kötü %10'u dışarıda "
-        f"bırakılır ve pay doğrudan veriden okunur. Tek varsayım, yeni ilanların eskilere benzemesidir — "
-        f"piyasa kaydıkça (§{section_no('time')}) bu varsayım zayıflar.",
+        f"bırakılır ve pay doğrudan veriden okunur. Tek varsayım, yeni ilanların eskilere benzemesidir; son "
+        f"taramanın yeni ilanlarında bu varsayımın ne kadar tuttuğu aşağıda.",
         f"- **No distributional assumption:** Errors are not assumed to follow a formula (a bell curve, "
         f"etc.). The model's real errors on cars it has never seen are sorted, the worst 10% are set "
         f"aside, and the margin is read directly from the data. The one assumption is that new listings "
-        f"resemble past ones — as the market drifts (§{section_no('time')}), that assumption weakens."))
+        f"resemble past ones; how well it holds on the last snapshot's new listings is below."))
     A(L(f"- **Oransaldır:** Hata payı lira değil yüzde olarak uygulanır (tahminin yaklaşık %{_dn} altı ile "
         f"%{_up} üstü). Bu yüzden pahalı araçta lira bandı geniş, ucuz araçta dar çıkar.",
         f"- **Proportional:** The margin is applied as a percentage, not in lira (roughly {_dn}% below to "
@@ -1345,15 +1319,15 @@ def section_calibration(c):
     # banda gore hata payi (Mondrian) on kayitla olculdu (plans/08-mondrian-coverage).
     _all = d["report"]["conformal_all"]
     # 2026-09-28 (denetim): rastgele katlarda capraz kalibrasyon da hedefe neredeyse kendiliginden oturur; asil sinav
-    # ileri kapsama (09_backtest.forward_coverage).
+    # ileri kapsama (08_forward_test).
     A(L(f"- **Kalibrasyonu başka ilanlardan:** Kapsama çapraz ölçülür: her katın aralığı yalnız öteki katların "
         f"hatalarından kurulur, hiçbir ilanın kendi hatası kendi aralığını ayarlamaz. Katlar rastgele olduğu için genel "
-        f"kapsama ({P(_all, lang, 2)}) yine de hedefe neredeyse kendiliğinden oturur; asıl sınav, sonraki taramanın "
+        f"kapsama ({P(_all, lang, 2)}) yine de hedefe neredeyse kendiliğinden oturur; asıl sınav, son taramanın "
         f"yeni ilanlarındaki ileri kapsama (aşağıda).",
         f"- **Calibrated on other listings:** Coverage is measured cross-wise: each fold's interval is built only from "
         f"the other folds' errors, so no listing's own error sets its interval. The folds are random, so the overall "
         f"coverage ({P(_all, lang, 2)}) still lands on the target almost by itself; the real test is the forward "
-        f"coverage on a later snapshot's new listings (below)."))
+        f"coverage on the last snapshot's new listings (below)."))
     A("")
     qe = dom["quantile_error"]
     A(L(f"**Zayıflık fiyata bağlı:** medyan hata tahmini en ucuz çeyrekte {P(qe[0][1], lang, 2)}, en pahalıda "
@@ -1415,49 +1389,37 @@ def section_calibration(c):
         "lower and upper end."))
     A("")
 
-    # 2026-09-28 (denetim, on kayit plans/09-forward-coverage): servis tarifi ileriye uygulanir; H1 dogrulandi, H2
-    # curudu. Cumleler veriye kapili; H1 tutmazsa uretec durur.
-    fcv = met["backtest"]["forward_coverage"]
-    _rng_of = lambda xs_: f"{P(min(xs_), lang)}–{P(max(xs_), lang)}"                          # noqa: E731
-    _band = lambda b_, i_: [dict((r_[0], r_) for r_ in c_["bands"])[b_][i_] for c_ in fcv]   # noqa: E731
-    _h1 = all(dict((r_[0], r_) for r_ in c_["bands"])["Q1"][3] > dict((r_[0], r_) for r_ in c_["bands"])["Q1"][2]
-              for c_ in fcv)
-    assert _h1, "ileri kapsama H1 tutmuyor — paragraf yeniden yazilmali"
-    _all_band = [r_[3] for c_ in fcv for r_ in c_["bands"]]
-    _nc_g = [c_["no_comparable"]["coverage_global"] for c_ in fcv]
-    _nc_b = [c_["no_comparable"]["coverage_band"] for c_ in fcv]
-    _nc_worse = sum(b_ < g_ for g_, b_ in zip(_nc_g, _nc_b))
-    _h2 = min(_all_band) >= 88
-    A(L(f"**İleri kapsama (ölçüt sonuçtan önce yazıldı).** Servis edilen tarif ileriye uygulandı: q eğitim "
-        f"taramasının kendi OOF hatalarından, test sonraki taramanın yeni ilanlarında (§{section_no('time')}'daki "
-        f"{number_word(len(fcv), lang)} ileri kurulum). Tek payla genel kapsama {_rng_of([c_['coverage_global'] for c_ in fcv])}, "
-        f"en ucuz bantta {_rng_of(_band('Q1', 2))}. Banda göre pay en ucuz bandı her kurulumda düzeltiyor "
-        f"({_rng_of(_band('Q1', 3))})"
-        + (f" ama her bantta %88'i tutmuyor: en düşük {P(min(_all_band), lang)}. " if not _h2 else
-           f" ve her bantta en az %88 kapsıyor. ")
-        + f"Aynı model ve yılı eğitimde hiç olmayan ilanlarda kapsama iki kolda da düşük (tek pay {_rng_of(_nc_g)}, banda "
-        f"göre {_rng_of(_nc_b)}); banda göre pay orada "
-        + ("her kurulumda" if _nc_worse == len(fcv) else
-           f"{number_word(len(fcv), lang)} kurulumun {number_word(_nc_worse, lang)} tanesinde")
-        + " kapsamayı daha da düşürüyor.",
-        f"**Forward coverage (criterion written before the result).** The served recipe was applied forward: q "
-        f"from the training snapshot's own OOF errors, tested on the next snapshot's new listings (the "
-        f"{number_word(len(fcv), 'en')} forward setups of §{section_no('time')}). With one margin the overall coverage "
-        f"is {_rng_of([c_['coverage_global'] for c_ in fcv])}, in the cheapest band {_rng_of(_band('Q1', 2))}. The "
-        f"per-band margin fixes the cheapest band in every setup ({_rng_of(_band('Q1', 3))})"
-        + (f" but does not hold 88% in every band: the lowest is {P(min(_all_band), lang)}. " if not _h2 else
-           f" and covers at least 88% in every band. ")
-        + f"On listings whose model and year never occur in training, coverage is low in both arms (one margin "
-        f"{_rng_of(_nc_g)}, per band {_rng_of(_nc_b)}); there the per-band margin lowers it further "
-        + ("in every setup." if _nc_worse == len(fcv) else
-           f"in {number_word(_nc_worse, 'en')} of the {number_word(len(fcv), 'en')} setups.")))
+    # 2026-11-22 (kullanici karari, docs/decisions.md): kayma ve oteki zaman analizleri cikti; ileri kapsama tek
+    # teste indi (08_forward_test): son taramadan onceki ilanlarla egit, son taramanin yeni ilanlarinda olc. Dokuz
+    # kurulumlu on kayit (plans/09-forward-coverage) geri cekildi. "Emsalsizde dusuk" cumlesi veriye kapili.
+    ft = met["forward_test"]
+    fc = ft["coverage"]
+    _fb = {r_[0]: r_ for r_ in fc["bands"]}
+    _nc = fc["no_comparable"]
+    assert max(_nc["coverage_global"], _nc["coverage_band"]) < v["cov_target"], \
+        "emsalsiz ilanlarda kapsama hedefe ulasiyor — paragraf yeniden yazilmali"
+    A(L(f"**Yeni ilanlarda: ileri test.** Son taramadan önce görülen {num(ft['n_train'], lang)} ilanla eğitilen model "
+        f"(her ilan son fiyatıyla), son taramada ({ft['test']}) ilk kez görülen {num(ft['n'], lang)} ilanı fiyatladı. "
+        f"MAPE {P(ft['MAPE'], lang, 2)} (%95 aralık {P(ft['ci_lo'], lang, 2)}–{P(ft['ci_hi'], lang, 2)}); taramaları "
+        f"karıştıran 5-fold OOF'ta {P(v['model_mape'], lang, 2)}. Servis edilen aralık tarifi aynen uygulandı: q ve bant "
+        f"sınırları yalnız eğitim ilanlarının kendi OOF hatalarından. Tek payla kapsama {P(fc['coverage_global'], lang)}, "
+        f"banda göre payla {P(fc['coverage_band'], lang)}. Aynı model ve yılı eğitimde hiç olmayan "
+        f"{num(_nc['n'], lang)} ilanda kapsama iki yolla da hedefin altında (tek pay {P(_nc['coverage_global'], lang)}, "
+        f"banda göre {P(_nc['coverage_band'], lang)}).",
+        f"**On new listings: the forward test.** A model trained on the {num(ft['n_train'], lang)} listings seen before "
+        f"the last snapshot (each at its latest price) priced the {num(ft['n'], lang)} listings first seen in the last "
+        f"snapshot ({ft['test']}). MAPE {P(ft['MAPE'], lang, 2)} (95% interval {P(ft['ci_lo'], lang, 2)}–"
+        f"{P(ft['ci_hi'], lang, 2)}); the 5-fold OOF, which mixes the snapshots, gives {P(v['model_mape'], lang, 2)}. "
+        f"The served interval recipe was applied as is: q and the band edges come only from the training listings' own "
+        f"OOF errors. Coverage is {P(fc['coverage_global'], lang)} with one margin and {P(fc['coverage_band'], lang)} "
+        f"with the per-band margin. On the {num(_nc['n'], lang)} listings whose model and year never occur in training, "
+        f"coverage is below target either way (one margin {P(_nc['coverage_global'], lang)}, per band "
+        f"{P(_nc['coverage_band'], lang)})."))
     A("")
-    T([L("bant", "band"), L("tek pay", "one margin"), L("banda göre", "per band")],
-      [[b_, _rng_of(_band(b_, 2)), _rng_of(_band(b_, 3))] for b_ in ["Q1", "Q2", "Q3", "Q4"]]
-      + [[L("emsalsiz (model+yıl eğitimde yok)", "no comparable (model+year not in training)"), _rng_of(_nc_g),
-          _rng_of(_nc_b)]], "lrr")
-    A(L(f"Hücreler {number_word(len(fcv), lang)} ileri kurulumdaki kapsamanın en düşüğü–en yükseği.",
-        f"Cells are the lowest–highest coverage over the {number_word(len(fcv), 'en')} forward setups."))
+    T([L("bant", "band"), L("ilan", "listings"), L("tek pay", "one margin"), L("banda göre", "per band")],
+      [[b_, num(_fb[b_][1], lang), P(_fb[b_][2], lang), P(_fb[b_][3], lang)] for b_ in ["Q1", "Q2", "Q3", "Q4"]]
+      + [[L("emsalsiz (model+yıl eğitimde yok)", "no comparable (model+year not in training)"), num(_nc["n"], lang),
+          P(_nc["coverage_global"], lang), P(_nc["coverage_band"], lang)]], "lrrr")
     A("")
 
     # 2026-09-28 (sadelestirme listesi, kullanici karari): "en iyi 5" ve iki "en kotu 6" tablosu cikti; satira
@@ -1520,343 +1482,11 @@ def section_calibration(c):
     A("")
     figs(28)
 
-def section_time(c):
-    """
-    EN: §9 — time: period effect, temporal backtest, per-snapshot OOF, distribution drift, when to retrain.
-    TR: §9 — zaman: dönem etkisi, zamansal backtest, dönem başına OOF, dağılım kayması, ne zaman yeniden
-        eğitilmeli.
-    """
-    v, d, dom, met, meta, hr, lang = c.v, c.d, c.dom, c.met, c.meta, c.hr, c.lang
-    L, A, T, figs = c.L, c.A, c.T, c.figs
-    bt = met["backtest"]
-    dr = dom["drift"]
-    # 2026-09-23: acilis "iki kanit ayni karari veriyor ... SEKIL sabit" diyordu; sekil olculmuyordu ve
-    # backtest hatasi ufukla BUYUYOR. Iki olcu ne diyorsa o yazilir.
-    # 2026-10-19 (site karsilastirmasi): acilis farkli test kumelerindeki %6.29 -> %7.34'u manset yapiyordu (govde
-    # "yalniz zamana baglanamaz" diyor) ve yeniden egitimi "hataya ve kaymaya" bagliyordu (maddeler kaymayi tani
-    # sayiyor). Artik sabit test kumesindeki en eski egitim farki; yon veriye kapili.
-    _small = v["psi_max"] < v["psi_safe"]
-    _hz = bt["horizon"]
-    _o_t, _o_d, _o_lo, _o_hi = _hz["vs_latest"][0]
-    _new_t = _hz["rows"][-1][0]
-    _o_ci = f"{_o_d:+.2f} [{_o_lo:+.2f}, {_o_hi:+.2f}]"
-    _dir_tr = ("daha çok yanılıyor" if _o_lo > 0 else "daha az yanılıyor" if _o_hi < 0 else
-               "farklı yanılıyor, ama fark örnekleme hatası içinde")
-    _dir_en = ("errs more" if _o_lo > 0 else "errs less" if _o_hi < 0 else
-               "differs, but within sampling error")
-    A(L(f"İki ölçü var. **Dağılım kayması:** "
-        + (f"dönemler arası fiyat dağılımı az kayıyor (en yüksek PSI {v['psi_max']:.3f}, \"kayma yok\" eşiği "
-           f"{v['psi_safe']:.2f}). " if _small else f"dağılım eşiğin üstünde kayıyor (en yüksek PSI {v['psi_max']:.3f}). ")
-        + f"**Zamansal backtest:** {_hz['test']} taramasına yeni gelen aynı {num(_hz['n'], lang)} ilan, önceki her "
-        f"taramayla ayrı ayrı eğitilen modelle fiyatlandı; en eski taramayla ({_o_t}) eğitilen model en yenisiyle "
-        f"({_new_t}) eğitilenden {_o_ci} puan {_dir_tr}. "
-        + f"Aynı model ve yılın ilanlarında piyasa seviyesi "
-        f"{P(v['ed']['period_shift']['live'][-1][1], lang, 1, sign=True)} kaydı ve model zamanı görmüyor → "
-        f"yeniden eğitim takvime değil **ölçülen hataya** bağlanmalı; dağılım kayması tanı için izlenir "
-        f"(bölümün sonu).",
-        f"Two measurements. **Distribution drift:** "
-        + (f"the price distribution moves little between snapshots (highest PSI {v['psi_max']:.3f}, \"no drift\" "
-           f"threshold {v['psi_safe']:.2f}). " if _small else
-           f"the distribution drifts above the threshold (highest PSI {v['psi_max']:.3f}). ")
-        + f"**Temporal backtest:** the same {num(_hz['n'], lang)} listings new in the {_hz['test']} snapshot were "
-        f"priced by a model trained on each earlier snapshot separately; the model trained on the oldest snapshot "
-        f"({_o_t}) {_dir_en} than the one trained on the latest ({_new_t}): {_o_ci} points. "
-        + f"Within the same model and year the market level moved "
-        f"{P(v['ed']['period_shift']['live'][-1][1], lang, 1, sign=True)} and the model is time-blind → "
-        f"retraining should follow the **measured error**, not the calendar; distribution drift is watched as a "
-        f"diagnostic (end of this section)."))
-    A("")
-
-    snaps = meta["snapshots"]
-    A(L("### Dönem etkisi", "### Period effect"))
-    A("")
-    base_snap = snaps[0][5:]
-    _shift = v["ed"]["period_shift"]
-    _live_by = {r[0]: r for r in _shift["live"]}
-    _emd = {p.split("→")[1]: e for p, _ks, _ps, e, _sh in dom["drift"]["all_pairs"]
-            if p.split("→")[0] == base_snap}
-    # 2026-09-23: donem etkisi hedonik modelden cikarildi (kullanici karari) -> hedonik sutun, dedup
-    # karsilastirmasi ve donem CI'i da cikti. Iki olcu kaldi: canli hucre karsilastirmasi ve EMD.
-    T([L("dönem", "snapshot"),
-       L("canlı piyasa (aynı model+yıl)", "live market (same model+year)"),
-       L("dağılım mesafesi (EMD)", "distribution distance (EMD)")],
-      [[f"{base_snap} ({L(chr(116)+chr(97)+chr(98)+chr(97)+chr(110), chr(98)+chr(97)+chr(115)+chr(101))})",
-        P(0.0, lang, 2), "—"]]
-      + [[r_[0], P(r_[1], lang, 2, sign=True) + f" ({r_[2]})", tlx(_emd[r_[0]], lang) if r_[0] in _emd else "—"]
-         for r_ in _shift["live"]],
-      "lrr")
-    A(L("İki sütun iki ayrı soruya cevap veriyor. **Canlı piyasa**: aynı model ve yılın ilanlarında medyan "
-        "fiyat ne kadar değişti (parantez içinde karşılaştırılan hücre sayısı) — ilan bileşiminden arınmış, "
-        "model varsayımı yok. **EMD**: iki dönemin fiyat dağılımını üst üste getirmek için gereken ortalama "
-        "kaydırma; bileşim dahil. Hedonik model dönem etkisi içermiyor, dönemler havuzlanarak kestirildi. "
-        "Rapordaki model (LightGBM) de zamansızdır: dönem özniteliği almaz.",
-        "The two columns answer two different questions. **Live market**: how the median price moved within "
-        "the same model and year (cell count in brackets) — free of listing mix, no model assumption. **EMD**: "
-        "the average shift needed to line up two periods' price distributions, mix included. The hedonic model "
-        "carries no period effect; the periods are pooled. The report's model (LightGBM) is time-blind too: it "
-        "takes no period feature."))
-    A("")
-
-    A(L("### Zamansal backtest", "### Temporal backtest"))
-    A("")
-    # 2026-09-28 (sadelestirme listesi): kurulum manset modelinki (hafif kurulum ve "yalniz satirlari karsilastirin"
-    # uyarisi kalkti); her ileri satirda modele gore kumeli bootstrap %95 GA; ilk egitim taramasinin kumulatif
-    # hucreleri tek donemle AYNI deney -> "=".
-    fc = {c_: i_ for i_, c_ in enumerate(bt["columns"]["forward"])}
-    _ci = lambda r_: f"{P(r_[fc['MAPE']], lang, 2)} [{r_[fc['ci_lo']]:.2f}, {r_[fc['ci_hi']]:.2f}]"   # noqa: E731
-    rows = []
-    for s, c in zip(bt["single"], bt["cumulative"]):
-        assert s[1] == c[1], f"backtest hizasi bozuk: {s} / {c}"
-        _dup = s[0] == bt["single"][0][0] and s[2:] == c[2:]
-        rows.append([f"{s[0]} → {s[1]}", _ci(s), num(s[3], lang), f"≤{c[0].lstrip('→')} → {c[1]}",
-                     L("= tek dönem", "= single") if _dup else _ci(c), "=" if _dup else num(c[3], lang)])
-    T([L("tek dönem: eğitim → test", "single: train → test"), L("MAPE [%95 GA]", "MAPE [95% CI]"), "n",
-       L("kümülatif: eğitim → test", "cumulative: train → test"), L("MAPE [%95 GA]", "MAPE [95% CI]"), "n"],
-      rows, "lrrlrr")
-    # 2026-09-27 (kullanici: "buradaki n'ler neyi gosteriyor"): n'in tanimi ve ilk satirdan bir ornek. Test
-    # taramasinin butun ilanlari per_snapshot'tan; fark = egitim taramasinda da yayinda olanlar.
-    _ex = bt["single"][0]
-    _ex_all = {r_[0]: r_[2] for r_ in bt["per_snapshot"]}[_ex[1]]
-    assert _ex_all > _ex[3], f"ornek satir tutarsiz: test taramasi {_ex_all}, test n {_ex[3]}"
-    _first = [s_ for s_ in bt["single"] if s_[0] == bt["single"][0][0]]
-    _same_first = _first == [[c_[0].lstrip("→")] + c_[1:] for c_ in bt["cumulative"][:len(_first)]]
-    _trees = sorted({r_[fc["trees"]] for r_ in bt["single"] + bt["cumulative"]})
-    A(L("Tek dönem = yalnız bir taramada eğit, sonrakini tahmin et. Kümülatif = t'ye kadarki tüm taramalarda "
-        "eğit. Test kümesi yalnız eğitimde hiç görülmemiş `ad_id`'ler (sızıntısız); **n** bu ilanların sayısı ve "
-        f"MAPE bu ilanlarda. Ör. {_ex[1]} taramasındaki {num(_ex_all, lang)} ilanın {num(_ex_all - _ex[3], lang)} "
-        f"tanesi {_ex[0]} taramasında da yayındaydı; test edilen kalan {num(_ex[3], lang)} ilan. Kümülatifte t'ye "
-        "kadarki her taramada görülen ilan çıktığı için n tek dönemden küçük ya da eşit."
-        + (" \"=\" işaretli kümülatif hücreler tek dönem koluyla aynı deneydir (ilk taramaya kadar birikim tek bir "
-           "taramadır)." if _same_first else ""),
-        "Single = train on one snapshot, predict a later one. Cumulative = train on every snapshot up to t. The test "
-        "set holds only `ad_id`s never seen in training (leak-free); **n** is the number of those listings and MAPE "
-        f"is over them. E.g. of the {num(_ex_all, lang)} listings in the {_ex[1]} snapshot, "
-        f"{num(_ex_all - _ex[3], lang)} were already live in the {_ex[0]} snapshot; the other {num(_ex[3], lang)} "
-        "were tested. Cumulative drops every listing seen in any snapshot up to t, so its n is at most the single n."
-        + (" The cumulative cells marked \"=\" are the same experiment as the single arm (accumulating up to the "
-           "first snapshot is one snapshot)." if _same_first else "")))
-    A("")
-    A(L(f"Kurulum manşet modelinki: model ve seri adı TF-IDF+SVD, aynı LightGBM ayarları. Ağaç sayısını, servis edilen "
-        f"modeldeki gibi, eğitim kümesinin kendi içindeki 5 katlı erken durdurma seçiyor ({'–'.join(str(t_) for t_ in (_trees[0], _trees[-1]))} "
-        f"ağaç); test taraması durdurmak için hiç kullanılmıyor. Köşeli parantez %95 güven aralığı: test ilanları "
-        f"modele göre yeniden örneklenerek (bir modelin ilanları birbirinden bağımsız değil) "
-        f"{num(bt['protocol']['interval']['n_boot'], lang)} kez hesaplandı.",
-        f"The setup is the headline model's: model and series names as TF-IDF+SVD, the same LightGBM settings. The "
-        f"tree count is chosen, as for the served model, by a 5-fold early-stopping CV inside the training set "
-        f"({'–'.join(str(t_) for t_ in (_trees[0], _trees[-1]))} trees); the test snapshot is never used to stop. "
-        f"Brackets are the 95% confidence interval: the test listings resampled by model (listings of one model are "
-        f"not independent), {num(bt['protocol']['interval']['n_boot'], lang)} times."))
-    A("")
-    # 2.6: ufuk karsilastirmasinin test ilanlari farkli; "saf zaman etkisi" denemez. Araliklar veriden okunur.
-    _a, _b = _first[0], _first[-1]
-    _apart = _a[fc["ci_hi"]] < _b[fc["ci_lo"]]
-    A(L(f"Aynı eğitim taramasından ({_a[0]}) test ufku uzadıkça MAPE {P(_a[fc['MAPE']], lang, 2)} → "
-        f"{P(_b[fc['MAPE']], lang, 2)}; güven aralıkları " + ("örtüşmüyor" if _apart else "örtüşüyor")
-        + ". Ama her ufkun test ilanları farklı: başka ilanlar, başka bileşim, başka test taraması. Bu fark yalnız "
-        "zamana bağlanamaz.",
-        f"From the same training snapshot ({_a[0]}) MAPE goes {P(_a[fc['MAPE']], lang, 2)} → {P(_b[fc['MAPE']], lang, 2)} "
-        f"as the test horizon lengthens; the confidence intervals " + ("do not overlap" if _apart else "overlap")
-        + ". But each horizon tests different listings: other listings, another mix, another test snapshot. The gap "
-        "cannot be put on time alone."))
-    A("")
-    # 2026-09-28 (denetim): ayni ilanlarda (sabit test kumesi) ufuk; farkin egitim taramasinin eskiligine baglanmasi
-    # bu tasarimla mumkun.
-    hz = bt["horizon"]
-    _hz_pos = all(lo_ > 0 for _t, _d, lo_, _h in hz["vs_latest"])
-    _hz_rows = ", ".join(f"{t_} {P(m_, lang, 2)}" for t_, m_, _l, _h in hz["rows"])
-    _hz_vs = ", ".join(f"{t_} {d_:+.2f} [{lo_:+.2f}, {hi_:+.2f}]" for t_, d_, lo_, hi_ in hz["vs_latest"])
-    A(L(f"**Sabit test kümesinde ufuk.** Bu çekince aynı ilanlarda kalkıyor: {hz['test']} taramasına yeni gelen "
-        f"{num(hz['n'], lang)} ilan (önceki hiçbir taramada görülmemiş) önceki her tek taramayla eğitilen modelle "
-        f"fiyatlandı. MAPE eğitim taramasına göre {_hz_rows}; en yeni eğitime göre fark {_hz_vs} (eşli, modele göre "
-        f"kümeli). "
-        + ("Aynı ilanlarda eğitim taraması eskidikçe hata artıyor." if _hz_pos else
-           "Aynı ilanlarda farkların bir kısmı örnekleme hatası içinde."),
-        f"**Horizon on a fixed test set.** On the same listings that caveat goes: the {num(hz['n'], lang)} listings new "
-        f"in the {hz['test']} snapshot (seen in no earlier snapshot) were priced by the model of each earlier single "
-        f"snapshot. MAPE by training snapshot: {_hz_rows}; difference from the latest training {_hz_vs} (paired, "
-        f"clustered by model). "
-        + ("On the same listings the error grows as the training snapshot ages." if _hz_pos else
-           "On the same listings part of the gaps is within sampling error.")))
-    A("")
-    pc = {c_: i_ for i_, c_ in enumerate(bt["columns"]["paired"])}
-    _pr = bt["paired"]
-    if _pr:
-        T([L("test", "test"), L("tek dönem eğitimi", "single training"), L("kümülatif eğitimi", "cumulative training"),
-           L("ortak ilan", "shared listings"), L("tek dönem", "single"), L("kümülatif", "cumulative"),
-           L("fark [%95 GA]", "difference [95% CI]")],
-          [[r_[pc["test"]], r_[pc["single_train"]], "≤" + r_[pc["cumulative_train"]].lstrip("→"),
-            num(r_[pc["n_common"]], lang), P(r_[pc["single_MAPE"]], lang, 2), P(r_[pc["cumulative_MAPE"]], lang, 2),
-            f"{r_[pc['difference']]:+.2f} [{r_[pc['ci_lo']]:+.2f}, {r_[pc['ci_hi']]:+.2f}]"] for r_ in _pr], "lllrrrr")
-        _better = [r_ for r_ in _pr if r_[pc["ci_hi"]] < 0]
-        _worse = [r_ for r_ in _pr if r_[pc["ci_lo"]] > 0]
-        A(L(f"Tek dönem ile kümülatif, aynı test taramasında ikisinin de test ettiği aynı ilanlarda eşli "
-            f"karşılaştırıldı (aynı yeniden örneklemeler). {number_word(len(_pr), lang, cap=True)} karşılaştırmanın "
-            f"{number_word(len(_better), lang)} tanesinde birikim hatayı güven aralığı sıfırın altında kalacak kadar "
-            f"düşürüyor" + (f", {number_word(len(_worse), lang)} tanesinde artırıyor" if _worse else "")
-            + (f"; kalan {number_word(len(_pr) - len(_better) - len(_worse), lang)} tanesinde fark örnekleme hatası "
-               f"içinde." if len(_pr) - len(_better) - len(_worse) else "."),
-            f"Single and cumulative were compared paired, on the listings both tested in the same test snapshot "
-            f"(the same resamples). In {number_word(len(_better), 'en')} of the {number_word(len(_pr), 'en')} "
-            f"comparisons accumulating lowers the error with the interval below zero"
-            + (f", in {number_word(len(_worse), 'en')} it raises it" if _worse else "")
-            + (f"; in the remaining {number_word(len(_pr) - len(_better) - len(_worse), 'en')} the gap is within "
-               f"sampling error." if len(_pr) - len(_better) - len(_worse) else ".")))
-        A("")
-
-    A(L("### Dönem başına OOF", "### Per-snapshot OOF"))
-    A("")
-    rows = [[p_[0], P(p_[1], lang, 2), num(p_[2], lang), "≤" + i_[0].lstrip("→"), P(i_[1], lang, 2),
-             num(i_[2], lang)]
-            for p_, i_ in zip(bt["per_snapshot"], bt["insample"])]
-    T([L("dönem (bağımsız)", "snapshot (standalone)"), "MAPE", "n",
-       L("kümülatif", "cumulative"), "MAPE", "n"], rows, "lrrlrr")
-    _last_ins, _last_n = bt["insample"][-1][1], bt["insample"][-1][2]
-    assert _last_n == v["n_dedup"] and abs(_last_ins - v["model_mape"]) < .005, "son kumulatif satir manset degil"
-    _own = {r_[0]: r_[1] for r_ in bt["per_snapshot"]}[_a[0]]
-    _below = _a[fc["MAPE"]] < _own
-    A(L(f"Bu tablo zamansal değil: her satır düz 5-fold OOF, yeni ilan kuralı yok. Son kümülatif satır manşet modelin "
-        f"OOF'unun kendisi ({P(_last_ins, lang, 2)}, {num(_last_n, lang)} ilan)."
-        + (f" İlk ileri test ({_a[0]} → {_a[1]}, {P(_a[fc['MAPE']], lang, 2)}) aynı taramanın kendi içindeki OOF'undan "
-           f"({P(_own, lang, 2)}) düşük. Bu bir çelişki değil, iki ayrı ölçüm: ileri model taramanın tamamıyla "
-           f"eğitiliyor (OOF'ta her kat beşte dördüyle), test ise yalnız sonraki taramaya yeni gelen ilanlar — başka "
-           f"bir ilan kümesi." if _below else ""),
-        f"This table is not temporal: every row is plain 5-fold OOF with no new-listings-only rule. The last cumulative "
-        f"row is the headline model's OOF itself ({P(_last_ins, lang, 2)}, {num(_last_n, lang)} listings)."
-        + (f" The first forward test ({_a[0]} → {_a[1]}, {P(_a[fc['MAPE']], lang, 2)}) is lower than the same "
-           f"snapshot's own OOF ({P(_own, lang, 2)}). That is not a contradiction but two different measurements: the "
-           f"forward model trains on the whole snapshot (in OOF each fold sees four fifths of it), and its test is only "
-           f"the listings new in the next snapshot — a different set of listings." if _below else "")))
-    A("")
-    figs(15)
-
-    A(L("### Dağılım kayması", "### Distribution drift"))
-    A("")
-    # 2026-09-28 (sadelestirme listesi): taramalar ilan paylasiyor, anlamlilik testi bagimsizlik varsayar ->
-    # p-degeri, ayrik tablo ve Holm cikti. Tablo farkin buyuklugunu ve ortak ilan payini verir.
-    pairs = dr["all_pairs"]
-    T([L("dönem çifti", "snapshot pair"), L("ortak ilan (ilk taramanın payı)", "shared (share of first)"), "KS", "PSI",
-       "EMD (₺)"],
-      [[pr, P(sh, lang), f"{ks:.4f}", f"{psi:.4f}", tlx(emd, lang)] for pr, ks, psi, emd, sh in pairs], "lrrrr")
-    # Olculerin okunusu. Esikler ureticinin notundan (regex), sayilarin tamami all_pairs / per_snapshot / medyan
-    # fiyattan; hicbiri elle yazilmadi.
-    th = re.search(r"PSI<([\d.]+).*?>([\d.]+)", dr["note"])
-    assert th, "drift notunda PSI esikleri bulunamadi | PSI thresholds missing from the drift note"
-    _safe, _retrain = float(th.group(1)), float(th.group(2))
-    psi_max = max(r[2] for r in pairs)
-    ks_max = max(r[1] for r in pairs)
-    _pern = [r[2] for r in bt["per_snapshot"]]
-    _navg = round(sum(_pern) / len(_pern) / 1000)                 # donem basina ~kac bin ilan
-    _snap = {sp[5:]: date.fromisoformat(sp) for sp in meta["snapshots"]}
-    _gap = lambda lab: (_snap[lab.split("→")[1]] - _snap[lab.split("→")[0]]).days
-    _short, _long = min(pairs, key=lambda r: _gap(r[0])), max(pairs, key=lambda r: _gap(r[0]))
-    _emd_k = lambda r: round(r[3] / 1000)
-    _long_pct = _long[3] / v["median"] * 100
-    _shared_max = max(pairs, key=lambda r: r[4])
-
-    A(L(f"**Sütunlar ne ölçüyor.** Üç ölçü de iki dönemin **ilan fiyatı dağılımını** karşılaştırır "
-        f"(ham fiyat, ₺; her dönemin o gün ilanda olan tüm ilanları, dönem başına ~{_navg} bin).",
-        f"**What the columns measure.** All three compare the **asking-price distribution** of two snapshots "
-        f"(raw price, ₺; every listing live on that day, ~{_navg}k per snapshot)."))
-    A("")
-    T([L("ölçü", "measure"), L("ne ölçer, nasıl okunur", "what it measures, how to read it")], [
-        ["**KS**",
-         L(f"İki dağılımın en çok ayrıldığı nokta; 0–1 arası. \"Şu fiyatın altında kalan ilan payı\" iki "
-           f"dönemde en fazla ne kadar farklı? {ks_max:.3f} = en ayrık noktada {ks_max * 100:.1f} puan fark.",
-           f"The point where the two distributions differ most; 0–1. How different is \"the share of listings "
-           f"below this price\" at worst? {ks_max:.3f} = {ks_max * 100:.1f} points apart at the widest point.")],
-        ["**PSI**",
-         L(f"Fark pratikte büyük mü? İlk dönemin fiyatları 10 dilime bölünür; ikinci dönemde bu dilimlerin "
-           f"payı ne kadar kaymış? < {_safe:.2f} kayma yok · {_safe:.2f}–{_retrain:.2f} orta · > {_retrain:.2f} "
-           f"büyük.",
-           f"Is the difference practically large? The first snapshot's prices are cut into 10 bins; how much did "
-           f"those bin shares move in the second? < {_safe:.2f} no drift · {_safe:.2f}–{_retrain:.2f} moderate · "
-           f"> {_retrain:.2f} large.")],
-        [L("**EMD (₺)**", "**EMD (₺)**"),
-         L("Fark kaç lira? Bir dönemin fiyat dağılımını ötekine çevirmek için fiyatların ortalama kaç lira "
-           "kaydırılması gerektiği. Lira cinsinden tek ölçü olduğu için en doğrudan okunanı bu.",
-           "How many lira is the difference? How far prices must move on average to turn one snapshot's "
-           "distribution into the other's. The only measure in lira, so the most directly readable one.")],
-    ], "ll")
-    A(L(f"**Taramalar bağımsız örneklem değil.** Aynı ilan birkaç taramada birden görülüyor: ilk taramadaki "
-        f"ilanların {P(_shared_max[4], lang)} kadarı ({_shared_max[0]}) ikinci taramada da var. Anlamlılık testleri "
-        f"(ör. KS p-değeri) iki örneklemin bağımsız olduğunu varsayar; bu yüzden p-değeri verilmiyor, tablo farkın "
-        f"büyüklüğünü gösteriyor.",
-        f"**The snapshots are not independent samples.** The same listing shows up in several of them: up to "
-        f"{P(_shared_max[4], lang)} of the first snapshot's listings ({_shared_max[0]}) are still there in the second. "
-        f"Significance tests (e.g. a KS p-value) assume two independent samples, so no p-value is given; the table "
-        f"shows the size of the difference."))
-    A("")
-    A(L(f"**Kayma tablosunun söylediği.** Tam taramalar arasındaki fark küçük: "
-        + (f"en yüksek PSI {psi_max:.4f}, \"kayma yok\" eşiğinin ({_safe:.2f}) {fraction_words(_safe / psi_max, lang)}. "
-           if psi_max < _safe else f"en yüksek PSI {psi_max:.4f}, \"kayma yok\" eşiğinin ({_safe:.2f}) üstünde. ")
-        + f"EMD bunu liraya çeviriyor: {number_word(_gap(_short[0]), lang)} günde "
-        f"~₺{_emd_k(_short)} bin, {number_word(round(_gap(_long[0]) / 30), lang)} ayda ~₺{_emd_k(_long)} bin — medyan ilan "
-        f"fiyatının ({tlm(v['median'])}) yaklaşık %{_long_pct:.0f} kadarı."
-        + (f" En yakın iki taramada ilkindeki ilanların {P(_short[4], lang)} kadarı ikincisinde de var, bu yüzden "
-           f"aralarındaki mesafe küçük çıkıyor." if _short[4] > 50 else ""),
-        f"**What the drift table says.** Between full snapshots the difference is small: "
-        + (f"the highest PSI is {psi_max:.4f}, about {_safe / psi_max:.0f}× below the \"no drift\" threshold "
-           f"({_safe:.2f}). " if psi_max < _safe else
-           f"the highest PSI, {psi_max:.4f}, is above the \"no drift\" threshold ({_safe:.2f}). ")
-        + f"EMD puts it in lira: ~₺{_emd_k(_short)}k over {number_word(_gap(_short[0]), lang)} days, "
-        f"~₺{_emd_k(_long)}k over {number_word(round(_gap(_long[0]) / 30), lang)} months — about {_long_pct:.0f}% of the "
-        f"median asking price ({tlm(v['median'])})."
-        + (f" Of the listings in the first of the two closest snapshots, {P(_short[4], lang)} are still in the "
-           f"second, so their distance comes out small." if _short[4] > 50 else "")))
-    A("")
-    figs(13, 14)
-
-    # Yeniden egitim tavsiyesi: takvim degil, olculen hata ve kayma + dissal olaylar + biriken veri.
-    # Butun sayilar yukaridaki tablolardan (psi_max/_safe, bt["single"], esli karsilastirma).
-    # 2026-09-28 (denetim): "sabit esik yetmez" gerekcesi sabit test kumesindeki ufuk farkindan (ayni ilanlar); kapi
-    # tutmazsa uretec durur.
-    _old = bt["horizon"]["vs_latest"][0]
-    assert psi_max < _safe and _old[2] > 0, (
-        f"'sabit esik yetmez' maddesi bayat: PSI {psi_max} (esik {_safe}), en eski egitim farki {_old}")
-    # 2026-09-28: "eski donemleri atma" onerisi ayni test ilanlarindaki esli karsilastirmaya kapili (farkli ilan
-    # kumelerindeki kumulatif OOF'a degil); birikim bir yerde anlamli zarar ederse uretec durur.
-    assert _pr and _better and not _worse, f"birikim onerisi bayat: {_pr}"
-    A(L("### Yeniden eğitim ne zaman", "### When to retrain"))
-    A("")
-    # 2026-09-29 (ikinci sadelestirme listesi): iki raporda da once hata, sonra kayma (tani).
-    A(L(f"- **Hatayı doğrudan izle, modeli yeni taramalarla yeniden eğit.** Fiyat her taramada geldiği için modelin "
-        f"yeni ilanlardaki hatası doğrudan ölçülebilir; yukarıdaki backtest tam bunu yapıyor. Aynı yeni ilanlarda en "
-        f"eski taramayla ({_old[0]}) eğitilen model en yenisinden {_old[1]:+.2f} puan [{_old[2]:+.2f}, "
-        f"{_old[3]:+.2f}] daha çok yanılıyor.\n"
-        f"- **Kaymayı tanı için izle.** PSI · KS · EMD neyin değiştiğini gösterir ama yeniden eğitimi tek başına "
-        f"tetiklemez: bugünkü en yüksek PSI {psi_max:.4f}, dağılım neredeyse kıpırdamazken model eskiyor. Sabit bir "
-        f"PSI eşiği yok.\n"
-        f"- **Fiyat rejimini değiştiren gelişmeler.** Vergi/ÖTV düzenlemesi, teşvik, ithalat "
-        f"kuralı, kur hareketi ya da ani piyasa anomalisi gibi dışsal olaylar kaymayı bir ölçüm "
-        f"penceresi dolmadan yaratabilir; bunlar ayrıca **tetikleyici** sayılmalı ve "
-        f"eğitim planı bunlara göre yapılmalı.\n"
-        f"- **Eski dönemleri atma.** Aynı test ilanlarındaki eşli karşılaştırmada birikimli eğitim "
-        f"{number_word(len(_pr), lang)} karşılaştırmanın {number_word(len(_better), lang)} tanesinde hatayı anlamlı "
-        f"düşürüyor, hiçbirinde anlamlı artırmıyor (aralıklar test ilanlarının örneklemesini taşır, eğitimin "
-        f"değişkenliğini değil). Yeniden eğitim eski dönemleri atarak değil, **üstüne ekleyerek** yapılmalı.",
-        f"- **Watch the error directly, retrain on new snapshots.** The price arrives with every snapshot, so the "
-        f"model's error on new listings can be measured directly; the backtest above does exactly that. On the same "
-        f"new listings the model trained on the oldest snapshot ({_old[0]}) errs {_old[1]:+.2f} points "
-        f"[{_old[2]:+.2f}, {_old[3]:+.2f}] more than the latest one.\n"
-        f"- **Watch drift as a diagnostic.** PSI · KS · EMD show what changed but do not trigger retraining on their "
-        f"own: today's highest PSI is {psi_max:.4f}, and the model ages while the distribution barely moves. There is "
-        f"no fixed PSI threshold.\n"
-        f"- **Events that reset the pricing regime.** A tax or excise change, an incentive, an "
-        f"import rule, a currency move or a sudden market anomaly can shift the distribution "
-        f"before a monitoring window closes; treat those as **triggers** as well and plan "
-        f"retraining around them.\n"
-        f"- **Keep the old snapshots.** In the paired comparison on the same test listings, accumulating "
-        f"lowers the error significantly in {number_word(len(_better), 'en')} of the {number_word(len(_pr), 'en')} "
-        f"comparisons and raises it significantly in none (the intervals carry the sampling of the test listings, not "
-        f"the variability of training). Retrain by **adding** snapshots, not by discarding the old ones."))
-    A("")
-
-
 def section_text(c):
     """
-    EN: §10 — the measured contribution of the seller's free text (10_free_text measures it live on every run;
+    EN: The free-text section — the measured contribution of the seller's free text (10_free_text measures it live on every run;
         pre-registered plan plans/10-text-contribution) and the keyword text flag.
-    TR: §10 — satıcının serbest metninin ölçülen katkısı (10_free_text her koşuda canlı ölçer; ön kayıtlı plan
+    TR: Serbest metin bölümü — satıcının serbest metninin ölçülen katkısı (10_free_text her koşuda canlı ölçer; ön kayıtlı plan
         plans/10-text-contribution) ve anahtar kelime metin bayrağı.
     """
     L, A, v, lang, d = c.L, c.A, c.v, c.lang, c.d
@@ -1908,8 +1538,9 @@ SECTIONS = [
     ("hedonic", "Hedonik model — kontrollü etkiler", "Hedonic model — controlled effects", section_hedonic),
     ("model", "Model karşılaştırma ve kısıtlar", "Model comparison and limitations", section_model),
     ("calibration", "Kalibrasyon, artıklar ve zayıflık", "Calibration, residuals and where it is weak", section_calibration),
-    ("time", "Zaman — dönem etkisi, dağılım kayması ve backtest", "Time — period effect, distribution drift and backtest", section_time),
     ("text", "Serbest metin: ölçüldü, dahil edilmedi", "Free text: measured, left out", section_text),
+    # "time" bolumu (zaman: donem etkisi, dagilim kaymasi, backtest) 2026-11-22'de kullanici karariyla cikti
+    # (docs/decisions.md); yeni ilanlardaki tek ileri test "calibration" bolumunde (08_forward_test).
     # "repro" bolumu 2026-09-20'de kullanici karariyla rapordan cikarildi (once TR'den silinmisti,
     # iki dil senkron olsun diye EN'den de); fonksiyonu da artik yok. Geri istenirse bir section_repro yazilip
     # bu listeye ("repro", "Yeniden üretilebilirlik", "Reproducibility", section_repro) satiri eklenir.
@@ -1941,21 +1572,21 @@ def fmt_technical(v, F, lang, d):
     A(L(f"Bu rapor iki soruya yanıt arar: İkinci el araç fiyatını ne belirler ve model bunu ne "
         f"kadar isabetle öngörebilir? Analiz; **{num(v['n_dedup'], lang)}** TR plakalı BMW/Audi "
         f"ilanında veri temizliği ve sızıntı kontrolünden geçerek kontrollü fiyat etkileri, "
-        f"piyasa yapısı, model karşılaştırması ve zamansal testleri ortaya koyar. LightGBM "
+        f"piyasa yapısı, model karşılaştırması ve yeni ilanlarda bir ileri testi ortaya koyar. LightGBM "
         f"ortalama **%{v['model_mape']}** yüzde hatayla (MAE: **{tl(v['model_mae'])}**, "
         f"R²: **{v['model_r2']}**) çalışarak emsal medyanına (aynı model ve yıl; emsal yoksa daha geniş "
         f"medyan) göre ortalama mutlak hatada (MAE) "
-        f"**%{v['better_pct']:.0f}** daha iyi sonuç verir. Paylaşılan tüm metrikler, modelin "
+        f"**%{v['better_pct']:.0f}** daha iyi sonuç verir. Manşet metrikler, modelin "
         f"daha önce görmediği veriler üzerinden **5-fold out-of-fold** kurgusuyla "
-        f"hesaplanmıştır. Hedef ilan fiyatıdır, satış fiyatı değil: satış fiyatı pazarlıkla bundan ayrılır.",
+        f"hesaplanmıştır; ileri test §{section_no('calibration')}'de. Hedef ilan fiyatıdır, satış fiyatı değil: satış fiyatı pazarlıkla bundan ayrılır.",
         f"This report answers two questions: what sets a used-car price, and how accurately the "
         f"model can predict it. The analysis runs over **{num(v['n_dedup'], lang)}** "
         f"Turkish-plated BMW/Audi listings — from cleaning and leakage checks through controlled "
-        f"price effects, market structure, model comparison and time tests. LightGBM is off by "
+        f"price effects, market structure, model comparison and a forward test on new listings. LightGBM is off by "
         f"**{v['model_mape']}%** on average (MAE: **{tl(v['model_mae'])}**, "
         f"R²: **{v['model_r2']}**), with a **{v['better_pct']:.0f}%** lower mean absolute error than the comparable median "
-        f"(same model and year, falling back to a wider median when there is none). Every metric here is computed **5-fold out-of-fold**, on data the "
-        f"model never saw in training. The target is the asking price, not the sale price: the sale price moves "
+        f"(same model and year, falling back to a wider median when there is none). The headline metrics are computed **5-fold out-of-fold**, on data the "
+        f"model never saw in training; the forward test is in §{section_no('calibration')}. The target is the asking price, not the sale price: the sale price moves "
         f"away from it through bargaining."))
     A("")
     for i, (_key, tr, en, fn) in enumerate(SECTIONS, 1):

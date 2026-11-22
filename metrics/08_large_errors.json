@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "08_large_errors.py",
-  "generated_at": "2026-11-22T18:55:38+03:00",
+  "generated_at": "2026-11-22T20:01:18+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": "601741517e09",
   "source": {
    "script": {
-    "analysis/08_large_errors.py": "06e510c90ad3b2c839e2c3612dd5b65340ae4ba15591e5e5ac7ae198293f0f33"
+    "analysis/08_large_errors.py": "08d6caa354bbc31af98f70b1c9e84a2d68ed53bfc7734a88dfc8e846ce5a2a9a"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
@@ -3111,35 +3111,6 @@
     "n": 29544,
     "big_pct": 3.8
    }
-  },
-  "by_snapshot": [
-   {
-    "snapshot": "2026-01-18",
-    "n": 2409,
-    "median_resid_pct": -3.27
-   },
-   {
-    "snapshot": "2026-01-27",
-    "n": 7002,
-    "median_resid_pct": -1.75
-   },
-   {
-    "snapshot": "2026-03-21",
-    "n": 9051,
-    "median_resid_pct": -0.25
-   },
-   {
-    "snapshot": "2026-06-27",
-    "n": 11526,
-    "median_resid_pct": 1.38
-   }
-  ],
-  "live_vs_gone": {
-   "last_snapshot": "2026-06-27",
-   "live_n": 11526,
-   "live_median_resid": 1.38,
-   "gone_n": 18462,
-   "gone_median_resid": -1.24
   },
   "lira_scaled": {
    "top_n": 100,

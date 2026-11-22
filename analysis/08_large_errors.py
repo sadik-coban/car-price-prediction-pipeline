@@ -2,17 +2,19 @@
 08_large_errors.py
 EN: Technical report §8 — where the large errors (|OOF residual| > 20%) come from. Rates by the number of
     comparables (same model + year), by model, by age (every age and every cut point — 18 is not a hard
-    break), by segment F/S, by snapshot and for listings still live vs gone; where the 100 largest lira errors
-    sit (under/over, top price quartile, performance families); engine specs that break away from
+    break) and by segment F/S; where the 100 largest lira errors sit (under/over, top price quartile,
+    performance families); engine specs that break away from
     their own model's median (a catalogue mismatch prices an engine the car does not have); and three example
     listings with the comparisons their report notes rest on, computed on every run (EXAMPLE_PEERS). Needs
     07_model_comparison's OOF artefact.
 TR: Teknik rapor §8 — büyük hatalar (|OOF artık| > %20) nereden geliyor. Emsal sayısına (aynı model + yıl),
-    modele, yaşa (her yaş ve her kesim noktası — 18 sert bir kırılma değil), F/S segmentine, taramaya ve hâlâ
-    yayında olan/kalkan ilana göre oranlar; en büyük 100 lira hatasının nerede toplandığı (düşük/fazla, en
+    modele, yaşa (her yaş ve her kesim noktası — 18 sert bir kırılma değil) ve F/S segmentine göre oranlar; en büyük 100 lira hatasının nerede toplandığı (düşük/fazla, en
     pahalı çeyrek, performans aileleri); kendi modelinin medyanından kopan motor değerleri (katalog uyuşmazlığı
     aracın sahip olmadığı bir motoru fiyatlar); ve rapor notlarının dayandığı karşılaştırmalarıyla üç örnek ilan,
     her koşuda hesaplanır (EXAMPLE_PEERS). 07_model_comparison'ın OOF artefaktına ihtiyaç duyar.
+    2026-11-22 (owner's decision, docs/decisions.md): the residual by last-seen snapshot and the live/gone
+    comparison left with the other time analyses | son görüldüğü taramaya göre artık ve canlı/kalkan
+    karşılaştırması öteki zaman analizleriyle birlikte çıktı.
 Output / Çıktı: metrics/08_large_errors.json
 """
 
@@ -82,21 +84,6 @@ def error_per_model(model, resid):
         buckets.append({"bin": lab, "lo": lo, "hi": hi, "n_models": int(len(s)), "n_listings": int(s["size"].sum()),
                         "median_of_medians": round(float(s["median"].median()), 2)})
     return rows, buckets
-
-
-def by_snapshot(snap, resid):
-    """
-    EN: Median residual per snapshot the listing was LAST seen in (survival, not period), and live vs gone:
-        listings still in the last snapshot against those that disappeared earlier.
-    TR: İlanın SON görüldüğü tarama başına medyan artık (hayatta kalma, dönem değil) ve canlı/kaybolan: son
-        taramada hâlâ yayında olanlar ile daha önce kalkanlar.
-    """
-    rows = [{"snapshot": s, "n": int(len(g)), "median_resid_pct": round(float(g.median()), 2)}
-            for s, g in pd.Series(resid).groupby(snap.values)]
-    live = (snap == snap.max()).values
-    return rows, {"last_snapshot": str(snap.max()), "live_n": int(live.sum()),
-                  "live_median_resid": round(float(np.median(resid[live])), 2), "gone_n": int((~live).sum()),
-                  "gone_median_resid": round(float(np.median(resid[~live])), 2)}
 
 
 def by_age(age, big):
@@ -238,8 +225,8 @@ def to_metrics(res):
     return {"error_drivers": {
         "threshold_pct": LARGE_ERROR_PCT, "overall": res["overall"], "by_model_year_n": res["by_comparables"],
         "per_model_error": res["per_model"], "per_model_buckets": res["buckets"],
-        "by_age": res["by_age"], "by_segment_FS": res["by_segment"], "by_snapshot": res["by_snapshot"],
-        "live_vs_gone": res["live"], "lira_scaled": res["lira"], "age_sensitivity": res["age_each"],
+        "by_age": res["by_age"], "by_segment_FS": res["by_segment"],
+        "lira_scaled": res["lira"], "age_sensitivity": res["age_each"],
         "age_cuts": res["age_cuts"], "spec_outliers": res["spec"],
         "examples": res["examples"]}}
 
@@ -259,7 +246,6 @@ n_model = listings.groupby("model")["model"].transform("size").values
 n_model_year = listings.groupby(["model", "gb_year"])["model"].transform("size").values
 path = np.array([SR.resolve(s, m)[1] for s, m in zip(listings["series"], listings["model"])])
 per_model, buckets = error_per_model(listings["model"].values, resid)
-snaps, live = by_snapshot(listings["snap"], resid)
 age_each, age_cuts = by_age(age, big)
 lira = {**lira_ranking(listings, price, pred, path), "under_if_symmetric": under_if_symmetric(price, pred)}
 spec = spec_outliers(listings, resid)
@@ -268,7 +254,7 @@ res = {"overall": {"n": len(listings), "n_big": int(big.sum()), "n_over": int(ov
                    "big_pct": round(100 * float(big.mean()), 2)},
        "by_comparables": by_comparables(n_model_year, big, over, under), "per_model": per_model, "buckets": buckets,
        "by_age": {"age_18plus": rate(age >= OLD_AGE, big), "age_under18": rate(age < OLD_AGE, big)},
-       "by_segment": {"F_or_S": rate(fs, big), "other": rate(~fs, big)}, "by_snapshot": snaps, "live": live,
+       "by_segment": {"F_or_S": rate(fs, big), "other": rate(~fs, big)},
        "lira": lira, "age_each": age_each, "age_cuts": age_cuts,
        "spec": spec, "examples": examples(listings, price, pred, resid, n_model, n_model_year)}
 print(f"large errors | büyük hata {res['overall']['n_big']} ({res['overall']['n_over']} over / {res['overall']['n_under']} under)")

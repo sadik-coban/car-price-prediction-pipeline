@@ -43,7 +43,7 @@ HEAVY = {"03_brand_ablation": "üç kolda 5-fold çapraz doğrulama",
          "07_lofo": "her öznitelik çıkarımı için 5-fold çapraz doğrulama (~15 dk)",
          "07_model_comparison": "LightGBM ve iki CatBoost ile 5-fold çapraz doğrulama; OOF kaydını yazar",
          "07_final_model": "servis modellerini bütün veriyle eğitir ve yazar",
-         "09_backtest": "her tarama ve eğitim kümesi için model eğitimi",
+         "08_forward_test": "son taramadan önceki ilanlarla model eğitimi (iç 5-fold CV ile)",
          "10_free_text": "açıklama metniyle 5-fold çapraz doğrulama",
          "shap/02_oof_shap": "fold modellerini yeniden kurar ve SHAP hesaplar; oof_shap.npz'yi yazar",
          "shap/04_variants": "servis modelleriyle bütün veride SHAP"}
@@ -139,9 +139,9 @@ def check(fresh, recorded_doc):
 def card(name):
     """
     EN: A script's card as Markdown text: question, data, method, split and the leakage types with their notes
-        (Turkish fields). name: "09_drift" or "shap/02_oof_shap". Returns: str.
+        (Turkish fields). name: "08_residuals" or "shap/02_oof_shap". Returns: str.
     TR: Bir betiğin kartı, Markdown metni olarak: soru, veri, yöntem, bölme ve notlarıyla sızıntı tipleri (Türkçe
-        alanlar). name: "09_drift" ya da "shap/02_oof_shap". Döndürür: str.
+        alanlar). name: "08_residuals" ya da "shap/02_oof_shap". Döndürür: str.
     """
     c = json.loads((CARDS_DIR / f"{name}.json").read_text(encoding="utf-8"))
     lines = [f"**Soru:** {c['question']['tr']}", f"**Veri:** {c['data']['tr']}", f"**Yöntem:** {c['method']['tr']}",

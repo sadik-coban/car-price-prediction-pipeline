@@ -123,7 +123,6 @@ def to_metrics(res):
         (error_drivers: lira_quartile, pred_quartile, calibration) ve yalnız rapor sayılarında (report) yayımlanır.
     """
     price, pred, resid = res["price"], res["pred"], res["resid"]
-    snap_med = res["snap_median"]
     return {
         "domain": {
             "quantile_error": [[b, round(v, 2)] for b, v in res["quartile_ape"]],
@@ -138,10 +137,9 @@ def to_metrics(res):
                 "points": [[float(b), round(float(r), 2)] for b, r in zip(pred, resid)],
                 "mean_resid_pct": round(float(np.mean(resid)), 2), "std_resid_pct": round(float(np.std(resid)), 2),
                 "n": int(len(price)),
-                "note": (f"Artık% = (gerçek-tahmin)/gerçek, TÜM noktalar. Ortalama sıfıra yakın, ama medyan artık "
-                        f"dönemlere göre %{min(snap_med):+.2f} ile %{max(snap_med):+.2f} arasında kayıyor (model "
-                        f"zamanı görmüyor). Fiyata göre yanlılık tahmin edilen fiyata göre gruplanarak ölçülmeli; "
-                        f"gerçek fiyata göre gruplamak ortalamaya dönüş üretir. Frontend: yoğunluk/hexbin render önerilir.")}},
+                "note": ("Artık% = (gerçek-tahmin)/gerçek, TÜM noktalar. Ortalama sıfıra yakın. Fiyata göre yanlılık "
+                         "tahmin edilen fiyata göre gruplanarak ölçülmeli; gerçek fiyata göre gruplamak ortalamaya dönüş "
+                         "üretir. Frontend: yoğunluk/hexbin render önerilir.")}},
         "error_drivers": {
             "lira_quartile": [[b, n, round(s, 1), round(m, 0), round(a, 2)] for b, n, s, m, a in res["lira"]],
             "pred_quartile": [[b, n, round(m, 0), round(md, 0)] for b, n, m, md in res["bias_pred"]],
@@ -162,7 +160,6 @@ resid = residual_pct(price, oof["lgb"].values)
 slope, intercept = np.polyfit(pred, price, 1)
 res = {"price": price, "pred": pred, "resid": resid, "quartile_ape": quartile_median_ape(pred, ape),
        "by_model": error_by_model(listings, ape, MIN_MODEL_N),
-       "snap_median": pd.Series(resid).groupby(listings["snap"].values).median().tolist(),
        "lira": lira_by_quartile(price, pred, np.minimum(np.abs(resid), APE_CAP)),
        "bias_pred": bias_by_predicted_quartile(price, pred), "slope": float(slope), "intercept": float(intercept),
        "bands": error_bands(price, pred), "r2_log": log_r2(price, pred)}

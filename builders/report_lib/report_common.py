@@ -11,7 +11,6 @@ TR: Teknik rapor ve karar notu derleyicilerinin paylaştıkları: metrik görün
 """
 import os
 import pathlib
-import re
 from decimal import Decimal, ROUND_HALF_UP
 
 import matplotlib
@@ -38,22 +37,19 @@ RESID_VIEW = 40
 # EN: every path the report text reads; a missing one stops the build instead of silently dropping a paragraph
 # TR: rapor metninin okuduğu her yol; eksik olan paragrafı sessizce düşürmek yerine derlemeyi durdurur
 REQUIRED = [
-    "domain.drift.all_pairs", "domain.drift.note",
     "domain.hedonic_reliability.center", "domain.brand_ablation.validation",
     "methodology.column_accounting", "methodology.kb_gb_twins", "domain.hedonic_reliability.columns",
     "domain.segment_ladder", "domain.model_year_median.ladder", "domain.price_dist.p10", "domain.price_dist.p90",
     "domain.final_results.training.target", "domain.shap.lightgbm_tfidf_svd", "methodology.kmeans_selection",
     "methodology.theils_matrix", "methodology.column_missing",
-    "methodology.backtest.per_snapshot", "methodology.backtest.insample", "methodology.backtest.protocol", "methodology.backtest.paired",
-    "methodology.backtest.horizon", "methodology.backtest.forward_coverage",
-    "methodology.backtest.columns",
+    "methodology.forward_test.MAPE", "methodology.forward_test.coverage",
     "methodology.systematic_missing.systematic_groups", "methodology.systematic_missing.note",
     "meta.repro", "meta.brands", "column_labels"] + [f"error_drivers.{p_}" for p_ in [
     "plate_scope", "segment_quality", "hedonic_dropped", "per_model_error", "per_model_buckets", "lira_quartile",
     "lira_scaled", "scope", "price_changes", "unspecified", "baseline_equal_terms", "text_flag",
-    "age_sensitivity", "age_cuts", "spec_outliers.blind_spot", "period_shift",
-    "by_model_year_n", "by_segment_FS", "by_age", "by_snapshot", "raw_columns", "examples",
-    "engine_rule.engine_cc", "engine_rule.power_hp", "unspecified.structure", "live_vs_gone"]] + [
+    "age_sensitivity", "age_cuts", "spec_outliers.blind_spot",
+    "by_model_year_n", "by_segment_FS", "by_age", "raw_columns", "examples",
+    "engine_rule.engine_cc", "engine_rule.power_hp", "unspecified.structure"]] + [
     f"report.{p_}" for p_ in ["q_bounds", "model_r2_log", "err_bands", "conformal_q", "conformal_all",
                               "mondrian", "text_ablation"]]
 
@@ -239,15 +235,11 @@ def derive(d):
     # TR: modelin log fiyattaki OOF R²'si, hedonik R² ile karşılaştırılabilir (08_residuals)
     v["model_r2_log"] = rep["model_r2_log"]
     v["cov_q4"] = dom["conformal"]["by_quantile"][-1][1]
-    # PSI ozeti — karar notunun "bugun kayma kucuk" cumlesi buna kapili. Esik ureticinin notundan;
-    # not bicimi degisirse sessizce varsayilana dusmez, durur.
-    _th = re.search(r"PSI<([\d.]+).*?>([\d.]+)", dom["drift"]["note"])
-    assert _th, "drift notunda PSI esikleri bulunamadi"
-    v["psi_max"] = max(r[2] for r in dom["drift"]["all_pairs"])    # [pair, KS, PSI, EMD, shared %]
-    v["psi_safe"], v["psi_retrain"] = float(_th.group(1)), float(_th.group(2))
-    v["bt_paired"], v["bt_columns"] = met["backtest"]["paired"], met["backtest"]["columns"]
-    v["bt_forward"] = met["backtest"]["forward_coverage"]
-    v["bt_horizon"] = met["backtest"]["horizon"]
+    # EN: 2026-11-22 (owner's decision): drift and the time analyses left; the error and interval coverage on the last
+    #     snapshot's new listings (08_forward_test) is the one forward measurement
+    # TR: 2026-11-22 (kullanıcı kararı): kayma ve zaman analizleri çıktı; son taramanın yeni ilanlarındaki hata ve aralık
+    #     kapsaması (08_forward_test) tek ileri ölçüm
+    v["ft"] = met["forward_test"]
     v["lofo"] = met["lofo"]                      # karar notu "farki kapatan" siralamasi (2026-09-23)
     # EN: OOF error distribution: bands, median/mean error, extremes (08_residuals)
     # TR: OOF hata dağılımı: bantlar, medyan/ortalama hata, uçlar (08_residuals)
@@ -581,68 +573,8 @@ def build_figures(d, v, lang, only=None):
         ax.grid(axis="y", color=GRID, lw=.7); ax.set_axisbelow(True)
         reg(12, _save(fig, f"{p}-12-coverage"), t)
 
-    # 13 drift histogram  [TEKNIK]
-    if want(13):
-        hist = dom["drift"]["hist"]
-        edges = hist["edges"]
-        t = L("Fiyat dağılımı — dönemlere göre", "Price distribution by snapshot")
-        fig, ax = plt.subplots(figsize=(7, 3.4))
-        for snap, ys in hist.items():
-            if snap == "edges":
-                continue
-            # 2026-09-23: eskiden step(sol kenarlar, where="mid") — her cubuk yarim bin sola kayiyordu.
-            assert edges and len(edges) == len(ys) + 1, "drift histogrami: kenar sayisi yukseklik+1 degil"
-            ax.stairs(np.array(ys) * 1e6, np.array(edges) / 1e6, lw=1.3, label=snap)   # yogunluk ₺M basina
-        ax.set_xlabel(L("fiyat (₺M)", "price (₺M)")); ax.set_ylabel(L("yoğunluk (₺M başına)", "density (per ₺M)"))
-        ax.set_title(t); ax.legend(frameon=False, fontsize=7)
-        ax.grid(color=GRID, lw=.7); ax.set_axisbelow(True)
-        reg(13, _save(fig, f"{p}-13-drift-hist"), t)
-
-    # 14 drift KDE (log)  [TEKNIK]
-    if want(14):
-        kde = dom["drift"]["kde_log"]
-        t = L("Log-fiyat yoğunluğu — dönemlere göre", "Log-price density by snapshot")
-        fig, ax = plt.subplots(figsize=(7, 3.4))
-        xs = kde["x"]
-        for snap, ys in kde.items():
-            if snap == "x":
-                continue
-            ax.plot(xs, ys, lw=1.3, label=snap)
-        ax.set_xlabel(L("log fiyat", "log price")); ax.set_ylabel(L("yoğunluk", "density"))
-        ax.set_title(t); ax.legend(frameon=False, fontsize=7)
-        ax.grid(color=GRID, lw=.7); ax.set_axisbelow(True)
-        reg(14, _save(fig, f"{p}-14-drift-kde"), t)
-
-    # 15 veri miktari ve hata  [TEKNIK]
-    if want(15):
-        # Iki cizgi AYNI 4 donemde hizalanir (indeksle). Eski surum x'e yazi etiketi veriyordu;
-        # insample etiketleri '→01-27' gibi okla basladigi icin matplotlib 7 ayri kategori kurup
-        # yesil cizgiyi turuncunun bittigi yerden devam ettiriyordu — iki cizgi hic hizalanmiyordu.
-        # Farki yaratan sey ILAN SAYISI (turuncu ~11 bin sabit, yesil 11→30 bin buyuyor); o yuzden
-        # yesil noktalarin altina n yazilir, turuncunun aciklamasina tek donemin n araligi.
-        bt = met["backtest"]
-        ps, ins = bt["per_snapshot"], bt["insample"]
-        # 2026-09-28: baslik iddia tasimiyor (iki cizgi farkli ilan kumeleri); birikimin etkisi §9'un eşli
-        # karsilastirmasinda, ayni test ilanlarinda olculuyor.
-        t = L("Tek dönem ve biriken dönemler — ortalama yüzde hata",
-              "Single period and pooled periods — mean percentage error")
-        fig, ax = plt.subplots(figsize=(7, 3.4))
-        xs = list(range(len(ps)))
-        _nps = [r[2] for r in ps]
-        ax.plot(xs, [r[1] for r in ps], "o-", color=C1, lw=1.6, ms=4,
-                label=L(f"yalnız o dönemin ilanları ({num(min(_nps), lang)}–{num(max(_nps), lang)} ilan)",
-                        f"that period's listings only ({num(min(_nps), lang)}–{num(max(_nps), lang)})"))
-        ax.plot(xs[:len(ins)], [r[1] for r in ins], "o-", color=C2, lw=1.6, ms=4,
-                label=L("o tarihe kadarki tüm dönemler birlikte", "all periods up to that date, pooled"))
-        for x_, r in zip(xs, ins):
-            ax.annotate(f"{num(r[2], lang)} " + L("ilan", "listings"), (x_, r[1]),
-                        textcoords="offset points", xytext=(0, -13), ha="center", fontsize=7, color=C2)
-        ax.set_xticks(xs, [r[0] for r in ps])
-        ax.set_xlabel(L("dönem", "period")); ax.set_ylabel("MAPE %"); ax.set_title(t)
-        ax.margins(x=0.08, y=0.25)          # kenardaki n etiketleri kesilmesin
-        ax.legend(frameon=False, fontsize=8)
-        ax.grid(color=GRID, lw=.7); ax.set_axisbelow(True)
-        reg(15, _save(fig, f"{p}-15-backtest"), t)
+    # 13 (fiyat dagilimi donemlere gore), 14 (log yogunluk) ve 15 (tek ve biriken donem) 2026-11-22'de cikti:
+    # zaman ve kayma analizden cikti (docs/decisions.md); numaralar bos kalir.
 
     # 16 eksiklik orani  [TEKNIK]
     if want(16):
@@ -868,11 +800,10 @@ def build_figures(d, v, lang, only=None):
 # ============================================================================
 BUSINESS_FIGS = [0, 5, 6, 7, 10, 12, 27]            # 2 (segment medyani) 2026-09-22'de cikti
 # 10/12 iki raporda da: karar notunda karar icin, teknik raporda kanit olarak (bilincli tekrar).
-# 2026-10-19 (kullanici karari): 15 karar notundan cikti — zamansal olmayan duz OOF'u ciziyor, "eski donemleri atma"
-# maddesinin kaniti gibi okunuyordu; teknik §9'da "zamansal degil" aciklamasiyla kaliyor.
+# 2026-11-22 (kullanici karari): 13/14/15 cikti — zaman ve kayma analizden cikti (docs/decisions.md).
 # 2026-09-28 (sadelestirme listesi): 17/18/20 cikti; 27 yalniz karar notunda.
 # 2026-09-29 (ikinci sadelestirme listesi): 22/23/24 (PCA ve k secimi) cikti; §5 tek paragraf.
-TECHNICAL_FIGS = [1, 3, 4, 8, 9, 10, 11, 12, 13, 14, 15, 16, 19, 21, 25, 26, 28, 29, 30]
+TECHNICAL_FIGS = [1, 3, 4, 8, 9, 10, 11, 12, 16, 19, 21, 25, 26, 28, 29, 30]
 
 
 def num(x, lang="tr"):

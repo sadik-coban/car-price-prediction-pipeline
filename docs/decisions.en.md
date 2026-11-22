@@ -17,7 +17,7 @@ in the prose from `secno("key")` — to reorder, move the lines in `SECTIONS`; n
 correct by themselves.
 
 - **Price report:** data → missingness → redundancy/brand → target and preprocessing → market structure →
-  hedonic → model → calibration → time → free text.
+  hedonic → model → calibration → free text (the time section left on 2026-11-22).
 The archived text report's generator follows the same pattern; that report is not part of the
 published work.
 
@@ -146,7 +146,7 @@ live in the technical report); everything in ₺ and plain percentages. The **te
 protocol, controls, limits. Both are fed by **the same computation**: shared values are derived
 once in `builders/report_lib/report_common.py::derive` and handed to both templates → a figure cannot differ between
 the two. Some
-charts (quartile error, coverage, backtest) appear in both (the lira quartile only in the business note since
+charts (quartile error, coverage) appear in both (the lira quartile only in the business note since
 2026-09-28): in the business note for the decision,
 in the technical report as evidence — a deliberate repeat.
 
@@ -156,7 +156,7 @@ in the technical report as evidence — a deliberate repeat.
 the published work** (listed in `.gitignore`). Two reasons: its headline result was negative
 (adding text features to the structured model produced no measurable gain), and the detectors behind its
 price claims carried defects found by audit (`archive/experiments/regex_audit/`). Since 2026-09-27 that result is
-not taken from the archive: §10 of the technical report measures the text's contribution live on every run with
+not taken from the archive: the technical report's free-text section measures the text's contribution live on every run with
 `analysis/10_free_text.py` (pre-registered as `plans/10-text-contribution`; the model's OOF against the same folds
 plus description TF-IDF/SVD). Nothing imports from the archive, and since 2026-09-27 no data or frozen number is
 read from it either (the "Nothing from the archive" decision below). The text flag's two pattern detectors
@@ -173,14 +173,61 @@ or hand-typed numbers copied from `archive/`, an older run or an older DB never 
 from the archive (the segment map, model settings, the text flag's word list) stay only if they are applied to the
 current data on every run and their output is used, and their origin is written down; nothing ineffective is
 kept. Guard: `tests/repo/test_no_archive_inputs.py`. Removed under this decision:
-- the frozen text ablation (`analysis/frozen/text_ablation.json`) and the archived LLM extraction file → §10 is a
-  live measurement;
+- the frozen text ablation (`analysis/frozen/text_ablation.json`) and the archived LLM extraction file → a live
+  measurement in the free-text section;
 - `dashboard_cache` / `options_cache` carried over from older DBs → dropped from silver and gold; the gold contract
   refuses any extra table;
 - the hand-typed numbers in the §8 notes → computed on every run;
 - ineffective items: `08_large_errors`'s old-D series group (`old_d_group`), the unused text reasons,
   `tools/metric_renames.py`'s proof commands against the archived P0 copy, two dead data files
   (`archive/obsolete/archive-inputs-2026-09-27/`).
+
+## Drift removed, one forward test kept (2026-11-22, owner's decision)
+
+The owner wanted time and drift out of the analysis ("it gets too tangled"). The decision was made after looking at
+how the data is collected.
+
+**Findings:**
+- **Snapshots are stock dumps.** Each one takes every BMW/Audi listing live on the site that day: 10,901 · 11,254 ·
+  11,478 · 11,526 listings.
+- **The gaps are uneven.** 9, 53 and 98 days lie between snapshots. The share of listings unseen in earlier snapshots
+  is 26%, 63% and 77%.
+- **`listing_date` is not the posting date.** It changed for 6,057 of the 10,831 listings seen in more than one
+  snapshot (56%); it is the day of the last update. The median "listing age" in a snapshot is therefore 10–13 days.
+  The only reliable time axis is the four snapshots.
+- **Listing age matters little.** The OOF residual is almost flat by listing age: medians between −0.46% and +0.12%.
+
+**Why drift went.** Stock dumps do not see the flow. A listing that does not sell enters several snapshots; a quick
+one opened and closed between two snapshots enters none. The difference between two snapshots' price distributions is
+therefore a mix of three things: the market really moving, which listings stay in stock, and composition. PSI, KS, EMD
+and the density curves cannot separate them, and the "residual by last-seen snapshot" is mixed with survival.
+
+**Why one forward test stayed.** "Learn from the past, price the listings that arrive later" is a well-defined
+question and the measurement closest to how the model is used. It is also the only evidence that the interval fails
+on cars without a comparable.
+- **Setup:** train on every listing seen before the last snapshot (latest price per listing), measure on the
+  listings first seen in the last snapshot.
+- **Measured:** MAPE with a model-resampled 95% interval; forward coverage of the served recipe (overall, per band,
+  without a comparable).
+- **Where:** `analysis/08_forward_test.py`; one paragraph in §8 of the report.
+
+**Removed:**
+- `analysis/09_drift.py` and the single, cumulative, paired, horizon, in-sample and per-snapshot arms of `09_backtest`;
+- figures 13, 14, 15; the technical report's "Time" section (free text §10 → §9);
+- `08_large_errors`' residual by last-seen snapshot and live/gone comparison; `08_residuals`' period sentence;
+- the business note's retraining, PSI and regime items.
+
+That the model does not see time stays in the report as one limitation sentence. The hedonic model had no period
+effect already (2026-09-23).
+
+**Withdrawn plan.** `plans/09-forward-coverage` (locked, 2026-09-28) pre-registered nine forward setups:
+- H1 confirmed: the per-band margin fixes the cheapest band in every setup.
+- H2 refuted: it does not hold 88% in every band.
+- The hypotheses say "in every setup", so a single setup cannot carry them. The plan was withdrawn; its folder is kept
+  locally in `archive/plans-withdrawn/`. The nine setups' numbers and evidence are in commit `fd0376a`
+  (`metrics/09_backtest.json`).
+- No new plan was opened: the single test's result had already been seen as one of the nine setups, so
+  "pre-registering" it now would come after the fact.
 
 ## Privacy
 
@@ -219,12 +266,11 @@ kept. Guard: `tests/repo/test_no_archive_inputs.py`. Removed under this decision
   same rule. Technical report §1 prints its size. The translation happens in the analysis
   (`analysis/lib/common.py`); the database keeps the information semi-raw (`NULL`).
 - **The hedonic model has no period effect** (user decision, 2026-09-23): periods are pooled; the shift in
-  market level is read in technical report §9 from live listings of the same model and year. Proposed again on
+  market level is not measured since 2026-11-22 (below, "Drift removed, one forward test kept"). Proposed again on
   2026-09-28 (+5.3%) and not taken: the number came from the site's old July data, and a "period" in this data
   is the snapshot a listing was last seen in, so it is mixed with survival.
-- **Retraining is not tied to a fixed PSI threshold** (2026-09-27). Drift is watched and the model is
-  retrained on new snapshots. The reason is in the data: with PSI far below the threshold, the error of a
-  model trained on one snapshot still grows as the test horizon lengthens (technical report §9). The price
-  arrives with every snapshot, so the model's error on new listings is watched directly; there is no fixed
-  threshold (2026-09-28).
+- **The model does not see time** (2026-11-22). The snapshots' prices are learned together; drift, the period
+  effect and the retraining advice left the analysis. The reports say so in one limitation sentence; the error on
+  the last snapshot's new listings is in technical report §8 (`analysis/08_forward_test.py`). The earlier rule
+  ("retraining is not tied to a fixed PSI threshold", 2026-09-27/28) went with it.
 - Scope is BMW + Audi; how far it generalises to other brands was not measured.

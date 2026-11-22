@@ -1,10 +1,11 @@
 """
 conformal.py
 EN: The conformal-interval pieces shared by 08_conformal_coverage (cross-calibrated coverage on the OOF) and
-    09_backtest (forward coverage on later snapshots): the interval around a prediction, the finite-sample
-    quantile, and the predicted-price band of a listing.
-TR: 08_conformal_coverage (OOF'ta çapraz kalibreli kapsama) ve 09_backtest (sonraki taramalarda ileri kapsama) ortak
-    conformal aralık parçaları: tahmin etrafındaki aralık, sonlu örneklem yüzdeliği ve bir ilanın tahmin fiyatı bandı.
+    08_forward_test (forward coverage on the listings new in the last snapshot): the interval around a prediction,
+    the finite-sample quantile, and the predicted-price band of a listing.
+TR: 08_conformal_coverage (OOF'ta çapraz kalibreli kapsama) ve 08_forward_test (son taramada yeni ilanlarda ileri
+    kapsama) ortak conformal aralık parçaları: tahmin etrafındaki aralık, sonlu örneklem yüzdeliği ve bir ilanın
+    tahmin fiyatı bandı.
 """
 import numpy as np
 

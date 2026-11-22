@@ -2,12 +2,12 @@
 test_08_large_errors.py
 EN: Invariants of metrics/08_large_errors.json (technical report §8 where the large errors come from): the
     overall counts add up (big = over + under, the share is the ratio); every breakdown covers all listings (by
-    comparables, age, age each year, F/S segment, snapshot, live vs gone, per-model buckets); the per-model buckets
+    comparables, age, age each year, F/S segment, per-model buckets); the per-model buckets
     are contiguous and hold every model; the lira ranking's top-N splits into under and over and its sub-counts fit
     in it; the spec-outlier shares are the ratios.
 TR: metrics/08_large_errors.json'un değişmezleri (teknik rapor §8 büyük hataların kaynağı): genel sayımlar
     toplanıyor (büyük = fazla + düşük, pay oran); her kırılım bütün ilanları kapsıyor (emsal, yaş, tek tek yaş,
-    F/S segment, tarama, canlı/kaybolan, model kovaları); model kovaları bitişik ve her modeli tutuyor; lira
+    F/S segment, model kovaları); model kovaları bitişik ve her modeli tutuyor; lira
     sıralamasının ilk N'i düşük ve fazla diye bölünüyor ve alt sayımları içine sığıyor; spec aykırı payları oranlar.
 """
 import pytest
@@ -32,16 +32,12 @@ def test_overall(ed, n):
     assert o["big_pct"] == pytest.approx(round(100 * o["n_big"] / n, 2))
 
 
-def test_breakdowns_cover_listings(ed, n, metrics):
+def test_breakdowns_cover_listings(ed, n):
     """EN: Every breakdown sums to the listings. / TR: Her kırılım ilanlara toplanıyor."""
     assert sum(b["n"] for b in ed["by_model_year_n"]) == n
-    assert sum(b["n"] for b in ed["by_snapshot"]) == n
     assert sum(r[1] for r in ed["age_sensitivity"]) == n
     assert sum(g["n"] for g in ed["by_age"].values()) == n
     assert sum(g["n"] for g in ed["by_segment_FS"].values()) == n
-    live = ed["live_vs_gone"]
-    assert live["live_n"] + live["gone_n"] == n
-    assert live["last_snapshot"] == metrics("01_dedup_leakage")["meta"]["snapshots"][-1]
 
 
 def test_per_model_buckets(ed, n):

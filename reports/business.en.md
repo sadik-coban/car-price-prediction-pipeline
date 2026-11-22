@@ -59,7 +59,7 @@ In **percentage** terms the model struggles on cheap cars — error varies sharp
 
 An asking-price error costs money in both directions: **over-estimating hits the buyer** — they overpay; **under-estimating hits the seller** — the car goes too cheap. A single number hides how sure the estimate is; a range states it and warns the user exactly where uncertainty is large.
 
-That is why the output is a **90% range**, not one number. With one margin the range does not hold on cheap cars: coverage in the cheapest predicted quartile is **81.0%**, below target. With the margin computed per price band, on the new listings of the snapshot after training the cheapest band covers 88.8%–92.5% instead of 77.1%–85.3%. On cars without a comparable the range fails either way (64.3%–76.2%); with the per-band margin coverage drops further there.
+That is why the output is a **90% range**, not one number. With one margin the range does not hold on cheap cars: coverage in the cheapest predicted quartile is **81.0%**, below target. With the margin computed per price band, on the last snapshot's new listings (the model trained on the listings before it) the cheapest band covers 88.8% instead of 77.1%. On cars without a comparable the range fails either way (68.3% and 65.3%); with the per-band margin coverage drops further there.
 
 ![How often the 90% range held (target 90%)](figures/en-12-coverage.png)
 
@@ -68,9 +68,6 @@ That is why the output is a **90% range**, not one number. With one margin the r
 - Compute the range's margin per price band: wider on cheap cars, narrower on expensive ones — don't trust a point estimate. On cars without a comparable, don't trust the range either.
 - Price rare and edge cars by hand; the model scatters there.
 - Review a listing whose text mentions a conversion, an engine swap or modifications before it goes live: that information is not in the form. With vehicle attributes held fixed no significant difference in its error rate was measured; the review guards against what the form cannot see, not against model error.
-- **Watch the error directly, retrain on new snapshots:** the price arrives with every snapshot, so the model's error on new listings can be measured directly. On the same new listings the model trained on the oldest snapshot errs 0.40 points more than the latest one; the market level moved +2.0% over four snapshots and the model is time-blind.
-- **Watch the price distribution as a diagnostic:** it moves little today (highest PSI 0.005); it does not trigger retraining on its own.
-- **Watch for events that reset the pricing regime** (a tax or excise change, an incentive, a sudden market move) — plan retraining around them. Do not discard old snapshots: on the same listings, accumulating never raised the error significantly and lowered it in some comparisons.
 
 ## What this model does not give you
 
@@ -78,6 +75,7 @@ That is why the output is a **90% range**, not one number. With one margin the r
 - **Causation.** These are controlled associations; it won't say "repaint it and the price drops".
 - **The value of one specific damaged car.** The model sees damage at panel and panel-group level (painted · changed · heavy-damage record) but not its **severity**: a light scratch and a deep dent land on the same "painted" flag.
 - **Equipment beyond the package, and modifications.** The trim package in the model name (M Sport, S Line and the like) is read; options outside the package and later changes are not visible.
+- **Time.** The model learns the prices of the four snapshots together and does not see the period. On the last snapshot's new listings its error is 6.78%; the 6.49% above comes from a measurement that mixes the snapshots.
 - **Anything outside BMW and Audi.** Scope is these two brands; how far it generalises to other brands was not measured.
 
 **Scale:** 29,988 listings, 4 scrape snapshots. **Data:** 2026-01-18 – 2026-06-27. Median asking price ₺1.55M.

@@ -16,7 +16,7 @@ koşulmazsa JSON değişmez.
 bölümleriyle aynı:
 - [1_data](../notebooks/1_data.ipynb): 1–4. bölümler;
 - [2_market_and_model](../notebooks/2_market_and_model.ipynb): 5–7;
-- [3_errors_and_time](../notebooks/3_errors_and_time.ipynb): 8–10;
+- [3_errors_and_text](../notebooks/3_errors_and_text.ipynb): 8–9;
 - [4_shap](../notebooks/4_shap.ipynb): SHAP raporu.
 
 Her betik için defter kartını, sonuçlarını tablo olarak ve raporun figürlerini gösterir. Sonuç iki yoldan gelir:

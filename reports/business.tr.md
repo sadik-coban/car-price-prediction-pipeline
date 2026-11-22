@@ -59,7 +59,7 @@ Model ucuz araçlarda **yüzde olarak** zorlanıyor — hata tahmin edilen fiyat
 
 İlan fiyatında iki yönlü hata da para kaybettirir: **fazla tahmin alıcıya patlar** — pahalıya alınmış araç; **düşük tahmin satıcıya** — ucuza gitmiş araç. Tek sayı ne kadar emin olunduğunu saklar; aralık bunu söyler ve kullanıcıyı belirsizliğin büyük olduğu yerde uyarır.
 
-Bu yüzden çıktı tek sayı değil, **%90 aralık**. Tek bir hata payıyla aralık ucuz araçlarda tutmuyor: tahmini en ucuz çeyrekte kapsama **%81.0**, hedefin altında. Hata payı fiyat bandına göre ayrı hesaplanınca, eğitimden sonraki taramanın yeni ilanlarında en ucuz bantta kapsama %77.1–%85.3 yerine %88.8–%92.5 oluyor. Emsalsiz araçta ise aralık iki yolla da tutmuyor (%64.3–%76.2); banda göre payla kapsama orada daha da düşüyor.
+Bu yüzden çıktı tek sayı değil, **%90 aralık**. Tek bir hata payıyla aralık ucuz araçlarda tutmuyor: tahmini en ucuz çeyrekte kapsama **%81.0**, hedefin altında. Hata payı fiyat bandına göre ayrı hesaplanınca, son taramanın yeni ilanlarında (model ondan önceki ilanlarla eğitildi) en ucuz bantta kapsama %77.1 yerine %88.8 oluyor. Emsalsiz araçta ise aralık iki yolla da tutmuyor (%68.3 ve %65.3); banda göre payla kapsama orada daha da düşüyor.
 
 ![%90 aralık kaç ilanda tuttu (hedef %90)](figures/tr-12-coverage.png)
 
@@ -68,9 +68,6 @@ Bu yüzden çıktı tek sayı değil, **%90 aralık**. Tek bir hata payıyla ara
 - Aralığın hata payını fiyat bandına göre ayrı hesapla: ucuz araçta daha geniş, pahalıda daha dar — tek sayıya güvenme. Emsalsiz araçta aralığa da güvenme.
 - Nadir ve uç araçları elle fiyatla; model orada saçılıyor.
 - Metninde dönüşüm, motor değişimi ya da modifiye geçen ilanı yayına almadan önce gözden geçir: bu bilgi formda yok. Araç özellikleri sabitken bu ilanlarda hata oranında anlamlı bir fark ölçülmedi; gözden geçirme model hatasına değil, formun göremediği bilgiye karşı.
-- **Hatayı doğrudan izle, modeli yeni taramalarla yeniden eğit:** fiyat her taramada geldiği için modelin yeni ilanlardaki hatası doğrudan ölçülebilir. Aynı yeni ilanlarda en eski taramayla eğitilen model en yenisinden 0.40 puan daha çok yanılıyor; piyasa seviyesi 4 dönemde +%2.0 kaydı ve model zamanı görmüyor.
-- **Fiyat dağılımını tanı için izle:** dağılım bugün az kayıyor (en yüksek PSI 0.005); yeniden eğitimi tek başına tetiklemez.
-- **Fiyat rejimini değiştiren gelişmeleri takip et** (vergi/ÖTV düzenlemesi, teşvik, ani piyasa hareketi gibi) — eğitim planı bunlara göre yapılmalı. Eski dönemleri atma: aynı ilanlarda birikimli eğitim hatayı hiçbir karşılaştırmada anlamlı artırmadı, bir kısmında düşürdü.
 
 ## Bu model neyi vermez
 
@@ -78,6 +75,7 @@ Bu yüzden çıktı tek sayı değil, **%90 aralık**. Tek bir hata payıyla ara
 - **Nedenselliği.** Bunlar kontrollü ilişkiler; "boya yaptır, fiyat düşer" demez.
 - **Belirli bir hasarlının değerini.** Model hasarı panel ve panel grubu düzeyinde görüyor (boyalı · değişen · ağır hasar kaydı) ama **şiddetini** görmüyor: hafif bir çizik de derin bir göçük de aynı "boyalı" bayrağına düşüyor.
 - **Paketin ötesindeki donanımı ve modifiyeyi.** Model adındaki donanım paketi (M Sport, S Line gibi) okunuyor; paketin dışındaki opsiyonlar ve sonradan yapılan değişiklikler görünmüyor.
+- **Zamanı.** Model dört taramanın fiyatlarını birlikte öğrenir, dönem farkını görmez. Son taramada yeni ilanlardaki hatası %6.78; yukarıdaki %6.49 taramaları karıştıran ölçümden.
 - **BMW ve Audi dışını.** Kapsam bu iki marka; başka markalara ne kadar genellenebildiği ölçülmedi.
 
 **Ölçek:** 29.988 ilan, 4 tarama dönemi. **Veri:** 2026-01-18 – 2026-06-27. Medyan ilan fiyatı ₺1.55M.

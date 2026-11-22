@@ -5,7 +5,7 @@
 >
 > **Güncelleme (2026-11-22, kullanıcı kararı):**
 > - `simple-notebooks` denemesi (01'in `.py` ↔ `.ipynb` ikizi, `sync_notebooks`) geri alındı.
-> - Yerine kökte `notebooks/` altında dört defter kuruldu: `1_data`, `2_market_and_model`, `3_errors_and_time`,
+> - Yerine kökte `notebooks/` altında dört defter kuruldu: `1_data`, `2_market_and_model`, `3_errors_and_text`,
 >   `4_shap`.
 > - Hafif betikler defterde kaydetmeden koşar (`records.run`; kaydet hücresi `if __name__ == "__main__":` altında)
 >   ve sonuç kayıtla karşılaştırılır. Ağır sekiz betik (`records.HEAVY`) `metrics/`'ten okunur. Defter tarafının

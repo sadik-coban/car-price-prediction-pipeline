@@ -1,6 +1,6 @@
 # İkinci El Araç Piyasası Analizi — Teknik Rapor
 
-Bu rapor iki soruya yanıt arar: İkinci el araç fiyatını ne belirler ve model bunu ne kadar isabetle öngörebilir? Analiz; **29.988** TR plakalı BMW/Audi ilanında veri temizliği ve sızıntı kontrolünden geçerek kontrollü fiyat etkileri, piyasa yapısı, model karşılaştırması ve zamansal testleri ortaya koyar. LightGBM ortalama **%6.49** yüzde hatayla (MAE: **₺110K**, R²: **0.9745**) çalışarak emsal medyanına (aynı model ve yıl; emsal yoksa daha geniş medyan) göre ortalama mutlak hatada (MAE) **%43** daha iyi sonuç verir. Paylaşılan tüm metrikler, modelin daha önce görmediği veriler üzerinden **5-fold out-of-fold** kurgusuyla hesaplanmıştır. Hedef ilan fiyatıdır, satış fiyatı değil: satış fiyatı pazarlıkla bundan ayrılır.
+Bu rapor iki soruya yanıt arar: İkinci el araç fiyatını ne belirler ve model bunu ne kadar isabetle öngörebilir? Analiz; **29.988** TR plakalı BMW/Audi ilanında veri temizliği ve sızıntı kontrolünden geçerek kontrollü fiyat etkileri, piyasa yapısı, model karşılaştırması ve yeni ilanlarda bir ileri testi ortaya koyar. LightGBM ortalama **%6.49** yüzde hatayla (MAE: **₺110K**, R²: **0.9745**) çalışarak emsal medyanına (aynı model ve yıl; emsal yoksa daha geniş medyan) göre ortalama mutlak hatada (MAE) **%43** daha iyi sonuç verir. Manşet metrikler, modelin daha önce görmediği veriler üzerinden **5-fold out-of-fold** kurgusuyla hesaplanmıştır; ileri test §8'de. Hedef ilan fiyatıdır, satış fiyatı değil: satış fiyatı pazarlıkla bundan ayrılır.
 
 ## 1. Veri temizleme ve sızıntı tespiti
 
@@ -45,7 +45,7 @@ Toplanan veriye modelden önce sırasıyla şunlar uygulandı:
 
 1. **Yapısal** — yaş · km · motor gücü/hacmi · kasa · yakıt · vites · çekiş · segment.
 2. **Hasar / ekspertiz** — 13 kaporta paneli × {değişen, boyalı, lokal boya} + ağır hasar kaydı. Bu 39 ham bayrak modele 12 öznitelik olarak giriyor: tavan · kaput · bagaj tek panel olduğu için **durum** (orijinal/lokal/boyalı/değişen), kapı · çamurluk · tampon ise grup içi **sayı** (kapı 0–4, çamurluk 0–4, tampon 0–2).
-3. **Serbest metin** — satıcı açıklaması; modelde **kullanılmıyor**. Ölçüldü: log R²'ye katkısı 0.0008; ayrıntısı §10'da.
+3. **Serbest metin** — satıcı açıklaması; modelde **kullanılmıyor**. Ölçüldü: log R²'ye katkısı 0.0008; ayrıntısı §9'da.
 
 **"Belirtilmemiş" panel orijinal sayıldı.** Site her panel için beş cevaptan birini veriyor: orijinal, belirtilmemiş, boyalı, lokal boyalı, değişmiş. Modele giren ilanlarda 59.651 panel (%15.3) belirtilmemiş; 1.235 ilanda 13 panelin hiçbiri belirtilmemiş. Bu cevap bilinçli bir kararla orijinal gibi kodlandı; gerekçe, satıcının hasarı yazmayı unutmuş olabileceği ama hasar olmamasının daha olası sayılması.
 
@@ -260,7 +260,7 @@ Rapordaki model: **LightGBM (model/seri adı TF-IDF+SVD)** — MAPE **%6.49**, R
 
 Merdiven: (model, yıl) medyanı → (model) medyanı — tüm yıllar → global medyan. Test'teki (model, yıl) hücresi eğitim fold'unda yoksa taban bir alt basamağa iner; her inişte hata belirgin büyür — emsalsiz araçta taban zaten zayıf. Medyanlar her fold'da yalnız eğitim kısmından hesaplanır (sızıntısız, modelle aynı 5-fold).
 
-**Model Kısıtları ve Gözlemler.** Modifiye, özel donanım veya ÖTV muafiyeti gibi form alanlarında yer almayıp serbest metne gizlenen bilgiler modele girmiyor; metninde dönüşüm ya da modifiye ifadesi geçen ilanlarda büyük hata oranı ham olarak %4.9, diğerlerinde %3.9; yaş, km, fiyat, performans ailesi, emsal sayısı ve marka sabitken olasılık oranı 1.14 (%95 GA 0.94–1.37): anlamlı bir fark ölçülmedi. Bu ifade performans ailelerindeki ilanların %43.6 kadarında geçiyor. Emsali olmayan ilanlarda hata belirgin şekilde büyüyor: aynı model ve yıldan başka ilan yoksa büyük hata oranı %19.0, 100+ emsal varsa %2.9; lira ölçeğindeki en büyük hatalar da bu uçta (§8). Kapsamlı bir hiperparametre optimizasyonuna bilinçli olarak gidilmedi; getirisi bu raporda ölçülmedi.
+**Model Kısıtları ve Gözlemler.** Modifiye, özel donanım veya ÖTV muafiyeti gibi form alanlarında yer almayıp serbest metne gizlenen bilgiler modele girmiyor; metninde dönüşüm ya da modifiye ifadesi geçen ilanlarda büyük hata oranı ham olarak %4.9, diğerlerinde %3.9; yaş, km, fiyat, performans ailesi, emsal sayısı ve marka sabitken olasılık oranı 1.14 (%95 GA 0.94–1.37): anlamlı bir fark ölçülmedi. Bu ifade performans ailelerindeki ilanların %43.6 kadarında geçiyor. Emsali olmayan ilanlarda hata belirgin şekilde büyüyor: aynı model ve yıldan başka ilan yoksa büyük hata oranı %19.0, 100+ emsal varsa %2.9; lira ölçeğindeki en büyük hatalar da bu uçta (§8). Kapsamlı bir hiperparametre optimizasyonuna bilinçli olarak gidilmedi; getirisi bu raporda ölçülmedi. Model zamanı görmez: dört taramanın fiyatlarını birlikte öğrenir ve yukarıdaki hatalar taramaları karıştıran 5-fold OOF'tan; son taramada yeni ilanlardaki hata §8'de.
 
 Servis edilen LightGBM bütün ilanlarla, CV'de erken durdurmanın seçtiği ağaç sayılarının medyanıyla (258 ağaç) eğitiliyor; yani yukarıdaki ölçümle aynı ayarda.
 
@@ -297,7 +297,6 @@ Hatası ±%20 sınırını aşan 1.208 ilan (768 fazla, 440 düşük tahmin). A�
 
 1. **Emsal yok.** Aynı model ve yıldan başka ilan yoksa büyük hata oranı %19.0, 100+ emsal varsa %2.9.
 2. **Uç ya da yaşlı araç.** F/S segmentte %19.1 — ama o iki segmentte toplam 444 ilan var (F 325 · S 119), yani en riskli işaretlenen yer aynı zamanda en ince olanı. Diğerleri %3.8; yaş ≥ 18'de %12.0 (daha gençlerde %3.2).
-3. **Zaman ve hayatta kalma.** Medyan artık ilanın son görüldüğü taramaya göre değişiyor: 2026-01-18 -%3.27 → 2026-06-27 +%1.38. Bunun bir kısmı dönem: model zamanı görmüyor ve piyasa bu aralıkta +%1.98 kaydı (§9). Bir kısmı hayatta kalma: son taramada hâlâ yayında olan 11.526 ilanın medyan artığı +%1.38, daha önce kalkan 18.462 ilanınki -%1.24; piyasanın yerinde saydığı ilk iki tarama arasında (%0.00) bile medyan artık -%3.27 → -%1.75 geçiyor — erken kalkan ilanlar modelin söylediğinden ucuza fiyatlanmıştı.
 
 **18 yaş verinin seçtiği bir eşik değil.** Büyük hata oranı yaşla artıyor: 5 yaş %0.35 · 10 yaş %1.56 · 15 yaş %7.86 · 18 yaş %11.69 · 21 yaş %15.34. En büyük bir yıllık sıçrama 16→17 yaş arasında (%7.79 → %12.72). Kesim 8 ile 21 arasında kaydırılınca yaşlı/genç oranı 3.5–6.7 kat arasında kalıyor; 18'de 3.7 kat. Ayrıca en yaşlı kova toplama sınırına dayanıyor: veri 2005 model yılıyla başlıyor, yani 18 ve üstü kovada yalnız 4 model yılı var.
 
@@ -327,9 +326,9 @@ Her nokta bir model; y ekseni o modelin ilanlarındaki medyan hata. Kova medyan�
 
 **Conformal aralık**, modelin tek bir fiyatın yanında veriye dayalı bir fiyat bandı da (örneğin ₺1.34M – ₺1.78M) sunmasıdır.
 
-- **Dağılım varsayımı yapmaz:** Hataların bir formüle (çan eğrisi vb.) uyduğu varsayılmaz. Modelin daha önce hiç görmediği araçlardaki gerçek hataları sıralanır, en kötü %10'u dışarıda bırakılır ve pay doğrudan veriden okunur. Tek varsayım, yeni ilanların eskilere benzemesidir — piyasa kaydıkça (§9) bu varsayım zayıflar.
+- **Dağılım varsayımı yapmaz:** Hataların bir formüle (çan eğrisi vb.) uyduğu varsayılmaz. Modelin daha önce hiç görmediği araçlardaki gerçek hataları sıralanır, en kötü %10'u dışarıda bırakılır ve pay doğrudan veriden okunur. Tek varsayım, yeni ilanların eskilere benzemesidir; son taramanın yeni ilanlarında bu varsayımın ne kadar tuttuğu aşağıda.
 - **Oransaldır:** Hata payı lira değil yüzde olarak uygulanır (tahminin yaklaşık %13 altı ile %15 üstü). Bu yüzden pahalı araçta lira bandı geniş, ucuz araçta dar çıkar.
-- **Kalibrasyonu başka ilanlardan:** Kapsama çapraz ölçülür: her katın aralığı yalnız öteki katların hatalarından kurulur, hiçbir ilanın kendi hatası kendi aralığını ayarlamaz. Katlar rastgele olduğu için genel kapsama (%89.99) yine de hedefe neredeyse kendiliğinden oturur; asıl sınav, sonraki taramanın yeni ilanlarındaki ileri kapsama (aşağıda).
+- **Kalibrasyonu başka ilanlardan:** Kapsama çapraz ölçülür: her katın aralığı yalnız öteki katların hatalarından kurulur, hiçbir ilanın kendi hatası kendi aralığını ayarlamaz. Katlar rastgele olduğu için genel kapsama (%89.99) yine de hedefe neredeyse kendiliğinden oturur; asıl sınav, son taramanın yeni ilanlarındaki ileri kapsama (aşağıda).
 
 **Zayıflık fiyata bağlı:** medyan hata tahmini en ucuz çeyrekte %6.95, en pahalıda %3.55. Tüm piyasaya tek bir yüzde uygulanınca, modelin oransal olarak daha çok yanıldığı ucuz bantta aralık dar kalıyor: Q1 kapsaması %81.0.
 
@@ -350,17 +349,16 @@ Liraya çevrilince tablo değişiyor: toplam lira hatasının %38.9 kadarı tahm
 
 **Not:** Bantlar tahmin edilen fiyattan kesildi: bir fiyatlama aracının bildiği tek şey o. Gerçek fiyata göre gruplamak ortalamaya dönüş üretir. Genişlik, aralığın alt ve üst ucu arasındaki farkın o banttaki medyanı.
 
-**İleri kapsama (ölçüt sonuçtan önce yazıldı).** Servis edilen tarif ileriye uygulandı: q eğitim taramasının kendi OOF hatalarından, test sonraki taramanın yeni ilanlarında (§9'daki dokuz ileri kurulum). Tek payla genel kapsama %87.3–%92.4, en ucuz bantta %77.1–%85.3. Banda göre pay en ucuz bandı her kurulumda düzeltiyor (%88.8–%92.5) ama her bantta %88'i tutmuyor: en düşük %84.9. Aynı model ve yılı eğitimde hiç olmayan ilanlarda kapsama iki kolda da düşük (tek pay %64.3–%76.2, banda göre %63.0–%73.0); banda göre pay orada her kurulumda kapsamayı daha da düşürüyor.
+**Yeni ilanlarda: ileri test.** Son taramadan önce görülen 21.099 ilanla eğitilen model (her ilan son fiyatıyla), son taramada (2026-06-27) ilk kez görülen 8.889 ilanı fiyatladı. MAPE %6.78 (%95 aralık %6.42–%7.17); taramaları karıştıran 5-fold OOF'ta %6.49. Servis edilen aralık tarifi aynen uygulandı: q ve bant sınırları yalnız eğitim ilanlarının kendi OOF hatalarından. Tek payla kapsama %87.4, banda göre payla %88.0. Aynı model ve yılı eğitimde hiç olmayan 297 ilanda kapsama iki yolla da hedefin altında (tek pay %68.3, banda göre %65.3).
 
-| bant | tek pay | banda göre |
-|---|---:|---:|
-| Q1 | %77.1–%85.3 | %88.8–%92.5 |
-| Q2 | %88.6–%92.1 | %87.3–%91.0 |
-| Q3 | %89.8–%94.5 | %84.9–%91.6 |
-| Q4 | %92.9–%96.2 | %88.0–%92.5 |
-| emsalsiz (model+yıl eğitimde yok) | %64.3–%76.2 | %63.0–%73.0 |
+| bant | ilan | tek pay | banda göre |
+|---|---:|---:|---:|
+| Q1 | 2.215 | %77.1 | %88.8 |
+| Q2 | 2.248 | %88.6 | %87.3 |
+| Q3 | 2.213 | %90.7 | %87.4 |
+| Q4 | 2.213 | %93.2 | %88.3 |
+| emsalsiz (model+yıl eğitimde yok) | 297 | %68.3 | %65.3 |
 
-Hücreler dokuz ileri kurulumdaki kapsamanın en düşüğü–en yükseği.
 
 ### En büyük hatalar
 
@@ -370,96 +368,7 @@ Hücreler dokuz ileri kurulumdaki kapsamanın en düşüğü–en yükseği.
 
 ![Lira ölçeğinde hata — tahmin − gerçek](figures/tr-28-residual-lira.png)
 
-## 9. Zaman — dönem etkisi, dağılım kayması ve backtest
-
-İki ölçü var. **Dağılım kayması:** dönemler arası fiyat dağılımı az kayıyor (en yüksek PSI 0.005, "kayma yok" eşiği 0.10). **Zamansal backtest:** 06-27 taramasına yeni gelen aynı 8.889 ilan, önceki her taramayla ayrı ayrı eğitilen modelle fiyatlandı; en eski taramayla (01-18) eğitilen model en yenisiyle (03-21) eğitilenden +0.40 [+0.27, +0.52] puan daha çok yanılıyor. Aynı model ve yılın ilanlarında piyasa seviyesi +%2.0 kaydı ve model zamanı görmüyor → yeniden eğitim takvime değil **ölçülen hataya** bağlanmalı; dağılım kayması tanı için izlenir (bölümün sonu).
-
-### Dönem etkisi
-
-| dönem | canlı piyasa (aynı model+yıl) | dağılım mesafesi (EMD) |
-|---|---:|---:|
-| 01-18 (taban) | %0.00 | — |
-| 01-27 | %0.00 (776) | ₺10.109 |
-| 03-21 | +%0.85 (728) | ₺20.560 |
-| 06-27 | +%1.98 (701) | ₺48.059 |
-
-İki sütun iki ayrı soruya cevap veriyor. **Canlı piyasa**: aynı model ve yılın ilanlarında medyan fiyat ne kadar değişti (parantez içinde karşılaştırılan hücre sayısı) — ilan bileşiminden arınmış, model varsayımı yok. **EMD**: iki dönemin fiyat dağılımını üst üste getirmek için gereken ortalama kaydırma; bileşim dahil. Hedonik model dönem etkisi içermiyor, dönemler havuzlanarak kestirildi. Rapordaki model (LightGBM) de zamansızdır: dönem özniteliği almaz.
-
-### Zamansal backtest
-
-| tek dönem: eğitim → test | MAPE [%95 GA] | n | kümülatif: eğitim → test | MAPE [%95 GA] | n |
-|---|---:|---:|---|---:|---:|
-| 01-18 → 01-27 | %6.29 [5.90, 6.73] | 2.960 | ≤01-18 → 01-27 | = tek dönem | = |
-| 01-18 → 03-21 | %6.59 [6.24, 6.96] | 8.182 | ≤01-18 → 03-21 | = tek dönem | = |
-| 01-18 → 06-27 | %7.34 [6.95, 7.73] | 10.529 | ≤01-18 → 06-27 | = tek dönem | = |
-| 01-27 → 03-21 | %6.54 [6.18, 6.91] | 7.413 | ≤01-27 → 03-21 | %6.47 [6.09, 6.83] | 7.238 |
-| 01-27 → 06-27 | %7.18 [6.82, 7.60] | 10.313 | ≤01-27 → 06-27 | %7.23 [6.85, 7.64] | 10.257 |
-| 03-21 → 06-27 | %6.90 [6.49, 7.33] | 9.099 | ≤03-21 → 06-27 | %6.78 [6.42, 7.17] | 8.889 |
-
-Tek dönem = yalnız bir taramada eğit, sonrakini tahmin et. Kümülatif = t'ye kadarki tüm taramalarda eğit. Test kümesi yalnız eğitimde hiç görülmemiş `ad_id`'ler (sızıntısız); **n** bu ilanların sayısı ve MAPE bu ilanlarda. Ör. 01-27 taramasındaki 11.254 ilanın 8.294 tanesi 01-18 taramasında da yayındaydı; test edilen kalan 2.960 ilan. Kümülatifte t'ye kadarki her taramada görülen ilan çıktığı için n tek dönemden küçük ya da eşit. "=" işaretli kümülatif hücreler tek dönem koluyla aynı deneydir (ilk taramaya kadar birikim tek bir taramadır).
-
-Kurulum manşet modelinki: model ve seri adı TF-IDF+SVD, aynı LightGBM ayarları. Ağaç sayısını, servis edilen modeldeki gibi, eğitim kümesinin kendi içindeki 5 katlı erken durdurma seçiyor (161–211 ağaç); test taraması durdurmak için hiç kullanılmıyor. Köşeli parantez %95 güven aralığı: test ilanları modele göre yeniden örneklenerek (bir modelin ilanları birbirinden bağımsız değil) 1.000 kez hesaplandı.
-
-Aynı eğitim taramasından (01-18) test ufku uzadıkça MAPE %6.29 → %7.34; güven aralıkları örtüşmüyor. Ama her ufkun test ilanları farklı: başka ilanlar, başka bileşim, başka test taraması. Bu fark yalnız zamana bağlanamaz.
-
-**Sabit test kümesinde ufuk.** Bu çekince aynı ilanlarda kalkıyor: 06-27 taramasına yeni gelen 8.889 ilan (önceki hiçbir taramada görülmemiş) önceki her tek taramayla eğitilen modelle fiyatlandı. MAPE eğitim taramasına göre 01-18 %7.29, 01-27 %7.13, 03-21 %6.89; en yeni eğitime göre fark 01-18 +0.40 [+0.27, +0.52], 01-27 +0.24 [+0.13, +0.34] (eşli, modele göre kümeli). Aynı ilanlarda eğitim taraması eskidikçe hata artıyor.
-
-| test | tek dönem eğitimi | kümülatif eğitimi | ortak ilan | tek dönem | kümülatif | fark [%95 GA] |
-|---|---|---|---:|---:|---:|---:|
-| 03-21 | 01-27 | ≤01-27 | 7.238 | %6.52 | %6.47 | -0.04 [-0.12, +0.03] |
-| 06-27 | 01-27 | ≤01-27 | 10.257 | %7.17 | %7.23 | +0.06 [-0.01, +0.12] |
-| 06-27 | 03-21 | ≤03-21 | 8.889 | %6.89 | %6.78 | -0.11 [-0.20, -0.02] |
-
-Tek dönem ile kümülatif, aynı test taramasında ikisinin de test ettiği aynı ilanlarda eşli karşılaştırıldı (aynı yeniden örneklemeler). Üç karşılaştırmanın bir tanesinde birikim hatayı güven aralığı sıfırın altında kalacak kadar düşürüyor; kalan iki tanesinde fark örnekleme hatası içinde.
-
-### Dönem başına OOF
-
-| dönem (bağımsız) | MAPE | n | kümülatif | MAPE | n |
-|---|---:|---:|---|---:|---:|
-| 01-18 | %6.91 | 10.901 | ≤01-18 | %6.91 | 10.901 |
-| 01-27 | %6.92 | 11.254 | ≤01-27 | %6.67 | 13.861 |
-| 03-21 | %6.93 | 11.478 | ≤03-21 | %6.45 | 21.099 |
-| 06-27 | %7.09 | 11.526 | ≤06-27 | %6.49 | 29.988 |
-
-Bu tablo zamansal değil: her satır düz 5-fold OOF, yeni ilan kuralı yok. Son kümülatif satır manşet modelin OOF'unun kendisi (%6.49, 29.988 ilan). İlk ileri test (01-18 → 01-27, %6.29) aynı taramanın kendi içindeki OOF'undan (%6.91) düşük. Bu bir çelişki değil, iki ayrı ölçüm: ileri model taramanın tamamıyla eğitiliyor (OOF'ta her kat beşte dördüyle), test ise yalnız sonraki taramaya yeni gelen ilanlar — başka bir ilan kümesi.
-
-![Tek dönem ve biriken dönemler — ortalama yüzde hata](figures/tr-15-backtest.png)
-
-### Dağılım kayması
-
-| dönem çifti | ortak ilan (ilk taramanın payı) | KS | PSI | EMD (₺) |
-|---|---:|---:|---:|---:|
-| 01-18→01-27 | %76.1 | 0.0055 | 0.0004 | ₺10.109 |
-| 01-18→03-21 | %30.2 | 0.0173 | 0.0015 | ₺20.560 |
-| 01-18→06-27 | %9.1 | 0.0309 | 0.0049 | ₺48.059 |
-| 01-27→03-21 | %36.1 | 0.0161 | 0.0011 | ₺15.717 |
-| 01-27→06-27 | %10.8 | 0.0301 | 0.0038 | ₺39.115 |
-| 03-21→06-27 | %21.1 | 0.0157 | 0.0017 | ₺28.620 |
-
-**Sütunlar ne ölçüyor.** Üç ölçü de iki dönemin **ilan fiyatı dağılımını** karşılaştırır (ham fiyat, ₺; her dönemin o gün ilanda olan tüm ilanları, dönem başına ~11 bin).
-
-| ölçü | ne ölçer, nasıl okunur |
-|---|---|
-| **KS** | İki dağılımın en çok ayrıldığı nokta; 0–1 arası. "Şu fiyatın altında kalan ilan payı" iki dönemde en fazla ne kadar farklı? 0.031 = en ayrık noktada 3.1 puan fark. |
-| **PSI** | Fark pratikte büyük mü? İlk dönemin fiyatları 10 dilime bölünür; ikinci dönemde bu dilimlerin payı ne kadar kaymış? < 0.10 kayma yok · 0.10–0.25 orta · > 0.25 büyük. |
-| **EMD (₺)** | Fark kaç lira? Bir dönemin fiyat dağılımını ötekine çevirmek için fiyatların ortalama kaç lira kaydırılması gerektiği. Lira cinsinden tek ölçü olduğu için en doğrudan okunanı bu. |
-
-**Taramalar bağımsız örneklem değil.** Aynı ilan birkaç taramada birden görülüyor: ilk taramadaki ilanların %76.1 kadarı (01-18→01-27) ikinci taramada da var. Anlamlılık testleri (ör. KS p-değeri) iki örneklemin bağımsız olduğunu varsayar; bu yüzden p-değeri verilmiyor, tablo farkın büyüklüğünü gösteriyor.
-
-**Kayma tablosunun söylediği.** Tam taramalar arasındaki fark küçük: en yüksek PSI 0.0049, "kayma yok" eşiğinin (0.10) yirmide biri. EMD bunu liraya çeviriyor: dokuz günde ~₺10 bin, beş ayda ~₺48 bin — medyan ilan fiyatının (₺1.55M) yaklaşık %3 kadarı. En yakın iki taramada ilkindeki ilanların %76.1 kadarı ikincisinde de var, bu yüzden aralarındaki mesafe küçük çıkıyor.
-
-![Fiyat dağılımı — dönemlere göre](figures/tr-13-drift-hist.png)
-
-![Log-fiyat yoğunluğu — dönemlere göre](figures/tr-14-drift-kde.png)
-
-### Yeniden eğitim ne zaman
-
-- **Hatayı doğrudan izle, modeli yeni taramalarla yeniden eğit.** Fiyat her taramada geldiği için modelin yeni ilanlardaki hatası doğrudan ölçülebilir; yukarıdaki backtest tam bunu yapıyor. Aynı yeni ilanlarda en eski taramayla (01-18) eğitilen model en yenisinden +0.40 puan [+0.27, +0.52] daha çok yanılıyor.
-- **Kaymayı tanı için izle.** PSI · KS · EMD neyin değiştiğini gösterir ama yeniden eğitimi tek başına tetiklemez: bugünkü en yüksek PSI 0.0049, dağılım neredeyse kıpırdamazken model eskiyor. Sabit bir PSI eşiği yok.
-- **Fiyat rejimini değiştiren gelişmeler.** Vergi/ÖTV düzenlemesi, teşvik, ithalat kuralı, kur hareketi ya da ani piyasa anomalisi gibi dışsal olaylar kaymayı bir ölçüm penceresi dolmadan yaratabilir; bunlar ayrıca **tetikleyici** sayılmalı ve eğitim planı bunlara göre yapılmalı.
-- **Eski dönemleri atma.** Aynı test ilanlarındaki eşli karşılaştırmada birikimli eğitim üç karşılaştırmanın bir tanesinde hatayı anlamlı düşürüyor, hiçbirinde anlamlı artırmıyor (aralıklar test ilanlarının örneklemesini taşır, eğitimin değişkenliğini değil). Yeniden eğitim eski dönemleri atarak değil, **üstüne ekleyerek** yapılmalı.
-
-## 10. Serbest metin: ölçüldü, dahil edilmedi
+## 9. Serbest metin: ölçüldü, dahil edilmedi
 
 Satıcı açıklaması modele **girmiyor**. Bu bir ihmal değil, ölçüm sonucu: §7'deki model log fiyatta R² **0.9699**; aynı fold'larda açıklama metni eklenince **0.9707** — ΔR² **0.0008**, modelin açıklayamadığı log varyansın %2.6 kadarı. MAPE %6.49 → %6.41, ortalama mutlak hata ₺109.776 → ₺108.770.
 

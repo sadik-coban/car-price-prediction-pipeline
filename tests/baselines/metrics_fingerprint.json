@@ -4,7 +4,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-27T21:30:21+03:00",
+  "_meta.generated_at": "2026-11-22T18:55:09+03:00",
   "_meta.run_id": null,
   "_meta.script": "01_dedup_leakage.py",
   "error_drivers.plate_scope.distribution": {
@@ -85,7 +85,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-27T21:30:22+03:00",
+  "_meta.generated_at": "2026-11-22T18:55:10+03:00",
   "_meta.run_id": null,
   "_meta.script": "01_engine_rule.py",
   "error_drivers.engine_rule.definition": "referans = ayni modelin kesin (kovasiz) degerli ilanlarinin medyani; fark = |aday − referans|; yalniz iki siniri da bilinen kovalar ve referansi olan modeller; yuzdelikler 5/25/50/75/95; konum = (referans − alt) / (ust − alt); ciftler = [alt, ust, aralik mi, ilan], iki siniri da olan ilanlar (kesin degerde alt = ust)",
@@ -189,7 +189,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-27T21:30:26+03:00",
+  "_meta.generated_at": "2026-11-22T18:55:14+03:00",
   "_meta.run_id": null,
   "_meta.script": "01_unspecified_panels.py",
   "error_drivers.unspecified.all_unspecified": 1235,
@@ -213,7 +213,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-27T21:30:28+03:00",
+  "_meta.generated_at": "2026-11-22T18:55:15+03:00",
   "_meta.run_id": null,
   "_meta.script": "02_missingness.py",
   "error_drivers.raw_columns.raw": 117,
@@ -317,7 +317,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-28T20:44:49+03:00",
+  "_meta.generated_at": "2026-11-22T18:55:17+03:00",
   "_meta.run_id": null,
   "_meta.script": "03_association.py",
   "domain.numeric_correlation.high_pairs": {
@@ -374,7 +374,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-27T21:30:46+03:00",
+  "_meta.generated_at": "2026-11-22T18:55:19+03:00",
   "_meta.run_id": null,
   "_meta.script": "03_segment_quality.py",
   "domain.series_segment_matrix": {
@@ -417,7 +417,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-27T21:32:08+03:00",
+  "_meta.generated_at": "2026-11-22T18:55:20+03:00",
   "_meta.run_id": null,
   "_meta.script": "04_target.py",
   "domain.price_dist.median": 1545000.0,
@@ -435,7 +435,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-29T00:03:03+03:00",
+  "_meta.generated_at": "2026-11-22T18:55:24+03:00",
   "_meta.run_id": null,
   "_meta.script": "05_segmentation.py",
   "domain.age_depreciation": {
@@ -476,7 +476,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-28T22:28:15+03:00",
+  "_meta.generated_at": "2026-11-22T18:55:28+03:00",
   "_meta.run_id": null,
   "_meta.script": "06_hedonic.py",
   "domain.hedonic.age_pct": -5.8,
@@ -762,7 +762,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-27T21:56:38+03:00",
+  "_meta.generated_at": "2026-11-22T20:01:10+03:00",
   "_meta.run_id": "601741517e09",
   "_meta.script": "07_text_flag.py",
   "error_drivers.text_flag.big_pct": 4.9,
@@ -783,7 +783,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-28T22:29:30+03:00",
+  "_meta.generated_at": "2026-11-22T20:01:13+03:00",
   "_meta.run_id": "601741517e09",
   "_meta.script": "08_conformal_coverage.py",
   "domain.conformal.by_quantile": {
@@ -815,12 +815,54 @@
    "sha256": "8760f7f7af0a91d83ac8618e804345611abd6586d2c9e3459c5d3f516e8c6b9c"
   }
  },
+ "08_forward_test": {
+  "_meta.data_until": "2026-06-27",
+  "_meta.db.path": "data/cars.duckdb",
+  "_meta.db.rows": 45315,
+  "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
+  "_meta.generated_at": "2026-11-22T20:01:55+03:00",
+  "_meta.run_id": null,
+  "_meta.script": "08_forward_test.py",
+  "methodology.forward_test.MAPE": 6.78,
+  "methodology.forward_test.ci_hi": 7.17,
+  "methodology.forward_test.ci_lo": 6.42,
+  "methodology.forward_test.coverage.bands": {
+   "len": 4,
+   "sha256": "df2a4fb10a611c6cef34028e2304a12edb22ede6018d5feb6a2a6109bad761db"
+  },
+  "methodology.forward_test.coverage.bounds": {
+   "len": 3,
+   "sha256": "e6c070f75f18d6a40b03e2cd566710e7e53786bd57428657e7985b9a712febe0"
+  },
+  "methodology.forward_test.coverage.coverage_band": 87.99,
+  "methodology.forward_test.coverage.coverage_global": 87.4,
+  "methodology.forward_test.coverage.n": 8889,
+  "methodology.forward_test.coverage.no_comparable.coverage_band": 65.32,
+  "methodology.forward_test.coverage.no_comparable.coverage_global": 68.35,
+  "methodology.forward_test.coverage.no_comparable.n": 297,
+  "methodology.forward_test.coverage.q": 0.1405,
+  "methodology.forward_test.coverage.q_band": {
+   "len": 4,
+   "sha256": "51d5c01e93b74606fb93da8571ac6121a5e0833484508d84d5561ca8cd79147a"
+  },
+  "methodology.forward_test.n": 8889,
+  "methodology.forward_test.n_train": 21099,
+  "methodology.forward_test.protocol.interval.level": 0.95,
+  "methodology.forward_test.protocol.interval.n_boot": 1000,
+  "methodology.forward_test.protocol.interval.resample": "model",
+  "methodology.forward_test.protocol.setup": "cv.fold_matrices + cv.LGB_PARAMS; trees = median of an inner 5-fold early-stopping CV on the training set, then one fit without early stopping",
+  "methodology.forward_test.protocol.test": "listings first seen in the last snapshot",
+  "methodology.forward_test.protocol.train": "every listing seen before the last snapshot, latest price per ad_id",
+  "methodology.forward_test.test": "2026-06-27",
+  "methodology.forward_test.train_until": "2026-03-21",
+  "methodology.forward_test.trees": 211
+ },
  "08_large_errors": {
   "_meta.data_until": "2026-06-27",
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-28T22:28:36+03:00",
+  "_meta.generated_at": "2026-11-22T20:01:18+03:00",
   "_meta.run_id": "601741517e09",
   "_meta.script": "08_large_errors.py",
   "error_drivers.age_cuts": {
@@ -843,10 +885,6 @@
   "error_drivers.by_segment_FS.F_or_S.n": 444,
   "error_drivers.by_segment_FS.other.big_pct": 3.8,
   "error_drivers.by_segment_FS.other.n": 29544,
-  "error_drivers.by_snapshot": {
-   "len": 4,
-   "sha256": "90053d4313780d156b0a8d5246ecac06aab8be86415ffa251588f96dd397117b"
-  },
   "error_drivers.examples": {
    "len": 3,
    "sha256": "3b3deacc8c98cd36c224a2f1971187c4a66da2d0b73c90617d317a3b0ef77a61"
@@ -865,11 +903,6 @@
   "error_drivers.lira_scaled.under_if_symmetric.hi": 77,
   "error_drivers.lira_scaled.under_if_symmetric.lo": 60,
   "error_drivers.lira_scaled.under_if_symmetric.mean": 67.8,
-  "error_drivers.live_vs_gone.gone_median_resid": -1.24,
-  "error_drivers.live_vs_gone.gone_n": 18462,
-  "error_drivers.live_vs_gone.last_snapshot": "2026-06-27",
-  "error_drivers.live_vs_gone.live_median_resid": 1.38,
-  "error_drivers.live_vs_gone.live_n": 11526,
   "error_drivers.overall.big_pct": 4.03,
   "error_drivers.overall.n": 29988,
   "error_drivers.overall.n_big": 1208,
@@ -899,7 +932,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-28T21:12:42+03:00",
+  "_meta.generated_at": "2026-11-22T20:01:15+03:00",
   "_meta.run_id": "601741517e09",
   "_meta.script": "08_residuals.py",
   "domain.pred_vs_true.ideal_line": {
@@ -919,7 +952,7 @@
   },
   "domain.residual_scatter.mean_resid_pct": -0.47,
   "domain.residual_scatter.n": 29988,
-  "domain.residual_scatter.note": "Artık% = (gerçek-tahmin)/gerçek, TÜM noktalar. Ortalama sıfıra yakın, ama medyan artık dönemlere göre %-3.27 ile %+1.38 arasında kayıyor (model zamanı görmüyor). Fiyata göre yanlılık tahmin edilen fiyata göre gruplanarak ölçülmeli; gerçek fiyata göre gruplamak ortalamaya dönüş üretir. Frontend: yoğunluk/hexbin render önerilir.",
+  "domain.residual_scatter.note": "Artık% = (gerçek-tahmin)/gerçek, TÜM noktalar. Ortalama sıfıra yakın. Fiyata göre yanlılık tahmin edilen fiyata göre gruplanarak ölçülmeli; gerçek fiyata göre gruplamak ortalamaya dönüş üretir. Frontend: yoğunluk/hexbin render önerilir.",
   "domain.residual_scatter.points": {
    "len": 29988,
    "sha256": "73578490d8a61b1a820e90141584bfced8c83d419f306ec1ff23f980ceafe547"
@@ -956,155 +989,12 @@
   "report.err_under20": 440,
   "report.model_r2_log": 0.9699
  },
- "09_backtest": {
-  "_meta.data_until": "2026-06-27",
-  "_meta.db.path": "data/cars.duckdb",
-  "_meta.db.rows": 45315,
-  "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-28T22:40:54+03:00",
-  "_meta.run_id": "601741517e09",
-  "_meta.script": "09_backtest.py",
-  "methodology.backtest.columns.forward": {
-   "len": 7,
-   "sha256": "cad79f89987cfbbcfd65302f8fd842b94c10833549fcd574910d52399c61b5de"
-  },
-  "methodology.backtest.columns.paired": {
-   "len": 9,
-   "sha256": "e62f92c32f19d3c3fb25c0bba02548b3be121268a0ea4623d5fb4570cb13438b"
-  },
-  "methodology.backtest.cumulative": {
-   "len": 6,
-   "sha256": "f1b6ee3af019538660a8db1e23f0e9fb9883c4c73e6e0280b676050d6ebd6896"
-  },
-  "methodology.backtest.forward_coverage": {
-   "len": 9,
-   "sha256": "9e0b0635796a7b997b069cd5dcceb0395a05060a64d3bffed388806d970eec18"
-  },
-  "methodology.backtest.horizon.n": 8889,
-  "methodology.backtest.horizon.rows": {
-   "len": 3,
-   "sha256": "a3e0133412586c3f67fb2352de10fe3494041e16440e352cfd8dc0b31bdc11fc"
-  },
-  "methodology.backtest.horizon.test": "06-27",
-  "methodology.backtest.horizon.vs_latest": {
-   "len": 2,
-   "sha256": "4a46d083d8c021f0bf293573bc26387f84712f1ff9bec3a419463922f11fb427"
-  },
-  "methodology.backtest.insample": {
-   "len": 4,
-   "sha256": "b0f57ca9b25b7b669906559cdf0ce390bb8d326071861ff9d69d1fa61bd0ea37"
-  },
-  "methodology.backtest.paired": {
-   "len": 3,
-   "sha256": "2d754d4757724d514aacbf687e6cdf90672950d0d31a7ce4c28774cbf6656d71"
-  },
-  "methodology.backtest.per_snapshot": {
-   "len": 4,
-   "sha256": "3cb4e90b6feb33f366b27751b3d9bd34da4fdeaf8953ac101a59523cb8c89757"
-  },
-  "methodology.backtest.protocol.interval.level": 0.95,
-  "methodology.backtest.protocol.interval.n_boot": 1000,
-  "methodology.backtest.protocol.interval.resample": "model",
-  "methodology.backtest.protocol.leak_free": {
-   "len": 2,
-   "sha256": "157d3646b52e16d28f83ad1478017eaf6ac1a2e2555c20e385e7e76fd61c791d"
-  },
-  "methodology.backtest.protocol.plain_kfold": {
-   "len": 2,
-   "sha256": "b3b9d739d449faff118fb799a07ebe369bd4c05e7365ad873acc47cb57ca354a"
-  },
-  "methodology.backtest.protocol.same_experiment": "cumulative first block (<= first snapshot) equals the single first block",
-  "methodology.backtest.protocol.setup": "headline: cv.fold_matrices + cv.LGB_PARAMS; forward trees = median of an inner 5-fold early-stopping CV on the training set, then one fit without early stopping",
-  "methodology.backtest.single": {
-   "len": 6,
-   "sha256": "d9d65de8c27543843defda3f8c5c45f893691e42023446e162c46f2ad3380f3c"
-  }
- },
- "09_drift": {
-  "_meta.data_until": "2026-06-27",
-  "_meta.db.path": "data/cars.duckdb",
-  "_meta.db.rows": 45315,
-  "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-28T20:44:55+03:00",
-  "_meta.run_id": null,
-  "_meta.script": "09_drift.py",
-  "domain.drift.all_pairs": {
-   "len": 6,
-   "sha256": "40afa3cbf074baa35e053a18c20e7750f76ffe7374babbcdefac494b7c402d4c"
-  },
-  "domain.drift.hist.2026-01-18": {
-   "len": 39,
-   "sha256": "aa2dceab0bda234b062b70d9cecc1bd8130afbc95841405efdce41b50af35eca"
-  },
-  "domain.drift.hist.2026-01-27": {
-   "len": 39,
-   "sha256": "40139d1631b493d280fd93fc10fa01e7dbc9b8313ca01be9e372a41fc500ba48"
-  },
-  "domain.drift.hist.2026-03-21": {
-   "len": 39,
-   "sha256": "94380258c6b9664f8f2d35fa4cf5cb08ee3a7c1beca4d73f3691017a2e115b16"
-  },
-  "domain.drift.hist.2026-06-27": {
-   "len": 39,
-   "sha256": "b6df37a708ddaf4afdef66109e71d97bd6ad774ad85864a321832a104577e5ba"
-  },
-  "domain.drift.hist.edges": {
-   "len": 40,
-   "sha256": "0bb1281713350f5965b4ed437adb3b78f6fd93d32a309c2828c78193e99e75ff"
-  },
-  "domain.drift.kde_log.2026-01-18": {
-   "len": 120,
-   "sha256": "890df62e2290f1f6b5831abdb6bab2ab928bb7d94de110604b02cabe793cf6a0"
-  },
-  "domain.drift.kde_log.2026-01-27": {
-   "len": 120,
-   "sha256": "67ef7d2495e9d13c03944da9c253e083663fc7add4f3f70b50f8d0ffa5ee6a99"
-  },
-  "domain.drift.kde_log.2026-03-21": {
-   "len": 120,
-   "sha256": "4c7cf02df253dc7db234fa554f3fddd26b1c573ad750ebe45843cacfdaca9b0b"
-  },
-  "domain.drift.kde_log.2026-06-27": {
-   "len": 120,
-   "sha256": "0c9ee60e7ad7defcdacf13a3ff74140b3a13a4d789f72a7623ee47805cc1d94f"
-  },
-  "domain.drift.kde_log.x": {
-   "len": 120,
-   "sha256": "4763054e01b9fd560b58a14615dd64077c30a4d18a0590b77879ac3d0bfd8572"
-  },
-  "domain.drift.kde_raw.2026-01-18": {
-   "len": 120,
-   "sha256": "4b79b174214e68042dd352135ac3b9bdb797518af40395c3041f73ab4cca499a"
-  },
-  "domain.drift.kde_raw.2026-01-27": {
-   "len": 120,
-   "sha256": "59a37f832e325656b9ad54324d2df507d5ec9bf154a59f1e8f873c308fc5647e"
-  },
-  "domain.drift.kde_raw.2026-03-21": {
-   "len": 120,
-   "sha256": "22cbbb94659eaa39309586542172af84433acbac04080453cebd2d0c53cc45eb"
-  },
-  "domain.drift.kde_raw.2026-06-27": {
-   "len": 120,
-   "sha256": "e8ddc3ebe6f3ffd92b5637d12d7492096b2446823f52d30765aac972e26d0d3e"
-  },
-  "domain.drift.kde_raw.x": {
-   "len": 120,
-   "sha256": "aabc32ed42af1802c25deb7cba7a0c24f42039d85c3dfe22d89f9fdb76414b74"
-  },
-  "domain.drift.note": "KS=maks dağılım farkı, PSI<0.10 güvenli/>0.25 retrain, EMD=kayma mesafesi (₺). hist.edges = bin kenarları (39 bin, 40 kenar); hist[snapshot] = yükseklikler.",
-  "error_drivers.period_shift.live": {
-   "len": 3,
-   "sha256": "1f85423bb1120b9a7aa2e4b25d3aa69dcfb196a23733b4268a3db38154700b3a"
-  },
-  "error_drivers.period_shift.min_cell_n": 3
- },
  "10_free_text": {
   "_meta.data_until": "2026-06-27",
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-27T21:58:31+03:00",
+  "_meta.generated_at": "2026-11-22T20:03:17+03:00",
   "_meta.run_id": null,
   "_meta.script": "10_free_text.py",
   "report.text_ablation.delta_r2": 0.0008,
@@ -1163,7 +1053,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-27T21:59:37+03:00",
+  "_meta.generated_at": "2026-11-22T18:55:49+03:00",
   "_meta.run_id": "601741517e09",
   "_meta.script": "shap/03_what_sets_price.py",
   "shap.cohorts.en.name": "Age (years)",
@@ -1345,7 +1235,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-27T22:00:35+03:00",
+  "_meta.generated_at": "2026-11-22T18:55:52+03:00",
   "_meta.run_id": "601741517e09",
   "_meta.script": "shap/06_one_listing.py",
   "shap_case.figures": {
