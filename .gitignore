@@ -25,6 +25,8 @@ venv/
 
 # --- artıklar ----------------------------------------------------------------
 __pycache__/
+# Jupyter'in otomatik kayıtları (defterler notebooks/ altında, commit'li)
+.ipynb_checkpoints/
 # pytest-cov'un ölçüm verisi (python -m pytest tests --cov=db)
 .coverage
 .vscode

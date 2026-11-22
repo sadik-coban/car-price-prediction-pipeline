@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "08_large_errors.py",
-  "generated_at": "2026-09-28T22:28:36+03:00",
+  "generated_at": "2026-11-22T18:55:38+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": "601741517e09",
   "source": {
    "script": {
-    "analysis/08_large_errors.py": "0efdb7cc8bdfe4e7c37e941d5407dfa7f0299e0759e45f407eb89269eb1c512a"
+    "analysis/08_large_errors.py": "06e510c90ad3b2c839e2c3612dd5b65340ae4ba15591e5e5ac7ae198293f0f33"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",

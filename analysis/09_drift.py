@@ -131,4 +131,5 @@ res = {"pairs": pairs, "kde_raw": kde_raw, "kde_log": kde_log, "hist": hist, "sh
 print("max PSI:", max(p[2] for p in pairs), "· cell shift | hücre kayması:", res["shift"])
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
-print("written | yazıldı:", save_metrics("09_drift", to_metrics(res)))
+if __name__ == "__main__":      # imported by notebooks/: no save | notebooks/ import edince kayıt yok
+    print("written | yazıldı:", save_metrics("09_drift", to_metrics(res)))

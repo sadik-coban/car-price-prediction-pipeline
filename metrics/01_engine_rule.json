@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "01_engine_rule.py",
-  "generated_at": "2026-09-27T21:30:22+03:00",
+  "generated_at": "2026-11-22T18:55:10+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": null,
   "source": {
    "script": {
-    "analysis/01_engine_rule.py": "89a954320e3ef965d779d0d6401fb341a01e10119bed8b14d33f95cc88ac4502"
+    "analysis/01_engine_rule.py": "43abc4e50acf2e3e72ed80bf354e207f06c16530c59d9a979eb024ba30413229"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",

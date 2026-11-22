@@ -129,8 +129,9 @@ res = {"case": case, "parts": breakdown(names, sv[i], row), "n_items": len(names
 print(case["name"], case["year"], "·", [(k, round(v, 3)) for k, v, _l in res["parts"]["top"]])
 
 # %% [6] Save | Kaydet — the only cell that writes files | dosya yazan tek hücre
-for lang in ("tr", "en"):
-    fig = fig_waterfall(names, sv[i], float(base_all[i]), row, case, lang)
-    fig.savefig(FIGDIR / f"{lang}-sh-06-waterfall.png")
-    plt.close(fig)
-print("written | yazıldı:", save_metrics("shap/06_one_listing", to_metrics(res), run_id=oof_info["run_id"]))
+if __name__ == "__main__":      # imported by notebooks/: no save | notebooks/ import edince kayıt yok
+    for lang in ("tr", "en"):
+        fig = fig_waterfall(names, sv[i], float(base_all[i]), row, case, lang)
+        fig.savefig(FIGDIR / f"{lang}-sh-06-waterfall.png")
+        plt.close(fig)
+    print("written | yazıldı:", save_metrics("shap/06_one_listing", to_metrics(res), run_id=oof_info["run_id"]))

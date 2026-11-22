@@ -144,4 +144,5 @@ res = {"structure": panel_structure(panel_cols, statuses), "matched": len(m), "n
 print({"matched": len(m), "at_least_one": int((n_unspec > 0).sum()), "all": int((n_unspec == len(panel_cols)).sum())})
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
-print("written | yazıldı:", save_metrics("01_unspecified_panels", to_metrics(res)))
+if __name__ == "__main__":      # imported by notebooks/: no save | notebooks/ import edince kayıt yok
+    print("written | yazıldı:", save_metrics("01_unspecified_panels", to_metrics(res)))

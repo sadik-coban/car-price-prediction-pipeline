@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "shap/06_one_listing.py",
-  "generated_at": "2026-09-27T22:00:35+03:00",
+  "generated_at": "2026-11-22T18:55:52+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": "601741517e09",
   "source": {
    "script": {
-    "analysis/shap/06_one_listing.py": "a714f09a17817a7992d773ec9ea05cc8e9b5415eb5a3e09831b8f732482da31f"
+    "analysis/shap/06_one_listing.py": "5a7b3307039e32cee6ad6d1bb9c3823ad8b048b3b4501f85fa2d256207956241"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",

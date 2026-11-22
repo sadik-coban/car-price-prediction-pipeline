@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "03_segment_quality.py",
-  "generated_at": "2026-09-27T21:30:46+03:00",
+  "generated_at": "2026-11-22T18:55:19+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": null,
   "source": {
    "script": {
-    "analysis/03_segment_quality.py": "13278a2118b96a933ef433c7c7b322b5de76322320283108a404b5f11a3474b1"
+    "analysis/03_segment_quality.py": "75a32eef3e8e63848bfd2972b9183a295932f3e28d0dd0ec9f5a6776bf81dc1d"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",

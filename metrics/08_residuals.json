@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "08_residuals.py",
-  "generated_at": "2026-09-28T21:12:42+03:00",
+  "generated_at": "2026-11-22T18:55:40+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": "601741517e09",
   "source": {
    "script": {
-    "analysis/08_residuals.py": "cc99ba44fcecec6a73346e3d4aa85bc39f278db93ccb5dbdbc2b072334642d36"
+    "analysis/08_residuals.py": "5d97f98d81154d4bead71d9a53bf997b7c5895ee3fe0c1b0ed9025c966d4cd39"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",

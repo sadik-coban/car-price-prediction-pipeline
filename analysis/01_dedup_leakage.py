@@ -267,4 +267,5 @@ res = {"rows": count_rows(all_rows, listings),
 print(res["rows"], res["price_changes"], sep="\n")
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
-print("written | yazıldı:", save_metrics("01_dedup_leakage", to_metrics(res)))
+if __name__ == "__main__":      # imported by notebooks/: no save | notebooks/ import edince kayıt yok
+    print("written | yazıldı:", save_metrics("01_dedup_leakage", to_metrics(res)))

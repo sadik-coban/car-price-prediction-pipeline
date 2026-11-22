@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "01_unspecified_panels.py",
-  "generated_at": "2026-09-27T21:30:26+03:00",
+  "generated_at": "2026-11-22T18:55:14+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": null,
   "source": {
    "script": {
-    "analysis/01_unspecified_panels.py": "838544bf96ca17ec1c6c5b20a52cdb72fb760371a1d3a1923e5a1fd80f72c69a"
+    "analysis/01_unspecified_panels.py": "9eca4683d159152ac24f6c22780ce57c061f2d2f8927b6bde46ecb41c9604cd9"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",

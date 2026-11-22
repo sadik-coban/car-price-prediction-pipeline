@@ -57,4 +57,5 @@ res = {"dist": price_distribution(price), "hist": price_histogram(price, HIST_ED
 print(res["dist"])
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
-print("written | yazıldı:", save_metrics("04_target", to_metrics(res)))
+if __name__ == "__main__":      # imported by notebooks/: no save | notebooks/ import edince kayıt yok
+    print("written | yazıldı:", save_metrics("04_target", to_metrics(res)))

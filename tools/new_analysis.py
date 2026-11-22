@@ -2,7 +2,9 @@
 new_analysis.py
 EN: Scaffolds a new analysis so that it cannot be born without a test and a card:
       analysis/<name>.py                  the three-layer template (pure functions → to_metrics → load / compute /
-                                          save cells), bilingual docstrings, # %% cells, save_metrics once;
+                                          save cells), bilingual docstrings, # %% cells, save_metrics once, under
+                                          `if __name__ == "__main__"` so a notebook can run the script without
+                                          saving (analysis/lib/records.py: run; a heavy script goes into HEAVY);
       tests/analysis/test_<name>.py       a stub marked `template` that FAILS until a real invariant replaces it;
       analysis/cards/<name>.json          the card with the question filled in and status "todo".
     It prints the line to add to analysis/run_all.py ORDER (it does not edit run_all.py). Until the card, the test
@@ -10,7 +12,9 @@ EN: Scaffolds a new analysis so that it cannot be born without a test and a card
     overwritten.
 TR: Yeni bir analizi, testsiz ve kartsız doğamayacak şekilde kurar:
       analysis/<ad>.py                    üç katmanlı şablon (saf fonksiyonlar → to_metrics → yükle / hesapla /
-                                          kaydet hücreleri), iki dilli docstring, # %% hücreleri, save_metrics bir kez;
+                                          kaydet hücreleri), iki dilli docstring, # %% hücreleri, save_metrics bir kez,
+                                          `if __name__ == "__main__"` altında; böylece defter betiği kaydetmeden
+                                          koşabilir (analysis/lib/records.py: run; ağır betik HEAVY'ye girer);
       tests/analysis/test_<ad>.py         `template` işaretli, gerçek bir invariant yerini alana dek DÜŞEN taslak;
       analysis/cards/<ad>.json            sorusu dolu, durumu "todo" kart.
     analysis/run_all.py ORDER'a eklenecek satırı basar (run_all.py'yi düzenlemez). Kart, test ve ORDER bitene dek
@@ -67,7 +71,8 @@ listings = load_clean()
 res = compute(listings)
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
-print("written | yazıldı:", save_metrics("{name}", to_metrics(res)))
+if __name__ == "__main__":      # imported by notebooks/: no save | notebooks/ import edince kayıt yok
+    print("written | yazıldı:", save_metrics("{name}", to_metrics(res)))
 '''
 
 TEST = '''"""

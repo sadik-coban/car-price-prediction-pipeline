@@ -274,4 +274,5 @@ res = {"overall": {"n": len(listings), "n_big": int(big.sum()), "n_over": int(ov
 print(f"large errors | büyük hata {res['overall']['n_big']} ({res['overall']['n_over']} over / {res['overall']['n_under']} under)")
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
-print("written | yazıldı:", save_metrics("08_large_errors", to_metrics(res), run_id=oof_info["run_id"]))
+if __name__ == "__main__":      # imported by notebooks/: no save | notebooks/ import edince kayıt yok
+    print("written | yazıldı:", save_metrics("08_large_errors", to_metrics(res), run_id=oof_info["run_id"]))

@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "05_segmentation.py",
-  "generated_at": "2026-09-29T00:03:03+03:00",
+  "generated_at": "2026-11-22T18:55:24+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": null,
   "source": {
    "script": {
-    "analysis/05_segmentation.py": "17e9f734065ac80e0868b3f952c64376993c868a38c65bc5d314b8605ef85aeb"
+    "analysis/05_segmentation.py": "03c3d52883a3785710b44677495af43027fa3f1455c955738808ecfc9978fc5e"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",

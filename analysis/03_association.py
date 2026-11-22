@@ -80,4 +80,5 @@ res = {"cols": cols, "theils": association_matrix(listings, cols, theils_u),
 print("high numeric pairs | yüksek sayısal çiftler:", res["numeric"]["high_pairs"])
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
-print("written | yazıldı:", save_metrics("03_association", to_metrics(res)))
+if __name__ == "__main__":      # imported by notebooks/: no save | notebooks/ import edince kayıt yok
+    print("written | yazıldı:", save_metrics("03_association", to_metrics(res)))

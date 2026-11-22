@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "07_text_flag.py",
-  "generated_at": "2026-09-27T21:56:38+03:00",
+  "generated_at": "2026-11-22T18:55:33+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": "601741517e09",
   "source": {
    "script": {
-    "analysis/07_text_flag.py": "9c3b22430a341b8fc4e43c21ce50956642f850f10614d0207fbeac75a798d632"
+    "analysis/07_text_flag.py": "845c95c11535256c690d4b43b5b604c57f103f56b13ebeb16cc0890bb05e7efc"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",

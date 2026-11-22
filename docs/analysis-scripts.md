@@ -12,6 +12,31 @@ ve her fonksiyonun açıklaması iki dilli (`EN:` / `TR:`).
 **Shift+Enter** hücreyi Interactive Window'da koşar. `[5]`'e kadar koşup sonuca bakılabilir; `[6]`
 koşulmazsa JSON değişmez.
 
+**Defterler (`notebooks/`):** sonuçları okumak ve hafif analizleri denemek için dört defter. Sıraları teknik raporun
+bölümleriyle aynı:
+- [1_data](../notebooks/1_data.ipynb): 1–4. bölümler;
+- [2_market_and_model](../notebooks/2_market_and_model.ipynb): 5–7;
+- [3_errors_and_time](../notebooks/3_errors_and_time.ipynb): 8–10;
+- [4_shap](../notebooks/4_shap.ipynb): SHAP raporu.
+
+Her betik için defter kartını, sonuçlarını tablo olarak ve raporun figürlerini gösterir. Sonuç iki yoldan gelir:
+- **Hafif betikler defterde koşar.** `script = run("08_residuals")` betiğin [1]–[5] hücrelerini çalıştırır: veriyi ve
+  kayıtlı model çıktılarını (OOF tahminleri, `oof_shap.npz`) okur, hesabı yapar. Kaydet hücresi [6]
+  `if __name__ == "__main__":` altında olduğu için çalışmaz. Analiz kodu betiğin kendisidir; defterde kopyası yok.
+  `check` sonucun `metrics/` kaydıyla aynı olup olmadığını gösterir. `script.res`, yüklenen tablolar ve betiğin
+  fonksiyonları sonraki hücrelerde denenebilir.
+- **Ağır betikler kayıttan okunur.** Model eğiten ya da çapraz doğrulama koşan sekiz betik
+  (`analysis/lib/records.py`'deki `HEAVY`) `metrics/`'ten gelir; `run` onları reddeder.
+
+Kayıtlı metrikler derleyicilerin okuyucusuyla (`builders/report_lib/metrics_view.py`) yüklenir; bu yüzden karışık ya
+da bayat bir kayıtta defter de raporlar gibi durur. Defter hiçbir dosya yazmaz. Bir sonucu kalıcı olarak değiştirmek
+için betik değişir ve zincir koşulur. Ardından `python tools/run_notebooks.py` defterleri taze kernel'de baştan sona
+koşar ve kaydeder (~30 sn). Yeni bir betik iskeleti kaydet hücresini korumalı açar; betik ağırsa `HEAVY`'ye eklenir.
+`tests/repo/test_notebooks.py` şu durumlarda düşer:
+- HEAVY dışında kaydet hücresi korumasız bir betik;
+- defterde dosya yazan ya da model uyduran bir hücre;
+- arşiv yolu, kırık bağlantı ya da hata çıktısı.
+
 **Ortak kod:** `analysis/lib/common.py` dışarıya iki şey açar — `load_clean()` (TR plakalı, fiyatı > 0,
 `ad_id` başına son kayıt, `ORDER BY ad_id`, türetilen öznitelikler) ve `save_metrics()` (JSON + `_meta`:
 betik adı, koşum zamanı, verideki son tarama tarihi, DB parmak izi, `run_id`). `analysis/lib/cv.py` 5-fold

@@ -12,6 +12,32 @@ every function has a bilingual description (`EN:` / `TR:`).
 **Shift+Enter** runs the cell in the Interactive Window. You can run up to `[5]` and look at the result;
 without `[6]` the JSON does not change.
 
+**Notebooks (`notebooks/`):** four notebooks for reading the results and trying the light analyses, in the order of
+the technical report's sections:
+- [1_data](../notebooks/1_data.ipynb): sections 1–4;
+- [2_market_and_model](../notebooks/2_market_and_model.ipynb): 5–7;
+- [3_errors_and_time](../notebooks/3_errors_and_time.ipynb): 8–10;
+- [4_shap](../notebooks/4_shap.ipynb): the SHAP report.
+
+The notebooks are in Turkish. For each script a notebook shows its card, its results as tables and the report's
+figures. The results come one of two ways:
+- **Light scripts run in the notebook.** `script = run("08_residuals")` executes the script's cells [1]–[5]: it
+  reads the data and the recorded model outputs (the OOF predictions, `oof_shap.npz`) and computes. The save cell
+  [6] is under `if __name__ == "__main__":`, so it does not run. The analysis code is the script's own; the notebook
+  holds no copy. `check` shows whether the result equals the `metrics/` record. `script.res`, the loaded frames and
+  the script's functions can be tried in the cells that follow.
+- **Heavy scripts are read from the record.** The eight scripts that train models or run cross-validation (`HEAVY`
+  in `analysis/lib/records.py`) come from `metrics/`; `run` refuses them.
+
+The recorded metrics are loaded with the builders' reader (`builders/report_lib/metrics_view.py`), so a notebook
+stops on a mixed or stale record as the reports do. A notebook writes no file. To change a result for good, change
+the script and run the chain. Then `python tools/run_notebooks.py` runs the notebooks top to bottom in a fresh kernel
+and saves them (~30 s). A new script scaffold opens with a guarded save cell; a heavy script is added to `HEAVY`.
+`tests/repo/test_notebooks.py` fails on:
+- a script outside HEAVY whose save cell is not guarded;
+- a notebook cell that writes a file or fits a model;
+- an archive path, a broken link or an error output.
+
 **Shared code:** `analysis/lib/common.py` exposes two things — `load_clean()` (TR-plated, price > 0, latest row
 per `ad_id`, `ORDER BY ad_id`, derived features) and `save_metrics()` (JSON + `_meta`: script name, run time,
 last snapshot date in the data, DB fingerprint, `run_id`). `analysis/lib/cv.py` is the single copy of the 5-fold

@@ -108,4 +108,5 @@ res = {"odds": controlled_odds(listings, big, flag, perf), "rates": flag_rates(r
 print("flagged | bayraklı:", res["rates"]["n"], "· OR", round(res["odds"]["or"], 2))
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
-print("written | yazıldı:", save_metrics("07_text_flag", to_metrics(res), run_id=oof_info["run_id"]))
+if __name__ == "__main__":      # imported by notebooks/: no save | notebooks/ import edince kayıt yok
+    print("written | yazıldı:", save_metrics("07_text_flag", to_metrics(res), run_id=oof_info["run_id"]))

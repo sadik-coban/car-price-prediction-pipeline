@@ -143,4 +143,5 @@ res = {"segment": median_by(listings, "segment"), "body": median_by(listings, "k
 print("silhouette by k | k'ye göre silhouette:", res["silhouette"])
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
-print("written | yazıldı:", save_metrics("05_segmentation", to_metrics(res)))
+if __name__ == "__main__":      # imported by notebooks/: no save | notebooks/ import edince kayıt yok
+    print("written | yazıldı:", save_metrics("05_segmentation", to_metrics(res)))

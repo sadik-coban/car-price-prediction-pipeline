@@ -108,4 +108,5 @@ res = {"rows": rows, "bounds": bounds, "q_served": conformal_q(np.log1p(price), 
 print(f"overall | genel: {res['all_global']}% ·", [(r[0], r[2], r[3]) for r in rows])
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
-print("written | yazıldı:", save_metrics("08_conformal_coverage", to_metrics(res), run_id=oof_info["run_id"]))
+if __name__ == "__main__":      # imported by notebooks/: no save | notebooks/ import edince kayıt yok
+    print("written | yazıldı:", save_metrics("08_conformal_coverage", to_metrics(res), run_id=oof_info["run_id"]))

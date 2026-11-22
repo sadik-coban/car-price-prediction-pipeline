@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "03_association.py",
-  "generated_at": "2026-09-28T20:44:49+03:00",
+  "generated_at": "2026-11-22T18:55:17+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": null,
   "source": {
    "script": {
-    "analysis/03_association.py": "4d066c2a8c511c985759f86ff04065d2108ebc37612eb2712a2a365e7676f6b4"
+    "analysis/03_association.py": "8b304a9418c58dd11755ea75037d1eefcce7efe68fbe05866c994790d60e9e46"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",

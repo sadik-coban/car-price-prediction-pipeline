@@ -37,9 +37,10 @@ beautifulsoup4
 lxml
 jsonlines
 
-# --- notebook kapısı (nbclient ile sınama) ---
+# --- defterler (notebooks/; tools/run_notebooks.py, tests/repo/test_notebooks.py) ---
 nbformat
 nbclient
+ipykernel    # defterlerin kernel'i (Jupyter / VS Code ve run_notebooks)
 
 # --- yayın (S3) ---
 boto3

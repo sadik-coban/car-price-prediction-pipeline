@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "09_drift.py",
-  "generated_at": "2026-09-28T20:44:55+03:00",
+  "generated_at": "2026-11-22T18:55:43+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,7 +11,7 @@
   "run_id": null,
   "source": {
    "script": {
-    "analysis/09_drift.py": "5d0737adec2d2e2bed5b8c61f249a3e6326656c690fb563b9d23bb01fd8313df"
+    "analysis/09_drift.py": "397d7cd0483730e3c88703ca6a03adbfc836c14fe65ff11dfa7baa5401df4cd7"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",

@@ -101,4 +101,5 @@ res = {"quality": segment_quality(derive_segments(raw)), "matrix": series_segmen
 print("raw ≠ derived | ham ≠ türetilen:", res["quality"]["raw_differs"], "/", res["quality"]["raw_known"])
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
-print("written | yazıldı:", save_metrics("03_segment_quality", to_metrics(res)))
+if __name__ == "__main__":      # imported by notebooks/: no save | notebooks/ import edince kayıt yok
+    print("written | yazıldı:", save_metrics("03_segment_quality", to_metrics(res)))

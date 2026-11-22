@@ -284,4 +284,5 @@ res = {"rates": rates, "blocks": blocks, "unspecified": unspecified_summary(raw,
 print({k: len(v) for k, v in classes.items()}, "| blocks:", [b["n_columns"] for b in blocks])
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
-print("written | yazıldı:", save_metrics("02_missingness", to_metrics(res)))
+if __name__ == "__main__":      # imported by notebooks/: no save | notebooks/ import edince kayıt yok
+    print("written | yazıldı:", save_metrics("02_missingness", to_metrics(res)))

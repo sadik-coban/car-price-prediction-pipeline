@@ -211,4 +211,5 @@ for p, m in res.items():
     print(p, {k: round(v["median"], 1) for k, v in m["candidates"].items()})
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
-print("written | yazıldı:", save_metrics("01_engine_rule", to_metrics(res)))
+if __name__ == "__main__":      # imported by notebooks/: no save | notebooks/ import edince kayıt yok
+    print("written | yazıldı:", save_metrics("01_engine_rule", to_metrics(res)))

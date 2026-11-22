@@ -386,14 +386,15 @@ res = {"n": len(listings), "table": table, "separate": separate_sum(svc, cols + 
 print("top | en büyük:", table[:3], "· directions | yönler:", {k: round(v, 2) for k, v in directions.items()})
 
 # %% [6] Save | Kaydet — the only cell that writes files | dosya yazan tek hücre
-FIGDIR.mkdir(parents=True, exist_ok=True)
-for lang in ("tr", "en"):
-    for no, slug, draw in ((1, "importance", lambda: fig_importance(table, lang)),
-                           (2, "beeswarm", lambda: fig_beeswarm(listings, G, lang)),
-                           (3, "dependence", lambda: fig_dependence(listings, G, lang)),
-                           (4, "cohorts", lambda: fig_cohorts(coh[lang], lang)),
-                           (5, "km-age", lambda: fig_km_age(listings, G, lang))):
-        fig = draw()
-        fig.savefig(FIGDIR / f"{lang}-sh-{no:02d}-{slug}.png")
-        plt.close(fig)
-print("written | yazıldı:", save_metrics("shap/03_what_sets_price", to_metrics(res), run_id=oof_info["run_id"]))
+if __name__ == "__main__":      # imported by notebooks/: no save | notebooks/ import edince kayıt yok
+    FIGDIR.mkdir(parents=True, exist_ok=True)
+    for lang in ("tr", "en"):
+        for no, slug, draw in ((1, "importance", lambda: fig_importance(table, lang)),
+                               (2, "beeswarm", lambda: fig_beeswarm(listings, G, lang)),
+                               (3, "dependence", lambda: fig_dependence(listings, G, lang)),
+                               (4, "cohorts", lambda: fig_cohorts(coh[lang], lang)),
+                               (5, "km-age", lambda: fig_km_age(listings, G, lang))):
+            fig = draw()
+            fig.savefig(FIGDIR / f"{lang}-sh-{no:02d}-{slug}.png")
+            plt.close(fig)
+    print("written | yazıldı:", save_metrics("shap/03_what_sets_price", to_metrics(res), run_id=oof_info["run_id"]))

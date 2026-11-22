@@ -169,4 +169,5 @@ res = {"price": price, "pred": pred, "resid": resid, "quartile_ape": quartile_me
 print("median % error by predicted quartile | tahmin çeyreğine göre medyan % hata:", [(b, round(v, 2)) for b, v in res["quartile_ape"]])
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
-print("written | yazıldı:", save_metrics("08_residuals", to_metrics(res), run_id=oof_info["run_id"]))
+if __name__ == "__main__":      # imported by notebooks/: no save | notebooks/ import edince kayıt yok
+    print("written | yazıldı:", save_metrics("08_residuals", to_metrics(res), run_id=oof_info["run_id"]))

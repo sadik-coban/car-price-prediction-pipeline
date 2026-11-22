@@ -283,4 +283,5 @@ print("series clusters | seri kümeleri:", res["series_zero"], "· without spec 
       [(r["term"], r["pct_effect"]) for r in res["spec_rows"] if r["term"] in ("hp100", "litre")], res["spec_n"])
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
-print("written | yazıldı:", save_metrics("06_hedonic", to_metrics(res)))
+if __name__ == "__main__":      # imported by notebooks/: no save | notebooks/ import edince kayıt yok
+    print("written | yazıldı:", save_metrics("06_hedonic", to_metrics(res)))
