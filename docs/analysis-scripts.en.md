@@ -26,7 +26,7 @@ figures. The results come one of two ways:
   [6] is under `if __name__ == "__main__":`, so it does not run. The analysis code is the script's own; the notebook
   holds no copy. `check` shows whether the result equals the `metrics/` record. `script.res`, the loaded frames and
   the script's functions can be tried in the cells that follow.
-- **Heavy scripts are read from the record.** The eight scripts that train models or run cross-validation (`HEAVY`
+- **Heavy scripts are read from the record.** The nine scripts that train models or run cross-validation (`HEAVY`
   in `analysis/lib/records.py`) come from `metrics/`; `run` refuses them.
 
 The recorded metrics are loaded with the builders' reader (`builders/report_lib/metrics_view.py`), so a notebook

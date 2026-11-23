@@ -50,8 +50,18 @@ REQUIRED = [
     "age_sensitivity", "age_cuts", "spec_outliers.blind_spot",
     "by_model_year_n", "by_segment_FS", "by_age", "raw_columns", "examples",
     "engine_rule.engine_cc", "engine_rule.power_hp", "unspecified.structure"]] + [
-    f"report.{p_}" for p_ in ["q_bounds", "model_r2_log", "err_bands", "conformal_q", "conformal_all",
-                              "mondrian", "text_ablation"]]
+    f"report.{p_}" for p_ in ["q_bounds", "model_r2_log", "err_bands", "mondrian", "text_ablation", "scale",
+                              "confidence", "served_interval"]] + [
+    # EN: 2026-11-23 (served interval): the scale model and the hit probability, out of fold and forward
+    # TR: 2026-11-23 (servis edilen aralık): ölçek modeli ve isabet olasılığı, OOF ve ileri
+    "domain.conformal.scale_by_quantile", "domain.conformal.hit_reliability", "methodology.forward_test.signed_error",
+    "methodology.forward_test.confidence", "methodology.forward_test.coverage.arms",
+    "methodology.forward_test.coverage.by_width_fifth", "methodology.forward_test.coverage.scale",
+    # EN: 2026-11-23 (hedonic section rebuilt): the ladder, the column without identity, age steps, panels by count
+    # TR: 2026-11-23 (hedonik bölüm yeniden kuruldu): merdiven, kimliksiz sütun, yaş basamakları, sayıya göre panel
+    "report.hedonic.ladder.rows", "report.hedonic.no_identity.coefficients", "report.hedonic.age_steps.rows",
+    "report.hedonic.age_steps.km_spline_df", "report.hedonic.by_count.top", "report.hedonic.by_count.painted",
+    "report.hedonic.by_count.changed"]
 
 
 def write_md(path, text):
@@ -184,14 +194,29 @@ def derive(d):
     hr = dom["hedonic_reliability"]
 
     model_mae, base_mae = lgb["MAE"], year_med["baseline"]["MAE"]
-    # EN: 2026-09-28 (owner's decision): the decision note prints the model-control column (effects within one
-    #     model name); an unknown term id stops (no silent None)
-    # TR: 2026-09-28 (kullanıcı kararı): karar notu model kontrolü sütununu basar (etkiler tek model adı içinde);
-    #     bilinmeyen terim kimliği durdurur (sessiz None yok)
-    hed_terms, hed_ci = {}, {}
+    # EN: 2026-09-28 (owner's decision): the decision note prints the car-model control column (effects within one
+    #     car model); an unknown term id stops (no silent None)
+    # TR: 2026-09-28 (kullanıcı kararı): karar notu araç modeli kontrolü sütununu basar (etkiler tek araç modeli
+    #     içinde); bilinmeyen terim kimliği durdurur (sessiz None yok)
+    hed_terms = {}
     for r in hr["columns"]["model"]["coefficients"]:
         assert r["term"] in HED_TERM, f"unknown hedonic term | bilinmeyen hedonik terim: {r['term']}"
-        hed_terms[r["term"]], hed_ci[r["term"]] = r["pct_effect"], (r["pct_lo"], r["pct_hi"])
+        hed_terms[r["term"]] = r["pct_effect"]
+    # EN: 2026-11-23 (hedonic section rebuilt, 06_hedonic report.hedonic): rows keyed by their ids, columns by the
+    #     published column lists; the ladder's ids must be exactly the labelled ones, the third column's terms the
+    #     same as the published columns', the counts 1…top
+    # TR: 2026-11-23 (hedonik bölüm yeniden kuruldu, 06_hedonic report.hedonic): satırlar kimlikleriyle, sütunlar
+    #     yayımlanan sütun listeleriyle anahtarlanır; merdivenin kimlikleri tam etiketli olanlar, üçüncü sütunun
+    #     terimleri yayımlanan sütunlarınkiyle aynı, sayılar 1…top olmalı
+    rh = rep["hedonic"]
+    ladder = {r[0]: dict(zip(rh["ladder"]["columns"], r)) for r in rh["ladder"]["rows"]}
+    assert list(ladder) == list(HED_LADDER), f"hedonic ladder ids | merdiven kimlikleri: {list(ladder)}"
+    no_identity = {r["term"]: r for r in rh["no_identity"]["coefficients"]}
+    assert list(no_identity) == list(hed_terms), f"no-identity terms | kimliksiz terimler: {list(no_identity)}"
+    bc = rh["by_count"]
+    by_count = {k: [dict(zip(bc["columns"], r)) for r in bc[k]] for k in ("painted", "changed")}
+    assert all([r["count"] for r in rows] == list(range(1, bc["top"] + 1)) for rows in by_count.values()), \
+        f"panel counts are not 1…top | panel sayıları 1…top değil: {by_count}"
 
     v = {
         # olcek
@@ -218,9 +243,12 @@ def derive(d):
         # EN: predicted-price quartile bounds and the per-band (Mondrian) interval arm (08_conformal_coverage)
         # TR: tahmin fiyatı çeyrek sınırları ve bant başına (Mondrian) aralık kolu (08_conformal_coverage)
         "q_bounds": rep["q_bounds"], "mondrian": rep["mondrian"],
-        # hedonik: segment sutununun R²'si ve n'i; karar notunun etkileri model sutunundan
-        "hed_r2": hr["columns"]["segment"]["r2"], "hed_n": hr["n"], "hed_center": hr["center"],
-        "hed_terms": hed_terms, "hed_ci": hed_ci,
+        # hedonik: orneklem n'i; karar notunun km, hasar ve degisen etkileri arac modeli kontrolu sutunundan;
+        # merdiven, kimliksiz sutun, yas basamaklari ve sayiya gore panel (report.hedonic)
+        "hed_n": hr["n"], "hed_center": hr["center"], "hed_terms": hed_terms,
+        "hed_ladder": ladder, "hed_no_identity": no_identity,
+        "hed_age_steps": [dict(zip(rh["age_steps"]["columns"], r)) for r in rh["age_steps"]["rows"]],
+        "hed_km_df": rh["age_steps"]["km_spline_df"], "hed_count_top": bc["top"], "hed_by_count": by_count,
         # marka
         "brand_mae_delta": abs(ba["brand_series_model"]["MAE"] - ba["series_model"]["MAE"]),
         "brand_mape_delta": abs(ba["brand_series_model"]["MAPE"] - ba["series_model"]["MAPE"]),
@@ -245,6 +273,18 @@ def derive(d):
     # TR: OOF hata dağılımı: bantlar, medyan/ortalama hata, uçlar (08_residuals)
     v.update({k: rep[k] for k in ("err_n", "err_bands", "err_median", "err_abs_median", "err_abs_mean", "err_over20",
                                   "err_under20", "err_sym_over", "err_sym_under", "err_min", "err_max", "err_in10")})
+    # EN: 2026-11-23 (served interval): the scale model (08_conformal_coverage report.scale), the hit probability
+    #     (report.confidence), the forward arms (08_forward_test) and the served bundle (07_final_model); rows keyed by
+    #     their ids, columns by the published column lists
+    # TR: 2026-11-23 (servis edilen aralık): ölçek modeli (08_conformal_coverage report.scale), isabet olasılığı
+    #     (report.confidence), ileri kollar (08_forward_test) ve servis paketi (07_final_model); satırlar
+    #     kimlikleriyle, sütunlar yayımlanan sütun listeleriyle anahtarlanır
+    sc, fc = rep["scale"], met["forward_test"]["coverage"]
+    v["scale"], v["conf"], v["served"] = sc, rep["confidence"], rep["served_interval"]
+    v["arms"] = {r[0]: dict(zip(sc["arm_columns"], r)) for r in sc["arms"]}
+    v["ft_arms"] = {r[0]: dict(zip(fc["arm_columns"], r)) for r in fc["arms"]}
+    v["profiles"] = {r[0]: dict(zip(sc["profile_columns"], r)) for r in sc["profiles"]}
+    v["period"] = {lang: period_label(meta["snapshots"], lang) for lang in ("tr", "en")}
     return v
 
 
@@ -388,8 +428,8 @@ def build_figures(d, v, lang, only=None):
 
     # 00 taban vs model  [IS]
     if want(0):
-        t = L("Ortalama hata: emsal medyanı vs model", "Mean error: comparable median vs model")
-        reg(0, bar(f"{p}-00-base-vs-model", [L("emsal medyanı", "comparable median"), "model"],
+        t = L("Ortalama hata: emsal medyanı vs tahmin modeli", "Mean error: comparable median vs price model")
+        reg(0, bar(f"{p}-00-base-vs-model", [L("emsal medyanı", "comparable median"), L("tahmin modeli", "price model")],
                    [v["base_mae"] / 1e3, v["model_mae"] / 1e3], t,
                    L("ortalama mutlak hata (₺bin)", "mean absolute error (₺k)")), t)
 
@@ -418,16 +458,18 @@ def build_figures(d, v, lang, only=None):
     # gitti, teknik rapor onu hic kullanmiyordu. Segment kirilimi teknik §5'te duruyor.
 
     # 03 hedonik etkiler, iki sutun  [TEKNIK] — 2026-09-28: bootstrap yerine modele gore kumeli %95 GA.
+    # 2026-11-23 (kullanicinin ifade kurali): veri kolonu "arac modeli", LightGBM "tahmin modeli". Figur site verisinden
+    # cizilir (domain); kimliksiz ucuncu sutun yalniz rapor verisinde oldugu icin tabloda, figurde degil.
     if want(3):
         cols = dom["hedonic_reliability"]["columns"]
-        t = L("Hedonik etkiler (nokta + modele göre kümeli %95 GA)",
-              "Hedonic effects (point + 95% CI clustered by model)")
+        t = L("Hedonik etkiler (nokta + araç modeline göre kümeli %95 GA)",
+              "Hedonic effects (point + 95% CI clustered by car model)")
         terms = [r["term"] for r in cols["segment"]["coefficients"]]
         assert terms == [r["term"] for r in cols["model"]["coefficients"]], "hedonik sutunlarin terimleri farkli"
         series = [(leg, [r["pct_effect"] for r in cols[k]["coefficients"]], [r["pct_lo"] for r in cols[k]["coefficients"]],
                    [r["pct_hi"] for r in cols[k]["coefficients"]])
                   for k, leg in (("segment", L("segment kontrolü", "segment control")),
-                                 ("model", L("model kontrolü", "model control")))]
+                                 ("model", L("araç modeli kontrolü", "car-model control")))]
         reg(3, errorbar(f"{p}-03-hedonic-ci", [HED_TERM[k][0 if lang == "tr" else 1] for k in terms], series,
                         t, L("fiyata etki %", "effect on price %")), t)
 
@@ -466,8 +508,9 @@ def build_figures(d, v, lang, only=None):
     # 07 marka karsilastirmasi  [IS]
     if want(7):
         bc = dom["brand_compare"]
-        t = L("Ham medyan fiyat: BMW vs Audi — model karmasını yansıtır",
-              "Raw median price: BMW vs Audi — reflects the model mix")
+        # 2026-11-23 (ifade kurali): "model karmasi" arac modeli karmasi demek
+        t = L("Ham medyan fiyat: BMW vs Audi — araç modeli karmasını yansıtır",
+              "Raw median price: BMW vs Audi — reflects the car-model mix")
         reg(7, bar(f"{p}-07-brand", ["BMW", "Audi"],
                    [bc["bmw_median"] / 1e6, bc["audi_median"] / 1e6], t,
                    L("medyan fiyat (₺M)", "median price (₺M)")), t)
@@ -555,18 +598,23 @@ def build_figures(d, v, lang, only=None):
     # 12 kapsama  [IS + TEKNIK]
     if want(12):
         # 2026-09-28: tahmin fiyati bandi basina iki kol (tek oran, banda gore / Mondrian), capraz kalibreli.
-        rows, rows_m = dom["conformal"]["by_quantile"], dom["conformal"]["mondrian_by_quantile"]
-        assert [r[0] for r in rows] == [r[0] for r in rows_m], "kapsama kollarinin bantlari farkli"
-        tgt = dom["conformal"]["coverage_target"]
+        # 2026-11-23 (servis edilen aralik): ucuncu kol olcek modeli, servis edilen; o one cikar (koyu mavi).
+        cf_ = dom["conformal"]
+        arms_ = [(cf_["by_quantile"], C2, L("tek pay", "one margin")),
+                 (cf_["mondrian_by_quantile"], "#93c5fd", L("banda göre pay", "per-band margin")),
+                 (cf_["scale_by_quantile"], C1, L("ölçek modeli (servis edilen)", "scale model (served)"))]
+        bands_ = [r[0] for r in arms_[0][0]]
+        assert all([r[0] for r in a_[0]] == bands_ for a_ in arms_), "kapsama kollarinin bantlari farkli"
+        tgt = cf_["coverage_target"]
         t = L(f"%{tgt} aralık kaç ilanda tuttu (hedef %{tgt})",
               f"How often the {tgt}% range held (target {tgt}%)")
         fig, ax = plt.subplots(figsize=(7, 3.2))
-        x = np.arange(len(rows))
-        ax.bar(x - .2, [r[1] for r in rows], width=.4, color=C2, label=L("tek oran", "one margin"))
-        ax.bar(x + .2, [r[1] for r in rows_m], width=.4, color=C1, label=L("banda göre", "per band"))
-        ax.set_xticks(x, [r[0] for r in rows])
+        x = np.arange(len(bands_))
+        for i_, (rows_, col_, lab_) in enumerate(arms_):
+            ax.bar(x + (i_ - 1) * .27, [r[1] for r in rows_], width=.27, color=col_, label=lab_)
+        ax.set_xticks(x, bands_)
         ax.set_xlabel(L("tahmin edilen fiyat çeyreği", "predicted-price quartile"))
-        ax.set_ylim(min(r[1] for r in rows + rows_m) - 5, 100)
+        ax.set_ylim(min(r[1] for a_ in arms_ for r in a_[0]) - 5, 100)
         ax.axhline(tgt, color=C3, ls="--", lw=1.2)
         ax.legend(frameon=False, fontsize=7, loc="upper left")
         ax.set_ylabel(L("kapsama %", "coverage %")); ax.set_title(t)
@@ -792,6 +840,26 @@ def build_figures(d, v, lang, only=None):
         fig.tight_layout(rect=(0, .04, 1, 1))
         reg(30, _save(fig, f"{p}-30-engine-bounds"), t)
 
+    # 31 isabet olasiliginin guvenilirligi  [TEKNIK] — 2026-11-23 (servis edilen aralik): onda birlik dilimlerde
+    # ongorulen ve gerceklesen; OOF (08_conformal_coverage) ve yeni ilanlar (08_forward_test) ayni eksende.
+    if want(31):
+        oof_, fwd_ = dom["conformal"]["hit_reliability"], met["forward_test"]["confidence"]["deciles"]
+        t = L("İsabet olasılığı: öngörülen ve gerçekleşen (onda birlik dilimler)",
+              "Hit probability: predicted vs observed (deciles)")
+        fig, ax = plt.subplots(figsize=(5.6, 4.2))
+        lo_ = min(x_ for r_ in oof_ + fwd_ for x_ in r_) - 3
+        ax.plot([lo_, 100], [lo_, 100], "--", color=C2, lw=.9, label=L("öngörülen = gerçekleşen", "predicted = observed"))
+        ax.plot([r_[0] for r_ in oof_], [r_[1] for r_ in oof_], "o-", color=C1, lw=1.6, ms=4,
+                label=L("OOF (çapraz kalibreli)", "OOF (cross-calibrated)"))
+        ax.plot([r_[0] for r_ in fwd_], [r_[1] for r_ in fwd_], "s--", color=C3, lw=1.4, ms=4,
+                label=L("yeni ilanlar (ileri test)", "new listings (forward test)"))
+        ax.set_xlim(lo_, 100); ax.set_ylim(lo_, 100); ax.set_aspect("equal")
+        ax.set_xlabel(L("öngörülen isabet olasılığı %", "predicted hit probability %"))
+        ax.set_ylabel(L("gerçekleşen isabet %", "observed hit share %"))
+        ax.set_title(t); ax.legend(frameon=False, fontsize=7.5, loc="upper left")
+        ax.grid(color=GRID, lw=.7); ax.set_axisbelow(True)
+        reg(31, _save(fig, f"{p}-31-hit-reliability"), t)
+
     return F
 
 
@@ -803,7 +871,8 @@ BUSINESS_FIGS = [0, 5, 6, 7, 10, 12, 27]            # 2 (segment medyani) 2026-0
 # 2026-11-22 (kullanici karari): 13/14/15 cikti — zaman ve kayma analizden cikti (docs/decisions.md).
 # 2026-09-28 (sadelestirme listesi): 17/18/20 cikti; 27 yalniz karar notunda.
 # 2026-09-29 (ikinci sadelestirme listesi): 22/23/24 (PCA ve k secimi) cikti; §5 tek paragraf.
-TECHNICAL_FIGS = [1, 3, 4, 8, 9, 10, 11, 12, 16, 19, 21, 25, 26, 28, 29, 30]
+# 2026-11-23 (servis edilen aralik): 31 (isabet olasiliginin guvenilirligi) eklendi; 13-15, 17/18, 20, 22-24 bos kalir.
+TECHNICAL_FIGS = [1, 3, 4, 8, 9, 10, 11, 12, 16, 19, 21, 25, 26, 28, 29, 30, 31]
 
 
 def num(x, lang="tr"):
@@ -851,9 +920,23 @@ HED_TERM = {"age": ("yaş", "age"), "age_sq": ("yaş²", "age²"), "km100k": ("k
             "km_sq": ("km²", "km²"), "age_x_km": ("yaş×km", "age×km"), "heavy_damage": ("ağır hasar", "heavy damage"),
             "painted": ("boyalı", "painted"), "changed": ("değişen", "changed"), "hp100": ("+100 hp", "+100 hp"),
             "litre": ("+1 litre", "+1 litre")}
+# EN: 2026-11-23: the hedonic ladder's regression ids (06_hedonic report.hedonic.ladder) -> (TR, EN) display, in the
+#     published order; derive stops on an unknown, missing or reordered id
+# TR: 2026-11-23: hedonik merdivenin regresyon kimlikleri (06_hedonic report.hedonic.ladder) -> (TR, EN) görünen ad,
+#     yayımlanan sırayla; derive bilinmeyen, eksik ya da yeri değişmiş kimlikte durur
+HED_LADDER = {"identity_segment": ("yalnız segment, marka, yakıt, vites", "segment, brand, fuel, transmission only"),
+              "identity_model": ("yalnız araç modelinin adı", "the car model name only"),
+              "condition": ("yalnız durum: yaş, km, ağır hasar, boyalı ve değişen panel",
+                            "condition only: age, mileage, heavy damage, painted and changed panels"),
+              "condition_engine": ("durum + motor gücü ve hacmi", "condition + engine power and displacement"),
+              "segment_control": ("durum + motor + segment, marka, yakıt, vites (**segment kontrolü**)",
+                                  "condition + engine + segment, brand, fuel, transmission (**segment control**)"),
+              "model_control": ("segment kontrolü + araç modelinin adı (**araç modeli kontrolü**)",
+                                "segment control + the car model name (**car-model control**)")}
 # EN: ids the metrics publish -> (TR, EN) display; id_label stops on an unknown id
 # TR: metriklerin yayımladığı kimlikler -> (TR, EN) görünen ad; id_label bilinmeyen kimlikte durur
-TIER_LABEL = {"model_year": ("model+yıl", "model + year"), "model": ("model", "model"), "global": ("global", "global")}
+TIER_LABEL = {"model_year": ("araç modeli + yıl", "car model + year"), "model": ("araç modeli", "car model"),
+              "global": ("global", "global")}
 FUEL_EN = {"Benzin": "Petrol", "Dizel": "Diesel", "LPG & Benzin": "LPG & Petrol", "Hibrit": "Hybrid"}
 LADDER_EN = {"(model, yıl) medyanı": "(model, year) median", "(model) medyanı — tüm yıllar": "(model) median — all years",
              "global medyan": "global median"}
@@ -878,6 +961,32 @@ MONTHS_TR = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz
          "Ekim", "Kasım", "Aralık"]
 MONTHS_EN = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September",
          "October", "November", "December"]
+
+
+def period_label(snapshots, lang):
+    """
+    EN: The data period from the snapshot dates (YYYY-MM-DD), in words: "January–June 2026", or with both years when
+        they differ.
+    TR: Tarama tarihlerinden (YYYY-AA-GG) veri dönemi, sözcükle: "Ocak–Haziran 2026"; yıllar farklıysa ikisi de.
+    """
+    months = MONTHS_TR if lang == "tr" else MONTHS_EN
+    (y0, m0), (y1, m1) = [(int(s[:4]), int(s[5:7])) for s in (min(snapshots), max(snapshots))]
+    return f"{months[m0]}–{months[m1]} {y1}" if y0 == y1 else f"{months[m0]} {y0}–{months[m1]} {y1}"
+
+
+def pm(low, high, lang, nd=1):
+    """
+    EN: An interval's margin around the estimate: low and high as magnitudes → "−7.0% / +7.5%" (tr "−%7.0 / +%7.5").
+    TR: Aralığın tahmin etrafındaki payı: alt ve üst büyüklük olarak → "−%7.0 / +%7.5" (en "−7.0% / +7.5%").
+    """
+    return f"−{P(abs(low), lang, nd)} / +{P(abs(high), lang, nd)}"
+
+
+# EN: the interval arms the metrics publish (08_conformal_coverage report.scale.arms, 08_forward_test coverage.arms)
+# TR: metriklerin yayımladığı aralık kolları (08_conformal_coverage report.scale.arms, 08_forward_test coverage.arms)
+ARM_LABEL = {"global": ("tek pay (herkese aynı)", "one margin (same for all)"),
+             "band": ("banda göre pay", "per-band margin"),
+             "scale": ("ölçek modeli (servis edilen)", "scale model (served)")}
 
 
 # "yirmide biri" gibi kesirler: Turkce locative eki unlu/unsuz uyumuna gore degisiyor (yirmi->yirmide

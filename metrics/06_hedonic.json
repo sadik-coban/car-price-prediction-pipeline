@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "06_hedonic.py",
-  "generated_at": "2026-11-22T18:55:28+03:00",
+  "generated_at": "2026-11-23T20:34:34+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,11 +11,12 @@
   "run_id": null,
   "source": {
    "script": {
-    "analysis/06_hedonic.py": "6706ad0ad0f4c86007fa8ee2d6644bbc4c7ff6130d077a73ec2b4f02bf1537d9"
+    "analysis/06_hedonic.py": "150361228c76740f49f9e1dd30a8dc1f34937e25c31e6f2fe17a29fa644eef03"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
     "analysis/lib/common.py": "533eaad7a29580e93aeff01214fc024538dd6a6ab717e6b669e7e7b0a4399295",
+    "analysis/lib/cv.py": "e83f615405ac012d466c9d82f698dc4145ba2df680c46ec3f529ee3ee6da56f5",
     "analysis/lib/segment_rule.py": "9e014153906e9fb7a139099d1b581459a7b9e17bb21acb2172bd67cdb66c01cc",
     "analysis/lib/spec_rule.py": "91f04d952ea6c6261efea511dcba61466c513a1442dbdf6a217c2c7d3fa8d276"
    }
@@ -406,6 +407,300 @@
    "cc": 356,
    "both": 348,
    "total": 434
+  }
+ },
+ "report": {
+  "hedonic": {
+   "ladder": {
+    "columns": [
+     "spec",
+     "n_columns",
+     "r2_in_sample",
+     "r2_out_of_fold"
+    ],
+    "rows": [
+     [
+      "identity_segment",
+      12,
+      0.3788,
+      0.3785
+     ],
+     [
+      "identity_model",
+      735,
+      0.8475,
+      0.822
+     ],
+     [
+      "condition",
+      9,
+      0.7311,
+      0.7309
+     ],
+     [
+      "condition_engine",
+      11,
+      0.872,
+      0.8719
+     ],
+     [
+      "segment_control",
+      22,
+      0.9312,
+      0.931
+     ],
+     [
+      "model_control",
+      756,
+      0.9648,
+      0.961
+     ]
+    ]
+   },
+   "no_identity": {
+    "r2": 0.872,
+    "coefficients": [
+     {
+      "term": "age",
+      "point": -0.073,
+      "se": 0.0032,
+      "ci_lo": -0.0793,
+      "ci_hi": -0.0667,
+      "pct_effect": -7.04,
+      "pct_lo": -7.62,
+      "pct_hi": -6.46,
+      "contains_zero": false
+     },
+     {
+      "term": "age_sq",
+      "point": 0.0003,
+      "se": 0.0004,
+      "ci_lo": -0.0005,
+      "ci_hi": 0.0011,
+      "pct_effect": 0.03,
+      "pct_lo": -0.05,
+      "pct_hi": 0.11,
+      "contains_zero": true
+     },
+     {
+      "term": "km100k",
+      "point": -0.1072,
+      "se": 0.0098,
+      "ci_lo": -0.1265,
+      "ci_hi": -0.0879,
+      "pct_effect": -10.16,
+      "pct_lo": -11.88,
+      "pct_hi": -8.41,
+      "contains_zero": false
+     },
+     {
+      "term": "km_sq",
+      "point": 0.0114,
+      "se": 0.0028,
+      "ci_lo": 0.0058,
+      "ci_hi": 0.017,
+      "pct_effect": 1.15,
+      "pct_lo": 0.58,
+      "pct_hi": 1.71,
+      "contains_zero": false
+     },
+     {
+      "term": "age_x_km",
+      "point": -0.0039,
+      "se": 0.0017,
+      "ci_lo": -0.0073,
+      "ci_hi": -0.0005,
+      "pct_effect": -0.39,
+      "pct_lo": -0.73,
+      "pct_hi": -0.05,
+      "contains_zero": false
+     },
+     {
+      "term": "heavy_damage",
+      "point": -0.1373,
+      "se": 0.0059,
+      "ci_lo": -0.149,
+      "ci_hi": -0.1256,
+      "pct_effect": -12.83,
+      "pct_lo": -13.84,
+      "pct_hi": -11.81,
+      "contains_zero": false
+     },
+     {
+      "term": "painted",
+      "point": -0.0122,
+      "se": 0.0008,
+      "ci_lo": -0.0138,
+      "ci_hi": -0.0107,
+      "pct_effect": -1.21,
+      "pct_lo": -1.37,
+      "pct_hi": -1.06,
+      "contains_zero": false
+     },
+     {
+      "term": "changed",
+      "point": -0.0359,
+      "se": 0.0016,
+      "ci_lo": -0.0391,
+      "ci_hi": -0.0327,
+      "pct_effect": -3.53,
+      "pct_lo": -3.84,
+      "pct_hi": -3.22,
+      "contains_zero": false
+     },
+     {
+      "term": "hp100",
+      "point": 0.4065,
+      "se": 0.038,
+      "ci_lo": 0.3319,
+      "ci_hi": 0.4811,
+      "pct_effect": 50.15,
+      "pct_lo": 39.36,
+      "pct_hi": 61.78,
+      "contains_zero": false
+     },
+     {
+      "term": "litre",
+      "point": 0.1103,
+      "se": 0.0475,
+      "ci_lo": 0.017,
+      "ci_hi": 0.2035,
+      "pct_effect": 11.66,
+      "pct_lo": 1.72,
+      "pct_hi": 22.57,
+      "contains_zero": false
+     }
+    ]
+   },
+   "age_steps": {
+    "columns": [
+     "age_from",
+     "age_to",
+     "n",
+     "pct_per_year",
+     "pct_lo",
+     "pct_hi"
+    ],
+    "rows": [
+     [
+      1,
+      5,
+      4812,
+      -5.51,
+      -6.73,
+      -4.28
+     ],
+     [
+      5,
+      10,
+      9430,
+      -6.82,
+      -7.81,
+      -5.83
+     ],
+     [
+      10,
+      15,
+      15533,
+      -6.14,
+      -7.32,
+      -4.94
+     ],
+     [
+      15,
+      20,
+      5204,
+      -4.69,
+      -6.06,
+      -3.31
+     ]
+    ],
+    "km_spline_df": 6
+   },
+   "by_count": {
+    "columns": [
+     "count",
+     "n",
+     "pct_effect",
+     "pct_lo",
+     "pct_hi"
+    ],
+    "top": 5,
+    "painted": [
+     [
+      1,
+      4050,
+      -2.29,
+      -2.62,
+      -1.96
+     ],
+     [
+      2,
+      2978,
+      -3.57,
+      -3.99,
+      -3.15
+     ],
+     [
+      3,
+      2022,
+      -4.21,
+      -4.74,
+      -3.67
+     ],
+     [
+      4,
+      1439,
+      -5.18,
+      -5.77,
+      -4.59
+     ],
+     [
+      5,
+      2867,
+      -7.01,
+      -7.65,
+      -6.37
+     ]
+    ],
+    "changed": [
+     [
+      1,
+      4638,
+      -3.7,
+      -4.03,
+      -3.37
+     ],
+     [
+      2,
+      2276,
+      -6.38,
+      -6.93,
+      -5.83
+     ],
+     [
+      3,
+      856,
+      -9.32,
+      -10.09,
+      -8.54
+     ],
+     [
+      4,
+      258,
+      -11.72,
+      -13.23,
+      -10.19
+     ],
+     [
+      5,
+      82,
+      -11.05,
+      -15.33,
+      -6.55
+     ]
+    ]
+   }
   }
  }
 }

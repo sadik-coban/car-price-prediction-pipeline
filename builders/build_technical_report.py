@@ -13,12 +13,33 @@ Run / Koşum: python builders/build_technical_report.py
 import re
 from datetime import date
 
-import numpy as np
-
-from report_lib.report_common import (EXAMPLE_NOTES, FUEL_EN, HED_TERM, LADDER_EN,
+from report_lib.report_common import (ARM_LABEL, EXAMPLE_NOTES, FUEL_EN, HED_LADDER, HED_TERM, LADDER_EN,
                            LOFO_FLAT_KEYS, LOFO_GROUPS, P, REPORTS_DIR, TECHNICAL_FIGS, TIER_LABEL, VARIANTS, VARIANTS_EN,
-                           _Ctx, build_figures, col, derive, fp, fraction_words, id_label, load_report_view,
-                           lofo_name, num, number_word, tl, tlm, tlx, tx, write_md)
+                           _Ctx, _m2, build_figures, col, derive, fp, fraction_words, id_label, load_report_view,
+                           lofo_name, num, number_word, pm, tl, tlm, tlx, tx, write_md)
+
+# EN: 2026-11-23 (served interval): ids the metrics publish -> (TR, EN) display; id_label stops on an unknown id
+# TR: 2026-11-23 (servis edilen aralık): metriklerin yayımladığı kimlikler -> (TR, EN) görünen ad; id_label
+#     bilinmeyen kimlikte durur
+# EN: 08_conformal_coverage report.scale.profiles groups | TR: araç türü tablosunun grupları
+PROFILE_LABEL = {"all": ("hepsi", "all"), "age_0_3": ("0–3 yaş", "age 0–3"), "age_4_7": ("4–7 yaş", "age 4–7"),
+                 "age_8_12": ("8–12 yaş", "age 8–12"), "age_13_18": ("13–18 yaş", "age 13–18"),
+                 "age_19_plus": ("19+ yaş", "age 19+"), "no_comparable": ("emsalsiz", "no comparable"),
+                 "comparables_20_plus": ("20+ emsal", "20+ comparables"),
+                 "cheapest_quarter": ("tahmini en ucuz çeyrek", "cheapest predicted quarter"),
+                 "dearest_quarter": ("tahmini en pahalı çeyrek", "dearest predicted quarter"),
+                 "top_mileage_fifth": ("km'si en yüksek beşte bir", "highest-mileage fifth"),
+                 "heavy_damaged": ("ağır hasar kayıtlı", "heavy-damage record"), "segment_f": ("F segmenti", "segment F")}
+# EN: the axes the scale model does not see (08_conformal_coverage unseen_axes) | TR: ölçek modelinin görmediği eksenler
+UNSEEN_AXIS_LABEL = {"seller_type": ("satıcı tipi", "seller type"), "city": ("il", "city"), "colour": ("renk", "colour"),
+                     "warranty": ("garanti", "warranty"), "first_owner": ("ilk sahip", "first owner"),
+                     "trade_in": ("takas", "trade-in"), "damage_record": ("hasar kaydı tutarı", "damage record amount")}
+# EN: 07_final_model's worked examples shown in §7 (unseen_category stays out: it serves like many_comparables)
+# TR: 07_final_model'in §7'de gösterilen işlenmiş örnekleri (unseen_category girmez: many_comparables gibi servis edilir)
+SERVED_EXAMPLE_LABEL = {"many_comparables": ("bol emsalli, tahmini en yüksek ilan", "the dearest prediction among well-covered cells"),
+                        "no_comparable": ("aynı araç, modelinin eğitimde olmadığı bir yaşta",
+                                          "the same car at an age its model never has in training"),
+                        "model_typo": ("aynı araç, model adının son harfi eksik", "the same car, last letter of the model name dropped")}
 
 
 def section_data(c):
@@ -619,10 +640,10 @@ def section_redundancy(c):
     assert _hp, "0.5'i asan sayisal cift yok — 'su ciftler' cumlesi bayat"
     _pairs = lambda lg: ", ".join(f"{col(d, a, lg)}–{col(d, b, lg)} {r:.2f}" for a, b, r in _hp)   # noqa: E731
     A(L(f"Sayısal öznitelikler arasında Spearman korelasyonu (sıra ilişkisi; aşağıdaki harita). |ρ| > 0.5 olan "
-        f"çiftler: {_pairs('tr')}. Hedonik modeldeki çoklu bağlantı §{section_no('hedonic')}'da VIF ile ölçülüyor; "
+        f"çiftler: {_pairs('tr')}. Hedonik regresyondaki çoklu bağlantı §{section_no('hedonic')}'da VIF ile ölçülüyor; "
         f"orada kapı ve çamurluk boyaları ayrı değil, toplam boyalı parça sayısı olarak giriyor.",
         f"Spearman correlation (rank association) among the numeric features, in the map below. Pairs with "
-        f"|ρ| > 0.5: {_pairs('en')}. Collinearity in the hedonic model is measured with VIF in "
+        f"|ρ| > 0.5: {_pairs('en')}. Collinearity in the hedonic regression is measured with VIF in "
         f"§{section_no('hedonic')}; door and fender paint enter there as the total painted-part count, not "
         f"separately."))
     A("")
@@ -756,72 +777,47 @@ def section_segment(c):
 
 def section_hedonic(c):
     """
-    EN: §6 — the hedonic model: two columns (segment control, model control) with 95% intervals clustered by model,
-        variance and VIF in one sentence each, the engine terms, LOFO vs the SHAP ranking.
-    TR: §6 — hedonik model: modele göre kümeli %95 aralıklı iki sütun (segment kontrolü, model kontrolü), varyans
-        ve VIF birer cümle, motor terimleri, LOFO ile SHAP sıralaması.
+    EN: §6 — the hedonic regression, as the tool for "with the car's identity fixed, what does its condition add":
+        what explains the price (the ladder: condition only, the car's identity only, both, next to the price model;
+        out of fold), the effects without identity, under segment control and under car-model control with 95%
+        intervals clustered by car model, age as yearly steps, painted and changed panels by count, the engine terms,
+        LOFO vs the SHAP ranking.
+    TR: §6 — hedonik regresyon, "aracın kimliği sabitken durumu ne katıyor" sorusunun yöntemi olarak: fiyatı ne
+        açıklıyor (merdiven: yalnız durum, yalnız aracın kimliği, ikisi; tahmin modelinin yanında; kat dışı), araç
+        modeline göre kümeli %95 aralıklarla kimliksiz, segment kontrollü ve araç modeli kontrollü etkiler, yıllık
+        basamaklarla yaş, sayıya göre boyalı ve değişen panel, motor terimleri, LOFO ile SHAP sıralaması.
     """
     v, d, dom, met, meta, hr, lang = c.v, c.d, c.dom, c.met, c.meta, c.hr, c.lang
     L, A, T, figs = c.L, c.A, c.T, c.figs
-    # 2026-09-28 (sadelestirme listesi): 1000 tekrarli satir bootstrap'i ilanlari bagimsiz sayiyordu -> modele gore
-    # kumeli SH. C(model)'li model artik ikinci sutun (karar notu onu basiyor, kullanici karari). VIF tablosu,
-    # yakita gore hp-cc tablosu ve varsayim testi paragrafi birer cumleye indi.
+    # 2026-09-28 (sadelestirme listesi): 1000 tekrarli satir bootstrap'i ilanlari bagimsiz sayiyordu -> arac modeline
+    # gore kumeli SH. VIF tablosu, yakita gore hp-cc tablosu ve varsayim testi paragrafi birer cumleye indi.
+    # 2026-11-23 (kullanicinin istegi, docs/decisions.md): soru tersinden soruluyor. Fiyatin ne kadarini arac
+    # bilinmeden durumu, ne kadarini yalniz kimligi acikliyor (merdiven, kat disi R²); kimlik sabitlenince her etki
+    # nasil degisiyor (kimliksiz ucuncu sutun); yas yillik basamaklarla, boyali/degisen panel sayiya gore. Ifade
+    # kurali: veri kolonu "arac modeli", LightGBM "tahmin modeli", bu regresyon "hedonik regresyon". Her gozlem
+    # cumlesi veriye kapili: tutmazsa uretec durur.
     cols = hr["columns"]
     seg = {r["term"]: r for r in cols["segment"]["coefficients"]}
     mod = {r["term"]: r for r in cols["model"]["coefficients"]}
+    ni = v["hed_no_identity"]
     terms = list(seg)
-    assert terms == list(mod), "hedonik sutunlarin terimleri farkli"
+    assert terms == list(mod) == list(ni), "hedonik sutunlarin terimleri farkli"
     lab = lambda k_, lg_: HED_TERM[k_][0 if lg_ == "tr" else 1]                         # noqa: E731
-    _share = (cols["model"]["r2"] - v["hed_r2"]) / (v["model_r2_log"] - v["hed_r2"]) * 100
-    _seg_zero = [k_ for k_ in terms if seg[k_]["contains_zero"]]
-    _mod_zero = [k_ for k_ in terms if mod[k_]["contains_zero"]]
-    # 2026-09-28 (denetim): "nokta obur sutunun araliginda mi" bir fark testi degil; kumeli fark testi 06'da.
-    _sig = [d_["term"] for d_ in hr["difference"] if d_["significant"]]
-    _sc = hr["series_cluster"]
     _names = lambda ks_, lg_: ", ".join(lab(k_, lg_) for k_ in ks_)                      # noqa: E731
-    assert hr["homoskedasticity_p"] < .05, "Breusch-Pagan esit varyansi reddetmiyor — gerekce cumlesi bayat"
-    A(L(f"Hedonik regresyon her sürücünün *kontrollü* (diğer her şey sabitken) fiyat etkisini verir; hedef log fiyat, "
-        f"n **{num(v['hed_n'], lang)}**. İki sütun yan yana. **Segment kontrolü** segment, marka, yakıt ve vites "
-        f"kuklalarıyla kurulur (R² **{v['hed_r2']}**). **Model kontrolü** bunlara `C(model)` ekler "
-        f"({num(hr['n_clusters'], lang)} model adı), yani her etki aynı model adı içinde ölçülür (R² "
-        f"**{cols['model']['r2']}**). Model kimliği, hedonik R² ile modelin aynı ölçekteki OOF R²'si "
-        f"({v['model_r2_log']}, log fiyat) arasındaki farkın yaklaşık {P(_share, lang, 0)} kadarını kapatıyor — bir üst "
-        f"tahmin: C(model)'li R² örneklem içi, modelinki OOF. Modelin başlıktaki R²'si ({v['model_r2']}) ham ₺ "
-        f"ölçeğinde; hedonikle o karşılaştırılmamalı.",
-        f"The hedonic regression gives each driver's *controlled* effect on price (all else equal); the target is log "
-        f"price, n **{num(v['hed_n'], lang)}**. Two columns side by side. **Segment control** uses segment, brand, "
-        f"fuel and transmission dummies (R² **{v['hed_r2']}**). **Model control** adds `C(model)` "
-        f"({num(hr['n_clusters'], lang)} model names), so each effect is measured within one model name (R² "
-        f"**{cols['model']['r2']}**). Model identity closes about {P(_share, lang, 0)} of the gap between the hedonic R² "
-        f"and the model's OOF R² on the same scale ({v['model_r2_log']}, log price) — an upper estimate: the R² with "
-        f"C(model) is in-sample while the model's is OOF. The model's headline R² ({v['model_r2']}) is on the raw ₺ "
-        f"scale and should not be read against the hedonic one."))
-    A("")
-    A(L(f"**Güven aralıkları.** Aynı modelin ilanları birbirinden bağımsız değil ve hata varyansı eşit değil "
-        f"(Breusch-Pagan p {fp(hr['homoskedasticity_p'])}); bu yüzden %95 güven aralıkları modele göre kümelenmiş "
-        f"standart hatalardan ({num(hr['n_clusters'], lang)} küme). Segment sütununda "
-        + (f"{len(terms)} terimin hepsinin aralığı sıfırı dışlıyor" if not _seg_zero else
-           f"{_names(_seg_zero, 'tr')} terimlerinin aralığı sıfırı içeriyor")
-        + ("; model sütununda da." if not _mod_zero else
-           f"; model sütununda {_names(_mod_zero, 'tr')} terimlerinin aralığı sıfırı içeriyor.")
-        + (f" Duyarlılık: seriye göre kümelenince ({num(_sc['n_clusters'], lang)} küme; az ve dengesiz, bu yüzden yalnız "
-           f"karşılaştırma için) aralığı sıfırı içeren terimler segment sütununda "
-           f"{_names(_sc['zero_in_ci']['segment'], 'tr') or 'yok'}, model sütununda "
-           f"{_names(_sc['zero_in_ci']['model'], 'tr') or 'yok'}. Aynı serinin modelleri de birbirinden bağımsız "
-           f"değil; bu terimlerin anlamlılığı kümelemenin seçimine bağlı."
-           if _sc["zero_in_ci"]["segment"] != _seg_zero or _sc["zero_in_ci"]["model"] != _mod_zero else ""),
-        f"**Confidence intervals.** Listings of the same model are not independent and the error variance is not "
-        f"equal (Breusch-Pagan p {fp(hr['homoskedasticity_p'])}), so the 95% intervals come from standard errors "
-        f"clustered by model ({num(hr['n_clusters'], lang)} clusters). In the segment column "
-        + (f"all {len(terms)} intervals exclude zero" if not _seg_zero else
-           f"the intervals of {_names(_seg_zero, 'en')} contain zero")
-        + ("; in the model column too." if not _mod_zero else
-           f"; in the model column the intervals of {_names(_mod_zero, 'en')} contain zero.")
-        + (f" Sensitivity: clustered by series ({num(_sc['n_clusters'], lang)} clusters; few and uneven, so for "
-           f"comparison only), the terms whose interval contains zero are {_names(_sc['zero_in_ci']['segment'], 'en') or 'none'} "
-           f"in the segment column and {_names(_sc['zero_in_ci']['model'], 'en') or 'none'} in the model column. "
-           f"Models of one series are not independent either; these terms' significance depends on the clustering."
-           if _sc["zero_in_ci"]["segment"] != _seg_zero or _sc["zero_in_ci"]["model"] != _mod_zero else "")))
+    cell = lambda r_: (f"{P(r_['pct_effect'], lang, 2, sign=True)} [{P(r_['pct_lo'], lang, 2, sign=True)}, "   # noqa: E731
+                       f"{P(r_['pct_hi'], lang, 2, sign=True)}]")
+    A(L(f"Bu bölüm iki soruyu yanıtlıyor. Birincisi: log fiyatın ne kadarı aracın ne olduğu bilinmeden yalnız "
+        f"durumundan, ne kadarı yalnız kimliğinden (araç modelinin adı), ne kadarı ikisinden birlikte açıklanıyor. "
+        f"İkincisi: aracın kimliği sabitken durumu fiyatla nasıl ilişkili ve her etki kimlik sabitlenince nasıl "
+        f"değişiyor. Yöntem hedonik regresyon (OLS; hedef log fiyat, n **{num(v['hed_n'], lang)}**). Burada fiyat "
+        f"tahmini için değil, ikinci soru için kullanılıyor; fiyatı tahmin etmek §{section_no('model')}'deki tahmin "
+        f"modelinin işi.",
+        f"This section answers two questions. First: how much of log price is explained by the car's condition alone, "
+        f"without knowing what car it is; how much by its identity alone (the car model name); and how much by both "
+        f"together. Second: with the car's identity held fixed, how its condition relates to the price, and how each "
+        f"effect changes once the identity is held fixed. The method is a hedonic regression (OLS; target log price, "
+        f"n **{num(v['hed_n'], lang)}**). It is used here not to predict prices but for the second question; "
+        f"predicting the price is the job of the price model in §{section_no('model')}."))
     A("")
     # OLS eksik deger kaldirmaz: kac ilanin neden elendigi 06_hedonic'te SAYILIR (hedonic_dropped), burada yalnizca
     # yazilir. Kapi: n_dedup - total == hedonik n.
@@ -829,41 +825,181 @@ def section_hedonic(c):
     if _dropped:
         assert v["n_dedup"] - _dropped["total"] == v["hed_n"], (
             f"hedonik eleme rapordaki n ile uyusmuyor: {v['n_dedup']} - {_dropped['total']} != {v['hed_n']}")
-        A(L(f"**Not:** Hedonik model bir OLS modelidir ve eksik değerlerle çalışamaz; bu yüzden eksik "
+        A(L(f"**Not:** Hedonik regresyon bir OLS'tir ve eksik değerlerle çalışamaz; bu yüzden eksik "
             f"motor gücü ({num(_dropped['hp'], lang)}) ve eksik motor hacmi ({num(_dropped['cc'], lang)}) bulunan "
             f"ilanlar analiz öncesinde elenmiştir. Her iki alanın da ortak eksik olduğu satırlar "
             f"düşüldüğünde veri setinden toplam {num(_dropped['total'], lang)} satır çıkarılmıştır.",
-            f"**Note:** The hedonic model is an OLS and cannot run with missing values, so listings with "
+            f"**Note:** The hedonic regression is an OLS and cannot run with missing values, so listings with "
             f"missing engine power ({num(_dropped['hp'], lang)}) or missing displacement ({num(_dropped['cc'], lang)}) "
             f"were removed before the analysis. Once the rows missing both are counted only once, "
             f"{num(_dropped['total'], lang)} rows in total were dropped from the dataset."))
         A("")
-    figs(3)
 
-    cell = lambda r_: (f"{P(r_['pct_effect'], lang, 2, sign=True)} [{P(r_['pct_lo'], lang, 2, sign=True)}, "   # noqa: E731
-                       f"{P(r_['pct_hi'], lang, 2, sign=True)}]")
-    A(L("### Kontrollü etkiler", "### Controlled effects"))
+    # --- Fiyati ne acikliyor: merdiven (06_hedonic report.hedonic.ladder), kat disi R²; tahmin modelinin log
+    # olcekteki kat disi R²'si 08_residuals'tan. Parcalar ve "farkin ne kadarini kapatiyor" orani burada turetilir.
+    lad = v["hed_ladder"]
+    ladl = lambda k_, lg_: HED_LADDER[k_][0 if lg_ == "tr" else 1]                     # noqa: E731
+    oof = {k_: r_["r2_out_of_fold"] for k_, r_ in lad.items()}
+    _cond, _idm, _both, _segc, _pm = (oof["condition"], oof["identity_model"], oof["model_control"],
+                                      oof["segment_control"], v["model_r2_log"])
+    assert _segc < _both < _pm, (f"segment {_segc} < arac modeli {_both} < tahmin modeli {_pm} tutmuyor — "
+                                 f"'farkin bir kismini kapatiyor' cumlesi bayat")
+    _share = (_both - _segc) / (_pm - _segc) * 100
+    _only_cond, _only_id = _both - _idm, _both - _cond
+    _shared = _both - _only_cond - _only_id
+    assert min(_only_cond, _only_id, _shared) > 0, (
+        f"merdiven parcalari pozitif degil: durum {_only_cond}, kimlik {_only_id}, ortak {_shared} — paragraf bayat")
+    _gap = {k_: r_["r2_in_sample"] - r_["r2_out_of_fold"] for k_, r_ in lad.items()}
+    _gap_top = max(_gap, key=_gap.get)
+    assert _gap_top == "identity_model", f"orneklem ici - kat disi farki en cok {_gap_top}'ta — cumle bayat"
+    A(L("### Fiyatı ne açıklıyor", "### What explains the price"))
     A("")
-    T([L("terim", "term"), L("segment kontrolü [%95 GA]", "segment control [95% CI]"),
-       L("model kontrolü [%95 GA]", "model control [95% CI]")],
-      [[lab(k_, lang), cell(seg[k_]), cell(mod[k_])] for k_ in terms], "lrr")
+    A(L(f"Altı regresyon, aynı {num(v['hed_n'], lang)} ilanda. R² log fiyatta ve kat dışı: ilanlar katlara bölündü, "
+        f"her katın ilanları öteki katlarda kurulan regresyonla tahmin edildi. Son satır tahmin modelinin aynı "
+        f"ölçekteki kat dışı R²'si.",
+        f"Six regressions on the same {num(v['hed_n'], lang)} listings. R² is on log price and out of fold: the "
+        f"listings were split into folds and each fold's listings were predicted by the regression fitted on the "
+        f"other folds. The last row is the price model's out-of-fold R² on the same scale."))
+    A("")
+    T([L("regresyon", "regression"), L("sütun (sabit dahil)", "columns (incl. intercept)"),
+       L("R² (kat dışı)", "R² (out of fold)")],
+      [[ladl(k_, lang), num(r_["n_columns"], lang), f"{r_['r2_out_of_fold']:.4f}"] for k_, r_ in lad.items()]
+      + [[L("**tahmin modeli** (LightGBM)", "**price model** (LightGBM)"), "–", f"{_pm:.4f}"]], "lrr")
+    A(L(f"Yalnız durumla R² {_cond:.4f}, yalnız araç modelinin adıyla {_idm:.4f}, ikisi birlikte (araç modeli "
+        f"kontrolü; motor ve öteki kimlik kuklaları dahil) {_both:.4f}. Yalnız durumun kattığı (araç modeli kontrolü "
+        f"eksi yalnız araç modelinin adı) {_only_cond:.4f}, yalnız aracın kimliğinin kattığı (araç modeli kontrolü eksi "
+        f"yalnız durum; motor burada kimlik tarafında) {_only_id:.4f}; kalan {_shared:.4f} ortak: durum ve kimlik "
+        f"birbirinden bağımsız değil, bu kısmı ikisinden biri tek başına da açıklıyor.",
+        f"Condition alone gives R² {_cond:.4f}, the car model name alone {_idm:.4f}, both together (car-model control, "
+        f"with the engine and the other identity dummies) {_both:.4f}. The part only condition adds (car-model control "
+        f"minus the car model name alone) is {_only_cond:.4f}; the part only the car's identity adds (car-model control "
+        f"minus condition alone; the engine counts on the identity side here) is {_only_id:.4f}; the remaining "
+        f"{_shared:.4f} is shared: condition and identity are not independent, and either one alone explains this "
+        f"part."))
+    A("")
+    A(L(f"Araç modelinin adı, segment kontrolünden tahmin modeline kalan farkın ({_segc:.4f} → {_pm:.4f}) yaklaşık "
+        f"{P(_share, lang, 0)} kadarını kapatıyor ({_segc:.4f} → {_both:.4f}). Tahmin modelinin R²'si "
+        f"{num(v['n_dedup'], lang)} ilanın tamamında, regresyonlarınki motor değeri olan {num(v['hed_n'], lang)} "
+        f"ilanda. Örneklem içi R² en çok yalnız araç modelinin adında kat dışından yüksek "
+        f"({lad['identity_model']['r2_in_sample']:.4f}): az ilanlı araç modellerinde kukla kendi ilanlarına uyuyor, "
+        f"görmediği ilanda o kadar tutmuyor; tablo bu yüzden kat dışı R²'yi veriyor. Tahmin modelinin başlıktaki R²'si "
+        f"({v['model_r2']}) ham ₺ ölçeğinde; regresyonlarla o karşılaştırılmamalı.",
+        f"The car model name closes about {P(_share, lang, 0)} of the gap left between segment control and the price "
+        f"model ({_segc:.4f} → {_pm:.4f}), taking it to {_both:.4f}. The price model's R² is over all "
+        f"{num(v['n_dedup'], lang)} listings, the regressions' over the {num(v['hed_n'], lang)} with an engine value. "
+        f"In-sample R² exceeds the out-of-fold one most for the car model name alone "
+        f"({lad['identity_model']['r2_in_sample']:.4f}): for car models with few listings the dummy fits its own "
+        f"listings and holds less well on listings it has not seen, which is why the table gives out-of-fold R². The "
+        f"price model's headline R² ({v['model_r2']}) is on the raw ₺ scale and should not be read against the "
+        f"regressions."))
+    A("")
+
+    # --- Kimlik sabitken etkiler: uc sutun (kimliksiz: report.hedonic.no_identity; segment ve arac modeli kontrolu:
+    # domain.hedonic_reliability.columns). Iki gozlem veriye kapili.
+    A(L("### Kimlik sabitken etkiler", "### Effects with the identity held fixed"))
+    A("")
+    A(L(f"Aynı {number_word(len(terms), 'tr')} terim üç sütunda. **Kimlik yok:** yalnız terimler. **Segment "
+        f"kontrolü:** segment, marka, yakıt ve vites kuklaları eklenir. **Araç modeli kontrolü:** bunlara araç modelinin "
+        f"adı eklenir ({num(hr['n_clusters'], lang)} araç modeli), yani her etki aynı araç modeli içinde ölçülür. "
+        f"Aralıklar araç modeline göre kümeli standart hatalardan (aşağıda).",
+        f"The same {number_word(len(terms), 'en')} terms in three columns. **No identity:** the terms alone. **Segment "
+        f"control:** segment, brand, fuel and transmission dummies are added. **Car-model control:** the car model name "
+        f"is added to those ({num(hr['n_clusters'], lang)} car models), so each effect is measured within one car "
+        f"model. The intervals come from standard errors clustered by car model (below)."))
+    A("")
+    T([L("terim", "term"), L("kimlik yok [%95 GA]", "no identity [95% CI]"),
+       L("segment kontrolü [%95 GA]", "segment control [95% CI]"),
+       L("araç modeli kontrolü [%95 GA]", "car-model control [95% CI]")],
+      [[lab(k_, lang), cell(ni[k_]), cell(seg[k_]), cell(mod[k_])] for k_ in terms], "lrrr")
     _center = hr["center"]
+    # 2026-09-28 (denetim): "nokta obur sutunun araliginda mi" bir fark testi degil; kumeli fark testi 06'da.
+    _sig = [d_["term"] for d_ in hr["difference"] if d_["significant"]]
     A(L(f"Etki = exp(β)−1. Yaş ve km **medyan araca** ({num(_center['age'], lang)} yaş, "
         f"{num(_center['km'], lang)} km) ortalandı: yaş ve km satırları o araçtaki marjinal etki. "
         f"Kare ve etkileşim terimleri (yaş², km², yaş×km) tek başına okunmaz; eğrinin bükülmesini taşır. "
-        + (f"İki sütunun farkı her terim için modele göre kümeli bir testle sınandı: fark {_names(_sig, 'tr')} "
-           f"terimlerinde örnekleme hatasından büyük (%5 düzeyinde); öteki terimlerde değil. " if _sig else
-           "İki sütunun farkı her terim için modele göre kümeli bir testle sınandı: hiçbir terimde örnekleme "
-           "hatasından büyük değil. ")
-        + "Karar notundaki etkiler model sütunundan: aynı model adı içinde.",
+        + (f"Segment ve araç modeli kontrolü sütunlarının farkı her terim için araç modeline göre kümeli bir testle "
+           f"sınandı: fark {_names(_sig, 'tr')} terimlerinde örnekleme hatasından büyük (%5 düzeyinde); öteki "
+           f"terimlerde değil. " if _sig else
+           "Segment ve araç modeli kontrolü sütunlarının farkı her terim için araç modeline göre kümeli bir testle "
+           "sınandı: hiçbir terimde örnekleme hatasından büyük değil. ")
+        + "Karar notundaki km, ağır hasar ve değişen panel etkileri araç modeli kontrolü sütunundan; yaş ve boyalı "
+          "panel aşağıdaki iki tablodan, onlar da aynı araç modeli içinde.",
         f"Effect = exp(β)−1. Age and km are centred on the **median car** ({num(_center['age'], lang)} "
         f"years, {num(_center['km'], lang)} km): the age and km rows are the marginal effect at that car. "
         f"Squared and interaction terms (age², km², age×km) are not read alone; they carry the curvature. "
-        + (f"The difference between the columns was tested per term with SEs clustered by model: it exceeds "
-           f"sampling error (at 5%) for {_names(_sig, 'en')}, and not for the other terms. " if _sig else
-           "The difference between the columns was tested per term with SEs clustered by model: it exceeds sampling "
-           "error for no term. ")
-        + "The decision note's effects come from the model column: within one model name."))
+        + (f"The difference between the segment-control and car-model-control columns was tested per term with SEs "
+           f"clustered by car model: it exceeds sampling error (at 5%) for {_names(_sig, 'en')}, and not for the "
+           f"other terms. " if _sig else
+           "The difference between the segment-control and car-model-control columns was tested per term with SEs "
+           "clustered by car model: it exceeds sampling error for no term. ")
+        + "The decision note's mileage, heavy-damage and changed-panel effects come from the car-model-control "
+          "column; age and painted panels come from the two tables below, also within one car model."))
+    A("")
+    _km_n, _km_s, _km_m = ni["km100k"], seg["km100k"], mod["km100k"]
+    _hp_n, _hp_s, _hp_m = ni["hp100"], seg["hp100"], mod["hp100"]
+    assert _km_n["pct_lo"] > max(_km_s["pct_hi"], _km_m["pct_hi"]), (
+        "kimliksiz km araligi kontrollu sutunlarla ortusuyor ya da daha guclu — 'km kimliksiz cok daha zayif' bayat")
+    assert _hp_n["pct_lo"] > max(_hp_s["pct_hi"], _hp_m["pct_hi"]), (
+        "kimliksiz +100 hp araligi kontrollu sutunlarla ortusuyor — '+100 hp kimliksiz cok daha buyuk' bayat")
+    assert max(_hp_s["point"], _hp_m["point"]) < _hp_n["point"] / 2, (
+        "kontrollu +100 hp log etkisi kimliksizin yarisindan buyuk — 'yaridan fazlasi aracin sinifi' bayat")
+    # "yalniz bu ikisi": kimliksiz araligi iki kontrollu sutunun hicbiriyle ortusmeyen terimler tam km ve +100 hp
+    _apart = lambda a_, b_: a_["pct_hi"] < b_["pct_lo"] or b_["pct_hi"] < a_["pct_lo"]   # noqa: E731
+    _moved = [k_ for k_ in terms if _apart(ni[k_], seg[k_]) and _apart(ni[k_], mod[k_])]
+    assert _moved == ["km100k", "hp100"], f"kimliksiz araligi ayrisan terimler {_moved} — 'yalniz bu ikisi' bayat"
+    A(L(f"Kimlik sabitlenince en belirgin değişen iki terim km ve {lab('hp100', 'tr')}: yalnız bu ikisinde kimliksiz "
+        f"sütunun aralığı öteki iki sütunun hiçbiriyle örtüşmüyor. **Km** kimlik olmadan çok daha zayıf görünüyor: "
+        f"{lab('km100k', 'tr')} kimlik yokken "
+        f"{cell(_km_n)}, araç modeli içinde {cell(_km_m)}. Km ile aracın kimliği birlikte değişiyor: yaşı, hasarı ve "
+        f"motoru aynı ilanlar arasında km'si yüksek olanlar ortalamada fiyatı daha yüksek araç modellerinden. Kimliksiz "
+        f"katsayı bunu da taşıdığı için km'nin fiyatla ilişkisini küçük gösteriyor. **{lab('hp100', 'tr')}** ise kimlik "
+        f"olmadan çok daha büyük: {cell(_hp_n)}; segment kontrolünde {cell(_hp_s)}, araç modeli kontrolünde "
+        f"{cell(_hp_m)}. Log ölçekte kimliksiz etkinin yarıdan fazlası segment, marka, yakıt ve vites girince gidiyor: "
+        f"büyük kısmı motorun kendisi değil, aracın sınıfı. Kimliksiz sütunla öteki ikisi arasında terim başına bir fark "
+        f"testi yok; bu iki gözlem aralıkların örtüşmemesine dayanıyor.",
+        f"The two terms that change most clearly once the identity is held fixed are mileage and {lab('hp100', 'en')}: "
+        f"only for these two does the no-identity interval overlap neither of the other two columns'. **Mileage** "
+        f"looks much weaker without the identity: {lab('km100k', 'en')} is "
+        f"{cell(_km_n)} without it and {cell(_km_m)} within one car model. Mileage and the car's identity move "
+        f"together: among listings with the same age, damage and engine, those with more mileage come on average from "
+        f"higher-priced car models. The coefficient without identity carries that too, so it understates how mileage "
+        f"relates to price. **{lab('hp100', 'en')}**, on the other hand, looks much larger without the identity: "
+        f"{cell(_hp_n)}; {cell(_hp_s)} under segment control and {cell(_hp_m)} under car-model control. On the log "
+        f"scale more than half of the uncontrolled effect goes once segment, brand, fuel and transmission enter: most of "
+        f"it is the car's class, not the engine itself. There is no per-term difference test between the no-identity "
+        f"column and the other two; these two observations rest on the intervals not overlapping."))
+    A("")
+    figs(3)
+    assert hr["homoskedasticity_p"] < .05, "Breusch-Pagan esit varyansi reddetmiyor — gerekce cumlesi bayat"
+    _zero = {k_: [t_ for t_ in terms if col_[t_]["contains_zero"]] for k_, col_ in (("none", ni), ("segment", seg),
+                                                                                   ("model", mod))}
+    _sc = hr["series_cluster"]
+    _ZCOL = {"none": ("kimliksiz sütunda", "in the no-identity column"),
+             "segment": ("segment kontrolünde", "under segment control"),
+             "model": ("araç modeli kontrolünde", "under car-model control")}
+    _zl = lambda lg_: "; ".join(                                                          # noqa: E731
+        f"{_ZCOL[k_][0]} {_names(z_, 'tr') or 'yok'}" if lg_ == "tr" else f"{_names(z_, 'en') or 'none'} {_ZCOL[k_][1]}"
+        for k_, z_ in _zero.items())
+    _series_differs = _sc["zero_in_ci"]["segment"] != _zero["segment"] or _sc["zero_in_ci"]["model"] != _zero["model"]
+    A(L(f"**Güven aralıkları.** Aynı araç modelinin ilanları birbirinden bağımsız değil ve hata varyansı eşit değil "
+        f"(Breusch-Pagan p {fp(hr['homoskedasticity_p'])}); bu yüzden %95 güven aralıkları araç modeline göre "
+        f"kümelenmiş standart hatalardan ({num(hr['n_clusters'], lang)} küme). Aralığı sıfırı içeren terimler: "
+        f"{_zl('tr')}."
+        + (f" Duyarlılık: seriye göre kümelenince ({num(_sc['n_clusters'], lang)} küme; az ve dengesiz, bu yüzden yalnız "
+           f"karşılaştırma için) aralığı sıfırı içeren terimler segment kontrolünde "
+           f"{_names(_sc['zero_in_ci']['segment'], 'tr') or 'yok'}, araç modeli kontrolünde "
+           f"{_names(_sc['zero_in_ci']['model'], 'tr') or 'yok'}. Aynı serinin araç modelleri de birbirinden bağımsız "
+           f"değil; bu terimlerin anlamlılığı kümelemenin seçimine bağlı." if _series_differs else ""),
+        f"**Confidence intervals.** Listings of the same car model are not independent and the error variance is not "
+        f"equal (Breusch-Pagan p {fp(hr['homoskedasticity_p'])}), so the 95% intervals come from standard errors "
+        f"clustered by car model ({num(hr['n_clusters'], lang)} clusters). Terms whose interval contains zero: "
+        f"{_zl('en')}."
+        + (f" Sensitivity: clustered by series ({num(_sc['n_clusters'], lang)} clusters; few and uneven, so for "
+           f"comparison only), the terms whose interval contains zero are "
+           f"{_names(_sc['zero_in_ci']['segment'], 'en') or 'none'} under segment control and "
+           f"{_names(_sc['zero_in_ci']['model'], 'en') or 'none'} under car-model control. Car models of one series "
+           f"are not independent either; these terms' significance depends on the clustering."
+           if _series_differs else "")))
     A("")
     A(L("**Katsayılar nedensel etki değil, kontrollü ilişkidir.** Ör. boyalı panelin katsayısı boyamanın fiyatı "
         "düşürdüğünü değil, boyalı panelli ilanların benzerlerinden o kadar ucuz ilan edildiğini söyler.",
@@ -874,22 +1010,106 @@ def section_hedonic(c):
     _vif = hr["vif"]
     _vif_level_tr = "10'un altında" if _vif["value"] < 10 else "10'un üzerinde — dikkatle okunmalı"
     _vif_level_en = "below 10" if _vif["value"] < 10 else "above 10 — read with care"
-    A(L(f"**Çoklu bağlantı.** Segment sütununun tasarımında en yüksek VIF {lab(_vif['term'], 'tr')} "
+    A(L(f"**Çoklu bağlantı.** Segment kontrolü sütununun tasarımında en yüksek VIF {lab(_vif['term'], 'tr')} "
         f"{_vif['value']:.2f} ({_vif_level_tr}); ortalanmamış tasarımda en yüksek {lab(_vif['raw_term'], 'tr')} "
         f"{_vif['raw_value']:.2f}. Yaş, yaş², km, km² ve yaş×km aynı iki değişkenden türediği için yapısal olarak "
         f"bağlı; medyan araca ortalamak bunu giderir, tahminler ve R² değişmez.",
-        f"**Collinearity.** The highest VIF in the segment column's design is {lab(_vif['term'], 'en')} "
+        f"**Collinearity.** The highest VIF in the segment-control column's design is {lab(_vif['term'], 'en')} "
         f"{_vif['value']:.2f} ({_vif_level_en}); in the uncentred design the highest is {lab(_vif['raw_term'], 'en')} "
         f"{_vif['raw_value']:.2f}. Age, age², km, km² and age×km are built from two variables, so they are "
         f"structurally linked; centring on the median car removes that, and predictions and R² do not change."))
     A("")
 
+    # --- Yas: yillik basamaklar (report.hedonic.age_steps). Ikinci dereceden terimin tek sayisi bicime bagli: en az
+    # bir basamak o sayinin araliginin disinda olmali; her basamak bir dusus olmali.
+    _steps, _age = v["hed_age_steps"], mod["age"]
+    assert all(s_["pct_hi"] < 0 for s_ in _steps), f"bir yas basamagi dusus degil — 'dusus' cumlesi bayat: {_steps}"
+    _out = [s_ for s_ in _steps if not _age["pct_lo"] <= s_["pct_per_year"] <= _age["pct_hi"]]
+    assert _out, "her yas basamagi ikinci dereceden sayinin araliginda — 'bicime bagli' cumlesi bayat"
+    _steep = min(_steps, key=lambda s_: s_["pct_per_year"])
+    _slow = max(_steps, key=lambda s_: s_["pct_per_year"])
+    _span = lambda s_: f"{s_['age_from']}–{s_['age_to']}"                                # noqa: E731
+    A(L("### Yaş: yıllık basamaklar", "### Age: yearly steps"))
+    A("")
+    A(L(f"Yaş burada ikinci dereceden bir terim yerine yaş başına bir kuklayla, km esnek bir eğriyle (B-spline, "
+        f"{v['hed_km_df']} serbestlik derecesi) giriyor; öteki terimler ve araç modeli kontrolü aynı. Tablo iki yaş "
+        f"arasında yıl başına ortalama fiyat değişimini veriyor.",
+        f"Here age enters as one dummy per age instead of a quadratic, and mileage as a flexible curve (B-spline, "
+        f"{v['hed_km_df']} degrees of freedom); the other terms and the car-model control stay. The table gives the "
+        f"average price change per year between two ages."))
+    A("")
+    T([L("yaş", "age"), L("aradaki ilan", "listings in the range"), L("yıl başına [%95 GA]", "per year [95% CI]")],
+      [[_span(s_), num(s_["n"], lang), (f"{P(s_['pct_per_year'], lang, 2, sign=True)} "
+                                        f"[{P(s_['pct_lo'], lang, 2, sign=True)}, {P(s_['pct_hi'], lang, 2, sign=True)}]")]
+       for s_ in _steps], "lrr")
+    A(L(f"İkinci dereceden terim medyan araçta ({num(_center['age'], lang)} yaş) tek bir sayı veriyor: yılda "
+        f"{cell(_age)}. Yıllık basamaklarla düşüş yaşa göre yılda {P(abs(_slow['pct_per_year']), lang, 2)} ile "
+        f"{P(abs(_steep['pct_per_year']), lang, 2)} arasında (en dik {_span(_steep)}, en yavaş {_span(_slow)} yaş "
+        f"arası); basamakların {len(_out)}/{len(_steps)} tanesi o tek sayının aralığının dışında. Tek sayı seçilen "
+        f"fonksiyon biçimine bağlı; yaşa göre değişen bir düşüşü tek orana indiriyor. Veri tek dönem "
+        f"({v['period']['tr']}): ölçülen, aynı dönemde ilanda olan ve bir model yılı farklı araçların fiyat farkı; bir "
+        f"aracın yaşlanırken ne kadar değer kaybettiği değil.",
+        f"The quadratic gives one number at the median car ({num(_center['age'], lang)} years): {cell(_age)} a year. "
+        f"With yearly steps the drop runs from {P(abs(_slow['pct_per_year']), lang, 2)} to "
+        f"{P(abs(_steep['pct_per_year']), lang, 2)} a year depending on age (steepest from {_steep['age_from']} to "
+        f"{_steep['age_to']}, slowest from {_slow['age_from']} to {_slow['age_to']}); {len(_out)} of the {len(_steps)} "
+        f"steps fall outside that single number's "
+        f"interval. The single number depends on the functional form chosen; it folds a drop that changes with age "
+        f"into one rate. The data is one period ({v['period']['en']}): what is measured is the price difference "
+        f"between cars one model year apart listed at the same time, not how much one car loses as it ages."))
+    A("")
+
+    # --- Boyali ve degisen panel sayisi (report.hedonic.by_count): hic yokken 1, 2, ... top ve fazlasi. Boyali icin
+    # "her biri sabit tutar degil", degisen icin "dogrusala yakin" cumleleri veriye kapili.
+    _top, _bc = v["hed_count_top"], v["hed_by_count"]
+    _pt, _ch = _bc["painted"], _bc["changed"]
+    _lin_p, _lin_c = mod["painted"], mod["changed"]
+    _comp = lambda pct_, k_: 100 * ((1 + pct_ / 100) ** k_ - 1)                          # noqa: E731
+    _p_rep = _comp(_pt[0]["pct_effect"], _top)        # ilk boyali panelin etkisi her panelde tekrarlansaydi
+    assert _pt[0]["pct_hi"] < _lin_p["pct_lo"], (
+        "ilk boyali panelin araligi dogrusal katsayininkiyle ortusuyor — 'sabit tutar degil' cumlesi bayat")
+    assert _pt[-1]["pct_lo"] > _p_rep, (
+        f"{_top}+ boyali panel ilk panelin tekrarindan ayrilmiyor — 'sonrakiler daha az' cumlesi bayat")
+    assert all(r_["pct_lo"] <= _comp(_lin_c["pct_effect"], r_["count"]) <= r_["pct_hi"] for r_ in _ch[1:]), (
+        "dogrusal degisen katsayisi 2…top satirlarinin araliginda degil — 'dogrusala yakin' cumlesi bayat")
+    assert _ch[0]["pct_hi"] < _lin_c["pct_effect"], (
+        "ilk degisen panel dogrusal katsayidan fazla dusurmuyor — 'yalniz ilk panel fazla' cumlesi bayat")
+    _count = lambda k_: str(k_) if k_ < _top else L(f"{_top} ve fazlası", f"{_top} or more")   # noqa: E731
+    A(L("### Boyalı ve değişen panel sayısı", "### Painted and changed panels by count"))
+    A("")
+    A(L(f"Burada boyalı (değişen) panel sayısı doğrusal bir terim yerine sayı başına bir kuklayla giriyor; etki hiç "
+        f"boyalı (değişen) paneli olmayan ilanlara göre, aynı araç modeli içinde, öteki terimler sabitken. Son satır "
+        f"{_top} ve fazlası.",
+        f"Here the painted (changed) panel count enters as one dummy per count instead of a linear term; the effect is "
+        f"against listings with no painted (changed) panel, within one car model, the other terms held fixed. The last "
+        f"row is {_top} or more."))
+    A("")
+    T([L("panel sayısı", "panels"), L("boyalı: ilan", "painted: listings"), L("boyalı [%95 GA]", "painted [95% CI]"),
+       L("değişen: ilan", "changed: listings"), L("değişen [%95 GA]", "changed [95% CI]")],
+      [[_count(p_["count"]), num(p_["n"], lang), cell(p_), num(c_["n"], lang), cell(c_)] for p_, c_ in zip(_pt, _ch)],
+      "lrrrr")
+    A(L(f"**Boyalı panel her biri sabit bir tutar değil.** Tek boyalı panel {cell(_pt[0])}; doğrusal terimin panel "
+        f"başına katsayısı {cell(_lin_p)} ve iki aralık örtüşmüyor. {_top} ve fazlası {cell(_pt[-1])}: ilk panelin "
+        f"etkisi her panelde tekrarlansaydı {_top} panel {P(_p_rep, lang, 2, sign=True)} olurdu, aralık bunu da "
+        f"dışlıyor. İlk boyalı panel en çok düşürüyor, sonrakiler ortalamada daha az. **Değişen panel doğrusala "
+        f"yakın:** panel başına {P(_lin_c['pct_effect'], lang, 2, sign=True)}, panel sayısıyla katlanınca 2'den {_top} "
+        f"ve fazlasına kadar her satırın aralığına düşüyor; yalnız ilk değişen panel ({cell(_ch[0])}) bundan fazla "
+        f"düşürüyor.",
+        f"**A painted panel is not a fixed amount each.** One painted panel is {cell(_pt[0])}; the linear term's "
+        f"per-panel coefficient is {cell(_lin_p)}, and the two intervals do not overlap. {_top} or more is "
+        f"{cell(_pt[-1])}: if the first panel's effect repeated for every panel, {_top} panels would be "
+        f"{P(_p_rep, lang, 2, sign=True)}, which the interval also excludes. The first painted panel costs the most; "
+        f"the later ones less on average. **Changed panels are close to linear:** "
+        f"{P(_lin_c['pct_effect'], lang, 2, sign=True)} per panel, compounded by the count, falls inside every row's "
+        f"interval from 2 to {_top} or more; only the first changed panel ({cell(_ch[0])}) costs more than that."))
+    A("")
+
     A(L("### Motor etkisi", "### Engine effect"))
     A("")
-    _hp_s, _hp_m, _l_s, _l_m = seg["hp100"], mod["hp100"], seg["litre"], mod["litre"]
+    _l_s, _l_m = seg["litre"], mod["litre"]
     _wider = (_hp_m["pct_hi"] - _hp_m["pct_lo"] > _hp_s["pct_hi"] - _hp_s["pct_lo"]
               and _l_m["pct_hi"] - _l_m["pct_lo"] > _l_s["pct_hi"] - _l_s["pct_lo"])
-    assert _wider, "model sutununda motor araliklari daha genis degil — 'araliklari genis' cumlesi bayat"
+    assert _wider, "arac modeli sutununda motor araliklari daha genis degil — 'araliklari genis' cumlesi bayat"
     _hw, _ws = hr["hp_within_model"], hr["without_spec_outliers"]
     _ws_hp = {r_["term"]: r_ for r_ in _ws["coefficients"]}["hp100"]
     # 2026-10-12: §8 isaretli ilanlari butun ilanlarda sayar, §6 yalniz hedonik orneklemde; orneklem gecerli gucu ve
@@ -910,26 +1130,27 @@ def section_hedonic(c):
                 + ("has no valid power or size value and was" if _spec_all - _spec_in == 1 else
                    "have no valid power or size value and were")
                 + " never in it)")
-    A(L(f"{lab('hp100', 'tr')} segment kontrolünde **{P(_hp_s['pct_effect'], lang, sign=True)}**, model kontrolünde "
-        f"**{P(_hp_m['pct_effect'], lang, sign=True)}**; {lab('litre', 'tr')} **{P(_l_s['pct_effect'], lang, sign=True)}** "
-        f"ile **{P(_l_m['pct_effect'], lang, sign=True)}** (aynı regresyonda, diğeri sabitken). Model adı motoru büyük "
-        f"ölçüde belirlediği için model sütununda motor terimleri yalnız aynı model adı içindeki güç ve hacim farkından "
-        f"ölçülür; aralıkları bu yüzden daha geniş. Bu fark ince: model adlarının yalnız "
-        f"{num(_hw['models_varying'], lang)}/{num(_hw['models'], lang)} tanesinde güç ilanlar arasında değişiyor (model "
-        f"içi standart sapma {_hw['sd_within']:.1f} hp, genelde {_hw['sd_overall']:.1f} hp) ve bir kısmı katalog hatası: "
-        f"{_spec_tr} model sütununda {lab('hp100', 'tr')} {P(_hp_m['pct_effect'], lang, sign=True)} → "
+    A(L(f"{lab('hp100', 'tr')} segment kontrolünde **{P(_hp_s['pct_effect'], lang, sign=True)}**, araç modeli "
+        f"kontrolünde **{P(_hp_m['pct_effect'], lang, sign=True)}**; {lab('litre', 'tr')} "
+        f"**{P(_l_s['pct_effect'], lang, sign=True)}** ile **{P(_l_m['pct_effect'], lang, sign=True)}** (aynı "
+        f"regresyonda, diğeri sabitken). Araç modelinin adı motoru büyük ölçüde belirlediği için araç modeli "
+        f"kontrolünde motor terimleri yalnız aynı araç modeli içindeki güç ve hacim farkından ölçülür; aralıkları bu "
+        f"yüzden daha geniş. Bu fark ince: araç modellerinin yalnız {num(_hw['models_varying'], lang)}/"
+        f"{num(_hw['models'], lang)} tanesinde güç ilanlar arasında değişiyor (araç modeli içi standart sapma "
+        f"{_hw['sd_within']:.1f} hp, genelde {_hw['sd_overall']:.1f} hp) ve bir kısmı katalog hatası: {_spec_tr} araç "
+        f"modeli kontrolünde {lab('hp100', 'tr')} {P(_hp_m['pct_effect'], lang, sign=True)} → "
         f"{P(_ws_hp['pct_effect'], lang, sign=True)}. Hacim ve güç birbirine bağlı (Pearson korelasyonu "
         f"{hr['hp_cc_pearson']:.2f}): hacmin etkisi güç sabitken kalan kısım, iki katsayı birlikte okunmalı; "
         f"birimler farklı olduğu için doğrudan kıyaslanmaz.",
         f"{lab('hp100', 'en')} is **{P(_hp_s['pct_effect'], lang, sign=True)}** under segment control and "
-        f"**{P(_hp_m['pct_effect'], lang, sign=True)}** under model control; {lab('litre', 'en')} "
+        f"**{P(_hp_m['pct_effect'], lang, sign=True)}** under car-model control; {lab('litre', 'en')} "
         f"**{P(_l_s['pct_effect'], lang, sign=True)}** and **{P(_l_m['pct_effect'], lang, sign=True)}** (same "
-        f"regression, the other held fixed). The model name largely fixes the engine, so in the model column the "
-        f"engine terms are measured only from power and size differences within one model name; that is why their "
+        f"regression, the other held fixed). The car model name largely fixes the engine, so under car-model control "
+        f"the engine terms are measured only from power and size differences within one car model; that is why their "
         f"intervals are wider. That variation is thin: power varies across listings in only "
-        f"{num(_hw['models_varying'], lang)} of {num(_hw['models'], lang)} model names (within-model standard deviation "
-        f"{_hw['sd_within']:.1f} hp, {_hw['sd_overall']:.1f} hp overall), and part of it is catalogue error: "
-        f"{_spec_en} the model column's {lab('hp100', 'en')} goes {P(_hp_m['pct_effect'], lang, sign=True)} → "
+        f"{num(_hw['models_varying'], lang)} of {num(_hw['models'], lang)} car models (within-car-model standard "
+        f"deviation {_hw['sd_within']:.1f} hp, {_hw['sd_overall']:.1f} hp overall), and part of it is catalogue error: "
+        f"{_spec_en} the car-model-control {lab('hp100', 'en')} goes {P(_hp_m['pct_effect'], lang, sign=True)} → "
         f"{P(_ws_hp['pct_effect'], lang, sign=True)}. Size and power are linked (Pearson correlation "
         f"{hr['hp_cc_pearson']:.2f}): size's effect is what remains with power fixed, so read the two coefficients "
         f"together; the units differ, so they are not directly comparable."))
@@ -952,15 +1173,15 @@ def section_hedonic(c):
         + ("İki yöntem aynı sıralamayı veriyor." if _rl == _rs else
            f"Sıralama SHAP'la örtüşmüyor: LOFO'da {' > '.join(_nm(k) for k in _rl)}; SHAP'ta "
            f"{' > '.join(_nm(k) for k in _rs)}. En keskin fark {_nm(_most_apart)}: SHAP'ta {_rs.index(_most_apart) + 1}. "
-           f"sırada, LOFO'da {_rl.index(_most_apart) + 1}. (ΔRMSE {tl(_lf[_most_apart])}) — çıkarılınca model onu büyük "
-           f"ölçüde başka özniteliklerden telafi ediyor."),
+           f"sırada, LOFO'da {_rl.index(_most_apart) + 1}. (ΔRMSE {tl(_lf[_most_apart])}) — çıkarılınca tahmin modeli onu "
+           f"büyük ölçüde başka özniteliklerden telafi ediyor."),
         "LOFO is a second, independent method: drop each feature and measure how much CV error grows. It "
         "measures something different from SHAP — the part the remaining features cannot make up for. "
         + ("Both methods give the same ranking." if _rl == _rs else
            f"The ranking does not match SHAP's: LOFO gives {' > '.join(_nm(k) for k in _rl)}; SHAP "
            f"{' > '.join(_nm(k) for k in _rs)}. The sharpest gap is {_nm(_most_apart)}: {_ord(_rs.index(_most_apart) + 1)} in "
-           f"SHAP, {_ord(_rl.index(_most_apart) + 1)} in LOFO (ΔRMSE {tl(_lf[_most_apart])}) — when it is removed the model "
-           f"largely makes it up from other features.")))
+           f"SHAP, {_ord(_rl.index(_most_apart) + 1)} in LOFO (ΔRMSE {tl(_lf[_most_apart])}) — when it is removed the "
+           f"price model largely makes it up from other features.")))
     A("")
     figs(4)
 
@@ -973,11 +1194,12 @@ def section_hedonic(c):
     unmeasured = [f for f in kept if f not in lofo_singles]
     own_bar = [k for k in LOFO_FLAT_KEYS if k in lofo_singles]      # tekil ama kendi cubugu olanlar
     in_group = len(lofo_singles) - len(own_bar)                      # tekil ama grubun icinde cizilenler
-    A(L(f"Grafik {len(LOFO_FLAT_KEYS)} çubuk gösteriyor, model {len(kept)} öznitelik kullanıyor: {len(lofo_singles)} "
+    # 2026-11-23 (ifade kurali): cumlede MODEL_SERIES grubu da geciyor; "model" burada tahmin modeli
+    A(L(f"Grafik {len(LOFO_FLAT_KEYS)} çubuk gösteriyor, tahmin modeli {len(kept)} öznitelik kullanıyor: {len(lofo_singles)} "
         f"öznitelik ölçüldü ({len(own_bar)}'si kendi çubuğunda, {in_group}'si {len(lofo_groups)} grubun içinde: "
         f"{' · '.join(f'`{g}`' for g in lofo_groups)}); **{len(unmeasured)} öznitelik hiç ölçülmedi**: "
         f"{' · '.join(f'`{f}`' for f in unmeasured)}.",
-        f"The chart shows {len(LOFO_FLAT_KEYS)} bars while the model uses {len(kept)} features: {len(lofo_singles)} "
+        f"The chart shows {len(LOFO_FLAT_KEYS)} bars while the price model uses {len(kept)} features: {len(lofo_singles)} "
         f"features were measured ({len(own_bar)} as their own bar, {in_group} inside the {len(lofo_groups)} groups: "
         f"{' · '.join(f'`{g}`' for g in lofo_groups)}); **{len(unmeasured)} features were never measured**: "
         f"{' · '.join(f'`{f}`' for f in unmeasured)}."))
@@ -1001,15 +1223,15 @@ def section_model(c):
     cb_w = [m.replace("R2", "R²") for m in MET if better(m, cb, lg)]
 
     _lgb_name = tx(VARIANTS_EN, VARIANTS[0][2], lang)
-    A(L(f"Rapordaki model: **LightGBM ({_lgb_name.split('(', 1)[1][:-1]})** — MAPE **%{v['model_mape']}**, "
+    A(L(f"Rapordaki tahmin modeli: **LightGBM ({_lgb_name.split('(', 1)[1][:-1]})** — MAPE **%{v['model_mape']}**, "
         f"R² **{v['model_r2']}**, "
         f"MAE **{tl(v['model_mae'])}**. Hedef `log1p(price)`, {v['n_features']} öznitelik. "
-        f"Emsal medyanı tabanına (aynı model ve yıl; emsal yoksa daha geniş medyan) göre ortalama mutlak hatada "
+        f"Emsal medyanı tabanına (aynı araç modeli ve yıl; emsal yoksa daha geniş medyan) göre ortalama mutlak hatada "
         f"(MAE) %{v['better_pct']:.0f} daha iyi.",
-        f"The report's model: **LightGBM ({_lgb_name.split('(', 1)[1][:-1]})** — MAPE **{v['model_mape']}%**, "
+        f"The report's price model: **LightGBM ({_lgb_name.split('(', 1)[1][:-1]})** — MAPE **{v['model_mape']}%**, "
         f"R² **{v['model_r2']}**, "
         f"MAE **{tl(v['model_mae'])}**. Target `log1p(price)`, {v['n_features']} features. "
-        f"{v['better_pct']:.0f}% lower mean absolute error than the comparable-median baseline (same model and "
+        f"{v['better_pct']:.0f}% lower mean absolute error than the comparable-median baseline (same car model and "
         f"year; a broader median when there is no comparable)."))
     A("")
     A(L("**TF-IDF+SVD neye uygulanıyor.** Serbest ilan metnine değil, yalnız `model` ve `series` ad "
@@ -1053,13 +1275,15 @@ def section_model(c):
     T([L("basamak", "tier"), L("ilan", "listings"), L("pay", "share"), "MAPE", "MAE", "R²"],
       [[id_label(TIER_LABEL, t, lang), num(n, lang), P(s, lang, 2), P(mp, lang, 2), tl(mae), f"{r2:.4f}"]
        for t, n, s, mp, mae, r2 in year_med["metric_breakdown"]], "lrrrrr")
-    A(L("Merdiven: " + " → ".join(year_med["ladder"]) + ". Test'teki (model, yıl) hücresi eğitim fold'unda "
+    A(L("Merdiven: " + " → ".join(year_med["ladder"]) + ". Test'teki (araç modeli, yıl) hücresi eğitim fold'unda "
         "yoksa taban bir alt basamağa iner; her inişte hata belirgin büyür — emsalsiz araçta taban zaten zayıf. "
-        "Medyanlar her fold'da yalnız eğitim kısmından hesaplanır (sızıntısız, modelle aynı 5-fold).",
+        "Medyanlar her fold'da yalnız eğitim kısmından hesaplanır (sızıntısız, tahmin modeliyle aynı 5-fold). "
+        "Basamak adlarındaki \"model\" araç modelidir (verideki `model` kolonu), tahmin modeli değil.",
         "Ladder: " + " → ".join(tx(LADDER_EN, s, lang) for s in year_med["ladder"]) + ". If the test "
-        "(model, year) cell is absent from the training fold, the baseline steps down a rung; error grows sharply at "
+        "(car model, year) cell is absent from the training fold, the baseline steps down a rung; error grows sharply at "
         "each step — without a comparable the baseline is weak anyway. Medians are computed on the training part of "
-        "each fold only (leak-free, same 5 folds as the model)."))
+        "each fold only (leak-free, same 5 folds as the price model). \"Model\" in the tier names is the car model "
+        "(the `model` column of the data), not the price model."))
     A("")
 
     # Gurultu tabani paragrafi 2026-09-20'de kullanici karariyla kaldirildi (once TR'den, senkron olsun
@@ -1112,14 +1336,51 @@ def section_model(c):
         f"The served LightGBM is trained on all listings with the median of the tree counts early stopping chose in "
         f"CV ({num(meta['repro']['final_lgb_trees'], lang)} trees), i.e. at the setting measured above."))
     A("")
+    # EN: 2026-11-23 (served interval plan): the bundle carries the per-car interval; three of 07's worked examples as
+    #     served. The typo sentence is gated: the typo must lose its comparables and widen the interval.
+    # TR: 2026-11-23 (servis edilen aralık planı): paket araca göre aralığı taşıyor; 07'nin işlenmiş örneklerinden üçü
+    #     servis edildiği gibi. Yazım hatası cümlesi kapılı: hata emsali sıfırlamalı ve aralığı genişletmeli.
+    si = v["served"]
+    ex = {e["id"]: e for e in si["examples"]}
+    _base, _typo = ex["many_comparables"], ex["model_typo"]
+    assert _typo["comparables"] == 0 < _base["comparables"] and \
+        _typo["upper_percent"] - _typo["lower_percent"] > _base["upper_percent"] - _base["lower_percent"], \
+        f"yazim hatasi ornegi emsali sifirlamiyor ya da araligi genisletmiyor: {_typo}"
+    A(L(f"Servis paketi aralığı da taşıyor: ölçek modeli (s), katsayı k = {si['k']:.3f}, isabet olasılığı için "
+        f"{num(si['n_scores'], lang)} sıralı skor ve emsal tablosu (eğitimdeki {num(si['comparable_cells'], lang)} "
+        f"(model, yaş) hücresinin ilan sayısı); verinin son tarama tarihi {si['data_until']}. Aralık ve isabet olasılığı "
+        f"istek anında bu parçalarla, §{section_no('calibration')}'deki tarifle hesaplanıyor. Paketten servis edildiği "
+        f"gibi üç örnek:",
+        f"The serving bundle carries the interval too: the scale model (s), the multiplier k = {si['k']:.3f}, "
+        f"{num(si['n_scores'], lang)} sorted scores for the hit probability, and the comparables table (listing counts "
+        f"of the {num(si['comparable_cells'], lang)} (model, age) cells in training); the data's last snapshot is "
+        f"{si['data_until']}. The interval and the hit probability are computed per request from these parts, with the "
+        f"recipe of §{section_no('calibration')}. Three examples as the bundle serves them:"))
+    A("")
+    T([L("örnek", "example"), L("tahmin", "estimate"), L("emsal", "comparables"), L("aralık", "interval"),
+       L("isabet olasılığı", "hit probability"), L("sitede", "on the site")],
+      [[id_label(SERVED_EXAMPLE_LABEL, k_, lang), tlm(ex[k_]["price"]), num(ex[k_]["comparables"], lang),
+        pm(ex[k_]["lower_percent"], ex[k_]["upper_percent"], lang), P(ex[k_]["hit_probability"], lang),
+        L(f"10'da {ex[k_]['shown']}", f"{ex[k_]['shown']} in 10")] for k_ in SERVED_EXAMPLE_LABEL], "lrrrrr")
+    A(L(f"Emsal, model adı eğitimdeki dizeyle birebir aranarak bulunur: yazım hatası emsali 0 yapar ve aralığı "
+        f"genişletir ({pm(_base['lower_percent'], _base['upper_percent'], lang)} yerine "
+        f"{pm(_typo['lower_percent'], _typo['upper_percent'], lang)}). İhtiyatlı yönde bir hata, ama sebebi kullanıcıya "
+        f"görünmeli.",
+        f"Comparables are found by matching the model name exactly against the training strings: a typo sets them to 0 "
+        f"and widens the interval ({pm(_typo['lower_percent'], _typo['upper_percent'], lang)} instead of "
+        f"{pm(_base['lower_percent'], _base['upper_percent'], lang)}). The error leans the cautious way, but the user "
+        f"should see why."))
+    A("")
 
 
 def section_calibration(c):
     """
     EN: §8 — calibration and residuals: error bands, where the large errors come from, examples, the conformal
-        interval and its coverage, the largest errors.
-    TR: §8 — kalibrasyon ve artıklar: hata bantları, büyük hataların kaynağı, örnekler, conformal aralık ve
-        kapsaması, en büyük hatalar.
+        interval (the served scale model against one margin and the per-band margin), its coverage per kind of car,
+        the hit probability, the forward test, the largest errors.
+    TR: §8 — kalibrasyon ve artıklar: hata bantları, büyük hataların kaynağı, örnekler, conformal aralık (servis
+        edilen ölçek modeli, tek pay ve banda göre payla karşılaştırmalı), araç türüne göre kapsaması, isabet
+        olasılığı, ileri test, en büyük hatalar.
     """
     v, d, dom, met, meta, hr, lang = c.v, c.d, c.dom, c.met, c.meta, c.hr, c.lang
     L, A, T, figs = c.L, c.A, c.T, c.figs
@@ -1290,53 +1551,94 @@ def section_calibration(c):
                                    " The two measures do not point the same way.")))
         A("")
     # --- Conformal aralık nedir (metin kullanıcının yazdığı açıklamadan, 2026-09-19).
-    # EN: q, the overall and per-quartile coverage come from 08_conformal_coverage (q = 90th percentile of
-    #     the OOF log errors) | TR: q, genel ve çeyrek kapsaması 08_conformal_coverage'dan (q = OOF log
-    #     hatalarının 90. yüzdeliği)
-    _q = d["report"]["conformal_q"]
-    _dn, _up = round(100 * (1 - np.exp(-_q))), round(100 * (np.exp(_q) - 1))
-    _ex = f"{tlm(v['median'] * np.exp(-_q))} – {tlm(v['median'] * np.exp(_q))}"
+    # EN: 2026-11-23 (served interval plan, docs/decisions.md): the served interval is the scale model's, per car (k and
+    #     s from 08_conformal_coverage report.scale); one margin and the per-band margin stay as the arms it is measured
+    #     against. Every claim below is gated on the data.
+    # TR: 2026-11-23 (servis edilen aralık planı, docs/decisions.md): servis edilen aralık ölçek modelininki, araca göre
+    #     (k ve s 08_conformal_coverage report.scale'den); tek pay ve banda göre pay, onunla ölçülen kollar olarak
+    #     kalır. Aşağıdaki her iddia veriye kapılı.
+    sc, conf, tgt = v["scale"], v["conf"], v["cov_target"]
+    arms, fa, prof = v["arms"], v["ft_arms"], v["profiles"]
+    ft = met["forward_test"]
+    fc = ft["coverage"]
+    assert list(arms) == list(fa) == list(ARM_LABEL), f"aralik kollari degisti: {list(arms)}, {list(fa)}"
+    _wd = sc["width"]
+    _wp = {r_[0]: r_ for r_ in _wd["percentiles"]}          # [percentile, width %, margin low %, margin high %]
+    _pd = sc["partial_dependence"]                          # [comparables, mean s]
+    assert all(a_[1] >= b_[1] for a_, b_ in zip(_pd, _pd[1:])), f"s emsalle artiyor: {_pd} — cumle yeniden yazilmali"
+    assert abs(arms["scale"]["coverage"] - tgt) < 1, f"olcek kolu hedefte degil: {arms['scale']} — cumle yeniden yazilmali"
+    _all, _ls = prof["all"], sc["latest_snapshot"]
+    _fl_oof, _fl_fwd = sc["floor_hits"], fc["scale"]["floor_hits"]
     A(L("### Conformal aralık ve kapsama", "### Conformal interval and coverage"))
     A("")
-    A(L(f"**Conformal aralık**, modelin tek bir fiyatın yanında veriye dayalı bir fiyat bandı da "
-        f"(örneğin {_ex}) sunmasıdır.",
-        f"**A conformal interval** is a data-based price band the model offers alongside its single "
-        f"price (e.g. {_ex})."))
+    A(L(f"**Conformal aralık**, modelin tek bir fiyatın yanında veriye dayalı bir fiyat bandı da sunmasıdır. Servis "
+        f"edilen aralık araca göre değişir: bütün ilanların medyan tahmini ve medyan payıyla "
+        f"{tlm(_all['new_low'])} – {tlm(_all['new_high'])}.",
+        f"**A conformal interval** is a data-based price band the model offers alongside its single price. The served "
+        f"interval changes with the car: at the median prediction and median margin over all listings it is "
+        f"{tlm(_all['new_low'])} – {tlm(_all['new_high'])}."))
     A("")
-    A(L(f"- **Dağılım varsayımı yapmaz:** Hataların bir formüle (çan eğrisi vb.) uyduğu varsayılmaz. "
-        f"Modelin daha önce hiç görmediği araçlardaki gerçek hataları sıralanır, en kötü %10'u dışarıda "
-        f"bırakılır ve pay doğrudan veriden okunur. Tek varsayım, yeni ilanların eskilere benzemesidir; son "
-        f"taramanın yeni ilanlarında bu varsayımın ne kadar tuttuğu aşağıda.",
-        f"- **No distributional assumption:** Errors are not assumed to follow a formula (a bell curve, "
-        f"etc.). The model's real errors on cars it has never seen are sorted, the worst 10% are set "
-        f"aside, and the margin is read directly from the data. The one assumption is that new listings "
-        f"resemble past ones; how well it holds on the last snapshot's new listings is below."))
-    A(L(f"- **Oransaldır:** Hata payı lira değil yüzde olarak uygulanır (tahminin yaklaşık %{_dn} altı ile "
-        f"%{_up} üstü). Bu yüzden pahalı araçta lira bandı geniş, ucuz araçta dar çıkar.",
-        f"- **Proportional:** The margin is applied as a percentage, not in lira (roughly {_dn}% below to "
-        f"{_up}% above the estimate). So the lira band is wide for expensive cars and narrow for cheap ones."))
-    # 2026-09-28 (sadelestirme listesi): kapsama capraz kalibreli ve tahmin fiyati bandina gore; "yapilmadi" denen
-    # banda gore hata payi (Mondrian) on kayitla olculdu (plans/08-mondrian-coverage).
-    _all = d["report"]["conformal_all"]
-    # 2026-09-28 (denetim): rastgele katlarda capraz kalibrasyon da hedefe neredeyse kendiliginden oturur; asil sinav
-    # ileri kapsama (08_forward_test).
-    A(L(f"- **Kalibrasyonu başka ilanlardan:** Kapsama çapraz ölçülür: her katın aralığı yalnız öteki katların "
-        f"hatalarından kurulur, hiçbir ilanın kendi hatası kendi aralığını ayarlamaz. Katlar rastgele olduğu için genel "
-        f"kapsama ({P(_all, lang, 2)}) yine de hedefe neredeyse kendiliğinden oturur; asıl sınav, son taramanın "
-        f"yeni ilanlarındaki ileri kapsama (aşağıda).",
-        f"- **Calibrated on other listings:** Coverage is measured cross-wise: each fold's interval is built only from "
-        f"the other folds' errors, so no listing's own error sets its interval. The folds are random, so the overall "
-        f"coverage ({P(_all, lang, 2)}) still lands on the target almost by itself; the real test is the forward "
-        f"coverage on the last snapshot's new listings (below)."))
+    A(L(f"- **Dağılım varsayımı yapmaz:** Hataların bir formüle (çan eğrisi vb.) uyduğu varsayılmaz. Modelin daha önce "
+        f"hiç görmediği araçlardaki gerçek hatalar, o tür araçta beklenen hata büyüklüğüne bölünüp sıralanır; en kötü "
+        f"%10'u dışarıda bırakılır ve katsayı (k = {sc['k']:.3f}) doğrudan veriden okunur. Tek varsayım, yeni ilanların "
+        f"eskilere benzemesidir; son taramanın yeni ilanlarında ne kadar tuttuğu aşağıda.",
+        f"- **No distributional assumption:** Errors are not assumed to follow a formula (a bell curve, etc.). The "
+        f"model's real errors on cars it has never seen are divided by the error size expected for that kind of car "
+        f"and sorted; the worst 10% are set aside and the multiplier (k = {sc['k']:.3f}) is read directly from the "
+        f"data. The one assumption is that new listings resemble past ones; how well it holds on the last snapshot's "
+        f"new listings is below."))
+    A(L(f"- **Araca göre ve oransal:** Küçük bir ikinci model (ölçek modeli, s) aracın formdaki bilgilerinden, fiyat "
+        f"tahmininden ve emsal sayısından (eğitimde aynı model ve yıldaki ilan sayısı) bu tür araçta beklenen log hata "
+        f"büyüklüğünü tahmin eder; aralık log tahmin ± k·s. Pay yüzde olarak uygulanır: medyan araçta "
+        f"{pm(_wp[50][2], _wp[50][3], lang)}, %5'lik yüzdelikte {pm(_wp[5][2], _wp[5][3], lang)}, %99'lukta "
+        f"{pm(_wp[99][2], _wp[99][3], lang)}. Genişlik en dar {P(_wd['min'], lang)}, %99'luk yüzdelikte "
+        f"{P(_wp[99][1], lang)}; ilanların {P(_wd['narrower_share'], lang)} kadarında aralık tek paydan dar. s, emsal "
+        f"arttıkça büyümeyecek biçimde kısıtlı (ortalama s, emsal sayısı {_pd[0][0]} iken {_pd[0][1]:.3f}, "
+        f"{_pd[-1][0]} iken {_pd[-1][1]:.3f}) ve alttan {sc['s_floor']} ile kırpılır; bu alt sınır "
+        + ("OOF'ta hiçbir ilanda devreye girmiyor" if _fl_oof == 0 else f"OOF'ta {num(_fl_oof, lang)} ilanda devreye giriyor")
+        + (", yeni ilanlarda da girmiyor." if _fl_fwd == 0 else
+           f", yeni ilanlarda {num(fc['n'], lang)} ilanın {num(_fl_fwd, lang)} tanesinde giriyor."),
+        f"- **Per car and proportional:** A small second model (the scale model, s) estimates, from the car's form "
+        f"fields, its price estimate and its comparables count (listings of the same model and year in training), how "
+        f"large the log error usually is for this kind of car; the interval is log estimate ± k·s. The margin is "
+        f"applied as a percentage: {pm(_wp[50][2], _wp[50][3], lang)} at the median car, "
+        f"{pm(_wp[5][2], _wp[5][3], lang)} at the 5th percentile, {pm(_wp[99][2], _wp[99][3], lang)} at the 99th. The "
+        f"width is {P(_wd['min'], lang)} at the narrowest and {P(_wp[99][1], lang)} at the 99th percentile; for "
+        f"{P(_wd['narrower_share'], lang)} of listings the interval is narrower than with one margin. s is constrained "
+        f"not to grow as comparables rise (mean s {_pd[0][1]:.3f} at {_pd[0][0]} comparables, {_pd[-1][1]:.3f} at "
+        f"{_pd[-1][0]}) and is floored at {sc['s_floor']}; the floor "
+        + ("does not bind out of fold" if _fl_oof == 0 else f"binds on {num(_fl_oof, lang)} listings out of fold")
+        + ("; nor on the new listings." if _fl_fwd == 0 else
+           f"; it binds on {num(_fl_fwd, lang)} of the {num(fc['n'], lang)} new listings.")))
+    # EN: decision 2 (2026-11-23): no "only the overall 90% is guaranteed"; 90% holds approximately by construction,
+    #     for listings of the same period, not over time. Decision 6: the last snapshot's listings named apart.
+    # TR: 2. karar (2026-11-23): "yalnız genel %90 güvenceli" yok; %90 tasarım gereği yaklaşık tutar, aynı dönemin
+    #     ilanları için, zaman içinde değil. 6. karar: son taramanın ilanları ayrıca anılır.
+    A(L(f"- **%{tgt} yaklaşık ve aynı dönem için:** %{tgt} tasarım gereği yaklaşık tutar: her katın aralığı yalnız öteki "
+        f"katların hatalarından kurulduğu ölçümde kapsama {P(arms['scale']['coverage'], lang, 2)} (aşağıdaki tablo). "
+        f"Bu yalnız aynı dönemin ilanları için geçerli, zaman içinde değil: son taramanın yeni ilanlarında "
+        f"{P(fa['scale']['coverage'], lang)} (aşağıda). Sayılar {v['period']['tr']} ilan fiyatlarını anlatır; son "
+        f"taramanın ({_ls['snap']}) {num(_ls['n'], lang)} ilanında kapsama tek payla {P(_ls['coverage_global'], lang)}, "
+        f"ölçek modeliyle {P(_ls['coverage_scale'], lang)}.",
+        f"- **About {tgt}%, for the same period:** {tgt}% holds approximately by construction: measured with each "
+        f"fold's interval built only from the other folds' errors, coverage is {P(arms['scale']['coverage'], lang, 2)} "
+        f"(table below). That holds for listings of the same period, not over time: on the last snapshot's new "
+        f"listings it is {P(fa['scale']['coverage'], lang)} (below). The numbers describe asking prices of "
+        f"{v['period']['en']}; on the {num(_ls['n'], lang)} listings of the last snapshot ({_ls['snap']}) coverage is "
+        f"{P(_ls['coverage_global'], lang)} with one margin and {P(_ls['coverage_scale'], lang)} with the scale model."))
     A("")
+    # EN: decision 13 (2026-11-23): the weakness depends on age and comparables (the breakdowns above); the residual
+    #     script's numbers by price quartile stay | TR: 13. karar: zayıflık yaşa ve emsale bağlı (yukarıdaki
+    #     kırılımlar); artık betiğinin fiyat çeyreği sayıları kalır
     qe = dom["quantile_error"]
-    A(L(f"**Zayıflık fiyata bağlı:** medyan hata tahmini en ucuz çeyrekte {P(qe[0][1], lang, 2)}, en pahalıda "
-        f"{P(qe[-1][1], lang, 2)}. Tüm piyasaya tek bir yüzde uygulanınca, modelin oransal olarak daha çok yanıldığı "
-        f"ucuz bantta aralık dar kalıyor: Q1 kapsaması {P(v['cov_q1'], lang)}.",
-        f"**The weakness is price-dependent:** median error is {P(qe[0][1], lang, 2)} in the cheapest predicted "
-        f"quartile and {P(qe[-1][1], lang, 2)} in the most expensive. With one percentage for the whole market the "
-        f"interval is too narrow in the cheap band, where the model errs more in proportional terms: Q1 coverage "
-        f"is {P(v['cov_q1'], lang)}."))
+    A(L(f"**Zayıflık yaşa ve emsale bağlı** (yukarıdaki kırılımlar); fiyata göre bakınca da görünüyor: medyan hata "
+        f"tahmini en ucuz çeyrekte {P(qe[0][1], lang, 2)}, en pahalıda {P(qe[-1][1], lang, 2)}. Herkese aynı yüzde "
+        f"uygulanınca, modelin oransal olarak daha çok yanıldığı ucuz bantta aralık dar kalıyor: Q1 kapsaması "
+        f"{P(v['cov_q1'], lang)}.",
+        f"**The weakness depends on age and comparables** (the breakdowns above), and it shows by price too: median "
+        f"error is {P(qe[0][1], lang, 2)} in the cheapest predicted quartile and {P(qe[-1][1], lang, 2)} in the most "
+        f"expensive. With the same percentage for everyone the interval is too narrow in the cheap band, where the "
+        f"model errs more in proportional terms: Q1 coverage is {P(v['cov_q1'], lang)}."))
     A("")
     figs(10)
     # 2026-09-28 (sadelestirme listesi): lira paneli (fig 27) ve gercek fiyata gore sapma cumlesi (ortalamaya
@@ -1349,6 +1651,100 @@ def section_calibration(c):
         f"quartile and {P(_q1[2], lang)} in the cheapest; mean absolute error {tl(_q4[3])} against "
         f"{tl(_q1[3])}."))
     A("")
+    # EN: the three arms in the same cross-calibrated measurement; "best interval score" is an out-of-fold claim
+    #     (decision 1), gated here | TR: aynı çapraz kalibreli ölçümde üç kol; "en iyi aralık skoru" OOF iddiası
+    #     (1. karar), burada kapılı
+    _sa, _others = arms["scale"], [arms[a_] for a_ in ARM_LABEL if a_ != "scale"]
+    assert _sa["interval_score"] < min(o_["interval_score"] for o_ in _others) and \
+        _sa["width_median"] < min(o_["width_median"] for o_ in _others), \
+        f"olcek modeli OOF'ta en dar ve en iyi aralik skorlu degil: {arms} — paragraf yeniden yazilmali"
+    _ncn = num(sc["no_comparable_n"], lang)
+    A(L("**Üç yöntem, aynı çapraz kalibreli ölçümde** (her katın aralığı yalnız öteki katların hatalarından):",
+        "**Three methods, in the same cross-calibrated measurement** (each fold's interval from the other folds' "
+        "errors only):"))
+    A("")
+    T([L("yöntem", "method"), L("kapsama", "coverage"), L("genişlik medyan / ort.", "width median / mean"),
+       L("aralık skoru", "interval score"), L(f"emsalsiz ({_ncn} ilan)", f"no comparable ({_ncn} listings)")],
+      [[id_label(ARM_LABEL, a_, lang), P(r_["coverage"], lang, 2),
+        f"{P(r_['width_median'], lang)} / {P(r_['width_mean'], lang)}", f"{r_['interval_score']:.4f}",
+        P(r_["coverage_no_comparable"], lang)] for a_, r_ in arms.items()], "lrrrr")
+    A(L("Genişlik tahminin yüzdesi. Aralık skoru log uzayında genişlik ile dışarıda kalan fiyatların cezasının toplamı "
+        "(Winkler); küçük daha iyi. Emsalsiz: aynı model ve yıldan öteki katlarda ilan yok.",
+        "Width is a percentage of the estimate. The interval score is the width plus a penalty for prices that fall "
+        "outside, in log space (Winkler); smaller is better. No comparable: no listing of the same model and year in "
+        "the other folds."))
+    A("")
+    # EN: the trade sentence names kinds of car by id; each must have been off target with one margin and near it with
+    #     the scale model, in the direction the sentence says | TR: takas cümlesi araç türlerini kimlikle anar; her biri
+    #     tek payla hedeften cümlenin dediği yönde uzak, ölçek modeliyle hedefe yakın olmalı
+    _narrow_ids, _wide_ids = ("age_19_plus", "no_comparable", "heavy_damaged"), ("age_0_3", "dearest_quarter")
+    assert all(prof[g_]["coverage_global"] <= tgt - 3 for g_ in _narrow_ids) and \
+        all(prof[g_]["coverage_global"] >= tgt + 3 for g_ in _wide_ids) and \
+        all(abs(prof[g_]["coverage_scale"] - tgt) <= 3 for g_ in _narrow_ids + _wide_ids), \
+        "olcek modeli takas cumlesi bayat — paragraf yeniden yazilmali"
+    _arrow = lambda g_: f"{P(prof[g_]['coverage_global'], lang)} → {P(prof[g_]['coverage_scale'], lang)}"  # noqa: E731
+    _axg, _axs = sc["axes"]["global"], sc["axes"]["scale"]
+    _worst = _axs["unseen"]["worst"]                        # [axis, group, n, points below the arm's own coverage]
+    _pts = lambda x_: ("−" if x_ < 0 else "+") + f"{abs(x_):.1f}"                                      # noqa: E731
+    _unseen = ", ".join(id_label(UNSEEN_AXIS_LABEL, k_, lang) for k_ in UNSEEN_AXIS_LABEL)
+    _sb = [r_[2] for r_ in sc["by_band"]]
+    # EN: the 5- and 3-point limits are the definitions of the published counts (off_5pp, below_own_3pp)
+    # TR: 5 ve 3 puanlık sınırlar yayımlanan sayıların tanımı (off_5pp, below_own_3pp)
+    A(L(f"**Ölçek modeli neyi değiştiriyor.** Tek pay herkese aynı genişliği veriyor: genç ve pahalı araçta gereğinden "
+        f"geniş, yaşlı, emsalsiz ve hasarlı araçta dar. Ölçek modeli payı araca göre dağıtıyor (aşağıdaki tablo): kapsama "
+        f"19+ yaşta {_arrow('age_19_plus')}, emsalsizde {_arrow('no_comparable')}, ağır hasar kayıtlıda "
+        f"{_arrow('heavy_damaged')}; 0–3 yaşta {_arrow('age_0_3')} ve tahmini en pahalı çeyrekte "
+        f"{_arrow('dearest_quarter')}, çünkü orada aralık daralıyor. Aracın s'ye giren bilgilerine göre gruplarda (yaş, "
+        f"km, motor gücü, segment, yakıt, vites, kasa, hasar, seri sıklığı; en az {num(sc['min_group_n'], lang)} ilanlı "
+        f"{num(_axs['input']['n_groups'], lang)} grup) hedeften 5 puan ya da daha fazla sapan grup tek payla "
+        f"{num(_axg['input']['off_5pp'], lang)} (en büyük sapma {_axg['input']['max_deviation']:.1f} puan), ölçek "
+        f"modeliyle {num(_axs['input']['off_5pp'], lang)} (en büyük {_axs['input']['max_deviation']:.1f}); bu kısmen "
+        f"tasarım gereği, çünkü bu bilgiler s'nin girdisi. s'nin görmediği bilgilerde ({_unseen}; "
+        f"{num(_axs['unseen']['n_groups'], lang)} grup) düzelme beklenmez: kolun kendi genel kapsamasının 3 puan ya da "
+        f"daha fazla altında kalan grup tek payla {num(_axg['unseen']['below_own_3pp'], lang)}, ölçek modeliyle "
+        f"{num(_axs['unseen']['below_own_3pp'], lang)}; ölçek modelinde en kötüsü "
+        f"{id_label(UNSEEN_AXIS_LABEL, _worst[0], lang)} bilgisinde bir grup ({num(_worst[2], lang)} ilan, "
+        f"{_pts(_worst[3])} puan).",
+        f"**What the scale model changes.** One margin gives everyone the same width: wider than needed on young and "
+        f"dear cars, too narrow on old, comparable-less and damaged ones. The scale model spreads the margin by car "
+        f"(table below): coverage goes {_arrow('age_19_plus')} at age 19+, {_arrow('no_comparable')} without a "
+        f"comparable, {_arrow('heavy_damaged')} with a heavy-damage record; {_arrow('age_0_3')} at age 0–3 and "
+        f"{_arrow('dearest_quarter')} in the dearest predicted quarter, because the interval narrows there. In groups "
+        f"by what s takes as input (age, mileage, engine power, segment, fuel, transmission, body type, damage, series "
+        f"frequency; {num(_axs['input']['n_groups'], lang)} groups of at least {num(sc['min_group_n'], lang)} listings) "
+        f"{num(_axg['input']['off_5pp'], lang)} groups are 5 or more points off target with one margin (largest gap "
+        f"{_axg['input']['max_deviation']:.1f} points) and {num(_axs['input']['off_5pp'], lang)} with the scale model "
+        f"(largest {_axs['input']['max_deviation']:.1f}); partly by design, since s takes these as input. On what s "
+        f"does not see ({_unseen}; {num(_axs['unseen']['n_groups'], lang)} groups) no fix is expected: "
+        f"{num(_axg['unseen']['below_own_3pp'], lang)} groups sit 3 or more points below the arm's own overall "
+        f"coverage with one margin, {num(_axs['unseen']['below_own_3pp'], lang)} with the scale model; its worst is a "
+        f"group on {id_label(UNSEEN_AXIS_LABEL, _worst[0], lang)} ({num(_worst[2], lang)} listings, "
+        f"{_pts(_worst[3])} points)."))
+    A("")
+    A(L(f"**Takas.** Banda göre payın her fiyat bandında ayrı bir kapsama güvencesi vardı; ölçek modeli bundan "
+        f"vazgeçiyor, bantlardaki kapsaması ({P(min(_sb), lang)}–{P(max(_sb), lang)}) ölçülmüş bir sonuç, güvence "
+        f"değil. Karşılığı araca göre genişlik, daha dar bir medyan aralık ve OOF'ta en iyi aralık skoru. Yöntem, s'nin "
+        f"ayarları, emsal kısıtı ve ±%{conf['within_pct']} toleransı bu sonuçlar görüldükten sonra kondu; hiçbirinde "
+        f"arama yapılmadı ve seçimi sonradan sınayan bağımsız bir test yok. Kapsama ve isabet ilan fiyatı içindir, satış "
+        f"fiyatı için değil.",
+        f"**The trade.** The per-band margin carried a coverage guarantee in each price band; the scale model gives that "
+        f"up, and its coverage in the bands ({P(min(_sb), lang)}–{P(max(_sb), lang)}) is a measured result, not a "
+        f"guarantee. In return it gives a width per car, a narrower median interval and the best interval score out of "
+        f"fold. The method, the settings of s, the comparables constraint and the ±{conf['within_pct']}% tolerance were "
+        f"set after these results were seen; none was searched, and no independent test checks the choice afterwards. "
+        f"Coverage and hit refer to the asking price, not the sale price."))
+    A("")
+    A(L(f"**Araç türüne göre (OOF).** Aralık, grubun medyan tahmini etrafında (₺M); isabet, ilan fiyatının tahminin "
+        f"±%{conf['within_pct']} yakınında olma olasılığı, öngörülen → gerçekleşen.",
+        f"**By kind of car (OOF).** The interval is around the group's median estimate (₺M); hit is the probability "
+        f"that the asking price is within ±{conf['within_pct']}% of the estimate, predicted → observed."))
+    A("")
+    T([L("araç türü", "kind of car"), L("ilan", "listings"), L("kapsama: tek pay → ölçek", "coverage: one margin → scale"),
+       L("pay: ölçek", "margin: scale"), L("aralık: tek pay", "interval: one margin"), L("aralık: ölçek", "interval: scale"),
+       L("isabet", "hit")],
+      [[id_label(PROFILE_LABEL, g_, lang), num(r_["n"], lang), _arrow(g_), pm(r_["margin_low_pct"], r_["margin_high_pct"], lang),
+        f"{_m2(r_['today_low'])}–{_m2(r_['today_high'])}", f"{_m2(r_['new_low'])}–{_m2(r_['new_high'])}",
+        f"{P(r_['hit_predicted'], lang)} → {P(r_['hit_observed'], lang)}"] for g_, r_ in prof.items()], "lrrrrrr")
     _mo = d["report"]["mondrian"]
     _col = {c_: i_ for i_, c_ in enumerate(_mo["columns"])}
     _mb = {r_[0]: r_ for r_ in _mo["by_band"]}
@@ -1357,69 +1753,161 @@ def section_calibration(c):
     # On kayit (H1): her bantta kapsama kabul araliginda. Tutmazsa bu paragraf yanlis olur -> uretec durur.
     assert all(_acc_lo <= c_ <= _acc_hi for c_ in _cov_m), f"Mondrian H1 tutmuyor: {_cov_m} — paragraf yeniden yazilmali"
     _w = lambda b_, c_: _mb[b_][_col[c_]]                                                   # noqa: E731
-    A(L(f"**Hata payı banda göre (Mondrian).** Hata payı tahmin edilen fiyatın dört çeyreğinde ayrı ayrı "
-        f"hesaplanınca kapsama her bantta {P(min(_cov_m), lang, 2)}–{P(max(_cov_m), lang, 2)}. Katlar rastgele olduğu "
-        f"için her bandın payı aynı dağılımdan gelen hatalarla kuruluyor; kapsama bu yüzden neredeyse kendiliğinden "
-        f"tutuyor, asıl sınav aşağıdaki ileri kapsama. Bedeli genişlik: en ucuz bantta aralık tahminin "
-        f"{P(_w('Q1', 'width_pct_global'), lang)} kadarından {P(_w('Q1', 'width_pct_band'), lang)} kadarına genişliyor, "
-        f"en pahalıda {P(_w('Q4', 'width_pct_global'), lang)} kadarından {P(_w('Q4', 'width_pct_band'), lang)} kadarına "
-        f"daralıyor.",
-        f"**Margin per band (Mondrian).** With the margin computed separately in each predicted-price quartile, "
-        f"coverage is {P(min(_cov_m), lang, 2)}–{P(max(_cov_m), lang, 2)} in every band. The folds are random, so each "
-        f"band's margin is built from errors of the same distribution and the coverage holds almost by itself; the real "
-        f"test is the forward coverage below. The price is width: in the cheapest band "
-        f"the interval widens from "
-        f"{P(_w('Q1', 'width_pct_global'), lang)} to {P(_w('Q1', 'width_pct_band'), lang)} of the estimate, in the most "
-        f"expensive it narrows from {P(_w('Q4', 'width_pct_global'), lang)} to {P(_w('Q4', 'width_pct_band'), lang)}."))
+    _sbw = {r_[0]: r_ for r_ in sc["by_band"]}             # [band, n, coverage, width median %]
+    assert list(_sbw) == list(_mb), f"olcek kolunun bantlari farkli: {list(_sbw)}"
+    A(L(f"**Hata payı banda göre (Mondrian).** Ön kayıtlı ara yol: pay tahmin edilen fiyatın dört çeyreğinde ayrı ayrı "
+        f"hesaplanınca kapsama her bantta {P(min(_cov_m), lang, 2)}–{P(max(_cov_m), lang, 2)}. Bedeli genişlik: en ucuz "
+        f"bantta aralık tahminin {P(_w('Q1', 'width_pct_global'), lang)} kadarından {P(_w('Q1', 'width_pct_band'), lang)} "
+        f"kadarına genişliyor, en pahalıda {P(_w('Q4', 'width_pct_band'), lang)} kadarına daralıyor. Ölçek modeli "
+        f"genişliği bant içinde de araca göre veriyor: medyan genişlik en ucuz bantta {P(_sbw['Q1'][3], lang)}, en "
+        f"pahalıda {P(_sbw['Q4'][3], lang)}.",
+        f"**Margin per band (Mondrian).** The pre-registered middle road: with the margin computed separately in each "
+        f"predicted-price quartile, coverage is {P(min(_cov_m), lang, 2)}–{P(max(_cov_m), lang, 2)} in every band. The "
+        f"price is width: in the cheapest band the interval widens from {P(_w('Q1', 'width_pct_global'), lang)} to "
+        f"{P(_w('Q1', 'width_pct_band'), lang)} of the estimate, in the most expensive it narrows to "
+        f"{P(_w('Q4', 'width_pct_band'), lang)}. The scale model sets the width by car within a band too: the median "
+        f"width is {P(_sbw['Q1'][3], lang)} in the cheapest band and {P(_sbw['Q4'][3], lang)} in the most expensive."))
     A("")
     figs(12)
     _qc = v["q_bounds"]
     _rng = [L(f"{tlm(_qc[0])} altı", f"below {tlm(_qc[0])}"),
             f"{tlm(_qc[0])} – {tlm(_qc[1])}", f"{tlm(_qc[1])} – {tlm(_qc[2])}",
             L(f"{tlm(_qc[2])} üstü", f"above {tlm(_qc[2])}")]
-    T([L("bant", "band"), L("tahmin edilen fiyat", "predicted price"), L("kapsama: tek oran", "coverage: one margin"),
-       L("kapsama: banda göre", "coverage: per band"), L("genişlik: banda göre", "width: per band")],
-      [[b_, r_, P(_w(b_, "coverage_global"), lang), P(_w(b_, "coverage_band"), lang),
-        L(f"tahminin {P(_w(b_, 'width_pct_band'), lang)} kadarı", f"{P(_w(b_, 'width_pct_band'), lang)} of the estimate")]
-       for b_, r_ in zip(["Q1", "Q2", "Q3", "Q4"], _rng)], "llrrr")
+    T([L("bant", "band"), L("tahmin edilen fiyat", "predicted price"), L("kapsama: tek pay", "coverage: one margin"),
+       L("kapsama: banda göre", "coverage: per band"), L("kapsama: ölçek", "coverage: scale"),
+       L("genişlik: banda göre", "width: per band"), L("genişlik: ölçek", "width: scale")],
+      [[b_, r_, P(_w(b_, "coverage_global"), lang), P(_w(b_, "coverage_band"), lang), P(_sbw[b_][2], lang),
+        P(_w(b_, "width_pct_band"), lang), P(_sbw[b_][3], lang)]
+       for b_, r_ in zip(["Q1", "Q2", "Q3", "Q4"], _rng)], "llrrrrr")
     A(L("**Not:** Bantlar tahmin edilen fiyattan kesildi: bir fiyatlama aracının bildiği tek şey o. Gerçek fiyata göre "
-        "gruplamak ortalamaya dönüş üretir. Genişlik, aralığın alt ve üst ucu arasındaki farkın o banttaki medyanı.",
+        "gruplamak ortalamaya dönüş üretir. Genişlik, aralığın alt ve üst ucu arasındaki farkın o banttaki medyanı "
+        "(tahminin yüzdesi).",
         "**Note:** The bands are cut on the predicted price, the only thing a pricing tool knows; grouping by the "
         "actual price produces regression to the mean. Width is the band's median distance between the interval's "
-        "lower and upper end."))
+        "lower and upper end (a percentage of the estimate)."))
     A("")
+    # EN: hit probability (decision 5: "N in 10" rounded down, at most shown_max, never 10); "calibrated out of fold"
+    #     is gated on the deciles | TR: isabet olasılığı (5. karar: "10'da N" aşağı yuvarlanır, en çok shown_max, 10
+    #     hiç); "OOF'ta kalibre" onda birlik dilimlere kapılı
+    _wi = conf["within_pct"]
+    _gap = max(abs(a_ - b_) for a_, b_ in dom["conformal"]["hit_reliability"])
+    assert _gap <= 3, f"isabet olasiligi OOF'ta kalibre degil (en buyuk dilim farki {_gap}) — cumle yeniden yazilmali"
+    _sh = {r_[0]: r_ for r_ in conf["by_shown"]}            # [shown, n, observed %]
+    assert max(_sh) == conf["shown_max"] < 10 and conf["skill_pct"] > 0, f"isabet gosterimi degisti: {conf}"
+    A(L(f"**İsabet olasılığı.** Aralıkla aynı hesaptan çıkar, yeni bir model gerekmez: bu tür araçta ilan fiyatının "
+        f"tahminin ±%{_wi} yakınında olma olasılığı, yani skorlardan log({1 + _wi / 100:g}) / s değerine eşit ya da "
+        f"küçük olanların payı. OOF'ta kalibre: ortalama öngörü {P(conf['mean_predicted'], lang)}, gerçekleşen "
+        f"{P(conf['mean_observed'], lang)}; Brier skoru herkese aynı olasılığı veren skordan {P(conf['skill_pct'], lang)} "
+        f"iyi. Araçları ayırıyor: olasılığın 10. yüzdeliği {P(conf['p10'], lang)}, 90. yüzdeliği {P(conf['p90'], lang)}. "
+        f"Sitede \"10'da N\" olarak gösterilir: aşağı yuvarlanır ve en çok {conf['shown_max']}, yani \"10'da 10\" hiç "
+        f"gösterilmez; {conf['shown_max']} görenlerde gerçekleşen {P(_sh[conf['shown_max']][2], lang)}.",
+        f"**Hit probability.** It comes from the same computation as the interval, no new model needed: the probability "
+        f"that the asking price of this kind of car is within ±{_wi}% of the estimate, i.e. the share of scores at or "
+        f"below log({1 + _wi / 100:g}) / s. It is calibrated out of fold: mean predicted {P(conf['mean_predicted'], lang)}, "
+        f"observed {P(conf['mean_observed'], lang)}; the Brier score is {P(conf['skill_pct'], lang)} better than giving "
+        f"everyone the same probability. It separates cars: the probability's 10th percentile is "
+        f"{P(conf['p10'], lang)}, its 90th {P(conf['p90'], lang)}. The site shows it as \"N in 10\", rounded down and at "
+        f"most {conf['shown_max']}, so \"10 in 10\" is never shown; of the cars shown {conf['shown_max']}, "
+        f"{P(_sh[conf['shown_max']][2], lang)} hit."))
+    A("")
+    figs(31)
 
     # 2026-11-22 (kullanici karari, docs/decisions.md): kayma ve oteki zaman analizleri cikti; ileri kapsama tek
     # teste indi (08_forward_test): son taramadan onceki ilanlarla egit, son taramanin yeni ilanlarinda olc. Dokuz
     # kurulumlu on kayit (plans/09-forward-coverage) geri cekildi. "Emsalsizde dusuk" cumlesi veriye kapili.
-    ft = met["forward_test"]
-    fc = ft["coverage"]
-    _fb = {r_[0]: r_ for r_ in fc["bands"]}
+    # 2026-11-23 (servis edilen aralik): olcek kolu ve isabet olasiligi eklendi; "emsalsizde hedefin altinda" tek pay ve
+    # banda gore pay icin kalir, olcek kolu icin ayri cumle ve ayri kapi. Isaretli hata fiyat artisi diye anilmaz.
     _nc = fc["no_comparable"]
     assert max(_nc["coverage_global"], _nc["coverage_band"]) < v["cov_target"], \
         "emsalsiz ilanlarda kapsama hedefe ulasiyor — paragraf yeniden yazilmali"
+    assert (fa["global"]["coverage_no_comparable"], fa["band"]["coverage_no_comparable"]) == \
+        (_nc["coverage_global"], _nc["coverage_band"]), "ileri kollarin emsalsiz kumesi farkli"
+    _nc_s = (arms["scale"]["coverage_no_comparable"], fa["scale"]["coverage_no_comparable"])
+    assert abs(_nc_s[0] - tgt) <= 2 and abs(_nc_s[1] - tgt) <= 3, \
+        f"olcek modeli emsalsizde hedefe yakin degil: {_nc_s} — paragraf yeniden yazilmali"
+    _above, _below = fa["scale"]["missed_above"], fa["scale"]["missed_below"]
+    assert _above > _below, f"kacirmalarin cogu araligin ustunde degil: {fa['scale']} — cumle yeniden yazilmali"
+    _se, _fconf = ft["signed_error"], ft["confidence"]
+    _up = _se["median"] > 0
     A(L(f"**Yeni ilanlarda: ileri test.** Son taramadan önce görülen {num(ft['n_train'], lang)} ilanla eğitilen model "
         f"(her ilan son fiyatıyla), son taramada ({ft['test']}) ilk kez görülen {num(ft['n'], lang)} ilanı fiyatladı. "
         f"MAPE {P(ft['MAPE'], lang, 2)} (%95 aralık {P(ft['ci_lo'], lang, 2)}–{P(ft['ci_hi'], lang, 2)}); taramaları "
-        f"karıştıran 5-fold OOF'ta {P(v['model_mape'], lang, 2)}. Servis edilen aralık tarifi aynen uygulandı: q ve bant "
-        f"sınırları yalnız eğitim ilanlarının kendi OOF hatalarından. Tek payla kapsama {P(fc['coverage_global'], lang)}, "
-        f"banda göre payla {P(fc['coverage_band'], lang)}. Aynı model ve yılı eğitimde hiç olmayan "
-        f"{num(_nc['n'], lang)} ilanda kapsama iki yolla da hedefin altında (tek pay {P(_nc['coverage_global'], lang)}, "
-        f"banda göre {P(_nc['coverage_band'], lang)}).",
+        f"karıştıran 5-fold OOF'ta {P(v['model_mape'], lang, 2)}. Servis edilen aralık tarifi aynen uygulandı: q, bant "
+        f"sınırları, s ve k yalnız eğitim ilanlarından (k = {fc['scale']['k']:.3f}). Kapsama tek payla "
+        f"{P(fa['global']['coverage'], lang)}, banda göre payla {P(fa['band']['coverage'], lang)}, ölçek modeliyle "
+        f"**{P(fa['scale']['coverage'], lang)}**: yeni ilanlar için geçerli sayı bu, %{tgt} değil. Aynı model ve yılı "
+        f"eğitimde hiç olmayan {num(_nc['n'], lang)} ilanda tek pay ve banda göre pay hedefin altında kalıyor, ölçek "
+        f"modeli hedefe yakın (tablo). Kaçırmaların çoğu aralığın üstünde: ölçek modelinde ilanların "
+        f"{P(_above, lang)} kadarı aralığın üstünde, {P(_below, lang)} kadarı altında kalıyor. İşaretli hata (log fiyat "
+        f"− log tahmin, ×100) medyanda {_se['median']:+.2f}, ortalamada {_se['mean']:+.2f}: yeni ilanlar tahminin "
+        + ("üstünde" if _up else "altında") + " kalma eğiliminde. Bu sayı bir fiyat artışı ölçümü değil; bileşenleri "
+        "bu raporda ayrıştırılmadı.",
         f"**On new listings: the forward test.** A model trained on the {num(ft['n_train'], lang)} listings seen before "
         f"the last snapshot (each at its latest price) priced the {num(ft['n'], lang)} listings first seen in the last "
         f"snapshot ({ft['test']}). MAPE {P(ft['MAPE'], lang, 2)} (95% interval {P(ft['ci_lo'], lang, 2)}–"
         f"{P(ft['ci_hi'], lang, 2)}); the 5-fold OOF, which mixes the snapshots, gives {P(v['model_mape'], lang, 2)}. "
-        f"The served interval recipe was applied as is: q and the band edges come only from the training listings' own "
-        f"OOF errors. Coverage is {P(fc['coverage_global'], lang)} with one margin and {P(fc['coverage_band'], lang)} "
-        f"with the per-band margin. On the {num(_nc['n'], lang)} listings whose model and year never occur in training, "
-        f"coverage is below target either way (one margin {P(_nc['coverage_global'], lang)}, per band "
-        f"{P(_nc['coverage_band'], lang)})."))
+        f"The served interval recipe was applied as is: q, the band edges, s and k come only from the training listings "
+        f"(k = {fc['scale']['k']:.3f}). Coverage is {P(fa['global']['coverage'], lang)} with one margin, "
+        f"{P(fa['band']['coverage'], lang)} with the per-band margin and **{P(fa['scale']['coverage'], lang)}** with the "
+        f"scale model: that is the number for new listings, not {tgt}%. On the {num(_nc['n'], lang)} listings whose "
+        f"model and year never occur in training, one margin and the per-band margin stay below target while the scale "
+        f"model is close to it (table). Most misses fall above the interval: with the scale model "
+        f"{P(_above, lang)} of listings land above it and {P(_below, lang)} below. The signed error (log price − log "
+        f"estimate, ×100) is {_se['median']:+.2f} at the median and {_se['mean']:+.2f} on average: new listings tend to "
+        f"sit " + ("above" if _up else "below") + " the estimate. This number is not a measure of price increase; its "
+        "parts are not separated in this report."))
     A("")
-    T([L("bant", "band"), L("ilan", "listings"), L("tek pay", "one margin"), L("banda göre", "per band")],
-      [[b_, num(_fb[b_][1], lang), P(_fb[b_][2], lang), P(_fb[b_][3], lang)] for b_ in ["Q1", "Q2", "Q3", "Q4"]]
-      + [[L("emsalsiz (model+yıl eğitimde yok)", "no comparable (model+year not in training)"), num(_nc["n"], lang),
-          P(_nc["coverage_global"], lang), P(_nc["coverage_band"], lang)]], "lrrr")
+    T([L("yöntem", "method"), L("kapsama", "coverage"), L("genişlik medyan / ort.", "width median / mean"),
+       L("aralık skoru", "interval score"), L(f"emsalsiz ({num(_nc['n'], lang)} ilan)",
+                                              f"no comparable ({num(_nc['n'], lang)} listings)"),
+       L("üstte kalan", "missed above"), L("altta kalan", "missed below")],
+      [[id_label(ARM_LABEL, a_, lang), P(r_["coverage"], lang), f"{P(r_['width_median'], lang)} / {P(r_['width_mean'], lang)}",
+        f"{r_['interval_score']:.4f}", P(r_["coverage_no_comparable"], lang), P(r_["missed_above"], lang),
+        P(r_["missed_below"], lang)] for a_, r_ in fa.items()], "lrrrrrr")
+    # EN: decision 4: coverage per fifth of the scale width, next to the 87% | TR: 4. karar: ölçek genişliğinin beşte
+    #     birlerinde kapsama, %87'nin yanında
+    _wf = fc["by_width_fifth"]                               # [fifth, n, one margin, per band, scale]
+    _sf = [r_[4] for r_ in _wf]
+    A(L(f"Ölçek aralığının genişliğine göre beşte birlerde ölçek modelinin kapsaması {P(min(_sf), lang)}–"
+        f"{P(max(_sf), lang)} arasında kalıyor; tek pay aynı araçlarda en dar beşte birde {P(_wf[0][2], lang)}, en geniş "
+        f"beşte birde {P(_wf[-1][2], lang)} kapsıyor.",
+        f"In fifths by the width of the scale interval the scale model covers {P(min(_sf), lang)}–{P(max(_sf), lang)}; "
+        f"one margin covers {P(_wf[0][2], lang)} of the same cars in the narrowest fifth and {P(_wf[-1][2], lang)} in "
+        f"the widest."))
+    A("")
+    # EN: decision 3: a what-if on today's data, "level only", not a time analysis; the sentence that narrow intervals
+    #     lose coverage first is gated | TR: 3. karar: bugünkü veride varsayım hesabı, "yalnız seviye", zaman analizi
+    #     değil; dar aralığın önce yitirdiği cümlesi kapılı
+    _lc = {c_: i_ for i_, c_ in enumerate(sc["level_shift_columns"])}
+    _l0, _lr = sc["level_shift"][0], sc["level_shift"][1:]
+    assert _l0[_lc["shift_pct"]] == 0 and all(
+        _l0[_lc["narrow_fifth_scale"]] - r_[_lc["narrow_fifth_scale"]] > _l0[_lc["coverage_scale"]] - r_[_lc["coverage_scale"]]
+        for r_ in _lr), f"dar aralik seviye kaymasinda once yitirmiyor: {sc['level_shift']} — cumle yeniden yazilmali"
+    _lj = lambda c_, nd=1: " / ".join(P(r_[_lc[c_]], lang, nd) for r_ in _lr)              # noqa: E731
+    A(L(f"**Yalnız seviye (varsayım hesabı, zaman analizi değil).** Bugünkü veride bütün ilan fiyatları "
+        f"{_lj('shift_pct', 0)} yüksek olsaydı kapsama tek payla {_lj('coverage_global')}, ölçek modeliyle "
+        f"{_lj('coverage_scale')} olurdu; ölçek aralığının en dar beşte birinde {_lj('narrow_fifth_scale')} (bugün "
+        f"{P(_l0[_lc['narrow_fifth_scale']], lang)}), gerçekleşen isabet {_lj('hit_observed')} (bugün "
+        f"{P(_l0[_lc['hit_observed']], lang)}). Dar aralık bir seviye kaymasında kapsamasını önce yitiriyor.",
+        f"**Level only (a what-if, not a time analysis).** If every asking price in today's data were "
+        f"{_lj('shift_pct', 0)} higher, coverage would be {_lj('coverage_global')} with one margin and "
+        f"{_lj('coverage_scale')} with the scale model; {_lj('narrow_fifth_scale')} in the narrowest fifth of the scale "
+        f"interval (today {P(_l0[_lc['narrow_fifth_scale']], lang)}), and the observed hit share "
+        f"{_lj('hit_observed')} (today {P(_l0[_lc['hit_observed']], lang)}). A narrow interval loses its coverage first "
+        f"when the level shifts."))
+    A("")
+    _opt = _fconf["mean_predicted"] - _fconf["mean_observed"]
+    _fsh = {r_[0]: r_ for r_ in _fconf["by_shown"]}
+    assert _fconf["skill_pct"] > 0 and max(_fsh) <= conf["shown_max"], f"ileri isabet degisti: {_fconf}"
+    A(L(f"İsabet olasılığı yeni ilanlarda " + ("iyimser" if _opt > 0 else "kötümser") + f" (yukarıdaki figür): ortalama öngörü "
+        f"{P(_fconf['mean_predicted'], lang)}, gerçekleşen {P(_fconf['mean_observed'], lang)}; Brier skoru yine sabit "
+        f"skordan {P(_fconf['skill_pct'], lang)} iyi; {conf['shown_max']} görenlerde gerçekleşen "
+        f"{P(_fsh[conf['shown_max']][2], lang)}. Test kümesine bakıp düzeltmek ayar olurdu, yapılmadı.",
+        f"On new listings the hit probability is " + ("optimistic" if _opt > 0 else "pessimistic") + f" (figure above): "
+        f"mean predicted {P(_fconf['mean_predicted'], lang)}, observed {P(_fconf['mean_observed'], lang)}; the Brier "
+        f"score is still {P(_fconf['skill_pct'], lang)} better than a constant; of the cars shown {conf['shown_max']}, "
+        f"{P(_fsh[conf['shown_max']][2], lang)} hit. Correcting it by looking at the test set would be tuning, so it "
+        f"was not done."))
     A("")
 
     # 2026-09-28 (sadelestirme listesi, kullanici karari): "en iyi 5" ve iki "en kotu 6" tablosu cikti; satira
@@ -1535,7 +2023,8 @@ SECTIONS = [
     ("redundancy", "Fazlalık, bağıntı ve marka", "Redundancy, dependence and brand", section_redundancy),
     ("target", "Hedef ve önişleme", "Target and preprocessing", section_target),
     ("segment", "Piyasa yapısı — belirgin küme yok", "Market structure — no clear clusters", section_segment),
-    ("hedonic", "Hedonik model — kontrollü etkiler", "Hedonic model — controlled effects", section_hedonic),
+    # 2026-11-23: bolum yeniden kuruldu (kimlik ve durum); "model" yerine "hedonik regresyon" (ifade kurali)
+    ("hedonic", "Hedonik regresyon: kimlik ve durum", "Hedonic regression: identity and condition", section_hedonic),
     ("model", "Model karşılaştırma ve kısıtlar", "Model comparison and limitations", section_model),
     ("calibration", "Kalibrasyon, artıklar ve zayıflık", "Calibration, residuals and where it is weak", section_calibration),
     ("text", "Serbest metin: ölçüldü, dahil edilmedi", "Free text: measured, left out", section_text),
@@ -1574,7 +2063,7 @@ def fmt_technical(v, F, lang, d):
         f"ilanında veri temizliği ve sızıntı kontrolünden geçerek kontrollü fiyat etkileri, "
         f"piyasa yapısı, model karşılaştırması ve yeni ilanlarda bir ileri testi ortaya koyar. LightGBM "
         f"ortalama **%{v['model_mape']}** yüzde hatayla (MAE: **{tl(v['model_mae'])}**, "
-        f"R²: **{v['model_r2']}**) çalışarak emsal medyanına (aynı model ve yıl; emsal yoksa daha geniş "
+        f"R²: **{v['model_r2']}**) çalışarak emsal medyanına (aynı araç modeli ve yıl; emsal yoksa daha geniş "
         f"medyan) göre ortalama mutlak hatada (MAE) "
         f"**%{v['better_pct']:.0f}** daha iyi sonuç verir. Manşet metrikler, modelin "
         f"daha önce görmediği veriler üzerinden **5-fold out-of-fold** kurgusuyla "
@@ -1585,7 +2074,7 @@ def fmt_technical(v, F, lang, d):
         f"price effects, market structure, model comparison and a forward test on new listings. LightGBM is off by "
         f"**{v['model_mape']}%** on average (MAE: **{tl(v['model_mae'])}**, "
         f"R²: **{v['model_r2']}**), with a **{v['better_pct']:.0f}%** lower mean absolute error than the comparable median "
-        f"(same model and year, falling back to a wider median when there is none). The headline metrics are computed **5-fold out-of-fold**, on data the "
+        f"(same car model and year, falling back to a wider median when there is none). The headline metrics are computed **5-fold out-of-fold**, on data the "
         f"model never saw in training; the forward test is in §{section_no('calibration')}. The target is the asking price, not the sale price: the sale price moves "
         f"away from it through bargaining."))
     A("")

@@ -42,20 +42,20 @@ def fmt_business(v, F, lang):
     # B3 (2026-09-23): etiket "ayni model, ayni yilin medyani" diyordu; sayi ise MERDIVENLI taban
     # (emsal yoksa modelin tum yillari, o da yoksa genel medyan). Etiket duzeltildi, es kosullu kiyas eklendi.
     _equal_terms = v["ed"]["baseline_equal_terms"]
-    A(L(f"**Emsal medyanı** — *aynı model ve yılın ortadaki fiyatı; o yıl için emsal yoksa modelin tüm "
+    A(L(f"**Emsal medyanı** — *aynı araç modeli ve yılın ortadaki fiyatı; o yıl için emsal yoksa o araç modelinin tüm "
         f"yıllarının, o da yoksa bütün piyasanın medyanı* — ortalama **{tl(v['base_mae'])}** "
-        f"yanılıyor; model **{tl(v['model_mae'])}** — **%{v['better_pct']:.0f} daha iyi**, "
+        f"yanılıyor; tahmin modeli **{tl(v['model_mae'])}** — **%{v['better_pct']:.0f} daha iyi**, "
         f"araç başına **{tl(v['gap_tl'])}**. 100 araçlık bir stokta bu, yaklaşık "
         f"**₺{v['gap_tl'] * 100 / 1e6:.0f}M**'lik fiyatlama hatası farkı demek. Yalnız emsali olan "
-        f"ilanlarda ({P(_equal_terms['pct'], lang)}) karşılaştırınca taban {tl(_equal_terms['baseline_mae'])}, model "
+        f"ilanlarda ({P(_equal_terms['pct'], lang)}) karşılaştırınca taban {tl(_equal_terms['baseline_mae'])}, tahmin modeli "
         f"{tl(_equal_terms['model_mae'])}: araç başına {tl(_equal_terms['gap_tl'])}, %{_equal_terms['improvement_pct']:.0f}.",
-        f"**The comparable median** — *the middle price of the same model and year; with no comparable "
-        f"that year, the model's all-year median, and failing that the whole market's* — misses by "
-        f"**{tl(v['base_mae'])}** on average; the model by **{tl(v['model_mae'])}** — "
+        f"**The comparable median** — *the middle price of the same car model and year; with no comparable "
+        f"that year, that car model's all-year median, and failing that the whole market's* — misses by "
+        f"**{tl(v['base_mae'])}** on average; the price model by **{tl(v['model_mae'])}** — "
         f"**{v['better_pct']:.0f}% better**, **{tl(v['gap_tl'])}** per car. Across a 100-car stock "
         f"that is about **₺{v['gap_tl'] * 100 / 1e6:.0f}M** of pricing error. On the listings that do "
         f"have a comparable ({P(_equal_terms['pct'], lang)}) the baseline misses by {tl(_equal_terms['baseline_mae'])} and "
-        f"the model by {tl(_equal_terms['model_mae'])}: {tl(_equal_terms['gap_tl'])} per car, {_equal_terms['improvement_pct']:.0f}%."))
+        f"the price model by {tl(_equal_terms['model_mae'])}: {tl(_equal_terms['gap_tl'])} per car, {_equal_terms['improvement_pct']:.0f}%."))
     A("")
     # 2026-09-23: "kilometre, hasar, motor" elle yaziliydi; motor grubu cikarilinca hata yalniz ~₺500 artiyor
     # (bilgisi model adinda). Siralama ve tutarlar LOFO'dan (methodology.lofo, karesel ortalama hata artisi).
@@ -64,23 +64,24 @@ def fmt_business(v, F, lang):
                   ("ENGINE", L("motor", "engine"))], key=lambda t_: -_lf[t_[0]])
     _big = [(a_, _lf[k_]) for k_, a_ in _levers if _lf[k_] >= 5000]
     _small = [(a_, _lf[k_]) for k_, a_ in _levers if _lf[k_] < 5000]
-    A(L(f"Farkı kapatan, model ve yılın ötesi en çok {' ve '.join(a_ for a_, _x in _big)}: modelden çıkarılınca "
+    A(L(f"Farkı kapatan, araç modeli ve yılın ötesi en çok {' ve '.join(a_ for a_, _x in _big)}: tahmin modelinden "
+        f"çıkarılınca "
         f"hata (karesel ortalama) sırasıyla {' ve '.join(tl(x_) for _a, x_ in _big)} büyüyor."
-        + "".join(f" {a_.capitalize()} bilgisi ise büyük ölçüde model adında zaten var: ayrıca çıkarılınca hata "
+        + "".join(f" {a_.capitalize()} bilgisi ise büyük ölçüde araç modelinin adında zaten var: ayrıca çıkarılınca hata "
                   f"yalnız {tl(x_)} artıyor." for a_, x_ in _small),
-        f"Beyond model and year the gap is closed mostly by {' and '.join(a_ for a_, _x in _big)}: removing them "
-        f"from the model grows the (root-mean-square) error by {' and '.join(tl(x_) for _a, x_ in _big)} "
+        f"Beyond car model and year the gap is closed mostly by {' and '.join(a_ for a_, _x in _big)}: removing them "
+        f"from the price model grows the (root-mean-square) error by {' and '.join(tl(x_) for _a, x_ in _big)} "
         f"respectively."
-        + "".join(f" The {a_} information is largely in the model name already: removing that group on its own adds only "
+        + "".join(f" The {a_} information is largely in the car model's name already: removing that group on its own adds only "
                   f"{tl(x_)}." for a_, x_ in _small)))
     A("")
     A(f"![{F[0][1]}](figures/{F[0][0]})")
     A("")
     _ratio = tiers[-1][4] / tiers[0][4]        # en alt basamak / en ust basamak (ort. hata)
-    A(L(f"**Emsal yoksa taban çöküyor** — en alt basamakta ortalama hata, model+yıl basamağının "
-        f"**{_ratio:.1f} katı**. Model de emsalsiz araçta zorlanıyor — nerede, ileride.",
+    A(L(f"**Emsal yoksa taban çöküyor** — en alt basamakta ortalama hata, araç modeli + yıl basamağının "
+        f"**{_ratio:.1f} katı**. Tahmin modeli de emsalsiz araçta zorlanıyor — nerede, ileride.",
         f"**Without a comparable the baseline collapses** — mean error at the bottom tier is "
-        f"**{_ratio:.1f}×** the top. The model struggles without comparables too — where, further down."))
+        f"**{_ratio:.1f}×** the top. The price model struggles without comparables too — where, further down."))
     A("")
     A(L("| taban basamağı | ilan | pay | ortalama hata |",
         "| baseline tier | listings | share | mean error |"))
@@ -92,38 +93,62 @@ def fmt_business(v, F, lang):
     # --- 2. Piyasa ne diyor
     A(L("## Piyasa fiyatı nasıl kuruyor", "## How this market builds a price"))
     A("")
-    _ht, _hc = v["hed_terms"], v["hed_ci"]
-    _hrows = [("yaş (yıl başına, tipik araçta)", "age (per year, at a typical car)", "age"),
-              ("kilometre (100 bin km başına, tipik araçta)", "mileage (per 100k km, at a typical car)", "km100k"),
-              ("ağır hasar kaydı", "heavy-damage record", "heavy_damage"),
-              ("değişen panel (her biri)", "changed panel (each)", "changed"),
-              ("boyalı panel (her biri)", "painted panel (each)", "painted"),
-              ("+100 hp motor gücü", "+100 hp of engine power", "hp100")]
-    # 2026-09-28 (kullanici karari): etkiler teknik §6'nin model kontrolu sutunundan — ayni model adi icinde.
-    A(L("Her kalemin fiyatı ne kadar oynattığı — **aynı model adı içinde, diğer her şey sabitken**:",
-        "How much each driver moves the price — **within one model name, with everything else held fixed**:"))
+    # 2026-11-23 (kullanicinin istegi, docs/decisions.md): once merdivenden tek cumle (kat disi R²: yalniz durum,
+    # yalniz arac modelinin adi, ikisi birlikte); sonra tablo. Giris nedensel degil ("fiyati oynatir" cikti). Yas
+    # yillik basamaklarin araligi, boyali panel ilk panel ve "top ve fazlasi" (dogrusal degil); km, agir hasar ve
+    # degisen panel (dogrusala yakin) teknik §6'nin arac modeli kontrolu sutunundan. "+100 hp" satiri ve "en belirsiz
+    # kalem" cumlesi cikti: arac modeli icinde guc pek degismiyor (teknik §6 motor paragrafi).
+    _lad = v["hed_ladder"]
+    _r2 = lambda k_: P(_lad[k_]["r2_out_of_fold"] * 100, lang, 0)                     # noqa: E731
+    A(L(f"Aracın ne olduğu ve durumu fiyatı birlikte kuruyor. İlanlar arasındaki (yüzde olarak ölçülen) fiyat "
+        f"farklarının yaklaşık {_r2('condition')} kadarını yalnız aracın durumu (yaş, km, hasar, boya, değişen panel), "
+        f"{_r2('identity_model')} kadarını yalnız araç modelinin adı, {_r2('model_control')} kadarını ikisi (motorla "
+        f"birlikte) açıklıyor (hesaba girmeyen ilanlarda ölçüldü).",
+        f"What the car is and the state it is in set the price together. Of the (percentage) price differences between "
+        f"listings, the car's condition alone (age, mileage, damage, paint, changed panels) explains about "
+        f"{_r2('condition')}, the car model name alone {_r2('identity_model')}, and both together (with the engine) "
+        f"{_r2('model_control')} (measured on listings left out of the fit)."))
     A("")
-    A(L("| kalem | fiyat |", "| driver | price |"))
+    _ht, _steps = v["hed_terms"], v["hed_age_steps"]
+    _top, _pt = v["hed_count_top"], v["hed_by_count"]["painted"]
+    assert all(s_["pct_hi"] < 0 for s_ in _steps), f"bir yas basamagi dusus degil — yas satiri bayat: {_steps}"
+    # "ilki en cok, sonrakiler daha az": ilk panelin etkisi her panelde tekrarlansaydi top panel bundan fazla dusururdu
+    assert _pt[-1]["pct_lo"] > 100 * ((1 + _pt[0]["pct_effect"] / 100) ** _top - 1), (
+        f"{_top}+ boyali panel ilk panelin tekrarindan ayrilmiyor — 'sonrakiler daha az' cumlesi bayat")
+    _age_lo = max(s_["pct_per_year"] for s_ in _steps)         # en yavas dusus | slowest drop
+    _age_hi = min(s_["pct_per_year"] for s_ in _steps)         # en dik dusus | steepest drop
+    _cell = lambda x_: P(x_, lang, 1, sign=True)                                       # noqa: E731
+    _hrows = [(L("yaş (yıl başına, yaşa göre)", "age (per year, depending on age)"),
+               L(f"{_cell(_age_lo)} ile {_cell(_age_hi)} arası", f"{_cell(_age_lo)} to {_cell(_age_hi)}")),
+              (L("kilometre (100 bin km başına, tipik araçta)", "mileage (per 100k km, at a typical car)"),
+               _cell(_ht["km100k"])),
+              (L("ağır hasar kaydı", "heavy-damage record"), _cell(_ht["heavy_damage"])),
+              (L("değişen panel (her biri)", "changed panel (each)"), _cell(_ht["changed"])),
+              (L("boyalı panel (yalnız bir tane)", "painted panel (just one)"), _cell(_pt[0]["pct_effect"])),
+              (L(f"boyalı panel ({_top} ve fazlası, toplam)", f"painted panels ({_top} or more, in total)"),
+               _cell(_pt[-1]["pct_effect"]))]
+    A(L("**Aynı araç modelinin, başka her bakımdan benzer ilanları** arasındaki fiyat farkı:",
+        "The price difference between **otherwise similar listings of the same car model**:"))
+    A("")
+    A(L("| kalem | fiyat |", "| item | price |"))
     A("|---|---:|")
-    for _tr, _en, _k in _hrows:
-        A(f"| {L(_tr, _en)} | {P(_ht[_k], lang, 1, sign=True)} |")
-    A("")
-    # 2026-09-28: tablonun en belirsiz kalemi (en genis %95 aralik) veriden secilip soylenir; tek sayi onu saklamasin.
-    _wide = max(_hrows, key=lambda r_: _hc[r_[2]][1] - _hc[r_[2]][0])
-    _lo, _hi = _hc[_wide[2]]
-    A(L(f"En belirsiz kalem {_wide[0].split(' (')[0]}: %95 güven aralığı {P(_lo, lang, 1, sign=True)} ile "
-        f"{P(_hi, lang, 1, sign=True)} arasında.",
-        f"The least certain driver is {_wide[1].split(' (')[0]}: its 95% confidence interval runs from "
-        f"{P(_lo, lang, 1, sign=True)} to {P(_hi, lang, 1, sign=True)}."))
+    for _label, _value in _hrows:
+        A(f"| {_label} | {_value} |")
     A("")
     # 2026-09-23: burada "dusuk-km yasli arac sistematik olarak ucuz kaliyor" yaziyordu; arkasinda hesap
     # yoktu ve olcum tersini gosterdi (ayni model+yil hucresinde 100 bin km'nin etkisi genc/orta/yasli
     # aracta -%13 / -%16 / -%13; yasli dusuk-km ceyrek hucresinin %14 USTUNDE). Iddia silindi.
     _center = v["hed_center"]
-    A(L(f"Yaş ve kilometre birbirine bağlı iki eksen; tablodaki yaş ve km satırları biri sabitken "
-        f"ötekinin etkisi, tipik araçta ({num(_center['age'], lang)} yaş, {num(_center['km'], lang)} km) ölçüldü.",
-        f"Age and mileage are linked axes; the age and km rows above are each measured with the other "
-        f"held fixed, at a typical car ({num(_center['age'], lang)} years, {num(_center['km'], lang)} km)."))
+    A(L(f"Yaş ve kilometre birbirine bağlı iki eksen; tablodaki her satır öteki sabitken ölçüldü. Km satırı tipik "
+        f"araçta ({num(_center['age'], lang)} yaş, {num(_center['km'], lang)} km); yaşın yıllık etkisi yaşa göre "
+        f"değişiyor. Veri tek dönem: yaş satırı bir model yılı farklı iki ilanın fiyat farkı, bir aracın bir yılda ne "
+        f"kadar değer kaybedeceği değil. Boyalı panel her biri sabit bir tutar değil: ilki en çok düşürüyor, "
+        f"sonrakiler daha az.",
+        f"Age and mileage are linked axes; every row is measured with the other held fixed. The mileage row is at a "
+        f"typical car ({num(_center['age'], lang)} years, {num(_center['km'], lang)} km); the yearly effect of age "
+        f"changes with age. The data is one period: the age row is the price gap between two listings one model year "
+        f"apart, not how much one car will lose in a year. A painted panel is not a fixed amount each: the first costs "
+        f"the most, the later ones less."))
     A("")
     for no in (5, 6):
         A(f"![{F[no][1]}](figures/{F[no][0]})")
@@ -133,11 +158,11 @@ def fmt_business(v, F, lang):
               else f"{v['brand_mape_delta']:.2f} puan oynatıyor")
     _bd_en = ("does not move" if v["brand_mape_delta"] < 0.005
               else f"moves {v['brand_mape_delta']:.2f} points of")
-    A(L(f"**Markadan hareket çıkmaz.** Seri+modelin üzerine markayı eklemek ortalama hatayı "
-        f"{_bd_tr} — marka zaten modelin içinde.",
-        f"**Brand gives you nothing to act on.** Adding brand on top of series+model "
-        f"{_bd_en} the mean error — brand already "
-        f"lives inside model."))
+    # 2026-11-23 (ifade kurali): cumlede hem arac modeli hem tahmin modelinin hatasi geciyordu; ikisi adlandirildi
+    A(L(f"**Markadan hareket çıkmaz.** Seri ve araç modelinin üzerine markayı eklemek tahmin modelinin ortalama "
+        f"hatasını {_bd_tr}: marka zaten araç modelinin içinde.",
+        f"**Brand gives you nothing to act on.** Adding brand on top of series and car model "
+        f"{_bd_en} the price model's mean error: brand already lives inside the car model."))
     A("")
     A(f"![{F[7][1]}](figures/{F[7][0]})")
     A("")
@@ -206,27 +231,52 @@ def fmt_business(v, F, lang):
         "estimate is; a range states it and warns the user exactly where uncertainty is large."))
     A("")
     # 2026-11-22 (kullanici karari, docs/decisions.md): ileri kapsama tek teste indi (08_forward_test): son taramadan
-    # onceki ilanlarla egitim, son taramanin yeni ilanlarinda kapsama. Banda gore payin en ucuz banti duzeltmesi ve
-    # emsalsiz aracta aralik tutmamasi veriye kapili; tutmazsa durur.
+    # onceki ilanlarla egitim, son taramanin yeni ilanlarinda kapsama. Emsalsiz aracta tek payin tutmamasi veriye
+    # kapili; tutmazsa durur.
+    # 2026-11-23 (servis edilen aralik): aralik araca gore (olcek modeli); "emsalsiz aracta aralik tutmuyor" cumlesi
+    # olcek modeli icin "tutuyor" oldu, ayri kapiyla. "Banda gore payla emsalsizde daha da dusuyor" yan cumlesi cikti
+    # (13. karar: gurultu); onunla banda gore payin en ucuz bant cumlesi ve kapisi da gitti.
     _fc = v["ft"]["coverage"]
-    _q1 = dict((r_[0], r_) for r_ in _fc["bands"])["Q1"]
-    assert _q1[3] > _q1[2], "bant basina pay ucuz banti duzeltmiyor"
     _nc = _fc["no_comparable"]
     assert max(_nc["coverage_global"], _nc["coverage_band"]) < v["cov_target"], "emsalsiz aracta aralik tutuyor"
-    _nc_worse = _nc["coverage_band"] < _nc["coverage_global"]
-    A(L(f"Bu yüzden çıktı tek sayı değil, **%{v['cov_target']} aralık**. Tek bir hata payıyla aralık ucuz araçlarda "
-        f"tutmuyor: tahmini en ucuz çeyrekte kapsama **{P(v['cov_q1'], lang)}**, hedefin altında. Hata payı fiyat "
-        f"bandına göre ayrı hesaplanınca, son taramanın yeni ilanlarında (model ondan önceki ilanlarla eğitildi) en "
-        f"ucuz bantta kapsama {P(_q1[2], lang)} yerine {P(_q1[3], lang)} oluyor. Emsalsiz araçta ise aralık iki "
-        f"yolla da tutmuyor ({P(_nc['coverage_global'], lang)} ve {P(_nc['coverage_band'], lang)})"
-        + ("; banda göre payla kapsama orada daha da düşüyor." if _nc_worse else "."),
-        f"That is why the output is a **{v['cov_target']}% range**, not one number. With one margin the range does not "
-        f"hold on cheap cars: coverage in the cheapest predicted quartile is **{P(v['cov_q1'], lang)}**, below target. "
-        f"With the margin computed per price band, on the last snapshot's new listings (the model trained on the "
-        f"listings before it) the cheapest band covers {P(_q1[3], lang)} instead of {P(_q1[2], lang)}. On cars without "
-        f"a comparable the range fails either way ({P(_nc['coverage_global'], lang)} and "
-        f"{P(_nc['coverage_band'], lang)})" + ("; with the per-band margin coverage drops further there."
-                                               if _nc_worse else ".")))
+    _pr, _sa, _fs = v["profiles"], v["arms"]["scale"], v["ft_arms"]["scale"]
+    _tgt = v["cov_target"]
+    assert _pr["cheapest_quarter"]["coverage_global"] < _tgt - 3 and _pr["no_comparable"]["coverage_global"] < _tgt - 3, \
+        "tek pay ucuz ya da emsalsiz aracta tutuyor — paragraf yeniden yazilmali"
+    assert abs(_pr["cheapest_quarter"]["coverage_scale"] - _tgt) <= 3 and \
+        abs(_sa["coverage_no_comparable"] - _tgt) <= 2 and abs(_fs["coverage_no_comparable"] - _tgt) <= 3, \
+        "olcek modeli ucuz ya da emsalsiz aracta hedefe yakin degil — paragraf yeniden yazilmali"
+    _cf, _ff = v["conf"], v["ft"]["confidence"]
+    _opt = _ff["mean_predicted"] - _ff["mean_observed"]
+    A(L(f"Bu yüzden çıktı tek sayı değil, **%{_tgt} aralık**, ve aralık araca göre: küçük bir ikinci model bu tür "
+        f"araçta beklenen hatanın büyüklüğünü tahmin ediyor, pay ona göre açılıyor. Herkese aynı payla aralık tahmini en "
+        f"ucuz çeyrekte (kapsama **{P(_pr['cheapest_quarter']['coverage_global'], lang)}**) ve emsalsiz araçta "
+        f"({P(_pr['no_comparable']['coverage_global'], lang)}) tutmuyordu; araca göre payla en ucuz çeyrekte "
+        f"{P(_pr['cheapest_quarter']['coverage_scale'], lang)}, emsalsiz araçta {P(_sa['coverage_no_comparable'], lang)}. "
+        f"Son taramanın yeni ilanlarında (model ondan önceki ilanlarla eğitildi) emsalsiz araçta da "
+        f"{P(_fs['coverage_no_comparable'], lang)} tutuyor (herkese aynı payla {P(_nc['coverage_global'], lang)}). "
+        f"Yeni ilanların tamamında kapsama **{P(_fs['coverage'], lang)}**, %{_tgt} değil: sayılar {v['period']['tr']} "
+        f"ilan fiyatlarını anlatır.",
+        f"That is why the output is a **{_tgt}% range**, not one number, and the range is per car: a small second "
+        f"model estimates how large the error usually is for this kind of car, and the margin opens to match. With the "
+        f"same margin for everyone the range did not hold in the cheapest predicted quartile (coverage "
+        f"**{P(_pr['cheapest_quarter']['coverage_global'], lang)}**) or on cars without a comparable "
+        f"({P(_pr['no_comparable']['coverage_global'], lang)}); with the per-car margin it is "
+        f"{P(_pr['cheapest_quarter']['coverage_scale'], lang)} in the cheapest quartile and "
+        f"{P(_sa['coverage_no_comparable'], lang)} without a comparable. On the last snapshot's new listings (the model "
+        f"trained on the listings before it) it holds without a comparable too, at {P(_fs['coverage_no_comparable'], lang)} "
+        f"(same margin for everyone: {P(_nc['coverage_global'], lang)}). Across all new listings coverage is "
+        f"**{P(_fs['coverage'], lang)}**, not {_tgt}%: the numbers describe asking prices of {v['period']['en']}."))
+    A("")
+    A(L(f"Aralığın yanında bir isabet olasılığı da var: bu tür araçta ilan fiyatının tahminin ±%{_cf['within_pct']} "
+        f"yakınında olma sıklığı, \"10'da N\" olarak; aşağı yuvarlanır ve en çok {_cf['shown_max']}, \"10'da 10\" hiç "
+        f"gösterilmez. Yeni ilanlarda {abs(_opt):.1f} puan " + ("iyimser" if _opt > 0 else "kötümser")
+        + f" (öngörülen {P(_ff['mean_predicted'], lang)}, gerçekleşen {P(_ff['mean_observed'], lang)}).",
+        f"Next to the range there is a hit probability: how often the asking price of this kind of car is within "
+        f"±{_cf['within_pct']}% of the estimate, shown as \"N in 10\"; rounded down and at most {_cf['shown_max']}, so "
+        f"\"10 in 10\" never appears. On new listings it is {abs(_opt):.1f} points "
+        + ("optimistic" if _opt > 0 else "pessimistic")
+        + f" (predicted {P(_ff['mean_predicted'], lang)}, observed {P(_ff['mean_observed'], lang)})."))
     A("")
     A(f"![{F[12][1]}](figures/{F[12][0]})")
     A("")
@@ -242,16 +292,20 @@ def fmt_business(v, F, lang):
               f"still {_flag_ctl['or']:.2f}×" if _flag_sig else "")
     A(L("**Ne yapmalı**", "**What to do**"))
     A("")
-    A(L(f"- Aralığın hata payını fiyat bandına göre ayrı hesapla: ucuz araçta daha geniş, pahalıda daha dar — tek "
-        f"sayıya güvenme. Emsalsiz araçta aralığa da güvenme.\n"
+    # 2026-11-23 (servis edilen aralik): "banda gore hesapla" ve "emsalsizde araliga da guvenme" maddesi, araca gore
+    # aralikla degisti; yeni ilanlardaki kapsama veriden.
+    A(L(f"- Fiyatı aralığıyla birlikte göster: pay araca göre geldiği için belirsizliğin büyük olduğu araçta aralık "
+        f"kendiliğinden genişliyor. Tek sayıya güvenme; yeni ilanlarda aralığın %{_tgt} değil "
+        f"{P(_fs['coverage'], lang)} tuttuğunu hesaba kat.\n"
         f"- Nadir ve uç araçları elle fiyatla; model orada saçılıyor.\n"
         + (f"- Metninde dönüşüm, motor değişimi ya da modifiye geçen ilanı otomatik fiyatlama, "
            f"elle incele; bu bilgi formda yok{_flag_tr}." if _flag_sig else
            f"- Metninde dönüşüm, motor değişimi ya da modifiye geçen ilanı yayına almadan önce gözden geçir: "
            f"bu bilgi formda yok. Araç özellikleri sabitken bu ilanlarda hata oranında anlamlı bir fark ölçülmedi; gözden "
            f"geçirme model hatasına değil, formun göremediği bilgiye karşı."),
-        f"- Compute the range's margin per price band: wider on cheap cars, narrower on expensive ones — don't "
-        f"trust a point estimate. On cars without a comparable, don't trust the range either.\n"
+        f"- Show the price with its range: the margin comes per car, so the range widens by itself where uncertainty is "
+        f"large. Don't trust a point estimate; on new listings count on the range holding {P(_fs['coverage'], lang)} of "
+        f"the time, not {_tgt}%.\n"
         f"- Price rare and edge cars by hand; the model scatters there.\n"
         + (f"- Never auto-price a listing whose text mentions a conversion, an engine swap or "
            f"modifications — price it by hand; that information is not in the form{_flag_en}." if _flag_sig else

@@ -1,7 +1,7 @@
 {
  "_meta": {
   "script": "08_conformal_coverage.py",
-  "generated_at": "2026-11-22T20:01:13+03:00",
+  "generated_at": "2026-11-23T18:24:34+03:00",
   "data_until": "2026-06-27",
   "db": {
    "path": "data/cars.duckdb",
@@ -11,12 +11,12 @@
   "run_id": "601741517e09",
   "source": {
    "script": {
-    "analysis/08_conformal_coverage.py": "f6507cbb6349e988bb8632df5b205e60e39d34a5b1ee610c978d70887105a9ff"
+    "analysis/08_conformal_coverage.py": "2d54a727d84deb3156371596ac96c0214339994440560daeff2880de6405578b"
    },
    "lib": {
     "analysis/lib/__init__.py": "05803b4786f339061bc10d5572bde9e682d74e857c18b3c55494a1b9172567c3",
     "analysis/lib/common.py": "533eaad7a29580e93aeff01214fc024538dd6a6ab717e6b669e7e7b0a4399295",
-    "analysis/lib/conformal.py": "7ba37319d93e3006cf69f5e66c7dd212848ffe47b60b2c4ac658dd99bb510e90",
+    "analysis/lib/conformal.py": "5958aee4dfda03b6f4a33548d2a57d89fcc08882f4e418be3f559020c08ad9c8",
     "analysis/lib/cv.py": "e83f615405ac012d466c9d82f698dc4145ba2df680c46ec3f529ee3ee6da56f5",
     "analysis/lib/segment_rule.py": "9e014153906e9fb7a139099d1b581459a7b9e17bb21acb2172bd67cdb66c01cc"
    }
@@ -60,8 +60,68 @@
      90.04
     ]
    ],
+   "scale_by_quantile": [
+    [
+     "Q1",
+     89.94
+    ],
+    [
+     "Q2",
+     90.16
+    ],
+    [
+     "Q3",
+     89.56
+    ],
+    [
+     "Q4",
+     90.72
+    ]
+   ],
+   "hit_reliability": [
+    [
+     49.3,
+     51.4
+    ],
+    [
+     61.7,
+     61.2
+    ],
+    [
+     68.3,
+     67.9
+    ],
+    [
+     73.8,
+     72.2
+    ],
+    [
+     78.4,
+     78.5
+    ],
+    [
+     83.3,
+     82.4
+    ],
+    [
+     87.6,
+     87.5
+    ],
+    [
+     90.9,
+     90.6
+    ],
+    [
+     93.9,
+     94.2
+    ],
+    [
+     96.3,
+     96.8
+    ]
+   ],
    "coverage_target": 90,
-   "note": "Bantlar tahmin edilen fiyatın çeyrekleri; kapsama çapraz kalibreli (her katın q'su öteki katlardan). by_quantile = tek q, mondrian_by_quantile = bant başına q."
+   "note": "Bantlar tahmin edilen fiyatın çeyrekleri; kapsama çapraz kalibreli (her kat öteki katlardan kalibre edilir). by_quantile = tek q, mondrian_by_quantile = bant başına q, scale_by_quantile = ölçek modeli. hit_reliability = isabet olasılığının onda birlik dilimlerinde [öngörülen %, gerçekleşen %]."
   }
  },
  "report": {
@@ -119,6 +179,524 @@
     "width_pct_global",
     "width_pct_band"
    ]
+  },
+  "scale": {
+   "k": 2.0874,
+   "floor_hits": 0,
+   "no_comparable_n": 752,
+   "arms": [
+    [
+     "global",
+     89.99,
+     28.3,
+     28.3,
+     0.4211,
+     70.74
+    ],
+    [
+     "band",
+     90.01,
+     25.9,
+     27.5,
+     0.4059,
+     66.76
+    ],
+    [
+     "scale",
+     90.09,
+     24.7,
+     27.2,
+     0.3657,
+     90.29
+    ]
+   ],
+   "by_band": [
+    [
+     "Q1",
+     7497,
+     89.94,
+     35.7
+    ],
+    [
+     "Q2",
+     7497,
+     90.16,
+     25.8
+    ],
+    [
+     "Q3",
+     7497,
+     89.56,
+     20.9
+    ],
+    [
+     "Q4",
+     7497,
+     90.72,
+     16.7
+    ]
+   ],
+   "by_comparables": [
+    [
+     "0",
+     752,
+     70.74,
+     66.76,
+     90.29
+    ],
+    [
+     "1_4",
+     2403,
+     82.36,
+     79.48,
+     90.47
+    ],
+    [
+     "5_19",
+     6752,
+     89.2,
+     88.85,
+     89.44
+    ],
+    [
+     "20_plus",
+     20081,
+     91.88,
+     92.53,
+     90.26
+    ]
+   ],
+   "axes": {
+    "global": {
+     "input": {
+      "n_groups": 42,
+      "off_5pp": 18,
+      "max_deviation": 25.2
+     },
+     "unseen": {
+      "n_groups": 32,
+      "below_own_3pp": 4,
+      "worst": [
+       "colour",
+       "Gri (Gümüş)",
+       315,
+       -10.3
+      ]
+     }
+    },
+    "scale": {
+     "input": {
+      "n_groups": 42,
+      "off_5pp": 0,
+      "max_deviation": 3.5
+     },
+     "unseen": {
+      "n_groups": 32,
+      "below_own_3pp": 4,
+      "worst": [
+       "first_owner",
+       "True",
+       302,
+       -5.7
+      ]
+     }
+    }
+   },
+   "width": {
+    "min": 8.9,
+    "percentiles": [
+     [
+      5,
+      14.4,
+      7.0,
+      7.5
+     ],
+     [
+      25,
+      18.4,
+      8.8,
+      9.6
+     ],
+     [
+      50,
+      24.7,
+      11.6,
+      13.1
+     ],
+     [
+      75,
+      33.0,
+      15.2,
+      17.9
+     ],
+     [
+      95,
+      47.9,
+      21.1,
+      26.8
+     ],
+     [
+      99,
+      68.3,
+      28.5,
+      39.8
+     ]
+    ],
+    "narrower_share": 62.44
+   },
+   "partial_dependence": [
+    [
+     0,
+     0.0928
+    ],
+    [
+     1,
+     0.0853
+    ],
+    [
+     2,
+     0.0737
+    ],
+    [
+     5,
+     0.0694
+    ],
+    [
+     10,
+     0.0662
+    ],
+    [
+     20,
+     0.0631
+    ],
+    [
+     50,
+     0.061
+    ],
+    [
+     100,
+     0.0609
+    ],
+    [
+     200,
+     0.0597
+    ]
+   ],
+   "profiles": [
+    [
+     "all",
+     29988,
+     90.0,
+     90.1,
+     11.6,
+     13.1,
+     1331000,
+     1765000,
+     1355000,
+     1734000,
+     78.3,
+     78.3
+    ],
+    [
+     "age_0_3",
+     2649,
+     97.4,
+     90.8,
+     7.5,
+     8.1,
+     3415000,
+     4527000,
+     3636000,
+     4252000,
+     92.1,
+     92.3
+    ],
+    [
+     "age_4_7",
+     4420,
+     97.5,
+     90.5,
+     7.4,
+     8.0,
+     2360000,
+     3128000,
+     2516000,
+     2933000,
+     91.7,
+     92.1
+    ],
+    [
+     "age_8_12",
+     12264,
+     92.7,
+     89.9,
+     10.5,
+     11.7,
+     1380000,
+     1829000,
+     1422000,
+     1775000,
+     81.7,
+     81.6
+    ],
+    [
+     "age_13_18",
+     8853,
+     83.3,
+     90.3,
+     15.2,
+     17.9,
+     959000,
+     1271000,
+     936000,
+     1302000,
+     67.0,
+     66.5
+    ],
+    [
+     "age_19_plus",
+     1802,
+     75.2,
+     88.5,
+     18.1,
+     22.1,
+     603000,
+     799000,
+     568000,
+     847000,
+     58.5,
+     58.9
+    ],
+    [
+     "no_comparable",
+     752,
+     70.7,
+     90.3,
+     19.7,
+     24.6,
+     1491000,
+     1977000,
+     1378000,
+     2139000,
+     53.1,
+     55.6
+    ],
+    [
+     "comparables_20_plus",
+     20081,
+     91.9,
+     90.3,
+     10.8,
+     12.1,
+     1304000,
+     1728000,
+     1339000,
+     1682000,
+     81.2,
+     80.9
+    ],
+    [
+     "cheapest_quarter",
+     7497,
+     81.0,
+     89.9,
+     16.3,
+     19.4,
+     788000,
+     1044000,
+     760000,
+     1083000,
+     64.7,
+     64.0
+    ],
+    [
+     "dearest_quarter",
+     7497,
+     94.7,
+     90.7,
+     8.0,
+     8.7,
+     2708000,
+     3589000,
+     2868000,
+     3389000,
+     87.4,
+     87.5
+    ],
+    [
+     "top_mileage_fifth",
+     5998,
+     79.9,
+     89.9,
+     16.5,
+     19.8,
+     906000,
+     1201000,
+     871000,
+     1249000,
+     63.5,
+     63.0
+    ],
+    [
+     "heavy_damaged",
+     1407,
+     80.5,
+     89.7,
+     15.8,
+     18.7,
+     1040000,
+     1379000,
+     1008000,
+     1422000,
+     64.0,
+     63.2
+    ],
+    [
+     "segment_f",
+     325,
+     65.8,
+     86.5,
+     21.8,
+     27.9,
+     2303000,
+     3053000,
+     2074000,
+     3391000,
+     49.6,
+     51.7
+    ]
+   ],
+   "latest_snapshot": {
+    "snap": "2026-06-27",
+    "n": 11526,
+    "coverage_global": 88.72,
+    "coverage_scale": 88.89
+   },
+   "level_shift": [
+    [
+     0,
+     89.99,
+     90.09,
+     98.85,
+     90.55,
+     78.27
+    ],
+    [
+     2,
+     89.22,
+     88.56,
+     98.37,
+     86.96,
+     77.13
+    ],
+    [
+     5,
+     86.13,
+     82.35,
+     96.45,
+     73.59,
+     70.58
+    ],
+    [
+     10,
+     73.89,
+     61.57,
+     84.79,
+     33.69,
+     49.37
+    ]
+   ],
+   "s_floor": 0.02,
+   "min_group_n": 200,
+   "arm_columns": [
+    "arm",
+    "coverage",
+    "width_median",
+    "width_mean",
+    "interval_score",
+    "coverage_no_comparable"
+   ],
+   "profile_columns": [
+    "group",
+    "n",
+    "coverage_global",
+    "coverage_scale",
+    "margin_low_pct",
+    "margin_high_pct",
+    "today_low",
+    "today_high",
+    "new_low",
+    "new_high",
+    "hit_predicted",
+    "hit_observed"
+   ],
+   "level_shift_columns": [
+    "shift_pct",
+    "coverage_global",
+    "coverage_scale",
+    "narrow_fifth_global",
+    "narrow_fifth_scale",
+    "hit_observed"
+   ]
+  },
+  "confidence": {
+   "mean_predicted": 78.3,
+   "mean_observed": 78.3,
+   "brier": 0.1493,
+   "brier_constant": 0.1701,
+   "skill_pct": 12.2,
+   "p10": 57.9,
+   "p50": 80.8,
+   "p90": 95.4,
+   "by_shown": [
+    [
+     1,
+     7,
+     14.3
+    ],
+    [
+     2,
+     106,
+     30.2
+    ],
+    [
+     3,
+     280,
+     40.4
+    ],
+    [
+     4,
+     868,
+     48.8
+    ],
+    [
+     5,
+     2506,
+     57.1
+    ],
+    [
+     6,
+     4637,
+     64.4
+    ],
+    [
+     7,
+     6118,
+     74.7
+    ],
+    [
+     8,
+     6983,
+     84.8
+    ],
+    [
+     9,
+     8483,
+     94.2
+    ]
+   ],
+   "within_pct": 10,
+   "shown_max": 9
   }
  }
 }

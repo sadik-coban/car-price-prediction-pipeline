@@ -25,7 +25,7 @@ Her betik için defter kartını, sonuçlarını tablo olarak ve raporun figürl
   `if __name__ == "__main__":` altında olduğu için çalışmaz. Analiz kodu betiğin kendisidir; defterde kopyası yok.
   `check` sonucun `metrics/` kaydıyla aynı olup olmadığını gösterir. `script.res`, yüklenen tablolar ve betiğin
   fonksiyonları sonraki hücrelerde denenebilir.
-- **Ağır betikler kayıttan okunur.** Model eğiten ya da çapraz doğrulama koşan sekiz betik
+- **Ağır betikler kayıttan okunur.** Model eğiten ya da çapraz doğrulama koşan dokuz betik
   (`analysis/lib/records.py`'deki `HEAVY`) `metrics/`'ten gelir; `run` onları reddeder.
 
 Kayıtlı metrikler derleyicilerin okuyucusuyla (`builders/report_lib/metrics_view.py`) yüklenir; bu yüzden karışık ya

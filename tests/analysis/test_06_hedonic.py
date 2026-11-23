@@ -10,6 +10,12 @@ TR: metrics/06_hedonic.json'un değişmezleri (teknik rapor §6 hedonik model): 
     iki yanında sıralı, "sıfırı içeriyor" bayrağı ona uyuyor, % etki ve sınırları exp(β)−1); manşet etkiler model
     sütununun; aralıklar modele göre kümeli; C(model) eklemek örneklem içi R²'yi düşürmüyor; en yüksek VIF ≥ 1 ve
     ortalamak onu düşürüyor.
+EN (2026-11-23): the ladder's out-of-fold predictions never see the scored fold; its rungs are nested as they should
+    be and include the published columns; the column without identity controls has the same terms; the age steps and
+    the parts-by-count rows are well formed.
+TR (2026-11-23): merdivenin kat dışı tahminleri puanlanan katı hiç görmez; basamakları olması gerektiği gibi iç içe ve
+    yayımlanan sütunları içerir; kimlik kontrolsüz sütun aynı terimleri taşır; yaş basamakları ve sayıya göre parça
+    satırları düzgün kurulu.
 """
 import math
 import sys
@@ -172,3 +178,80 @@ def test_sensitivities(hr, metrics):
     hw = hr["hp_within_model"]
     assert hw["models"] == hr["n_clusters"] and 0 < hw["models_varying"] <= hw["models"]
     assert 0 < hw["sd_within"] < hw["sd_overall"]
+
+
+# ── Ladder, no-identity column, age steps, parts by count (2026-11-23) ─────────────────────────────
+@pytest.fixture(scope="module")
+def rh(doc):
+    """EN: The report-only hedonic block. / TR: Yalnız raporun kullandığı hedonik blok."""
+    return doc["report"]["hedonic"]
+
+
+def test_oof_predictions_never_see_the_scored_fold(functions):
+    """
+    EN: Changing the prices of one fold leaves that fold's out-of-fold predictions as they were and moves the others.
+    TR: Bir katın fiyatlarını değiştirmek o katın kat dışı tahminlerini olduğu gibi bırakır, ötekileri değiştirir.
+    """
+    rng = np.random.default_rng(0)
+    n = 500
+    X = np.column_stack([np.ones(n), rng.normal(size=(n, 3))])
+    y = X @ np.array([1.0, 2.0, -1.0, 0.5]) + rng.normal(0, .1, n)
+    fold = np.arange(n) % 5
+    folds = [(np.flatnonzero(fold != k), np.flatnonzero(fold == k)) for k in range(5)]
+    a = functions["oof_predictions"](X, y, folds)
+    y2 = y.copy()
+    y2[fold == 0] += 10
+    b = functions["oof_predictions"](X, y2, folds)
+    assert np.array_equal(a[fold == 0], b[fold == 0]) and not np.allclose(a[fold != 0], b[fold != 0])
+
+
+def test_ladder(rh, hr):
+    """
+    EN: Six regressions; the two published columns and the no-identity column are rungs of it (same in-sample R²);
+        in-sample R² never falls when terms are added (condition ⊂ condition + engine ⊂ segment control ⊂ car-model
+        control; segment identity ⊂ segment control; car-model identity ⊂ car-model control); out of fold a
+        regression is not better than in sample (beyond rounding).
+    TR: Altı regresyon; yayımlanan iki sütun ve kimliksiz sütun onun basamakları (aynı örneklem içi R²); terim
+        eklendikçe örneklem içi R² düşmez (durum ⊂ durum + motor ⊂ segment kontrolü ⊂ araç modeli kontrolü; segment
+        kimliği ⊂ segment kontrolü; araç modeli kimliği ⊂ araç modeli kontrolü); kat dışında bir regresyon örneklem
+        içinden iyi değil (yuvarlama dışında).
+    """
+    rows = {r[0]: r for r in rh["ladder"]["rows"]}
+    assert list(rows) == ["identity_segment", "identity_model", "condition", "condition_engine", "segment_control",
+                          "model_control"] and len(rh["ladder"]["columns"]) == 4
+    assert rows["segment_control"][2] == hr["columns"]["segment"]["r2"]
+    assert rows["model_control"][2] == hr["columns"]["model"]["r2"]
+    assert rows["condition_engine"][2] == rh["no_identity"]["r2"]
+    for small, big in (("condition", "condition_engine"), ("condition_engine", "segment_control"),
+                       ("segment_control", "model_control"), ("identity_segment", "segment_control"),
+                       ("identity_model", "model_control")):
+        assert rows[small][2] <= rows[big][2] and rows[small][1] < rows[big][1], (small, big)
+    assert all(0 < r[3] <= r[2] + 1e-4 for r in rows.values())
+
+
+def test_no_identity_column(rh):
+    """
+    EN: The column without identity controls carries the same ten terms, with consistent rows.
+    TR: Kimlik kontrolsüz sütun aynı on terimi, tutarlı satırlarla taşır.
+    """
+    assert [r["term"] for r in rh["no_identity"]["coefficients"]] == TERMS
+    for r in rh["no_identity"]["coefficients"]:
+        assert r["ci_lo"] <= r["point"] <= r["ci_hi"] and r["se"] > 0, r["term"]
+        assert r["pct_effect"] == pytest.approx(100 * (math.exp(r["point"]) - 1), abs=0.02), r["term"]
+
+
+def test_age_steps_and_counts(rh, hr):
+    """
+    EN: Age steps: increasing age pairs, each with listings and an interval around the point. Parts by count: counts
+        1 … top for painted and changed, each with listings (never more than the sample) and an ordered interval.
+    TR: Yaş basamakları: artan yaş çiftleri, her birinde ilan ve noktanın iki yanında aralık. Sayıya göre parça:
+        boyalı ve değişen için 1 … top; her birinde ilan (örneklemden fazla olamaz) ve sıralı aralık.
+    """
+    steps = rh["age_steps"]["rows"]
+    assert len(rh["age_steps"]["columns"]) == 6 and all(a < b for a, b, *_ in steps)
+    assert [s[0] for s in steps] == sorted(s[0] for s in steps)
+    assert all(0 < s[2] <= hr["n"] and s[4] <= s[3] <= s[5] for s in steps)
+    bc = rh["by_count"]
+    for name in ("painted", "changed"):
+        assert [r[0] for r in bc[name]] == list(range(1, bc["top"] + 1))
+        assert all(r[3] <= r[2] <= r[4] and r[1] > 0 for r in bc[name]) and sum(r[1] for r in bc[name]) < hr["n"]

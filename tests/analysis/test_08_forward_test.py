@@ -97,3 +97,65 @@ def test_coverage_adds_up(ft):
     vals = [c["coverage_global"], c["coverage_band"], c["no_comparable"]["coverage_global"],
             c["no_comparable"]["coverage_band"]] + [x for b in c["bands"] for x in b[2:]]
     assert all(0 <= x <= 100 for x in vals) and len(c["q_band"]) == 4 and c["q"] > 0
+
+
+# ── Scale model | Ölçek modeli ─────────────────────────────────────────────────────────────────────
+def test_forward_scale_calibrates_on_training_only(functions):
+    """
+    EN: The scale arm takes no test price at all, and its k comes from the training listings only: another test set
+        (other cars, other predictions) gives the same k. A test listing's comparables are counted in training.
+    TR: Ölçek kolu test fiyatını hiç almaz ve k'sı yalnız eğitim ilanlarından gelir: başka bir test kümesi (başka
+        araçlar, başka tahminler) aynı k'yı verir. Test ilanının emsali eğitimde sayılır.
+    """
+    import inspect
+
+    import pandas as pd
+    rng = np.random.default_rng(0)
+
+    def cars(n):
+        """EN: n synthetic cars. / TR: n yapay araç."""
+        return pd.DataFrame({"brand": rng.choice(["a", "b"], n), "kb_fuel": rng.choice(["x", "y"], n),
+                             "vehicle_age": rng.integers(0, 25, n), "gb_mileage": rng.uniform(0, 3e5, n)})
+
+    n = 1500
+    tr_X, tr_price = cars(n), rng.uniform(5e5, 5e6, n)
+    tr_oof = np.log1p(tr_price) + rng.normal(0, .1, n)
+    tr_cells, fold = rng.choice(["m1", "m2", "m3"], n), np.arange(n) % 5
+    forward_scale = functions["forward_scale"]
+    assert not [p for p in inspect.signature(forward_scale).parameters if p.startswith("test_price")]
+    a = forward_scale(tr_X, tr_price, tr_oof, tr_cells, fold, cars(300), rng.uniform(13, 15, 300),
+                      np.array(["m1"] * 150 + ["never"] * 150))
+    b = forward_scale(tr_X, tr_price, tr_oof, tr_cells, fold, cars(200), rng.uniform(13, 15, 200), np.array(["m2"] * 200))
+    assert a["k"] == b["k"] and a["k"] > 0
+    assert a["comparables"][:150].tolist() == [int((tr_cells == "m1").sum())] * 150 and not a["comparables"][150:].any()
+    assert np.allclose(a["r"], a["k"] * a["s"]) and np.all((a["p"] >= 0) & (a["p"] <= 1))
+
+
+def test_arms_side_by_side(ft):
+    """
+    EN: The three arms on the same test listings: the q arms repeat the published coverages; every listing is inside
+        or missed above or missed below; the width fifths partition the test set; the scale model's k is positive.
+    TR: Aynı test ilanlarında üç kol: q kolları yayımlanan kapsamaları yineler; her ilan ya içeride ya üstte ya altta
+        kaçırılmış; genişlik beşte birleri test kümesini bölümler; ölçek modelinin k'sı pozitif.
+    """
+    c = ft["coverage"]
+    arms = {r[0]: r for r in c["arms"]}
+    assert list(arms) == ["global", "band", "scale"] and all(len(r) == len(c["arm_columns"]) for r in c["arms"])
+    assert arms["global"][1] == c["coverage_global"] and arms["band"][1] == c["coverage_band"]
+    assert arms["global"][5] == c["no_comparable"]["coverage_global"]
+    assert all(r[1] + r[6] + r[7] == pytest.approx(100, abs=0.02) for r in c["arms"])
+    assert sum(r[1] for r in c["by_width_fifth"]) == ft["n"] and [r[0] for r in c["by_width_fifth"]] == [1, 2, 3, 4, 5]
+    assert c["scale"]["k"] > 0 and 0 <= c["scale"]["floor_hits"] <= ft["n"]
+
+
+def test_forward_hit_probability(ft):
+    """
+    EN: Ten reliability points with rising predictions; the shown values partition the test listings; the signed
+        error's mean and median are published.
+    TR: Öngörüsü artan on güvenilirlik noktası; gösterilen değerler test ilanlarını bölümler; işaretli hatanın
+        ortalaması ve medyanı yayımlanır.
+    """
+    cf = ft["confidence"]
+    assert len(cf["deciles"]) == 10 and [p for p, _ in cf["deciles"]] == sorted(p for p, _ in cf["deciles"])
+    assert sum(r[1] for r in cf["by_shown"]) == ft["n"] and all(0 <= r[0] <= 9 for r in cf["by_shown"])
+    assert 0 <= cf["mean_observed"] <= 100 and set(ft["signed_error"]) == {"mean", "median"}

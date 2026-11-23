@@ -229,6 +229,123 @@ effect already (2026-09-23).
 - No new plan was opened: the single test's result had already been seen as one of the nine setups, so
   "pre-registering" it now would come after the fact.
 
+## Served interval: scale model and hit probability (2026-11-23, owner approved)
+
+**Decision.** The served 90% interval is now per car. A small second model (the scale model, s) predicts the size of
+the error to expect for this kind of car; the interval is `expm1(log prediction ± k·s)`. A hit probability comes with
+it: the chance that the listing price is within ±10% of the prediction. The price prediction did not change: the main
+model file is byte-identical. Recipe and code are in `analysis/lib/conformal.py`; the plan is
+`served_interval_plan.md` (repo root).
+
+**Before.** One margin for everybody (q = 0.1412, i.e. −13.2% / +15.2%). Overall coverage was 90%, but not by group:
+97% at age 0–7, 75% at age 19+, 71% for cars without a comparable, 66% in segment F.
+
+**Arms tried** (OOF, cross-calibrated, 29,988 listings; forward test 8,889 new listings). IS is the interval score in
+log space, smaller is better:
+
+| arm | OOF coverage | OOF IS | OOF no comparable | forward coverage | forward IS | forward no comparable | outcome |
+|---|---|---|---|---|---|---|---|
+| one q | 89.99 | 0.4211 | 70.7 | 87.40 | 0.4438 | 68.35 | stays in the report (old serving) |
+| q per band (plan 08) | 90.01 | 0.4059 | 66.8 | 87.99 | 0.4296 | 65.32 | stays in the report (pre-registered) |
+| CQR | 90.00 | – | 73.7 | 88.68 | – | 70.03 | not in the code |
+| band × comparables | 90.06 | 0.3929 | 90.8 | 87.68 | 0.4178 | 90.91 | not in the code |
+| scale model | 90.09 | 0.3657 | 90.3 | 86.83 | 0.3977 | 88.55 | **served** |
+| three-input scale (prediction, age, comparables) | – | 0.3780 | – | – | difference is noise | – | not in the code |
+
+- **The middle way** (one k per comparables bucket) changed nothing in the forward test; not in the code.
+- The numbers of CQR, band × comparables and the three-input arm come from read-only audit scripts; they are not in
+  the live chain.
+
+**Why the scale model.** Band × comparables fixed only the two failures we had seen (the cheap band, cars without a
+comparable). The scale model fixes the other axes too: over the 42 groups on the axes it takes as inputs, 18 are more
+than 5 points off target with one q and none with the scale model. It has the best interval score out of fold. The
+reason for 30 inputs over three: the damage information a user enters should move the margin (coverage on heavily
+damaged cars 80.8 against 89.7). In the forward test the difference between the two scale models is within noise.
+
+**What was given up.** Band × comparables had a separate calibration in each of its 16 cells. With the scale model the
+good coverage by group is empirical; that per-cell calibration was traded for a sharper interval and the other axes.
+
+**Honesty notes.**
+- **Chosen after the results.** The method, the settings of s (300 trees, 15 leaves, at least 100 listings per leaf,
+  floor 0.02), the monotone constraint and the ±10% were fixed after results were seen. None was searched. No
+  independent test is left.
+- **90% holds approximately, for the same period.** The served centre and s are built on all data, the scores on fold
+  models; this construction has no finite-sample guarantee. It does not hold over time: 86.8 on listings that arrive
+  later.
+- **The leak was measured.** The tests prove only that s never sees the scored fold; the errors come from the main
+  model's cross-fitting. Rebuilding everything (main model, inner OOF errors, s, k) from the other four folds for each
+  outer fold gave coverage 90.11, no comparable 90.03, IS 0.3669. The difference is negligible.
+- **Stability.** Over 10 seeds and 7 settings: OOF coverage 90.00–90.25, k 2.075–2.105, forward coverage 86.69–87.06.
+  But one car's margin moves by a median 2.5% (95th percentile 9.5%) from seed to seed. No seed averaging: serving is
+  deterministic with one model, and serving five models is not worth this gain.
+- **Monotonicity is a design rule.** "More comparables never widen the margin." It has no measurable effect on
+  coverage (constrained and unconstrained are the same in the forward test).
+- **Narrow intervals go stale first.** If the price level moves, the narrowest intervals lose coverage first; the report
+  shows this with a what-if (`report.scale.level_shift`).
+- **What s does not see.** Seller, city, colour and a flaw mentioned in the description are not in s; on those axes the
+  scale model is neither better nor worse than one q.
+- **The target is the listing price**, not the sale price. **The model name is free text:** comparables are looked up
+  by the exact training string; a typo makes the count 0 and widens the interval (the cautious direction).
+
+**Pre-registration.** The locked `plans/08-mondrian-coverage` covers the one-q and per-band arms; the scale model is
+outside it and that plan stays as it is. No new pre-registration was opened: the results had been seen, and
+"pre-registering" afterwards would mislead (the path taken when `plans/09-forward-coverage` was withdrawn).
+
+**On the site.** The hit is shown as "N in 10", rounded down and at most 9 (with rounding 11% of cars would see "10 in
+10", against 94–96.5% observed). The sentences carry the period: "by January–June 2026 listing prices". No percentage,
+s, k or "high / medium / low" label is shown.
+
+**Time audit (same day).** The owner asked whether the forward test's +2.2 log points is a price shift and whether the
+project is fit for a drift analysis; three independent audits were run.
+- **The +2.2 is not a price rise.** The forward signed error is +2.46 on average, +2.02 at the median. +1.16 of it
+  comes from how the training set is built: 46% of the training prices are January-dated and belong to ads that left
+  before March; ads that leave are ~2 log points cheaper on the same day than ads that stay. The price level rose by
+  about +1 to +1.5 in 98 days (training on the March stock alone: +1.30 [1.0–1.6]). Nominal listing prices, not
+  deflated.
+- **PSI, KS and EMD do not come back.** Between consecutive snapshots the price PSI is below a noise floor that keeps
+  shared ads fixed; the 0.10 threshold is exceeded only on `model` and location, where the value equals the noise. The
+  "drift removed" decision was confirmed.
+- **No date in the model, no constant offset (owner's decision).** A snapshot input learns the cheap leaving ads as a
+  date effect (+1.28 for 9 days; the stock moved 0.42). Shifting the target and retraining gives the same result as a
+  constant offset. The offset (+1.73) removes the bias on June listings and lifts their coverage from 88.7 to 89.3, but
+  it cannot be validated because no test at a later date will be run; it was not applied. The model sits about 1.7%
+  below the last snapshot's listings on average; this is written as a limitation.
+
+**Outside the repo.** The API and the site (`sadik-portfolio`) are not changed from this repo; the specification is in
+steps 7–9 of the plan and the parity examples in `data/serving/serve/parity_examples.json`.
+
+## The hedonic section was rebuilt (2026-11-23, owner's request)
+
+**Why.** The two-column coefficient table ("segment control", "model control") asked the question backwards. What the
+owner wanted to see: how much of the price is explained without knowing what car it is, how much by the identity alone,
+and how each effect changes once the identity is held fixed. The hedonic regression was not removed: no other section
+gives the effects of mileage, heavy damage and changed parts this cleanly (in SHAP the split between age and mileage
+depends on the price model).
+
+**Added** (`analysis/06_hedonic.py`, `report.hedonic`):
+- **The ladder:** in-sample and 5-fold out-of-fold R² of six regressions. Out of fold: segment, brand, fuel and
+  transmission only 0.38; condition only (age, mileage, damage, paint, changed parts) 0.73; the car model name only
+  0.82; condition + engine 0.87; segment control 0.93; car-model control 0.96.
+- **A third column without identity controls.** Mileage is −10% without the identity and −15% with it; +100 hp is +50%
+  without the identity and +20% once the segment enters. So uncontrolled mileage misleads, and most of the "effect" of
+  power is the car's class.
+- **Age as yearly steps** (age dummies and a mileage spline within the car model): −4.7% to −6.8% per year, depending on
+  age. The quadratic's single number at the median car (−5.8%) depended on the functional form; in the audit flexible
+  forms gave −4.1…−4.4%. The data is one period: what is measured is the difference of one model year, not the ageing
+  of one car.
+- **Parts by count:** a painted part is not linear (1: −2.3%; 2: −3.6%; 5 and more: −7.0%; the linear coefficient said
+  −1.0% per part). Changed parts are close to linear (1: −3.7%; 2: −6.4%; 3: −9.3%).
+
+**Removed from the business note.** The "+100 hp" row: within one car model power hardly varies (it varies in 354 of
+735 car models, within-model spread 9 hp) and the number is sensitive to a single car model. It stays in the technical
+report with its caveats. The heading's "how much each item moves the price" was causal and was reworded.
+
+**No pre-registration.** Everything was added after the results were seen; pre-registering afterwards would mislead.
+The numbers of the two published columns did not change.
+
+**Wording rule (same day).** In the reports "model" meant two things. The data column is the "car model", LightGBM is
+the "price model", wherever the two could be confused.
+
 ## Privacy
 
 1. `ad_id` is written into no report and no site data; it stays in the database and in

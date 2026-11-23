@@ -1,6 +1,6 @@
 # Used Car Market Analysis — Technical Report
 
-This report answers two questions: what sets a used-car price, and how accurately the model can predict it. The analysis runs over **29,988** Turkish-plated BMW/Audi listings — from cleaning and leakage checks through controlled price effects, market structure, model comparison and a forward test on new listings. LightGBM is off by **6.49%** on average (MAE: **₺110K**, R²: **0.9745**), with a **43%** lower mean absolute error than the comparable median (same model and year, falling back to a wider median when there is none). The headline metrics are computed **5-fold out-of-fold**, on data the model never saw in training; the forward test is in §8. The target is the asking price, not the sale price: the sale price moves away from it through bargaining.
+This report answers two questions: what sets a used-car price, and how accurately the model can predict it. The analysis runs over **29,988** Turkish-plated BMW/Audi listings — from cleaning and leakage checks through controlled price effects, market structure, model comparison and a forward test on new listings. LightGBM is off by **6.49%** on average (MAE: **₺110K**, R²: **0.9745**), with a **43%** lower mean absolute error than the comparable median (same car model and year, falling back to a wider median when there is none). The headline metrics are computed **5-fold out-of-fold**, on data the model never saw in training; the forward test is in §8. The target is the asking price, not the sale price: the sale price moves away from it through bargaining.
 
 ## 1. Data cleaning and leakage detection
 
@@ -156,7 +156,7 @@ Theil's U(a | b) gives how much of a's uncertainty is gone once b is known (0–
 
 In the other direction series determines model only at 0.39. Brand is fully readable from either model or series (U(brand | model) = 1.00): brand carries no separate information; the brand ablation below measures the same thing.
 
-Spearman correlation (rank association) among the numeric features, in the map below. Pairs with |ρ| > 0.5: Age (years)–Mileage 0.74, Power (hp)–Engine (cc) 0.61, Door Painted–Fender Painted 0.60. Collinearity in the hedonic model is measured with VIF in §6; door and fender paint enter there as the total painted-part count, not separately.
+Spearman correlation (rank association) among the numeric features, in the map below. Pairs with |ρ| > 0.5: Age (years)–Mileage 0.74, Power (hp)–Engine (cc) 0.61, Door Painted–Fender Painted 0.60. Collinearity in the hedonic regression is measured with VIF in §6; door and fender paint enter there as the total painted-part count, not separately.
 
 ![Spearman correlation](figures/en-21-spearman.png)
 
@@ -190,52 +190,101 @@ Raw price is right-skewed (skew 1.62); a log transform pulls it toward symmetry 
 
 The data has no clear natural clusters: on the standardised numeric features KMeans stays below a silhouette of 0.25 for all seven values of k tried (2–8; the highest is k=2, 0.242). Clusters and PCA are therefore not used in the analysis; market structure is read through explicit features such as segment and body type.
 
-## 6. Hedonic model — controlled effects
+## 6. Hedonic regression: identity and condition
 
-The hedonic regression gives each driver's *controlled* effect on price (all else equal); the target is log price, n **29,554**. Two columns side by side. **Segment control** uses segment, brand, fuel and transmission dummies (R² **0.9312**). **Model control** adds `C(model)` (735 model names), so each effect is measured within one model name (R² **0.9648**). Model identity closes about 87% of the gap between the hedonic R² and the model's OOF R² on the same scale (0.9699, log price) — an upper estimate: the R² with C(model) is in-sample while the model's is OOF. The model's headline R² (0.9745) is on the raw ₺ scale and should not be read against the hedonic one.
+This section answers two questions. First: how much of log price is explained by the car's condition alone, without knowing what car it is; how much by its identity alone (the car model name); and how much by both together. Second: with the car's identity held fixed, how its condition relates to the price, and how each effect changes once the identity is held fixed. The method is a hedonic regression (OLS; target log price, n **29,554**). It is used here not to predict prices but for the second question; predicting the price is the job of the price model in §7.
 
-**Confidence intervals.** Listings of the same model are not independent and the error variance is not equal (Breusch-Pagan p <0.001), so the 95% intervals come from standard errors clustered by model (735 clusters). In the segment column all 10 intervals exclude zero; in the model column the intervals of age², +1 litre contain zero. Sensitivity: clustered by series (22 clusters; few and uneven, so for comparison only), the terms whose interval contains zero are +1 litre in the segment column and age², age×km, +1 litre in the model column. Models of one series are not independent either; these terms' significance depends on the clustering.
+**Note:** The hedonic regression is an OLS and cannot run with missing values, so listings with missing engine power (426) or missing displacement (356) were removed before the analysis. Once the rows missing both are counted only once, 434 rows in total were dropped from the dataset.
 
-**Note:** The hedonic model is an OLS and cannot run with missing values, so listings with missing engine power (426) or missing displacement (356) were removed before the analysis. Once the rows missing both are counted only once, 434 rows in total were dropped from the dataset.
+### What explains the price
 
-![Hedonic effects (point + 95% CI clustered by model)](figures/en-03-hedonic-ci.png)
+Six regressions on the same 29,554 listings. R² is on log price and out of fold: the listings were split into folds and each fold's listings were predicted by the regression fitted on the other folds. The last row is the price model's out-of-fold R² on the same scale.
 
-### Controlled effects
-
-| term | segment control [95% CI] | model control [95% CI] |
+| regression | columns (incl. intercept) | R² (out of fold) |
 |---|---:|---:|
-| age | -6.64% [-6.92%, -6.37%] | -5.80% [-6.33%, -5.27%] |
-| age² | +0.08% [+0.04%, +0.13%] | +0.03% [-0.03%, +0.08%] |
-| km (100k) | -15.11% [-15.81%, -14.40%] | -14.83% [-15.31%, -14.34%] |
-| km² | +1.56% [+1.08%, +2.05%] | +1.67% [+1.34%, +2.01%] |
-| age×km | -0.62% [-0.89%, -0.35%] | -0.33% [-0.56%, -0.10%] |
-| heavy damage | -11.60% [-12.51%, -10.68%] | -12.46% [-13.25%, -11.67%] |
-| painted | -1.05% [-1.17%, -0.92%] | -0.98% [-1.09%, -0.88%] |
-| changed | -3.06% [-3.33%, -2.79%] | -3.12% [-3.35%, -2.88%] |
-| +100 hp | +19.86% [+13.89%, +26.15%] | +19.30% [+6.90%, +33.12%] |
-| +1 litre | +7.49% [+0.71%, +14.73%] | +5.97% [-0.92%, +13.35%] |
+| segment, brand, fuel, transmission only | 12 | 0.3785 |
+| the car model name only | 735 | 0.8220 |
+| condition only: age, mileage, heavy damage, painted and changed panels | 9 | 0.7309 |
+| condition + engine power and displacement | 11 | 0.8719 |
+| condition + engine + segment, brand, fuel, transmission (**segment control**) | 22 | 0.9310 |
+| segment control + the car model name (**car-model control**) | 756 | 0.9610 |
+| **price model** (LightGBM) | – | 0.9699 |
 
-Effect = exp(β)−1. Age and km are centred on the **median car** (11 years, 181,000 km): the age and km rows are the marginal effect at that car. Squared and interaction terms (age², km², age×km) are not read alone; they carry the curvature. The difference between the columns was tested per term with SEs clustered by model: it exceeds sampling error (at 5%) for age, age×km, heavy damage, painted, and not for the other terms. The decision note's effects come from the model column: within one model name.
+Condition alone gives R² 0.7309, the car model name alone 0.8220, both together (car-model control, with the engine and the other identity dummies) 0.9610. The part only condition adds (car-model control minus the car model name alone) is 0.1390; the part only the car's identity adds (car-model control minus condition alone; the engine counts on the identity side here) is 0.2301; the remaining 0.5919 is shared: condition and identity are not independent, and either one alone explains this part.
+
+The car model name closes about 77% of the gap left between segment control and the price model (0.9310 → 0.9699), taking it to 0.9610. The price model's R² is over all 29,988 listings, the regressions' over the 29,554 with an engine value. In-sample R² exceeds the out-of-fold one most for the car model name alone (0.8475): for car models with few listings the dummy fits its own listings and holds less well on listings it has not seen, which is why the table gives out-of-fold R². The price model's headline R² (0.9745) is on the raw ₺ scale and should not be read against the regressions.
+
+### Effects with the identity held fixed
+
+The same ten terms in three columns. **No identity:** the terms alone. **Segment control:** segment, brand, fuel and transmission dummies are added. **Car-model control:** the car model name is added to those (735 car models), so each effect is measured within one car model. The intervals come from standard errors clustered by car model (below).
+
+| term | no identity [95% CI] | segment control [95% CI] | car-model control [95% CI] |
+|---|---:|---:|---:|
+| age | -7.04% [-7.62%, -6.46%] | -6.64% [-6.92%, -6.37%] | -5.80% [-6.33%, -5.27%] |
+| age² | +0.03% [-0.05%, +0.11%] | +0.08% [+0.04%, +0.13%] | +0.03% [-0.03%, +0.08%] |
+| km (100k) | -10.16% [-11.88%, -8.41%] | -15.11% [-15.81%, -14.40%] | -14.83% [-15.31%, -14.34%] |
+| km² | +1.15% [+0.58%, +1.71%] | +1.56% [+1.08%, +2.05%] | +1.67% [+1.34%, +2.01%] |
+| age×km | -0.39% [-0.73%, -0.05%] | -0.62% [-0.89%, -0.35%] | -0.33% [-0.56%, -0.10%] |
+| heavy damage | -12.83% [-13.84%, -11.81%] | -11.60% [-12.51%, -10.68%] | -12.46% [-13.25%, -11.67%] |
+| painted | -1.21% [-1.37%, -1.06%] | -1.05% [-1.17%, -0.92%] | -0.98% [-1.09%, -0.88%] |
+| changed | -3.53% [-3.84%, -3.22%] | -3.06% [-3.33%, -2.79%] | -3.12% [-3.35%, -2.88%] |
+| +100 hp | +50.15% [+39.36%, +61.78%] | +19.86% [+13.89%, +26.15%] | +19.30% [+6.90%, +33.12%] |
+| +1 litre | +11.66% [+1.72%, +22.57%] | +7.49% [+0.71%, +14.73%] | +5.97% [-0.92%, +13.35%] |
+
+Effect = exp(β)−1. Age and km are centred on the **median car** (11 years, 181,000 km): the age and km rows are the marginal effect at that car. Squared and interaction terms (age², km², age×km) are not read alone; they carry the curvature. The difference between the segment-control and car-model-control columns was tested per term with SEs clustered by car model: it exceeds sampling error (at 5%) for age, age×km, heavy damage, painted, and not for the other terms. The decision note's mileage, heavy-damage and changed-panel effects come from the car-model-control column; age and painted panels come from the two tables below, also within one car model.
+
+The two terms that change most clearly once the identity is held fixed are mileage and +100 hp: only for these two does the no-identity interval overlap neither of the other two columns'. **Mileage** looks much weaker without the identity: km (100k) is -10.16% [-11.88%, -8.41%] without it and -14.83% [-15.31%, -14.34%] within one car model. Mileage and the car's identity move together: among listings with the same age, damage and engine, those with more mileage come on average from higher-priced car models. The coefficient without identity carries that too, so it understates how mileage relates to price. **+100 hp**, on the other hand, looks much larger without the identity: +50.15% [+39.36%, +61.78%]; +19.86% [+13.89%, +26.15%] under segment control and +19.30% [+6.90%, +33.12%] under car-model control. On the log scale more than half of the uncontrolled effect goes once segment, brand, fuel and transmission enter: most of it is the car's class, not the engine itself. There is no per-term difference test between the no-identity column and the other two; these two observations rest on the intervals not overlapping.
+
+![Hedonic effects (point + 95% CI clustered by car model)](figures/en-03-hedonic-ci.png)
+
+**Confidence intervals.** Listings of the same car model are not independent and the error variance is not equal (Breusch-Pagan p <0.001), so the 95% intervals come from standard errors clustered by car model (735 clusters). Terms whose interval contains zero: age² in the no-identity column; none under segment control; age², +1 litre under car-model control. Sensitivity: clustered by series (22 clusters; few and uneven, so for comparison only), the terms whose interval contains zero are +1 litre under segment control and age², age×km, +1 litre under car-model control. Car models of one series are not independent either; these terms' significance depends on the clustering.
 
 **The coefficients are controlled associations, not causal effects.** E.g. the painted-panel coefficient does not say that painting lowers the price, only that listings with painted panels are advertised that much cheaper than similar ones.
 
-**Collinearity.** The highest VIF in the segment column's design is age×km 7.25 (below 10); in the uncentred design the highest is age×km 96.28. Age, age², km, km² and age×km are built from two variables, so they are structurally linked; centring on the median car removes that, and predictions and R² do not change.
+**Collinearity.** The highest VIF in the segment-control column's design is age×km 7.25 (below 10); in the uncentred design the highest is age×km 96.28. Age, age², km, km² and age×km are built from two variables, so they are structurally linked; centring on the median car removes that, and predictions and R² do not change.
+
+### Age: yearly steps
+
+Here age enters as one dummy per age instead of a quadratic, and mileage as a flexible curve (B-spline, 6 degrees of freedom); the other terms and the car-model control stay. The table gives the average price change per year between two ages.
+
+| age | listings in the range | per year [95% CI] |
+|---|---:|---:|
+| 1–5 | 4,812 | -5.51% [-6.73%, -4.28%] |
+| 5–10 | 9,430 | -6.82% [-7.81%, -5.83%] |
+| 10–15 | 15,533 | -6.14% [-7.32%, -4.94%] |
+| 15–20 | 5,204 | -4.69% [-6.06%, -3.31%] |
+
+The quadratic gives one number at the median car (11 years): -5.80% [-6.33%, -5.27%] a year. With yearly steps the drop runs from 4.69% to 6.82% a year depending on age (steepest from 5 to 10, slowest from 15 to 20); 2 of the 4 steps fall outside that single number's interval. The single number depends on the functional form chosen; it folds a drop that changes with age into one rate. The data is one period (January–June 2026): what is measured is the price difference between cars one model year apart listed at the same time, not how much one car loses as it ages.
+
+### Painted and changed panels by count
+
+Here the painted (changed) panel count enters as one dummy per count instead of a linear term; the effect is against listings with no painted (changed) panel, within one car model, the other terms held fixed. The last row is 5 or more.
+
+| panels | painted: listings | painted [95% CI] | changed: listings | changed [95% CI] |
+|---|---:|---:|---:|---:|
+| 1 | 4,050 | -2.29% [-2.62%, -1.96%] | 4,638 | -3.70% [-4.03%, -3.37%] |
+| 2 | 2,978 | -3.57% [-3.99%, -3.15%] | 2,276 | -6.38% [-6.93%, -5.83%] |
+| 3 | 2,022 | -4.21% [-4.74%, -3.67%] | 856 | -9.32% [-10.09%, -8.54%] |
+| 4 | 1,439 | -5.18% [-5.77%, -4.59%] | 258 | -11.72% [-13.23%, -10.19%] |
+| 5 or more | 2,867 | -7.01% [-7.65%, -6.37%] | 82 | -11.05% [-15.33%, -6.55%] |
+
+**A painted panel is not a fixed amount each.** One painted panel is -2.29% [-2.62%, -1.96%]; the linear term's per-panel coefficient is -0.98% [-1.09%, -0.88%], and the two intervals do not overlap. 5 or more is -7.01% [-7.65%, -6.37%]: if the first panel's effect repeated for every panel, 5 panels would be -10.94%, which the interval also excludes. The first painted panel costs the most; the later ones less on average. **Changed panels are close to linear:** -3.12% per panel, compounded by the count, falls inside every row's interval from 2 to 5 or more; only the first changed panel (-3.70% [-4.03%, -3.37%]) costs more than that.
 
 ### Engine effect
 
-+100 hp is **+19.9%** under segment control and **+19.3%** under model control; +1 litre **+7.5%** and **+6.0%** (same regression, the other held fixed). The model name largely fixes the engine, so in the model column the engine terms are measured only from power and size differences within one model name; that is why their intervals are wider. That variation is thin: power varies across listings in only 354 of 735 model names (within-model standard deviation 9.0 hp, 43.1 hp overall), and part of it is catalogue error: without the listings with an inconsistent engine value (§8 counts 15; 14 of them are in the hedonic sample, the other 1 has no valid power or size value and was never in it) the model column's +100 hp goes +19.3% → +26.0%. Size and power are linked (Pearson correlation 0.73): size's effect is what remains with power fixed, so read the two coefficients together; the units differ, so they are not directly comparable.
++100 hp is **+19.9%** under segment control and **+19.3%** under car-model control; +1 litre **+7.5%** and **+6.0%** (same regression, the other held fixed). The car model name largely fixes the engine, so under car-model control the engine terms are measured only from power and size differences within one car model; that is why their intervals are wider. That variation is thin: power varies across listings in only 354 of 735 car models (within-car-model standard deviation 9.0 hp, 43.1 hp overall), and part of it is catalogue error: without the listings with an inconsistent engine value (§8 counts 15; 14 of them are in the hedonic sample, the other 1 has no valid power or size value and was never in it) the car-model-control +100 hp goes +19.3% → +26.0%. Size and power are linked (Pearson correlation 0.73): size's effect is what remains with power fixed, so read the two coefficients together; the units differ, so they are not directly comparable.
 
 ### LOFO — leave-one-feature-out
 
-LOFO is a second, independent method: drop each feature and measure how much CV error grows. It measures something different from SHAP — the part the remaining features cannot make up for. The ranking does not match SHAP's: LOFO gives Mileage > Age (years) > damage group > model/series name > engine (hp + cc); SHAP Age (years) > engine (hp + cc) > Mileage > model/series name > damage group. The sharpest gap is engine (hp + cc): 2nd in SHAP, 5th in LOFO (ΔRMSE ₺524) — when it is removed the model largely makes it up from other features.
+LOFO is a second, independent method: drop each feature and measure how much CV error grows. It measures something different from SHAP — the part the remaining features cannot make up for. The ranking does not match SHAP's: LOFO gives Mileage > Age (years) > damage group > model/series name > engine (hp + cc); SHAP Age (years) > engine (hp + cc) > Mileage > model/series name > damage group. The sharpest gap is engine (hp + cc): 2nd in SHAP, 5th in LOFO (ΔRMSE ₺524) — when it is removed the price model largely makes it up from other features.
 
 ![LOFO — ΔRMSE when a feature is removed (non-overlapping groups)](figures/en-04-lofo-flat.png)
 
-The chart shows 5 bars while the model uses 25 features: 19 features were measured (2 as their own bar, 17 inside the 3 groups: `DAMAGE_COLS` · `MODEL_SERIES` · `ENGINE`); **6 features were never measured**: `brand` · `kb_body_type` · `kb_drivetrain` · `segment` · `kb_transmission` · `kb_fuel`.
+The chart shows 5 bars while the price model uses 25 features: 19 features were measured (2 as their own bar, 17 inside the 3 groups: `DAMAGE_COLS` · `MODEL_SERIES` · `ENGINE`); **6 features were never measured**: `brand` · `kb_body_type` · `kb_drivetrain` · `segment` · `kb_transmission` · `kb_fuel`.
 
 ## 7. Model comparison and limitations
 
-The report's model: **LightGBM (model/series name TF-IDF+SVD)** — MAPE **6.49%**, R² **0.9745**, MAE **₺110K**. Target `log1p(price)`, 25 features. 43% lower mean absolute error than the comparable-median baseline (same model and year; a broader median when there is no comparable).
+The report's price model: **LightGBM (model/series name TF-IDF+SVD)** — MAPE **6.49%**, R² **0.9745**, MAE **₺110K**. Target `log1p(price)`, 25 features. 43% lower mean absolute error than the comparable-median baseline (same car model and year; a broader median when there is no comparable).
 
 **What TF-IDF+SVD is applied to.** Not the free-text description — only the `model` and `series` name strings (e.g. "A4 Sedan 2.0 TDI"). The point is to let rare name combinations borrow information from their neighbours through name similarity, covering exactly where target encoding weakens in sparse cells. The seller's description never enters the model (see §1, third layer).
 
@@ -254,15 +303,25 @@ The report's model: **LightGBM (model/series name TF-IDF+SVD)** — MAPE **6.49%
 
 | tier | listings | share | MAPE | MAE | R² |
 |---|---:|---:|---:|---:|---:|
-| model + year | 29,236 | 97.49% | 10.69% | ₺179K | 0.9450 |
-| model | 596 | 1.99% | 26.70% | ₺559K | 0.6082 |
+| car model + year | 29,236 | 97.49% | 10.69% | ₺179K | 0.9450 |
+| car model | 596 | 1.99% | 26.70% | ₺559K | 0.6082 |
 | global | 156 | 0.52% | 47.38% | ₺1.10M | -0.2359 |
 
-Ladder: (model, year) median → (model) median — all years → global median. If the test (model, year) cell is absent from the training fold, the baseline steps down a rung; error grows sharply at each step — without a comparable the baseline is weak anyway. Medians are computed on the training part of each fold only (leak-free, same 5 folds as the model).
+Ladder: (model, year) median → (model) median — all years → global median. If the test (car model, year) cell is absent from the training fold, the baseline steps down a rung; error grows sharply at each step — without a comparable the baseline is weak anyway. Medians are computed on the training part of each fold only (leak-free, same 5 folds as the price model). "Model" in the tier names is the car model (the `model` column of the data), not the price model.
 
 **Model limitations and observations.** Information that never reaches the form fields and hides in the free text — modifications, special equipment, tax-exemption status — does not enter the model; listings whose text mentions a conversion or modification have a raw large-error rate of 4.9% against 3.9% for the rest; with age, mileage, price, performance family, comparable count and brand held fixed the odds ratio is 1.14 (95% CI 0.94–1.37): no significant difference was measured. The wording appears in 43.6% of performance-family listings. Without comparables the error grows markedly: with no other listing of the same model and year the large-error rate is 19.0%, with 100+ comparables 2.9%; the largest lira errors sit at this end too (§8). No extensive hyperparameter optimisation was run, by choice; its payoff was not measured in this report. The model does not see time: it learns the prices of the four snapshots together, and the errors above come from a 5-fold OOF that mixes the snapshots; the error on the last snapshot's new listings is in §8.
 
 The served LightGBM is trained on all listings with the median of the tree counts early stopping chose in CV (258 trees), i.e. at the setting measured above.
+
+The serving bundle carries the interval too: the scale model (s), the multiplier k = 2.087, 29,988 sorted scores for the hit probability, and the comparables table (listing counts of the 2,194 (model, age) cells in training); the data's last snapshot is 2026-06-27. The interval and the hit probability are computed per request from these parts, with the recipe of §8. Three examples as the bundle serves them:
+
+| example | estimate | comparables | interval | hit probability | on the site |
+|---|---:|---:|---:|---:|---:|
+| the dearest prediction among well-covered cells | ₺4.82M | 117 | −9.2% / +10.1% | 89.6% | 8 in 10 |
+| the same car at an age its model never has in training | ₺2.29M | 0 | −25.5% / +34.3% | 42.9% | 4 in 10 |
+| the same car, last letter of the model name dropped | ₺4.67M | 0 | −16.2% / +19.3% | 65.1% | 6 in 10 |
+
+Comparables are found by matching the model name exactly against the training strings: a typo sets them to 0 and widens the interval (−16.2% / +19.3% instead of −9.2% / +10.1%). The error leans the cautious way, but the user should see why.
 
 ## 8. Calibration, residuals and where it is weak
 
@@ -324,41 +383,80 @@ Each point is a model; the y axis is the median error across that model's listin
 
 ### Conformal interval and coverage
 
-**A conformal interval** is a data-based price band the model offers alongside its single price (e.g. ₺1.34M – ₺1.78M).
+**A conformal interval** is a data-based price band the model offers alongside its single price. The served interval changes with the car: at the median prediction and median margin over all listings it is ₺1.36M – ₺1.73M.
 
-- **No distributional assumption:** Errors are not assumed to follow a formula (a bell curve, etc.). The model's real errors on cars it has never seen are sorted, the worst 10% are set aside, and the margin is read directly from the data. The one assumption is that new listings resemble past ones; how well it holds on the last snapshot's new listings is below.
-- **Proportional:** The margin is applied as a percentage, not in lira (roughly 13% below to 15% above the estimate). So the lira band is wide for expensive cars and narrow for cheap ones.
-- **Calibrated on other listings:** Coverage is measured cross-wise: each fold's interval is built only from the other folds' errors, so no listing's own error sets its interval. The folds are random, so the overall coverage (89.99%) still lands on the target almost by itself; the real test is the forward coverage on the last snapshot's new listings (below).
+- **No distributional assumption:** Errors are not assumed to follow a formula (a bell curve, etc.). The model's real errors on cars it has never seen are divided by the error size expected for that kind of car and sorted; the worst 10% are set aside and the multiplier (k = 2.087) is read directly from the data. The one assumption is that new listings resemble past ones; how well it holds on the last snapshot's new listings is below.
+- **Per car and proportional:** A small second model (the scale model, s) estimates, from the car's form fields, its price estimate and its comparables count (listings of the same model and year in training), how large the log error usually is for this kind of car; the interval is log estimate ± k·s. The margin is applied as a percentage: −11.6% / +13.1% at the median car, −7.0% / +7.5% at the 5th percentile, −28.5% / +39.8% at the 99th. The width is 8.9% at the narrowest and 68.3% at the 99th percentile; for 62.4% of listings the interval is narrower than with one margin. s is constrained not to grow as comparables rise (mean s 0.093 at 0 comparables, 0.060 at 200) and is floored at 0.02; the floor does not bind out of fold; it binds on 2 of the 8,889 new listings.
+- **About 90%, for the same period:** 90% holds approximately by construction: measured with each fold's interval built only from the other folds' errors, coverage is 90.09% (table below). That holds for listings of the same period, not over time: on the last snapshot's new listings it is 86.8% (below). The numbers describe asking prices of January–June 2026; on the 11,526 listings of the last snapshot (2026-06-27) coverage is 88.7% with one margin and 88.9% with the scale model.
 
-**The weakness is price-dependent:** median error is 6.95% in the cheapest predicted quartile and 3.55% in the most expensive. With one percentage for the whole market the interval is too narrow in the cheap band, where the model errs more in proportional terms: Q1 coverage is 81.0%.
+**The weakness depends on age and comparables** (the breakdowns above), and it shows by price too: median error is 6.95% in the cheapest predicted quartile and 3.55% in the most expensive. With the same percentage for everyone the interval is too narrow in the cheap band, where the model errs more in proportional terms: Q1 coverage is 81.0%.
 
 ![Median error by predicted-price quartile (%)](figures/en-10-quartile-error.png)
 
 In lira the picture changes: 38.9% of total lira error sits in the most expensive predicted quartile and 17.6% in the cheapest; mean absolute error ₺171K against ₺77K.
 
-**Margin per band (Mondrian).** With the margin computed separately in each predicted-price quartile, coverage is 89.96%–90.04% in every band. The folds are random, so each band's margin is built from errors of the same distribution and the coverage holds almost by itself; the real test is the forward coverage below. The price is width: in the cheapest band the interval widens from 28.3% to 37.1% of the estimate, in the most expensive it narrows from 28.3% to 21.4%.
+**Three methods, in the same cross-calibrated measurement** (each fold's interval from the other folds' errors only):
+
+| method | coverage | width median / mean | interval score | no comparable (752 listings) |
+|---|---:|---:|---:|---:|
+| one margin (same for all) | 89.99% | 28.3% / 28.3% | 0.4211 | 70.7% |
+| per-band margin | 90.01% | 25.9% / 27.5% | 0.4059 | 66.8% |
+| scale model (served) | 90.09% | 24.7% / 27.2% | 0.3657 | 90.3% |
+
+Width is a percentage of the estimate. The interval score is the width plus a penalty for prices that fall outside, in log space (Winkler); smaller is better. No comparable: no listing of the same model and year in the other folds.
+
+**What the scale model changes.** One margin gives everyone the same width: wider than needed on young and dear cars, too narrow on old, comparable-less and damaged ones. The scale model spreads the margin by car (table below): coverage goes 75.2% → 88.5% at age 19+, 70.7% → 90.3% without a comparable, 80.5% → 89.7% with a heavy-damage record; 97.4% → 90.8% at age 0–3 and 94.7% → 90.7% in the dearest predicted quarter, because the interval narrows there. In groups by what s takes as input (age, mileage, engine power, segment, fuel, transmission, body type, damage, series frequency; 42 groups of at least 200 listings) 18 groups are 5 or more points off target with one margin (largest gap 25.2 points) and 0 with the scale model (largest 3.5); partly by design, since s takes these as input. On what s does not see (seller type, city, colour, warranty, first owner, trade-in, damage record amount; 32 groups) no fix is expected: 4 groups sit 3 or more points below the arm's own overall coverage with one margin, 4 with the scale model; its worst is a group on first owner (302 listings, −5.7 points).
+
+**The trade.** The per-band margin carried a coverage guarantee in each price band; the scale model gives that up, and its coverage in the bands (89.6%–90.7%) is a measured result, not a guarantee. In return it gives a width per car, a narrower median interval and the best interval score out of fold. The method, the settings of s, the comparables constraint and the ±10% tolerance were set after these results were seen; none was searched, and no independent test checks the choice afterwards. Coverage and hit refer to the asking price, not the sale price.
+
+**By kind of car (OOF).** The interval is around the group's median estimate (₺M); hit is the probability that the asking price is within ±10% of the estimate, predicted → observed.
+
+| kind of car | listings | coverage: one margin → scale | margin: scale | interval: one margin | interval: scale | hit |
+|---|---:|---:|---:|---:|---:|---:|
+| all | 29,988 | 90.0% → 90.1% | −11.6% / +13.1% | 1.33–1.77 | 1.36–1.73 | 78.3% → 78.3% |
+| age 0–3 | 2,649 | 97.4% → 90.8% | −7.5% / +8.1% | 3.42–4.53 | 3.64–4.25 | 92.1% → 92.3% |
+| age 4–7 | 4,420 | 97.5% → 90.5% | −7.4% / +8.0% | 2.36–3.13 | 2.52–2.93 | 91.7% → 92.1% |
+| age 8–12 | 12,264 | 92.7% → 89.9% | −10.5% / +11.7% | 1.38–1.83 | 1.42–1.78 | 81.7% → 81.6% |
+| age 13–18 | 8,853 | 83.3% → 90.3% | −15.2% / +17.9% | 0.96–1.27 | 0.94–1.30 | 67.0% → 66.5% |
+| age 19+ | 1,802 | 75.2% → 88.5% | −18.1% / +22.1% | 0.60–0.80 | 0.57–0.85 | 58.5% → 58.9% |
+| no comparable | 752 | 70.7% → 90.3% | −19.7% / +24.6% | 1.49–1.98 | 1.38–2.14 | 53.1% → 55.6% |
+| 20+ comparables | 20,081 | 91.9% → 90.3% | −10.8% / +12.1% | 1.30–1.73 | 1.34–1.68 | 81.2% → 80.9% |
+| cheapest predicted quarter | 7,497 | 81.0% → 89.9% | −16.3% / +19.4% | 0.79–1.04 | 0.76–1.08 | 64.7% → 64.0% |
+| dearest predicted quarter | 7,497 | 94.7% → 90.7% | −8.0% / +8.7% | 2.71–3.59 | 2.87–3.39 | 87.4% → 87.5% |
+| highest-mileage fifth | 5,998 | 79.9% → 89.9% | −16.5% / +19.8% | 0.91–1.20 | 0.87–1.25 | 63.5% → 63.0% |
+| heavy-damage record | 1,407 | 80.5% → 89.7% | −15.8% / +18.7% | 1.04–1.38 | 1.01–1.42 | 64.0% → 63.2% |
+| segment F | 325 | 65.8% → 86.5% | −21.8% / +27.9% | 2.30–3.05 | 2.07–3.39 | 49.6% → 51.7% |
+
+**Margin per band (Mondrian).** The pre-registered middle road: with the margin computed separately in each predicted-price quartile, coverage is 89.96%–90.04% in every band. The price is width: in the cheapest band the interval widens from 28.3% to 37.1% of the estimate, in the most expensive it narrows to 21.4%. The scale model sets the width by car within a band too: the median width is 35.7% in the cheapest band and 16.7% in the most expensive.
 
 ![How often the 90% range held (target 90%)](figures/en-12-coverage.png)
 
-| band | predicted price | coverage: one margin | coverage: per band | width: per band |
-|---|---|---:|---:|---:|
-| Q1 | below ₺1.15M | 81.0% | 90.0% | 37.1% of the estimate |
-| Q2 | ₺1.15M – ₺1.53M | 91.0% | 90.0% | 27.2% of the estimate |
-| Q3 | ₺1.53M – ₺2.26M | 93.2% | 90.0% | 24.4% of the estimate |
-| Q4 | above ₺2.26M | 94.7% | 90.0% | 21.4% of the estimate |
+| band | predicted price | coverage: one margin | coverage: per band | coverage: scale | width: per band | width: scale |
+|---|---|---:|---:|---:|---:|---:|
+| Q1 | below ₺1.15M | 81.0% | 90.0% | 89.9% | 37.1% | 35.7% |
+| Q2 | ₺1.15M – ₺1.53M | 91.0% | 90.0% | 90.2% | 27.2% | 25.8% |
+| Q3 | ₺1.53M – ₺2.26M | 93.2% | 90.0% | 89.6% | 24.4% | 20.9% |
+| Q4 | above ₺2.26M | 94.7% | 90.0% | 90.7% | 21.4% | 16.7% |
 
-**Note:** The bands are cut on the predicted price, the only thing a pricing tool knows; grouping by the actual price produces regression to the mean. Width is the band's median distance between the interval's lower and upper end.
+**Note:** The bands are cut on the predicted price, the only thing a pricing tool knows; grouping by the actual price produces regression to the mean. Width is the band's median distance between the interval's lower and upper end (a percentage of the estimate).
 
-**On new listings: the forward test.** A model trained on the 21,099 listings seen before the last snapshot (each at its latest price) priced the 8,889 listings first seen in the last snapshot (2026-06-27). MAPE 6.78% (95% interval 6.42%–7.17%); the 5-fold OOF, which mixes the snapshots, gives 6.49%. The served interval recipe was applied as is: q and the band edges come only from the training listings' own OOF errors. Coverage is 87.4% with one margin and 88.0% with the per-band margin. On the 297 listings whose model and year never occur in training, coverage is below target either way (one margin 68.3%, per band 65.3%).
+**Hit probability.** It comes from the same computation as the interval, no new model needed: the probability that the asking price of this kind of car is within ±10% of the estimate, i.e. the share of scores at or below log(1.1) / s. It is calibrated out of fold: mean predicted 78.3%, observed 78.3%; the Brier score is 12.2% better than giving everyone the same probability. It separates cars: the probability's 10th percentile is 57.9%, its 90th 95.4%. The site shows it as "N in 10", rounded down and at most 9, so "10 in 10" is never shown; of the cars shown 9, 94.2% hit.
 
-| band | listings | one margin | per band |
-|---|---:|---:|---:|
-| Q1 | 2,215 | 77.1% | 88.8% |
-| Q2 | 2,248 | 88.6% | 87.3% |
-| Q3 | 2,213 | 90.7% | 87.4% |
-| Q4 | 2,213 | 93.2% | 88.3% |
-| no comparable (model+year not in training) | 297 | 68.3% | 65.3% |
+![Hit probability: predicted vs observed (deciles)](figures/en-31-hit-reliability.png)
 
+**On new listings: the forward test.** A model trained on the 21,099 listings seen before the last snapshot (each at its latest price) priced the 8,889 listings first seen in the last snapshot (2026-06-27). MAPE 6.78% (95% interval 6.42%–7.17%); the 5-fold OOF, which mixes the snapshots, gives 6.49%. The served interval recipe was applied as is: q, the band edges, s and k come only from the training listings (k = 2.100). Coverage is 87.4% with one margin, 88.0% with the per-band margin and **86.8%** with the scale model: that is the number for new listings, not 90%. On the 297 listings whose model and year never occur in training, one margin and the per-band margin stay below target while the scale model is close to it (table). Most misses fall above the interval: with the scale model 10.5% of listings land above it and 2.7% below. The signed error (log price − log estimate, ×100) is +2.02 at the median and +2.46 on average: new listings tend to sit above the estimate. This number is not a measure of price increase; its parts are not separated in this report.
+
+| method | coverage | width median / mean | interval score | no comparable (297 listings) | missed above | missed below |
+|---|---:|---:|---:|---:|---:|---:|
+| one margin (same for all) | 87.4% | 28.2% / 28.2% | 0.4438 | 68.3% | 8.9% | 3.7% |
+| per-band margin | 88.0% | 27.1% / 27.4% | 0.4296 | 65.3% | 8.9% | 3.1% |
+| scale model (served) | 86.8% | 24.0% / 26.8% | 0.3977 | 88.5% | 10.5% | 2.7% |
+
+In fifths by the width of the scale interval the scale model covers 85.3%–89.6%; one margin covers 98.0% of the same cars in the narrowest fifth and 70.6% in the widest.
+
+**Level only (a what-if, not a time analysis).** If every asking price in today's data were 2% / 5% / 10% higher, coverage would be 89.2% / 86.1% / 73.9% with one margin and 88.6% / 82.3% / 61.6% with the scale model; 87.0% / 73.6% / 33.7% in the narrowest fifth of the scale interval (today 90.5%), and the observed hit share 77.1% / 70.6% / 49.4% (today 78.3%). A narrow interval loses its coverage first when the level shifts.
+
+On new listings the hit probability is optimistic (figure above): mean predicted 79.1%, observed 75.1%; the Brier score is still 9.7% better than a constant; of the cars shown 9, 91.5% hit. Correcting it by looking at the test set would be tuning, so it was not done.
 
 ### The largest errors
 

@@ -10,9 +10,13 @@ EN: Technical report §8 — the error on listings that arrive later. A model tr
     Reported:
       - MAPE (cv.price_metrics on expm1 of the log prediction) with a 95% interval from a bootstrap that resamples
         whole models (a model's listings are not independent);
-      - the served interval recipe applied forward: q from the training set's own OOF errors, one q for all or one per
-        predicted-price band; coverage overall, per band and on the listings whose (model, year) never occurs in
-        training.
+      - the interval recipes applied forward, everything calibrated on the training set's own OOF errors: one q for
+        all, one q per predicted-price band, and the scale model (lib.conformal: s and k from the training set's nested
+        OOF scores, the served s trained on the whole training set; a training listing's comparables are counted
+        without its inner fold, a test listing's in the whole training set). Coverage overall, per band and on the
+        listings whose (model, year) never occurs in training; width, interval score and the direction of the misses
+        per arm; coverage per fifth of the scale width; the signed log error;
+      - the hit probability (±10%) of the scale model on the test listings: predicted against observed.
     2026-11-22 (owner's decision, docs/decisions.md): drift and the other time analyses left the analysis. This single
     test replaced 09_backtest: it is that script's last cumulative setup, with the same functions. Heavy: it trains
     (analysis/lib/records.py HEAVY), so a notebook reads its record.
@@ -26,8 +30,13 @@ TR: Teknik rapor §8 — sonradan gelen ilanlardaki hata. Servis edilen model gi
     Raporlanan:
       - MAPE (log tahminin expm1'i üzerinde cv.price_metrics) ve bütün modelleri yeniden örnekleyen bootstrap'ten %95
         aralık (bir modelin ilanları bağımsız değil);
-      - servis edilen aralık tarifi ileriye uygulanır: q eğitim kümesinin kendi OOF hatalarından, herkese tek q ya da
-        tahmin fiyatı bandı başına q; kapsama genel, bant başına ve (model, yıl)'ı eğitimde hiç geçmeyen ilanlarda.
+      - aralık tarifleri ileriye uygulanır, her şey eğitim kümesinin kendi OOF hatalarıyla kalibre edilir: herkese tek
+        q, tahmin fiyatı bandı başına q ve ölçek modeli (lib.conformal: s ve k eğitim kümesinin iç içe OOF
+        skorlarından, servis edilen s bütün eğitim kümesiyle; eğitim ilanının emsali kendi iç katı sayılmadan, test
+        ilanınınki bütün eğitim kümesinde sayılır). Kapsama genel, bant başına ve (model, yıl)'ı eğitimde hiç geçmeyen
+        ilanlarda; kol başına genişlik, aralık skoru ve kaçırmanın yönü; ölçek genişliğinin beşte birlerinde kapsama;
+        işaretli log hata;
+      - ölçek modelinin test ilanlarındaki isabet olasılığı (±%10): öngörülen ve gerçekleşen.
     2026-11-22 (kullanıcı kararı, docs/decisions.md): kayma ve öteki zaman analizleri analizden çıktı. Bu tek test
     09_backtest'in yerini aldı: o betiğin son biriken kurulumu, aynı fonksiyonlarla. Ağır: model eğitir
     (analysis/lib/records.py HEAVY); defter kaydını okur.
@@ -126,18 +135,14 @@ def ape(price, pred_log):
     return np.abs(price - np.expm1(pred_log)) / price * 100
 
 
-def forward_coverage(train_price, train_oof_log, test_price, test_log, no_comparable):
+def forward_q(train_price, train_oof_log, test_log):
     """
-    EN: The served recipe applied forward: q from the training set's own OOF log errors (finite-sample 90%), band
-        edges from the quartiles of its OOF predictions; one q for all, or one q per band (Mondrian). Coverage on the
-        test listings overall, per band and on those whose (model, year) never occurs in training. Only training
-        numbers set q and the edges. Returns: {"q", "q_band", "bounds", "n", "coverage_global", "coverage_band",
-        "bands": [[band, n, cov_global, cov_band]], "no_comparable": {"n", "coverage_global", "coverage_band"}}.
-    TR: Servis tarifi ileriye uygulanır: q eğitim kümesinin kendi OOF log hatalarından (sonlu örneklem %90), bant
-        sınırları OOF tahminlerinin çeyreklerinden; herkese tek q ya da bant başına q (Mondrian). Kapsama test
-        ilanlarında genel, bant başına ve (model, yıl)'ı eğitimde hiç geçmeyenlerde. q'yu ve sınırları yalnız eğitim
-        sayıları belirler. Döndürür: {"q", "q_band", "bounds", "n", "coverage_global", "coverage_band", "bands":
-        [[bant, n, kapsama_genel, kapsama_bant]], "no_comparable": {"n", "coverage_global", "coverage_band"}}.
+    EN: The calibration of the two q arms, from training numbers only: q from the training set's own OOF log errors
+        (finite-sample 90%), band edges from the quartiles of its OOF predictions, one q per band.
+        Returns: (q, [q per band], [3 band edges], test predictions in ₺, band of each test listing).
+    TR: İki q kolunun kalibrasyonu, yalnız eğitim sayılarından: q eğitim kümesinin kendi OOF log hatalarından (sonlu
+        örneklem %90), bant sınırları OOF tahminlerinin çeyreklerinden, bant başına bir q.
+        Döndürür: (q, [bant başına q], [3 bant sınırı], ₺ olarak test tahminleri, her test ilanının bandı).
     """
     tr_pred = np.clip(np.expm1(train_oof_log), 0, PRICE_CAP)
     tr_err = np.abs(np.log1p(train_price) - np.log1p(tr_pred))
@@ -146,7 +151,21 @@ def forward_coverage(train_price, train_oof_log, test_price, test_log, no_compar
     q = CF.conformal_quantile(tr_err)
     q_band = [CF.conformal_quantile(tr_err[tr_band == b]) for b in range(len(BANDS))]
     te_pred = np.clip(np.expm1(test_log), 0, PRICE_CAP)
-    te_band = CF.band_of(te_pred, bounds)
+    return q, q_band, bounds, te_pred, CF.band_of(te_pred, bounds)
+
+
+def forward_coverage(train_price, train_oof_log, test_price, test_log, no_comparable):
+    """
+    EN: The two q arms applied forward (forward_q): one q for all, or one q per band (Mondrian). Coverage on the
+        test listings overall, per band and on those whose (model, year) never occurs in training. Only training
+        numbers set q and the edges. Returns: {"q", "q_band", "bounds", "n", "coverage_global", "coverage_band",
+        "bands": [[band, n, cov_global, cov_band]], "no_comparable": {"n", "coverage_global", "coverage_band"}}.
+    TR: İki q kolu ileriye uygulanır (forward_q): herkese tek q ya da bant başına q (Mondrian). Kapsama test
+        ilanlarında genel, bant başına ve (model, yıl)'ı eğitimde hiç geçmeyenlerde. q'yu ve sınırları yalnız eğitim
+        sayıları belirler. Döndürür: {"q", "q_band", "bounds", "n", "coverage_global", "coverage_band", "bands":
+        [[bant, n, kapsama_genel, kapsama_bant]], "no_comparable": {"n", "coverage_global", "coverage_band"}}.
+    """
+    q, q_band, bounds, te_pred, te_band = forward_q(train_price, train_oof_log, test_log)
     ins_g = CF.inside(test_price, te_pred, q)
     ins_b = CF.inside(test_price, te_pred, np.asarray(q_band)[te_band])
     pc = lambda m: round(float(m.mean() * 100), 2) if m.size else None       # noqa: E731
@@ -158,14 +177,74 @@ def forward_coverage(train_price, train_oof_log, test_price, test_log, no_compar
                               "coverage_band": pc(ins_b[no_comparable])}}
 
 
+def forward_scale(train_X, train_price, train_oof_log, train_cells, train_fold, test_X, test_log, test_cells):
+    """
+    EN: The scale model applied forward; the test prices are not an input. Scores: each training listing's OOF log
+        error over an s that never saw its inner fold (CF.nested_scores), its comparables counted without that fold.
+        k is their finite-sample 90% quantile. The s that prices the test listings is trained on the whole training
+        set; a test listing's comparables are the training listings of its (model, year) cell.
+        Returns: {"k", "s", "r" (half-width k·s), "p" (hit probability), "comparables"}, arrays per test listing.
+    TR: Ölçek modeli ileriye uygulanır; test fiyatları girdi değildir. Skorlar: her eğitim ilanının OOF log hatası
+        bölü kendi iç katını görmemiş bir s (CF.nested_scores); emsali o kat sayılmadan sayılır. k bunların sonlu
+        örneklem %90 yüzdeliği. Test ilanlarını fiyatlayan s bütün eğitim kümesiyle eğitilir; test ilanının emsali
+        kendi (model, yıl) hücresindeki eğitim ilanlarıdır.
+        Döndürür: {"k", "s", "r" (yarı genişlik k·s), "p" (isabet olasılığı), "comparables"}, test ilanı başına diziler.
+    """
+    n = len(train_price)
+    tr_pred = np.clip(np.expm1(train_oof_log), 0, PRICE_CAP)
+    tr_err = np.abs(np.log1p(train_price) - np.log1p(tr_pred))
+    log_pred = np.concatenate([np.log1p(tr_pred), np.log1p(np.clip(np.expm1(test_log), 0, PRICE_CAP))])
+    cells = pd.Series(np.asarray(train_cells, dtype=object)).astype(str)
+    te_n = pd.Series(np.asarray(test_cells, dtype=object)).astype(str).map(cells.value_counts()).fillna(0).astype(int)
+    counts = np.concatenate([CF.other_fold_counts(train_cells, train_fold), te_n.values])
+    scores, _ = CF.nested_scores(train_X, tr_err, log_pred[:n], counts[:n], train_fold)
+    both = pd.concat([train_X, test_X], ignore_index=True)
+    Xtr, Xte, catc = CF.scale_matrix(both, np.arange(n), np.arange(n, len(both)), log_pred, counts)
+    s = CF.predict_scale(CF.fit_scale(Xtr, tr_err, catc), Xte)
+    k = CF.conformal_quantile(scores)
+    return {"k": k, "s": s, "r": k * s, "p": CF.p_within(np.sort(scores), s), "comparables": te_n.values}
+
+
+def arm_report(test_price, te_pred, arms, no_comparable, scale_r):
+    """
+    EN: The arms side by side on the test listings. Per arm: coverage, median and mean width (% of the prediction),
+        interval score, coverage without a comparable, and the misses split into above and below the interval (% of
+        the test listings). Per fifth of the scale width (narrowest first): listings and coverage of every arm.
+        arms: {name: half-width per listing or one number}.
+        Returns: {"arms": [[arm, coverage, width_median, width_mean, interval_score, coverage_no_comparable,
+        above, below]], "by_width_fifth": [[fifth, n, coverage per arm...]]}.
+    TR: Kollar test ilanlarında yan yana. Kol başına: kapsama, medyan ve ortalama genişlik (tahminin %'si), aralık
+        skoru, emsalsizde kapsama ve kaçırmaların aralığın üstünde ve altında kalanlara bölünmesi (test ilanlarının
+        %'si). Ölçek genişliğinin beşte biri başına (en dar önce): ilan sayısı ve her kolun kapsaması.
+        arms: {ad: ilan başına ya da tek sayı yarı genişlik}.
+        Döndürür: {"arms": [[kol, kapsama, genişlik_medyan, genişlik_ortalama, aralık_skoru, emsalsiz_kapsama,
+        üstte, altta]], "by_width_fifth": [[beşte_bir, n, kol başına kapsama...]]}.
+    """
+    pc = lambda m: round(float(np.mean(m) * 100), 2)                         # noqa: E731
+    fifth = pd.qcut(pd.Series(scale_r).rank(method="first"), 5, labels=False).values
+    rows, ins = [], {}
+    for name, r in arms.items():
+        lo, hi = CF.interval(te_pred, r)
+        ins[name] = (test_price >= lo) & (test_price <= hi)
+        w = CF.width_pct(te_pred, r)
+        rows.append([name, pc(ins[name]), round(float(np.median(w)), 1), round(float(np.mean(w)), 1),
+                     round(CF.interval_score(test_price, te_pred, r), 4), pc(ins[name][no_comparable]),
+                     pc(test_price > hi), pc(test_price < lo)])
+    return {"arms": rows,
+            "by_width_fifth": [[i + 1, int((fifth == i).sum())] + [pc(ins[a][fifth == i]) for a in arms]
+                               for i in range(5)]}
+
+
 def forward_test(rows, snaps):
     """
     EN: The single forward test: train on every listing seen before the last snapshot (latest price per ad_id), price
         the listings first seen in the last snapshot. Returns: {"train_until", "test", "n_train", "n", "MAPE",
-        "ci_lo", "ci_hi", "trees", "coverage": forward_coverage(...)}.
+        "ci_lo", "ci_hi", "trees", "signed_error", "coverage": forward_coverage(...) + the arms side by side and the
+        scale model's k, "confidence": CF.reliability(...)}.
     TR: Tek ileri test: son taramadan önce görülen her ilanla eğit (ad_id başına son fiyat), son taramada ilk kez
         görülen ilanları fiyatla. Döndürür: {"train_until", "test", "n_train", "n", "MAPE", "ci_lo", "ci_hi", "trees",
-        "coverage": forward_coverage(...)}.
+        "signed_error", "coverage": forward_coverage(...) + kollar yan yana ve ölçek modelinin k'sı,
+        "confidence": CF.reliability(...)}.
     """
     train = latest_per_ad(rows[rows["snap"].isin(snaps[:-1])])
     predict, trees, oof_log = fit_forward(train)
@@ -175,9 +254,29 @@ def forward_test(rows, snaps):
     lo, hi = interval(cluster_boot(te["model"].values, ape(price, pl))[:, 0])
     cells = set(zip(train["model"], train["gb_year"]))
     no_comp = np.array([c not in cells for c in zip(te["model"], te["gb_year"])])
+    tr_price = train["price"].values.astype(float)
+    cov = forward_coverage(tr_price, oof_log, price, pl, no_comp)
+    # EN: scale arm — the inner folds are those of fit_forward's CV | TR: ölçek kolu — iç katlar fit_forward'ın CV'sindekiler
+    tr_fold = np.zeros(len(train), dtype=int)
+    for f, (_, va) in enumerate(make_folds(len(train))):
+        tr_fold[va] = f
+    cell = lambda d: (d["model"].astype(str) + "|" + d["gb_year"].astype(str)).values       # noqa: E731
+    sc = forward_scale(train[FEATURES].reset_index(drop=True), tr_price, oof_log, cell(train), tr_fold,
+                       te[FEATURES].reset_index(drop=True), pl, cell(te))
+    assert np.array_equal(sc["comparables"] == 0, no_comp), "no-comparable listings differ | emsalsiz ilanlar farklı"
+    q, q_band, _, te_pred, te_band = forward_q(tr_price, oof_log, pl)
+    arms = arm_report(price, te_pred, {"global": q, "band": np.asarray(q_band)[te_band], "scale": sc["r"]},
+                      no_comp, sc["r"])
+    signed = (np.log1p(price) - np.log1p(te_pred)) * 100
+    hit = np.abs(signed) / 100 <= np.log1p(CF.WITHIN)
     return {"train_until": snaps[-2], "test": snaps[-1], "n_train": int(len(train)), "n": int(len(te)),
             "MAPE": mape(price, pl), "ci_lo": lo, "ci_hi": hi, "trees": trees,
-            "coverage": forward_coverage(train["price"].values.astype(float), oof_log, price, pl, no_comp)}
+            "signed_error": {"mean": round(float(signed.mean()), 2), "median": round(float(np.median(signed)), 2)},
+            "coverage": {**cov, **arms,
+                         "scale": {"k": round(sc["k"], 4), "floor_hits": int((sc["s"] <= CF.S_FLOOR).sum())},
+                         "arm_columns": ["arm", "coverage", "width_median", "width_mean", "interval_score",
+                                         "coverage_no_comparable", "missed_above", "missed_below"]},
+            "confidence": CF.reliability(sc["p"], hit)}
 
 
 # %% [3] Metrics assembly | Metrik derleme — naming and rounding only | yalnız adlandırma ve yuvarlama
@@ -192,6 +291,8 @@ def to_metrics(res):
                      "test": "listings first seen in the last snapshot",
                      "setup": "cv.fold_matrices + cv.LGB_PARAMS; trees = median of an inner 5-fold early-stopping CV "
                               "on the training set, then one fit without early stopping",
+                     "scale": "s and k from the training set's nested OOF scores; the served s is trained on the "
+                              "whole training set; signed_error = (log price − log prediction) × 100",
                      "interval": {"level": LEVEL, "n_boot": N_BOOT, "resample": "model"}}}}}
 
 
@@ -203,7 +304,8 @@ snaps = sorted(rows["snap"].unique())
 res = forward_test(rows, snaps)
 print({k: res[k] for k in ("train_until", "test", "n_train", "n", "MAPE", "ci_lo", "ci_hi", "trees")},
       "coverage | kapsama", res["coverage"]["coverage_global"], res["coverage"]["coverage_band"],
-      res["coverage"]["no_comparable"])
+      res["coverage"]["no_comparable"], "· arms | kollar", res["coverage"]["arms"], res["coverage"]["scale"],
+      "· hit | isabet", res["confidence"]["mean_predicted"], res["confidence"]["mean_observed"])
 
 # %% [6] Save | Kaydet — the only cell that writes the JSON | JSON'u yazan tek hücre
 if __name__ == "__main__":      # imported by notebooks/: no save | notebooks/ import edince kayıt yok

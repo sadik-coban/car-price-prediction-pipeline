@@ -476,7 +476,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-11-22T18:55:28+03:00",
+  "_meta.generated_at": "2026-11-23T20:34:34+03:00",
   "_meta.run_id": null,
   "_meta.script": "06_hedonic.py",
   "domain.hedonic.age_pct": -5.8,
@@ -533,17 +533,63 @@
   "error_drivers.hedonic_dropped.both": 348,
   "error_drivers.hedonic_dropped.cc": 356,
   "error_drivers.hedonic_dropped.hp": 426,
-  "error_drivers.hedonic_dropped.total": 434
+  "error_drivers.hedonic_dropped.total": 434,
+  "report.hedonic.age_steps.columns": {
+   "len": 6,
+   "sha256": "f3d46f420e89ab371ab4a9306ee7e0c09ff0e595dd9c1192af93c8e56b81c294"
+  },
+  "report.hedonic.age_steps.km_spline_df": 6,
+  "report.hedonic.age_steps.rows": {
+   "len": 4,
+   "sha256": "2734806003b4fd648bb9311d9150939cddc36bb469cf98743c662e6a19cd035f"
+  },
+  "report.hedonic.by_count.changed": {
+   "len": 5,
+   "sha256": "9d56e21455da97916e4fdf486dad0858ac8fe103bb05197bba89da96b29a8b46"
+  },
+  "report.hedonic.by_count.columns": {
+   "len": 5,
+   "sha256": "e2b10a2e0e790c7f6edd466023fe60bb7cfdcd8927d3e24366230e4d5f3e0222"
+  },
+  "report.hedonic.by_count.painted": {
+   "len": 5,
+   "sha256": "437851921b0c61b8f541dd85c7caf7e4264ca20543da05cad2688cf602a63690"
+  },
+  "report.hedonic.by_count.top": 5,
+  "report.hedonic.ladder.columns": {
+   "len": 4,
+   "sha256": "bab2ecf2b8bc9d1b092f6ffa700c4805901be360cd4c11c5f8bbeeb4a359553b"
+  },
+  "report.hedonic.ladder.rows": {
+   "len": 6,
+   "sha256": "3d6ff93d9d76a039781815c732356c504a5859ea464bf576b3c620d4be889288"
+  },
+  "report.hedonic.no_identity.coefficients": {
+   "len": 10,
+   "sha256": "a512cc375b439fd04a322ced6b0a575182517a75ca791f936780a17a99a1e1c4"
+  },
+  "report.hedonic.no_identity.r2": 0.872
  },
  "07_final_model": {
   "_meta.data_until": "2026-06-27",
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-09-29T00:03:52+03:00",
+  "_meta.generated_at": "2026-11-23T18:24:06+03:00",
   "_meta.run_id": "601741517e09",
   "_meta.script": "07_final_model.py",
-  "meta.repro.final_lgb_trees": 258
+  "meta.repro.final_lgb_trees": 258,
+  "report.served_interval.comparable_cells": 2194,
+  "report.served_interval.comparable_total": 29988,
+  "report.served_interval.data_until": "2026-06-27",
+  "report.served_interval.examples": {
+   "len": 4,
+   "sha256": "42f08390cedd8783ce570289eb2a394509a4893c1d1c9d1691889dbdf5779007"
+  },
+  "report.served_interval.k": 2.0874,
+  "report.served_interval.n_scores": 29988,
+  "report.served_interval.s_floor": 0.02,
+  "report.served_interval.within_pct": 10
  },
  "07_lofo": {
   "_meta.data_until": "2026-06-27",
@@ -783,7 +829,7 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-11-22T20:01:13+03:00",
+  "_meta.generated_at": "2026-11-23T18:24:34+03:00",
   "_meta.run_id": "601741517e09",
   "_meta.script": "08_conformal_coverage.py",
   "domain.conformal.by_quantile": {
@@ -791,11 +837,33 @@
    "sha256": "67198bd1bb2fdfec2c107de1ffb0bbafefc89dd58086cfa2c4be9e07bdd7587e"
   },
   "domain.conformal.coverage_target": 90,
+  "domain.conformal.hit_reliability": {
+   "len": 10,
+   "sha256": "928a0e5ac01a6fea54005f0f00826b0c0a56ae1050efe33ec4a20851d40cdff0"
+  },
   "domain.conformal.mondrian_by_quantile": {
    "len": 4,
    "sha256": "1ab0fee5138896443e1d48108fe593c205bb4b6d2028f2d5593066c1ab52276d"
   },
-  "domain.conformal.note": "Bantlar tahmin edilen fiyatın çeyrekleri; kapsama çapraz kalibreli (her katın q'su öteki katlardan). by_quantile = tek q, mondrian_by_quantile = bant başına q.",
+  "domain.conformal.note": "Bantlar tahmin edilen fiyatın çeyrekleri; kapsama çapraz kalibreli (her kat öteki katlardan kalibre edilir). by_quantile = tek q, mondrian_by_quantile = bant başına q, scale_by_quantile = ölçek modeli. hit_reliability = isabet olasılığının onda birlik dilimlerinde [öngörülen %, gerçekleşen %].",
+  "domain.conformal.scale_by_quantile": {
+   "len": 4,
+   "sha256": "d3077ca79de3fc87bd04d1d0b2f7f6f2ff220bab53e10f37d71d5b7e6ba93d5f"
+  },
+  "report.confidence.brier": 0.1493,
+  "report.confidence.brier_constant": 0.1701,
+  "report.confidence.by_shown": {
+   "len": 9,
+   "sha256": "ebb51ff92738778cf07d48555dc97e286b9693183f949f5de38ea73e6688227f"
+  },
+  "report.confidence.mean_observed": 78.3,
+  "report.confidence.mean_predicted": 78.3,
+  "report.confidence.p10": 57.9,
+  "report.confidence.p50": 80.8,
+  "report.confidence.p90": 95.4,
+  "report.confidence.shown_max": 9,
+  "report.confidence.skill_pct": 12.2,
+  "report.confidence.within_pct": 10,
   "report.conformal_all": 89.99,
   "report.conformal_q": 0.1412297144167473,
   "report.mondrian.accept_band": {
@@ -813,6 +881,75 @@
   "report.q_bounds": {
    "len": 3,
    "sha256": "8760f7f7af0a91d83ac8618e804345611abd6586d2c9e3459c5d3f516e8c6b9c"
+  },
+  "report.scale.arm_columns": {
+   "len": 6,
+   "sha256": "7158f9179656be61b90dd332f6b424d0912c89011ad66148c5b92093a941e182"
+  },
+  "report.scale.arms": {
+   "len": 3,
+   "sha256": "628f2f5b33ecbc4dd524137f7ce099411cda25c6da01b802f93ffb0112c0568d"
+  },
+  "report.scale.axes.global.input.max_deviation": 25.2,
+  "report.scale.axes.global.input.n_groups": 42,
+  "report.scale.axes.global.input.off_5pp": 18,
+  "report.scale.axes.global.unseen.below_own_3pp": 4,
+  "report.scale.axes.global.unseen.n_groups": 32,
+  "report.scale.axes.global.unseen.worst": {
+   "len": 4,
+   "sha256": "809c8614645c1a9053f7d4362278bf869435b5d379518dec3bae737b9e6c5493"
+  },
+  "report.scale.axes.scale.input.max_deviation": 3.5,
+  "report.scale.axes.scale.input.n_groups": 42,
+  "report.scale.axes.scale.input.off_5pp": 0,
+  "report.scale.axes.scale.unseen.below_own_3pp": 4,
+  "report.scale.axes.scale.unseen.n_groups": 32,
+  "report.scale.axes.scale.unseen.worst": {
+   "len": 4,
+   "sha256": "e8ac1948687affc8007c2b12c7c1ad1cec5ca5d55ab3d3dbe992ed8700245dcc"
+  },
+  "report.scale.by_band": {
+   "len": 4,
+   "sha256": "ad2fbda44a5fcfbf011a7e94b9d546ac264841c8d90a33c7d91fa98cffbe1ebd"
+  },
+  "report.scale.by_comparables": {
+   "len": 4,
+   "sha256": "fcab29ee4b1d5e480014d9523c23d943de4709a2119310da9ac3ba0063c8f1a1"
+  },
+  "report.scale.floor_hits": 0,
+  "report.scale.k": 2.0874,
+  "report.scale.latest_snapshot.coverage_global": 88.72,
+  "report.scale.latest_snapshot.coverage_scale": 88.89,
+  "report.scale.latest_snapshot.n": 11526,
+  "report.scale.latest_snapshot.snap": "2026-06-27",
+  "report.scale.level_shift": {
+   "len": 4,
+   "sha256": "0bb9676d00a66271c1d9a1d0ba9169351cb1de823fdf6f64e9c494492363a420"
+  },
+  "report.scale.level_shift_columns": {
+   "len": 6,
+   "sha256": "b989925f0ffaaa1a533abe1bd919cd1124588dcc8278511b4cc276265007994c"
+  },
+  "report.scale.min_group_n": 200,
+  "report.scale.no_comparable_n": 752,
+  "report.scale.partial_dependence": {
+   "len": 9,
+   "sha256": "bf335da1b430f8e8a1401cea95bd1ff4e37a895de771b2156c444c7e50eb1a7b"
+  },
+  "report.scale.profile_columns": {
+   "len": 12,
+   "sha256": "c8096cd3211e03332761a14837ea4f4beb84fda2281a06960efad5957b9719fd"
+  },
+  "report.scale.profiles": {
+   "len": 13,
+   "sha256": "3836370a3dc1c65a26417b645a34f6ec259f7d7e17fa08a576c80ef9b73cf930"
+  },
+  "report.scale.s_floor": 0.02,
+  "report.scale.width.min": 8.9,
+  "report.scale.width.narrower_share": 62.44,
+  "report.scale.width.percentiles": {
+   "len": 6,
+   "sha256": "7519d746bbd40635c6c45c8abde73a03a4a35553854c720cb980cf551a8e76ce"
   }
  },
  "08_forward_test": {
@@ -820,12 +957,36 @@
   "_meta.db.path": "data/cars.duckdb",
   "_meta.db.rows": 45315,
   "_meta.db.sha256": "444123b1f1a9f7e5613c702cdf725e927262ed7b33dcd77cad7aeb1b8bbc1b8a",
-  "_meta.generated_at": "2026-11-22T20:01:55+03:00",
+  "_meta.generated_at": "2026-11-23T18:25:07+03:00",
   "_meta.run_id": null,
   "_meta.script": "08_forward_test.py",
   "methodology.forward_test.MAPE": 6.78,
   "methodology.forward_test.ci_hi": 7.17,
   "methodology.forward_test.ci_lo": 6.42,
+  "methodology.forward_test.confidence.brier": 0.1686,
+  "methodology.forward_test.confidence.brier_constant": 0.1868,
+  "methodology.forward_test.confidence.by_shown": {
+   "len": 8,
+   "sha256": "bb0ae95bf0cbe63e0df061505fccfa833ff9458504ac1694e40b2a2fbae5fc1d"
+  },
+  "methodology.forward_test.confidence.deciles": {
+   "len": 10,
+   "sha256": "c2d635805b2b982c30a1e8565d044d94a7ca9868fd66468b437d98c92100e9ff"
+  },
+  "methodology.forward_test.confidence.mean_observed": 75.1,
+  "methodology.forward_test.confidence.mean_predicted": 79.1,
+  "methodology.forward_test.confidence.p10": 58.0,
+  "methodology.forward_test.confidence.p50": 82.2,
+  "methodology.forward_test.confidence.p90": 95.3,
+  "methodology.forward_test.confidence.skill_pct": 9.7,
+  "methodology.forward_test.coverage.arm_columns": {
+   "len": 8,
+   "sha256": "d0316231562e4f34b19382fcb451cdb0720114a1bf70ed49427fb70f022cf0c8"
+  },
+  "methodology.forward_test.coverage.arms": {
+   "len": 3,
+   "sha256": "ae8f4f0a07f3b97d8049dd1b1d44278d3544afa3a3ff74449702bdd29a2f94fe"
+  },
   "methodology.forward_test.coverage.bands": {
    "len": 4,
    "sha256": "df2a4fb10a611c6cef34028e2304a12edb22ede6018d5feb6a2a6109bad761db"
@@ -833,6 +994,10 @@
   "methodology.forward_test.coverage.bounds": {
    "len": 3,
    "sha256": "e6c070f75f18d6a40b03e2cd566710e7e53786bd57428657e7985b9a712febe0"
+  },
+  "methodology.forward_test.coverage.by_width_fifth": {
+   "len": 5,
+   "sha256": "8748eab5f6ccb93f077d2473d36b18b6f109c3589c18c769f8a93ebc27b23c78"
   },
   "methodology.forward_test.coverage.coverage_band": 87.99,
   "methodology.forward_test.coverage.coverage_global": 87.4,
@@ -845,14 +1010,19 @@
    "len": 4,
    "sha256": "51d5c01e93b74606fb93da8571ac6121a5e0833484508d84d5561ca8cd79147a"
   },
+  "methodology.forward_test.coverage.scale.floor_hits": 2,
+  "methodology.forward_test.coverage.scale.k": 2.0997,
   "methodology.forward_test.n": 8889,
   "methodology.forward_test.n_train": 21099,
   "methodology.forward_test.protocol.interval.level": 0.95,
   "methodology.forward_test.protocol.interval.n_boot": 1000,
   "methodology.forward_test.protocol.interval.resample": "model",
+  "methodology.forward_test.protocol.scale": "s and k from the training set's nested OOF scores; the served s is trained on the whole training set; signed_error = (log price − log prediction) × 100",
   "methodology.forward_test.protocol.setup": "cv.fold_matrices + cv.LGB_PARAMS; trees = median of an inner 5-fold early-stopping CV on the training set, then one fit without early stopping",
   "methodology.forward_test.protocol.test": "listings first seen in the last snapshot",
   "methodology.forward_test.protocol.train": "every listing seen before the last snapshot, latest price per ad_id",
+  "methodology.forward_test.signed_error.mean": 2.46,
+  "methodology.forward_test.signed_error.median": 2.02,
   "methodology.forward_test.test": "2026-06-27",
   "methodology.forward_test.train_until": "2026-03-21",
   "methodology.forward_test.trees": 211

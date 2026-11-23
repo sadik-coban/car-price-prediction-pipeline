@@ -215,6 +215,114 @@ Modelin zamanı görmediği raporda tek bir sınır cümlesiyle kalır. Hedonik 
 - Yeni plan açılmadı: tek testin sonucu dokuz kurulumdan biri olarak zaten görülmüştü; şimdi "ön kayıt" sonradan
   yapılmış olurdu.
 
+## Servis edilen aralık: ölçek modeli ve isabet olasılığı (2026-11-23, kullanıcı onayı)
+
+**Karar.** Servis edilen %90 aralık artık araca göre. Küçük bir ikinci model (ölçek modeli, s) bu tür araçta beklenen
+hata büyüklüğünü tahmin eder; aralık `expm1(log tahmin ± k·s)`. Yanında bir isabet olasılığı verilir: ilan fiyatının
+tahminin ±%10 yakınında olma olasılığı. Fiyat tahmini değişmedi: ana model dosyası birebir aynı. Tarif ve kod
+`analysis/lib/conformal.py`'de; plan `served_interval_plan.md` (repo kökü).
+
+**Önceki durum.** Herkese tek pay (q = 0,1412, yani −%13,2 / +%15,2). Genel kapsama %90, ama gruplarda tutmuyordu:
+0–7 yaşta %97, 19+ yaşta %75, emsalsiz araçta %71, F segmentinde %66.
+
+**Denenen kollar** (OOF, çapraz kalibreli, 29.988 ilan; ileri test 8.889 yeni ilan). IS log uzayında aralık skoru,
+küçük daha iyi:
+
+| kol | OOF kapsama | OOF IS | OOF emsalsiz | ileri kapsama | ileri IS | ileri emsalsiz | sonuç |
+|---|---|---|---|---|---|---|---|
+| tek q | 89,99 | 0,4211 | 70,7 | 87,40 | 0,4438 | 68,35 | raporda kalır (eski servis) |
+| bant başına q (plan 08) | 90,01 | 0,4059 | 66,8 | 87,99 | 0,4296 | 65,32 | raporda kalır (ön kayıtlı) |
+| CQR | 90,00 | – | 73,7 | 88,68 | – | 70,03 | koda girmedi |
+| bant × emsal | 90,06 | 0,3929 | 90,8 | 87,68 | 0,4178 | 90,91 | koda girmedi |
+| ölçek modeli | 90,09 | 0,3657 | 90,3 | 86,83 | 0,3977 | 88,55 | **servis edilir** |
+| üç girdili ölçek (tahmin, yaş, emsal) | – | 0,3780 | – | – | fark gürültü | – | koda girmedi |
+
+- **Ara yol** (k'yı emsal kovası başına hesaplamak) ileri testte hiçbir şey değiştirmedi; koda girmedi.
+- CQR, bant × emsal ve üç girdili kolun sayıları salt okunur denetim betiklerinden; canlı zincirde yoklar.
+
+**Neden ölçek modeli.** Bant × emsal yalnız gördüğümüz iki hatayı (ucuz bant, emsalsiz araç) düzeltiyordu. Ölçek
+modeli öteki eksenleri de düzeltiyor: girdisi olan eksenlerin 42 grubunda tek q'da 18 grup hedeften 5 puandan fazla
+sapıyor, ölçek modelinde hiçbiri. OOF'ta en iyi aralık skoru onda. 30 girdiyi üç girdiye tercih etme gerekçesi:
+kullanıcının girdiği hasar bilgisi payı etkilemeli (ağır hasarlıda kapsama 80,8'e karşı 89,7). İleri testte iki
+ölçek modeli arasındaki fark gürültü içinde.
+
+**Vazgeçilen şey.** Bant × emsal'in 16 hücresinin her birinde ayrı bir kalibrasyonu vardı. Ölçek modelinde gruplardaki
+iyi kapsama ampirik; daha keskin aralık ve öteki eksenler için o hücre kalibrasyonundan vazgeçildi.
+
+**Dürüstlük notları.**
+- **Seçim sonuçtan sonra.** Yöntem, s'nin ayarları (300 ağaç, 15 yaprak, yaprakta en az 100 ilan, alt sınır 0,02),
+  monotonluk kısıtı ve ±%10 sonuçlar görüldükten sonra kondu. Hiçbirinde arama yapılmadı. Bağımsız test kalmadı.
+- **%90 yaklaşık tutar, aynı dönem için.** Servis edilen merkez ve s bütün veriyle, skorlar kat modelleriyle kuruluyor;
+  bu kurulumun sonlu örneklem güvencesi yok. Zaman içinde tutmaz: sonradan gelen ilanlarda 86,8.
+- **Sızıntı payı ölçüldü.** Testler yalnız s'nin puanlanan katı görmediğini kanıtlar; hatalar ana modelin çapraz
+  uydurmasından gelir. Her dış kat için her şey (ana model, iç OOF hataları, s, k) öteki dört kattan yeniden kurulunca
+  kapsama 90,11, emsalsiz 90,03, IS 0,3669 çıktı. Fark yok sayılır.
+- **Kararlılık.** 10 tohum ve 7 ayarda OOF kapsama 90,00–90,25, k 2,075–2,105, ileri kapsama 86,69–87,06. Ama aynı
+  aracın payı tohumdan tohuma medyan %2,5, %95'lik %9,5 oynuyor. Tohum ortalaması alınmadı: servis tek modelle
+  deterministik, beş model servis etmek bu kazanca değmez.
+- **Monotonluk bir tasarım kuralı.** "Daha çok emsal payı hiç genişletmez." Kapsamaya ölçülebilir katkısı yok
+  (kısıtlı ve kısıtsız ileri testte aynı).
+- **Dar aralık önce eskir.** Fiyat seviyesi kayarsa en dar aralıklar kapsamayı ilk kaybeder; rapor bunu bir varsayım
+  hesabıyla gösterir (`report.scale.level_shift`).
+- **s'nin görmediği bilgi.** Satıcı, il, renk ve ilan metnindeki bir kusur s'de yok; bu eksenlerde ölçek modeli tek
+  q'dan ne iyi ne kötü.
+- **Hedef ilan fiyatı**, satış fiyatı değil. **Model adı serbest metin:** emsal eğitimdeki dizeyle birebir aranır;
+  yazım hatası emsali 0 yapar ve aralığı genişletir (ihtiyatlı yönde).
+
+**Ön kayıt.** Kilitli `plans/08-mondrian-coverage` tek q ve bant kollarını kapsıyor; ölçek modeli onun dışında ve o plan
+olduğu gibi duruyor. Yeni ön kayıt açılmadı: sonuçlar görülmüştü, sonradan "ön kayıt" yanıltıcı olurdu
+(`plans/09-forward-coverage` geri çekilirken izlenen yol).
+
+**Sitede sunum.** İsabet "10'da N" olarak gösterilir, aşağı yuvarlanır ve en çok 9 olur (yuvarlamayla araçların %11'i
+"10'da 10" görürdü, gerçekleşen %94–96,5). Cümleler dönemi taşır: "Ocak–Haziran 2026 ilan fiyatlarına göre".
+Yüzde, s, k ya da "yüksek / orta / düşük" etiketi gösterilmez.
+
+**Zaman denetimi (aynı gün).** Kullanıcı "ileri testteki +2,2 log puan fiyat kayması mı, proje kayma analizine uygun mu"
+diye sordu; üç bağımsız denetim yapıldı.
+- **+2,2 fiyat artışı değil.** İleri testte işaretli hata ortalama +2,46, medyan +2,02. Bunun +1,16'sı eğitim
+  kümesinin kuruluşundan: eğitim fiyatlarının %46'sı ocak tarihli ve marttan önce çıkmış ilanlara ait; çıkan ilanlar
+  aynı gün kalanlardan ~2 log puan ucuz. Fiyat seviyesi 98 günde yaklaşık +1 ile +1,5 (yalnız mart stokuyla eğitim:
+  +1,30 [1,0–1,6]). Nominal ilan fiyatı; enflasyondan arındırılmadı.
+- **PSI, KS, EMD geri gelmez.** Ardışık taramalarda fiyat PSI'ı ortak ilanları sabit tutan gürültü tabanının altında;
+  0,10 eşiği yalnız `model` ve konumda aşılıyor, orada değer gürültüye eşit. "Kayma çıktı" kararı doğrulandı.
+- **Tarih modele girmez, sabit ofset uygulanmaz (kullanıcı kararı).** Tarama girdisi çıkan ucuz ilanları tarih diye
+  öğreniyor (9 gün için +1,28; stokun hareketi 0,42). Hedefi kaydırıp yeniden eğitmek sabit ofsetle aynı sonucu veriyor.
+  Sabit ofset (+1,73) Haziran ilanlarında yanlılığı sıfırlar ve kapsamayı 88,7'den 89,3'e çıkarır, ama ileri tarihte
+  bir test yapılmayacağı için doğrulanamaz; uygulanmadı. Model son taramanın ilanlarının ortalama %1,7 altında kalır;
+  bu bir sınırlama olarak yazılır.
+
+**Repo dışı.** API ve site (`sadik-portfolio`) bu repodan değiştirilmez; şartname planın 7–9. adımlarında, parite
+örnekleri `data/serving/serve/parity_examples.json`'da.
+
+## Hedonik bölüm yeniden kuruldu (2026-11-23, kullanıcı isteği)
+
+**Neden.** İki sütunlu katsayı tablosu ("segment kontrolü", "model kontrolü") soruyu tersinden soruyordu. Kullanıcının
+görmek istediği: aracın ne olduğu bilinmeden fiyatın ne kadarı açıklanıyor, yalnız kimlikle ne kadarı, ve kimlik
+sabitlenince her etki nasıl değişiyor. Hedonik regresyon çıkarılmadı: km, ağır hasar ve değişen parça etkilerini bu
+kadar temiz veren başka bir bölüm yok (SHAP'ta yaş ile km'nin payı tahmin modeline göre değişiyor).
+
+**Eklenenler** (`analysis/06_hedonic.py`, `report.hedonic`):
+- **Merdiven:** altı regresyonun örneklem içi ve 5 katlı kat dışı R²'si. Kat dışı: yalnız segment, marka, yakıt, vites
+  0,38; yalnız durum (yaş, km, hasar, boya, değişen) 0,73; yalnız araç modelinin adı 0,82; durum + motor 0,87; segment
+  kontrolü 0,93; araç modeli kontrolü 0,96.
+- **Kimlik kontrolsüz üçüncü sütun.** Km kimlik olmadan −%10, kimlik sabitken −%15; +100 hp kimlik olmadan +%50,
+  segment girince +%20. Yani kontrolsüz km yanıltıyor, gücün "etkisi"nin çoğu aracın sınıfı.
+- **Yıllık basamaklarla yaş** (araç modeli içinde yaş kuklaları ve km spline'ı): yıl başına −%4,7 ile −%6,8, yaşa göre.
+  İkinci dereceden terimin medyan araçtaki tek sayısı (−%5,8) fonksiyon biçimine bağlıydı; denetimde esnek biçimler
+  −%4,1…−%4,4 verdi. Veri tek dönem: ölçülen bir model yılının farkı, bir aracın yaşlanması değil.
+- **Sayıya göre parça:** boyalı parça doğrusal değil (1: −%2,3; 2: −%3,6; 5 ve fazlası: −%7,0; doğrusal katsayı parça
+  başına −%1,0 diyordu). Değişen parça doğrusala yakın (1: −%3,7; 2: −%6,4; 3: −%9,3).
+
+**İş notundan çıkan.** "+100 hp" satırı: aynı araç modeli içinde güç neredeyse değişmiyor (735 araç modelinin 354'ünde
+değişiyor, araç modeli içi yayılım 9 hp), sayı tek bir araç modeline duyarlı. Teknik raporda uyarılarıyla kalır.
+Başlıktaki "fiyatı ne kadar oynattığı" ifadesi nedensel olduğu için değişti.
+
+**Ön kayıt yok.** Hepsi sonuçlar görüldükten sonra eklendi; sonradan ön kayıt yanıltıcı olurdu. Yayımlanan iki sütunun
+sayıları değişmedi.
+
+**Kelime kuralı (aynı gün).** Raporlarda "model" iki şeyi anlatıyordu. Verideki kolon için "araç modeli", LightGBM için
+"tahmin modeli" yazılır; ikisinin karışabileceği her yerde.
+
 ## Gizlilik
 
 1. `ad_id` hiçbir rapora ya da site verisine yazılmaz; yalnız veritabanında ve onun yanındaki
