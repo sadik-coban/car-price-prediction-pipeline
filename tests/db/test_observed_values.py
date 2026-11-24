@@ -19,7 +19,7 @@ import pytest
 from conftest import raw_record
 
 import build_gold_db as G
-from lib import observed_values as OV, process_for_db as P
+from dblib import observed_values as OV, process_for_db as P
 
 REGISTER = OV.load()
 FIELDS = REGISTER["raw"]["fields"]

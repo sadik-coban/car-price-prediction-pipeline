@@ -1,11 +1,11 @@
 """
 observed_values.py (tools)
-EN: Writes or checks the register of what the data holds, db/observed_values.json (see db/lib/observed_values.py):
+EN: Writes or checks the register of what the data holds, db/observed_values.json (see db/dblib/observed_values.py):
     raw field values or formats, damage labels, silver columns with few values, series → models. Data is only read.
     Update the register only on purpose: after new data showed a value and the code was made to handle it (the DB
     build stops on anything not in the register; tests/db/test_observed_values.py checks the code against it).
     --check compares the file with the data (the generation stamp left out) and exits 1 on any difference.
-TR: Verinin ne tuttuğunun kaydını, db/observed_values.json'u yazar ya da sınar (bkz. db/lib/observed_values.py): ham
+TR: Verinin ne tuttuğunun kaydını, db/observed_values.json'u yazar ya da sınar (bkz. db/dblib/observed_values.py): ham
     alan değerleri ya da biçimleri, hasar etiketleri, az değerli silver kolonları, seri → modeller. Veri yalnız okunur.
     Kaydı yalnız bilerek güncelleyin: yeni veri bir değer gösterdikten ve kod o değeri ele alacak hâle getirildikten
     sonra (DB kurulumu kayıtta olmayan her şeyde durur; tests/db/test_observed_values.py kodu ona göre sınar).
@@ -19,7 +19,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "db"))
-from lib import observed_values as OV  # noqa: E402
+from dblib import observed_values as OV  # noqa: E402
 
 
 def main(argv=None):

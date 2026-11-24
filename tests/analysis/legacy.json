@@ -1,8 +1,0 @@
-{
- "_about": {
-  "en": "Scripts written before the analysis cards and tests (2026-09-24), exempt from the card and test cells of the coverage matrix while their source keeps this sha256 (CRLF folded to LF). When a listed script changes, it needs a card (analysis/cards/) and a real test (tests/analysis/), then its line is removed here. The list only shrinks: tests/analysis/test_coverage.py refuses a name that was not on the first list.",
-  "tr": "Analiz kartları ve testlerinden önce yazılmış betikler (2026-09-24); kaynakları bu sha256'yı taşıdıkça (CRLF → LF) kapsam matrisinin kart ve test hücrelerinden muaf. Listedeki bir betik değişince kart (analysis/cards/) ve gerçek test (tests/analysis/) ister, sonra satırı buradan silinir. Liste yalnız kısalır: tests/analysis/test_coverage.py ilk listede olmayan bir adı reddeder."
- },
- "scripts": {
- }
-}

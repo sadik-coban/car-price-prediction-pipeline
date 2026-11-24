@@ -15,7 +15,7 @@ import duckdb
 import pytest
 
 import build_duckdb as BD
-from lib import observed_values as OV
+from dblib import observed_values as OV
 
 pytestmark = [pytest.mark.data,
               pytest.mark.skipif(not OV.DB_PATH.exists() or not OV.raw_files(), reason="no local data | yerel veri yok")]

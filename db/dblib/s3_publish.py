@@ -23,7 +23,7 @@ import boto3
 import dotenv
 from botocore.exceptions import ClientError
 
-ROOT = Path(__file__).resolve().parents[2]                 # db/lib -> repo root | depo kökü
+ROOT = Path(__file__).resolve().parents[2]                 # db/dblib -> repo root | depo kökü
 ENV_FILE = ROOT / ".env"
 # EN: settings field → environment variable | TR: ayar alanı → ortam değişkeni
 ENV_VARS = {"endpoint": "RAILWAY_S3_ENDPOINT", "access_key": "RAILWAY_S3_ACCESS_KEY",

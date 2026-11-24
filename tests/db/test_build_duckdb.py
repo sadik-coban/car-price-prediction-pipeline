@@ -18,7 +18,7 @@ import pytest
 from conftest import S1, S2, damage_list, make_old_db, raw_record, small_tree, write_raw_tree
 
 import build_duckdb as BD
-from lib.process_for_db import DAMAGE_PART_MAP
+from dblib.process_for_db import DAMAGE_PART_MAP
 
 def sha(path):
     """EN: sha256 of a file. / TR: Dosyanın sha256'sı."""
@@ -350,7 +350,7 @@ def test_register_argument_is_used(tmp_path):
     EN: An explicit register is the one checked: a register without blue plates stops a tree that has one.
     TR: Açıkça verilen kayıt sınanır: mavi plakasız bir kayıt, mavi plaka içeren ağacı durdurur.
     """
-    from lib import observed_values as OV
+    from dblib import observed_values as OV
     clean = write_raw_tree(tmp_path / "clean", {("audi", S1): [raw_record(10000001)],
                                                 ("bmw", S1): [raw_record(10000002, brand="bmw")]})
     register = {"raw": OV.scan_raw(OV.raw_files(clean))[0]}

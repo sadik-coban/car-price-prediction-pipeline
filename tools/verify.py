@@ -2,19 +2,16 @@
 verify.py
 EN: The single definition of done: a change is finished when this exits 0. It only selects which tests run and
     summarises them; every check itself is a test under tests/.
-      fast  (default)  unit tests, metrics vs baseline, reports rebuilt byte for byte, repository rules; seconds
-      --data           + the real-data layer (data/raw, data/cars.duckdb); minutes
-      --full           reruns the analysis chain first (python analysis/run_all.py, ~16 min), then everything
+      fast  (default)  unit tests of db/ and notebooks/lib, notebooks built from their current sources; seconds
+      --data           + the real-data layer (data/raw, data/cars.duckdb) and the notebooks run again; minutes
     --json prints a one-line summary (used by the Claude Code Stop hook).
 TR: Tek "bitti" tanımı: bir değişiklik bu komut 0 ile çıkınca biter. Yalnız hangi testlerin koşacağını seçer ve
     özetler; her kontrolün kendisi tests/ altında bir testtir.
-      hızlı (varsayılan)  birim testler, referansa göre metrikler, bayt bayt yeniden üretilen raporlar, depo
-                          kuralları; saniyeler
-      --data              + gerçek veri katmanı (data/raw, data/cars.duckdb); dakikalar
-      --full              önce analiz zincirini yeniden koşar (python analysis/run_all.py, ~16 dk), sonra hepsi
+      hızlı (varsayılan)  db/ ve notebooks/lib birim testleri, defterlerin güncel kaynaktan derlenmiş olması; saniyeler
+      --data              + gerçek veri katmanı (data/raw, data/cars.duckdb) ve defterlerin yeniden koşumu; dakikalar
     --json tek satırlık özet basar (Claude Code Stop hook'u kullanır).
 Run / Koşum:
-    python tools/verify.py [--data | --full] [--json]
+    python tools/verify.py [--data] [--json]
 """
 import argparse
 import json
@@ -28,7 +25,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 # EN: pytest marker expression per layer | TR: katman başına pytest işaret ifadesi
-LAYERS = {"fast": "not data and not full", "data": "not full", "full": ""}
+LAYERS = {"fast": "not data", "data": ""}
 
 
 def failures(junit_xml):
@@ -74,18 +71,10 @@ def main(argv=None):
     """
     sys.stdout.reconfigure(encoding="utf-8")      # EN: Turkish failure lines on a cp1252 console | TR: cp1252 konsolda Türkçe
     ap = argparse.ArgumentParser(description="Definition of done | bitti tanımı")
-    group = ap.add_mutually_exclusive_group()
-    group.add_argument("--data", action="store_true", help="also the real-data layer | gerçek veri katmanı da")
-    group.add_argument("--full", action="store_true", help="rerun the analysis chain first | önce zinciri koş")
+    ap.add_argument("--data", action="store_true", help="also the real-data layer | gerçek veri katmanı da")
     ap.add_argument("--json", action="store_true", help="one-line JSON summary | tek satır JSON özet")
     args = ap.parse_args(argv)
-    layer = "full" if args.full else "data" if args.data else "fast"
-    if args.full:
-        chain = subprocess.run([sys.executable, str(ROOT / "analysis" / "run_all.py")], cwd=ROOT)
-        if chain.returncode:
-            summary = {"ok": False, "layer": layer, "failed": ["analysis/run_all.py failed | düştü"]}
-            print(json.dumps(summary, ensure_ascii=False) if args.json else summary)
-            return 1
+    layer = "data" if args.data else "fast"
     code, passed, bad, seconds = run_pytest(layer)
     ok = code == 0 and not bad
     summary = {"ok": ok, "layer": layer, "passed": passed, "failed": bad, "seconds": round(seconds, 1)}

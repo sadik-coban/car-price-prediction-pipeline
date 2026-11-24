@@ -1,9 +1,9 @@
 """
 test_s3_publish.py
-EN: Tests of db/lib/s3_publish.py — settings from a temporary .env (never the real one), the environment
+EN: Tests of db/dblib/s3_publish.py — settings from a temporary .env (never the real one), the environment
     winning over the file, no secret in repr or error messages, no side effect at import, and S3Store's three
     operations against a fake client. No network.
-TR: db/lib/s3_publish.py testleri — geçici bir .env'den ayarlar (asla gerçeği değil), ortamın dosyaya göre
+TR: db/dblib/s3_publish.py testleri — geçici bir .env'den ayarlar (asla gerçeği değil), ortamın dosyaya göre
     öncelikli olması, repr'de ve hata mesajında sır olmaması, import'ta yan etki olmaması ve S3Store'un üç işlemi
     sahte istemciyle. Ağ yok.
 """
@@ -15,7 +15,7 @@ import pytest
 from botocore.exceptions import ClientError
 from conftest import FakeS3Client
 
-from lib import s3_publish
+from dblib import s3_publish
 
 SECRET = "secret-value-123"
 

@@ -1,7 +1,7 @@
 """
 build_duckdb.py
 EN: Builds the SEMI-RAW database data/cars.duckdb from data/raw/{audi,bmw}/<snapshot>/details.jsonl (the
-    analysis reads it). Rows come from lib/process_for_db.py; this script only reads the files and writes the
+    analysis reads it). Rows come from dblib/process_for_db.py; this script only reads the files and writes the
     tables — every listing the site showed is kept (blue plates too): scope decisions belong to gold
     (db/gold_rules.json) and to the analysis (analysis/lib/common.py keeps TR plates). WHAT is written:
       - car_listings: every listing in every snapshot (no de-duplication), `id` (row number, 1…N) + DB_COLUMNS.
@@ -20,16 +20,16 @@ EN: Builds the SEMI-RAW database data/cars.duckdb from data/raw/{audi,bmw}/<snap
     closed cleanly), when the old DB is open in another program, or when the raw data is incomplete (a missing
     brand folder, a snapshot folder without details.jsonl, an unreadable line).
     NO GUESSING: before anything is read into rows, the raw files are compared with the register of observed
-    values (db/observed_values.json, db/lib/observed_values.py): a new field, a value or format the register has
+    values (db/observed_values.json, db/dblib/observed_values.py): a new field, a value or format the register has
     not seen, or an unknown damage label stops the build with the field, the value, how many records and the first
-    file:line — nothing is written. The parsers (lib/process_for_db.py) raise UnknownValue on any form the data never
+    file:line — nothing is written. The parsers (dblib/process_for_db.py) raise UnknownValue on any form the data never
     showed, as a second guard. Adapt the code to the new value first, then update the register
     (python tools/observed_values.py); tests/db/test_observed_values.py checks the code against the register.
     NOTE — the API: this semi-raw file is NOT what the API gets. The live API expects unknown = false / 0;
     db/build_gold_db.py derives data/cars_gold.duckdb from this file, and publish_data_to_s3.py uploads only a
     file that keeps that gold contract (docs/database.md → "Gold adımı").
 TR: data/raw/{audi,bmw}/<tarama>/details.jsonl'den YARI HAM veritabanı data/cars.duckdb'yi kurar (analiz okur).
-    Satırlar lib/process_for_db.py'den gelir; bu betik yalnız dosyaları okur ve tabloları yazar — sitenin
+    Satırlar dblib/process_for_db.py'den gelir; bu betik yalnız dosyaları okur ve tabloları yazar — sitenin
     gösterdiği her ilan tutulur (mavi plakalar da): kapsam kararları gold'a (db/gold_rules.json) ve analize
     (analysis/lib/common.py TR plakalıları tutar) aittir. NE yazılır:
       - car_listings: her taramadaki her ilan (tekilleştirme yok), `id` (satır numarası, 1…N) + DB_COLUMNS.
@@ -46,9 +46,9 @@ TR: data/raw/{audi,bmw}/<tarama>/details.jsonl'den YARI HAM veritabanı data/car
     veri eksikse (marka klasörü yok, details.jsonl'suz tarama klasörü, okunamayan satır) hiçbir şeye dokunmadan
     durur.
     TAHMİN YOK: satırlar okunmadan önce ham dosyalar gözlenen değerler kaydıyla karşılaştırılır
-    (db/observed_values.json, db/lib/observed_values.py): yeni bir alan, kaydın görmediği bir değer ya da biçim veya
+    (db/observed_values.json, db/dblib/observed_values.py): yeni bir alan, kaydın görmediği bir değer ya da biçim veya
     bilinmeyen bir hasar etiketi kurulumu alan, değer, kayıt sayısı ve ilk dosya:satır ile durdurur — hiçbir şey
-    yazılmaz. Ayrıştırıcılar (lib/process_for_db.py) verinin hiç göstermediği her biçimde ikinci emniyet olarak
+    yazılmaz. Ayrıştırıcılar (dblib/process_for_db.py) verinin hiç göstermediği her biçimde ikinci emniyet olarak
     UnknownValue yükseltir. Önce kodu yeni değere göre uyarlayın, sonra kaydı güncelleyin
     (python tools/observed_values.py); tests/db/test_observed_values.py kodu kayda göre sınar.
     NOT — API: bu yarı ham dosya API'ye giden dosya DEĞİL. Canlı API bilinmeyen = false / 0 bekler;
@@ -66,8 +66,8 @@ import duckdb
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib import observed_values as OV  # noqa: E402
-from lib.process_for_db import DAMAGE_STATUS_MAP, jsonl_to_silver_df  # noqa: E402
+from dblib import observed_values as OV  # noqa: E402
+from dblib.process_for_db import DAMAGE_STATUS_MAP, jsonl_to_silver_df  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent          # repo root | depo kökü
 DATA_DIR = ROOT / "data" / "raw"

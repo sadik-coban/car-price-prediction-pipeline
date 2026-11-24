@@ -9,7 +9,7 @@ EN: Publishes the locally built GOLD database data/cars_gold.duckdb (db/build_go
       2. its sha256 is computed and the version is set (the manifest on S3 + 1, unless --version is given);
       3. data/cars.duckdb is uploaded FIRST, then data/manifest.json (version, sha256, build time, row count),
          so the poll never sees a new manifest pointing at a missing or old file.
-    HOW to talk to S3 is in lib/s3_publish.py. --dry-run does steps 1–2 and prints the manifest without
+    HOW to talk to S3 is in dblib/s3_publish.py. --dry-run does steps 1–2 and prints the manifest without
     connecting to S3 or reading .env.
 TR: Yerelde kurulan GOLD veritabanı data/cars_gold.duckdb'yi (db/build_gold_db.py) S3'e data/cars.duckdb adıyla
     yayımlar — API'nin veri tazeleme yoklamasının okuduğu nesne, o yoklama açıksa (servis bu deponun dışında,
@@ -20,7 +20,7 @@ TR: Yerelde kurulan GOLD veritabanı data/cars_gold.duckdb'yi (db/build_gold_db.
       2. sha256 hesaplanır ve sürüm belirlenir (S3'teki manifest + 1; --version verilmediyse);
       3. ÖNCE data/cars.duckdb, SONRA data/manifest.json (sürüm, sha256, kurulum zamanı, satır sayısı) yüklenir;
          böylece yoklama eksik ya da eski bir dosyayı gösteren yeni bir manifest görmez.
-    S3 ile NASIL konuşulacağı lib/s3_publish.py'de. --dry-run 1–2. adımları yapar ve manifesti basar; S3'e
+    S3 ile NASIL konuşulacağı dblib/s3_publish.py'de. --dry-run 1–2. adımları yapar ve manifesti basar; S3'e
     bağlanmaz, .env'i okumaz.
 Run / Koşum:
     python db/publish_data_to_s3.py --dry-run          # check only | yalnız kontrol
@@ -35,7 +35,7 @@ from pathlib import Path
 import duckdb
 
 from build_gold_db import contract_problems
-from lib import s3_publish
+from dblib import s3_publish
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DUCKDB = ROOT / "data" / "cars_gold.duckdb"

@@ -25,12 +25,12 @@ from botocore.exceptions import ClientError
 
 DB_DIR = Path(__file__).resolve().parents[2] / "db"
 sys.path.insert(0, str(DB_DIR))
-from lib import observed_values as OV  # noqa: E402
+from dblib import observed_values as OV  # noqa: E402
 
 REGISTER = OV.load()
 
 # EN: the 13 panel labels of the site's damage diagram | TR: sitenin hasar şemasının 13 parça etiketi
-PANELS = list(json.loads((DB_DIR / "lib" / "damage_mappings.json").read_text(encoding="utf-8"))["panels"])
+PANELS = list(json.loads((DB_DIR / "dblib" / "damage_mappings.json").read_text(encoding="utf-8"))["panels"])
 MISSING = object()          # raw_record(key=MISSING) leaves the key out | anahtarı kayıttan çıkarır
 
 

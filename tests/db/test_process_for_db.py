@@ -1,9 +1,9 @@
 """
 test_process_for_db.py
-EN: Tests of db/lib/process_for_db.py — every parser on the formats that occur in the real data (all
+EN: Tests of db/dblib/process_for_db.py — every parser on the formats that occur in the real data (all
     records were counted; no invented format is tested), the semi-raw rules (unknown stays None), the
     description heading, the damage diagram, whole records and reading a JSONL file. Records are fake.
-TR: db/lib/process_for_db.py testleri — her ayrıştırıcı gerçek veride görülen biçimlerle (bütün kayıtlar
+TR: db/dblib/process_for_db.py testleri — her ayrıştırıcı gerçek veride görülen biçimlerle (bütün kayıtlar
     sayıldı; uydurma biçim sınanmaz), yarı ham kurallar (bilinmeyen None kalır), açıklama başlığı, hasar şeması,
     tam kayıtlar ve JSONL dosyası okuma. Kayıtlar sahte.
 """
@@ -14,7 +14,7 @@ from datetime import date, datetime, timezone
 import pytest
 from conftest import MISSING, damage_list, raw_record
 
-from lib import process_for_db as P
+from dblib import process_for_db as P
 
 NONE4 = (None, None, None, None)
 

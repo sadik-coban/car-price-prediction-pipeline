@@ -49,7 +49,7 @@ derived from it (`data/cars_gold.duckdb`, below). Until 2026-09-24 this file its
   - `build_duckdb.py` compares the raw data with the register before reading any rows. A new field, an unseen
     value or format, or an unknown damage label stops the build **with nothing written**; the message names the
     field, the value, how many records and the first file:line.
-  - The parsers (`db/lib/process_for_db.py`) raise `UnknownValue` on any form the data never showed instead of
+  - The parsers (`db/dblib/process_for_db.py`) raise `UnknownValue` on any form the data never showed instead of
     guessing. A single production year used to become "start = end", an unknown first-owner text became `False`,
     and an unknown damage label was skipped.
   - Tests check both ways: every value the code names was seen in the data, and every value in the data is handled

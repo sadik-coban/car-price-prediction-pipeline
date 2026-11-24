@@ -1,7 +1,7 @@
 {
   "_about": {
-    "en": "The site's damage diagram: 13 panel labels -> silver status column, 5 status labels -> enum. Read by db/lib/process_for_db.py and analysis/01_unspecified_panels.py. Labels are written exactly as arabam.com shows them.",
-    "tr": "Sitenin hasar şeması: 13 parça etiketi -> silver durum kolonu, 5 durum etiketi -> enum. db/lib/process_for_db.py ve analysis/01_unspecified_panels.py okur. Etiketler arabam.com'da göründüğü gibi yazılı."
+    "en": "The site's damage diagram: 13 panel labels -> silver status column, 5 status labels -> enum. Read by db/dblib/process_for_db.py and analysis/01_unspecified_panels.py. Labels are written exactly as arabam.com shows them.",
+    "tr": "Sitenin hasar şeması: 13 parça etiketi -> silver durum kolonu, 5 durum etiketi -> enum. db/dblib/process_for_db.py ve analysis/01_unspecified_panels.py okur. Etiketler arabam.com'da göründüğü gibi yazılı."
   },
   "panels": {
     "Tavan": "roof_status",

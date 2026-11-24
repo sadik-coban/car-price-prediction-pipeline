@@ -47,7 +47,7 @@ Bu dosya analizin girdisi. API'ye doğrudan gitmez: yayın, ondan türetilen gol
   - `build_duckdb.py` satırları okumadan önce ham veriyi kayıtla karşılaştırır. Yeni bir alan, görülmemiş bir değer
     ya da biçim veya bilinmeyen bir hasar etiketi kurulumu **hiçbir şey yazmadan** durdurur; mesaj alanı, değeri,
     kaç kayıtta olduğunu ve ilk dosya:satır'ı söyler.
-  - Ayrıştırıcılar (`db/lib/process_for_db.py`) verinin hiç göstermediği biçimde tahmin etmek yerine
+  - Ayrıştırıcılar (`db/dblib/process_for_db.py`) verinin hiç göstermediği biçimde tahmin etmek yerine
     `UnknownValue` yükseltir. Eskiden tek yıllı üretim yılı "ilk = son" oluyor, bilinmeyen ilk sahip metni `False`
     sayılıyor, bilinmeyen hasar etiketi atlanıyordu.
   - Testler iki yönde sınar: kodun andığı her değer veride görülmüş, verideki her değer kodda bilerek ele alınmış
