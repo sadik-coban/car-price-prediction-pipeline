@@ -3,6 +3,7 @@ test_real_data.py
 notebooks/lib fonksiyonları gerçek veride (data/cars.duckdb ve data/raw, salt okunur). Yavaş katman: `data` işareti.
 Eski betiklerin durma koşullarından lib'e düşenler burada sınanır: ilan başına tek satır, her satırın segmenti ve onu
 çözen yol, görülmemiş plaka ya da segment değeri yok, ham hasar cevapları veritabanının bayraklarıyla bire bir aynı.
+Defterlerin veri hakkında söylediği ama kendisi göstermediği cümleler de burada sınanır (motor değeri kolonları).
 """
 import json
 
@@ -50,6 +51,32 @@ def test_engine_values_are_positive_where_present():
     listings = data.add_features(data.load_rows())
     for column in ["power_hp_val", "engine_cc_val"]:
         assert (listings[column].dropna() > 0).all(), column
+
+
+@pytest.mark.parametrize("measure", ["engine_cc", "power_hp"])
+def test_database_engine_value_is_the_midpoint_of_the_bounds(measure):
+    # 1. defter, 2.1: veritabanının *_val kolonu iki sınır varsa orta nokta, tek sınır varsa o sınır, sınır yoksa boş
+    rows = data.query(f"SELECT {measure}_low AS low, {measure}_up AS up, {measure}_val AS val, "
+                      f"{measure}_is_range AS is_range FROM car_listings")
+    low, up, val = rows["low"], rows["up"], rows["val"]
+    is_range = rows["is_range"].fillna(False).astype(bool)
+    both = low.notna() & up.notna()
+    assert (val[both] == (low[both] + up[both]) / 2).all()
+    assert (val[low.notna() & up.isna()] == low[low.notna() & up.isna()]).all()
+    assert (val[low.isna() & up.notna()] == up[low.isna() & up.notna()]).all()
+    assert val[low.isna() & up.isna()].isna().all()
+    assert (low[is_range & both] < up[is_range & both]).all()        # aralıkta alt sınır üst sınırdan küçük
+    assert (low[~is_range & both] == up[~is_range & both]).all()     # kesin değerde alt = üst = değer
+    assert not (~is_range & (low.isna() != up.isna())).any()         # tek sınır yalnız aralıkta olur
+
+
+def test_engine_rule_leaves_a_value_empty_only_where_the_site_gave_no_bound():
+    # hacim kuralı üst sınırı alır: yalnız alt sınırı olan bir hacim ("… cm3 ve üzeri") boş kalırdı. Site bu biçimi
+    # göstermedi; gösterirse önce veritabanı kurulumu durur, biçim tanıtılıp kural uyarlanmazsa bu test yakalar
+    listings = data.add_features(data.load_rows(latest_only=False))
+    for measure in ["engine_cc", "power_hp"]:
+        no_bound = listings[f"{measure}_low"].isna() & listings[f"{measure}_up"].isna()
+        assert (listings[f"{measure}_val"].isna() == no_bound).all(), measure
 
 
 def test_raw_damage_answers_equal_the_database_flags():

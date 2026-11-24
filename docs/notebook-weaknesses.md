@@ -18,12 +18,6 @@ sonucun ne kadar güvenle okunabileceğini ya da bir değişikliğin fark edilme
 | Toplama filtresi sınırları (1.4) | Verinin toplama filtresinin içinde kaldığı yalnız bir tabloyla gösteriliyor. Fiyat tavanı başlık sayılarında var (`price_at_cap`); kilometre ve yıl sınırının başlık anahtarı yok, değişirse hiçbir test yakalamaz. | açık |
 | Defterdeki değer sabitleri | Defterin kendi yazdığı değerler ("SUV", "bmw", "audi", "Belirtilmemiş") gözlenen değerler kaydında (`db/observed_values.json`) var, ama bu elle kontrol edildi. İki yönlü test yalnız `notebooks/lib` içindeki sabitleri tarıyor, defter kaynaklarını taramıyor. | açık |
 
-### Sınanmadan söylenen
-
-| konu | ne | durum |
-|---|---|---|
-| Motor değeri kolonları (2.1) | Veritabanının `*_val` kolonlarının aralığın orta noktasını tuttuğu ayrıca sınanmadı. Çıktı bununla uyumlu: yeniden hesaplanan güç hiçbir ilanda farklı değil, hacim 7.827 ilanda farklı (hacim için üst sınır kullanıldığından). | açık |
-
 ### Eksik ya da açık kalanlar
 
 | konu | ne | durum |
@@ -33,6 +27,12 @@ sonucun ne kadar güvenle okunabileceğini ya da bir değişikliğin fark edilme
 | Belirtilmemiş paneller ham sayfalardan sayılıyor (3) | Veritabanındaki boş değerin "belirtilmemiş" cevabına tam karşılık geldiği gösterildiği için sayım yalnız veritabanından da yapılabilirdi. Yöntem aynı kalsın diye ham sayfalar okunuyor. | bilerek |
 | Kolon sınıfları tablosu (4.5) | "Tahmin modelinde" satırı 53 kolonu tek tek sayıyor; 39 hasar bayrağı özetlenebilir. | açık |
 | Başlık sayıları | 34 satır; "küçük tablo" için fazla olabilir. | açık |
+
+### Sonradan giderilenler
+
+| konu | ne yapıldı |
+|---|---|
+| Motor değeri kolonları (2.1) | "Veritabanının `*_val` kolonları aralığın orta noktası" cümlesi sınanmadan yazılmıştı. Gerçek veride sınandı ve bütün satırlarda tutuyor: iki sınır varsa orta nokta, tek sınır varsa o sınır, sınır yoksa boş. Test eklendi (`tests/lib/test_real_data.py`). Aynı yerde ikinci bir test, kuralın bir değeri yalnız sitenin hiç sınır vermediği ilanlarda boş bıraktığını sınıyor: hacim kuralı üst sınırı aldığı için yalnız alt sınırı olan bir hacim ("… cm3 ve üzeri") boş kalırdı. Site hacimde bu biçimi hiç göstermedi; gösterirse önce veritabanı kurulumu görülmemiş değer diye durur, test ondan sonraki adımı (biçim tanıtıldı ama kural uyarlanmadı) yakalar. |
 
 ## 2. defter: fiyatı ne belirliyor
 
