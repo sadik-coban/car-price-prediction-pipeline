@@ -76,6 +76,14 @@ def test_segment_of(series, model, segment):
     assert data.segment_of(series, model) == segment
 
 
+@pytest.mark.parametrize("series, model, resolved", [
+    ("3 Serisi", "320i Sport Line", ("D", "series_map")), ("M Serisi", "M5", ("E", "base_class")),
+    ("RS", "RS 6", ("E", "base_class")), ("i Serisi", "i8 Premium Techno", ("S", "model_table")),
+    ("M Serisi", "Z4 M Coupe", ("S", "model_table")), ("Yeni Seri", "X1", (None, None))])
+def test_resolve_segment_gives_the_path(series, model, resolved):
+    assert data.resolve_segment(series, model) == resolved
+
+
 def test_segments_stop_on_an_unresolved_pair():
     # durmanın kendisini sınar: "Yeni Seri" hiç görülmemiş bir seri
     assert data.segments(["3 Serisi"], ["320i Sport Line"]) == ["D"]

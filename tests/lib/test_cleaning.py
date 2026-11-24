@@ -1,9 +1,9 @@
 """
 test_cleaning.py
-notebooks/lib/cleaning.py: plaka türü, ham sayfalardan hasar listesi okuma ve bayrakların yeniden kurulması küçük,
-elle kurulmuş verilerle; plaka ve hasar cevabı eşlemelerinin gözlenen değerler kaydıyla (db/observed_values.json)
-iki yönlü uyumu; yeniden kurulan bayrak adlarının veritabanı kolunun bayrak listesiyle (db/gold_rules.json) aynı
-olması. Gerçek veri okunmaz.
+notebooks/lib/cleaning.py: plaka türü, sitenin segment değeri, ham sayfalardan hasar listesi okuma ve bayrakların
+yeniden kurulması küçük, elle kurulmuş verilerle; plaka, segment ve hasar cevabı eşlemelerinin gözlenen değerler
+kaydıyla (db/observed_values.json) iki yönlü uyumu; yeniden kurulan bayrak adlarının veritabanı kolunun bayrak
+listesiyle (db/gold_rules.json) aynı olması. Gerçek veri okunmaz.
 """
 import json
 
@@ -32,6 +32,23 @@ def test_plate_kinds_both_ways():
     """(a) eşlemedeki her plaka değeri veride geçiyor; (b) veride görülen her dolu plaka değeri eşlemede."""
     observed = {v for v, _ in REGISTER["silver"]["columns"]["gb_plate_origin"]["values"] if v is not None}
     assert set(cleaning.PLATE_KINDS) == observed
+
+
+def test_raw_segment():
+    kinds = cleaning.raw_segment(pd.Series(["D Segment", None, "G Segment", "B Segment"]))
+    assert kinds[[0, 2, 3]].tolist() == ["D", "G", "B"] and pd.isna(kinds[1])     # boş değer boş kalır
+
+
+def test_raw_segment_stops_on_an_unseen_value():
+    # durmanın kendisini sınar: "H Segment" veride hiç görülmedi
+    with pytest.raises(ValueError, match="H Segment"):
+        cleaning.raw_segment(pd.Series(["D Segment", "H Segment"]))
+
+
+def test_raw_segments_both_ways():
+    """Eşlemedeki her segment değeri veride geçiyor; veride görülen her dolu segment değeri eşlemede."""
+    observed = {v for v, _ in REGISTER["silver"]["columns"]["gb_segment"]["values"] if v is not None}
+    assert set(cleaning.RAW_SEGMENTS) == observed
 
 
 def test_damage_answers_both_ways():

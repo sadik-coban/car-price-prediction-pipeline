@@ -1,4 +1,5 @@
-> **Durum (2026-11-24): uygulanıyor.** 0. ve 1. aşama yapıldı (commit atılmadı); `1_data_and_cleaning` okumanı bekliyor. Dal: `classic-notebooks`
+> **Durum (2026-11-24): uygulanıyor.** 0. ve 1. aşama commit'lendi (4316eb9, 574a118); 2. aşama yazıldı (commit
+> atılmadı). `1_data_and_cleaning` ve `2_what_drives_price` okumanı bekliyor. Dal: `classic-notebooks`
 > (`simple-notebooks` be8644a'dan açıldı). Dördüncü sürüm: yapı sıfırdan kurulur, fonksiyon klasörünün adı `lib`,
 > defterlerin kaynağı jupytext ile düz Python dosyasıdır.
 
@@ -33,7 +34,8 @@ notebooks/                        her defter iki dosya: <ad>.py (kaynak) ve <ad>
   lib/                            import edilen fonksiyonlar; kurulum yok, import anında dosya okumaz, yazmaz
     data.py                       yükleme ve türetilen kolonlar
     cleaning.py  missing.py  association.py  market.py  hedonic.py
-    model.py                      katlar, matrisler, LightGBM, taban
+    folds.py  spec_rule.py        ortak beş kat; motor tutarlılık kuralı (2. ve 4. defter)
+    model.py                      matrisler, LightGBM, taban
     errors.py  interval.py  shap_tools.py  plots.py
     cache.py                      ağır adımlar için "varsa oku, yoksa koş"
 db/                               veritabanı kolu; mantığı değişmez, yalnız db/lib → db/dblib adı değişir
@@ -54,7 +56,8 @@ Defterin kaynağı düz bir Python dosyasıdır (`notebooks/<ad>.py`, "percent" 
   ya da başlık sayıları referanstan farklıysa defter yazılmaz.
 - Defteri Jupyter'de elle düzenlersen önce `jupytext --sync notebooks/<ad>.ipynb` değişikliği kaynağa aktarır,
   sonra derleme aracı koşulur.
-- Kapı, defterin kaynağıyla aynı olduğunu ve kaynak ya da `lib` değiştikten sonra yeniden derlendiğini sınar.
+- Kapı, defterin kaynağıyla aynı olduğunu ve kaynak ya da defterin import ettiği `lib` modülleri değiştikten sonra
+  yeniden derlendiğini sınar. Defterin kullanmadığı bir modül değişince defter bayatlamaz.
 
 ### Sıfırdan ne demek
 
@@ -153,7 +156,7 @@ sonradan istenirse aynı deftere, her Türkçe açıklama hücresinin altına ek
 |---|---|---|
 | 0 | Temiz ağaç: eski zincir kalkar, `db/lib` → `db/dblib`, kapı sadeleşir ve yeşildir. **Yapıldı** | Dalda yalnız veritabanı kolu ve kapı var |
 | 1 | Derleme aracı ve defter testleri (**yapıldı**), `notebooks/lib/` (data, cleaning, missing), `1_data_and_cleaning` (**yazıldı**; 34 başlık sayısı eski kayıtlarla aynı, ilk referans onayınla kaydedildi). Önbellek 3. defterle gelir | Üslubu ve kod/modül dengesini onaylarsın |
-| 2 | `2_what_drives_price` | Hafif analizlerin hepsi defterde |
+| 2 | `2_what_drives_price` (**yazıldı**; `lib`: association, market, hedonic, folds, spec_rule, plots; 39 başlık sayısı eski kayıtlarla aynı, ilk referans onayınla kaydedildi) | Hafif analizlerin hepsi defterde |
 | 3 | `3_price_model` (ağır adımlar bir kez koşar) | Modelleme defterde |
 | 4 | `4_errors_and_interval` | Hata ve aralık defterde |
 | 5 | `5_shap` | Analizin tamamı yeni yapıda |

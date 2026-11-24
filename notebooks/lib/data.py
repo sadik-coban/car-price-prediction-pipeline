@@ -64,19 +64,28 @@ def load_rows(latest_only=True):
     return query(f"SELECT * FROM car_listings WHERE {where} ORDER BY ad_id, search_date")
 
 
-def segment_of(series, model):
-    """Bir ilanın segmenti (B, C, D, E, F ya da S); çözülemezse None."""
+def resolve_segment(series, model):
+    """
+    Bir ilanın segmenti ve onu çözen yol: (segment, yol). Yol 'model_table' (MODEL_SEG), 'series_map' (SEGMENT_MAP)
+    ya da 'base_class' (performans ailesi: araç modeli adındaki rakamdan temel seri); çözülemezse (None, None).
+    """
     series, model = str(series), str(model)
     for prefix, segment in MODEL_SEG.get(series, {}).items():
         if model.startswith(prefix):
-            return segment
+            return segment, "model_table"
     if series in SEGMENT_MAP:
-        return SEGMENT_MAP[series]
+        return SEGMENT_MAP[series], "series_map"
     if series in PERF_BASE:
         digit = PERF_RE.match(model)
-        if digit:
-            return SEGMENT_MAP.get(PERF_BASE[series].format(digit.group(1)))
-    return None
+        base = PERF_BASE[series].format(digit.group(1)) if digit else None
+        if base in SEGMENT_MAP:
+            return SEGMENT_MAP[base], "base_class"
+    return None, None
+
+
+def segment_of(series, model):
+    """Bir ilanın segmenti (B, C, D, E, F ya da S); çözülemezse None."""
+    return resolve_segment(series, model)[0]
 
 
 def segments(series, models):

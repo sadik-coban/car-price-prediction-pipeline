@@ -1,5 +1,5 @@
 """
-Temizlik: plaka türü ve ham sayfalardaki hasar listeleri.
+Temizlik: plaka türü, sitenin segment değeri ve ham sayfalardaki hasar listeleri.
 Modülü import etmek hiçbir dosya okumaz, yazmaz.
 """
 import json
@@ -11,6 +11,9 @@ from lib import data
 
 # Veride görülen plaka değerleri ve kısa kimlikleri; boş plaka "empty" (db/observed_values.json)
 PLATE_KINDS = {data.TR_PLATE: "tr", "Mavi plakalı": "blue"}
+# Sitenin segment kolonunda (gb_segment) görülen değerler ve kısa kimlikleri (db/observed_values.json)
+RAW_SEGMENTS = {"B Segment": "B", "C Segment": "C", "D Segment": "D", "E Segment": "E", "F Segment": "F",
+                "G Segment": "G"}
 
 # Durum kolonundan veritabanı bayrak önekine: çoğu "_status" atılınca çıkar, üç tek parçanın öneki Türkçe
 FLAG_PREFIX = {"roof_status": "tavan", "engine_hood_status": "kaput", "trunk_lid_status": "bagaj"}
@@ -25,6 +28,18 @@ def plate_kind(plate):
     if len(unseen):
         raise ValueError(f"görülmemiş plaka değeri: {list(unseen)}")
     return kind.fillna("empty")
+
+
+def raw_segment(values):
+    """
+    Sitenin segment değerini (gb_segment) kısa kimliğe çevirir: B ... G; boş değer boş kalır. Görülmemiş bir değerde
+    durur.
+    """
+    kind = values.map(RAW_SEGMENTS)
+    unseen = values[kind.isna() & values.notna()].unique()
+    if len(unseen):
+        raise ValueError(f"görülmemiş segment değeri: {list(unseen)}")
+    return kind
 
 
 def read_damage_lists(panel_map, status_map):

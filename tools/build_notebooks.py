@@ -6,8 +6,8 @@ notebooks/ olan taze bir kernel'de baştan sona koşar ve çıktılarıyla noteb
   - Defterin tanımladığı `headline` sözlüğü (başlık sayıları) tests/baselines/<ad>.json ile karşılaştırılır. Fark
     varsa defter yazılmaz. Fark bilerek yapıldıysa --accept "<gerekçe>" referansı günceller; bu yalnız kullanıcının
     onayıyla yapılır. Referans dosyaları elle düzenlenmez.
-  - Yazılan deftere kaynak özeti konur (kendi .py dosyası ve notebooks/lib/*.py). tests/notebooks, defterin bayat
-    olup olmadığını bununla anlar.
+  - Yazılan deftere kaynak özeti konur (kendi .py dosyası ve import ettiği notebooks/lib modülleri). tests/notebooks,
+    defterin bayat olup olmadığını bununla anlar.
 Defter Jupyter'de elle düzenlendiyse önce kaynağa aktarılır: jupytext --sync notebooks/<ad>.ipynb
 Koşum:
     python tools/build_notebooks.py                        bütün defterler
@@ -16,6 +16,7 @@ Koşum:
     python tools/build_notebooks.py --accept "gerekçe"     başlık sayılarındaki farkı kabul eder
 """
 import argparse
+import ast
 import hashlib
 import json
 import sys
@@ -47,10 +48,38 @@ def sources(names=()):
     return paths
 
 
+def lib_imports(path):
+    """Bir .py dosyasının import ettiği lib modüllerinin adları (from lib import x, from lib.x import y, import lib.x)."""
+    names = set()
+    for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+        if isinstance(node, ast.ImportFrom) and node.module == "lib":
+            names.update(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and (node.module or "").startswith("lib."):
+            names.add(node.module.split(".")[1])
+        elif isinstance(node, ast.Import):
+            names.update(alias.name.split(".")[1] for alias in node.names if alias.name.startswith("lib."))
+    return names
+
+
+def used_lib_files(source):
+    """Bir defterin doğrudan ya da başka bir lib modülü üzerinden import ettiği lib dosyaları ve lib/__init__.py."""
+    seen, waiting = set(), [source]
+    while waiting:
+        for name in lib_imports(waiting.pop()) - seen:
+            if not (LIB / f"{name}.py").exists():
+                raise SystemExit(f"{source.name}: lib/{name}.py yok")
+            seen.add(name)
+            waiting.append(LIB / f"{name}.py")
+    return [LIB / "__init__.py"] + [LIB / f"{name}.py" for name in sorted(seen)]
+
+
 def source_digest(source):
-    """Bir defterin kaynak özeti: kendi .py dosyası ile lib/*.py dosyalarının sha256'sı (satır sonundan bağımsız)."""
+    """
+    Bir defterin kaynak özeti: kendi .py dosyası ile import ettiği lib dosyalarının sha256'sı (satır sonundan
+    bağımsız). Defterin kullanmadığı bir lib modülü değişince defter bayatlamaz.
+    """
     h = hashlib.sha256()
-    for path in [source] + sorted(LIB.glob("*.py")):
+    for path in [source] + used_lib_files(source):
         text = path.read_text(encoding="utf-8").replace("\r\n", "\n")
         h.update(f"{path.name}\n{text}\n".encode("utf-8"))
     return h.hexdigest()

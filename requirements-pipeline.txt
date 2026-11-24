@@ -23,6 +23,7 @@ scikit-learn
 lightgbm
 catboost
 statsmodels
+patsy        # hedonik regresyonun formülleri; statsmodels ile gelir, defter doğrudan import ediyor
 shap
 joblib
 

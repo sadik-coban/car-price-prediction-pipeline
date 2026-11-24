@@ -1,8 +1,8 @@
 """
 test_real_data.py
 notebooks/lib fonksiyonları gerçek veride (data/cars.duckdb ve data/raw, salt okunur). Yavaş katman: `data` işareti.
-Eski betiklerin durma koşullarından lib'e düşenler burada sınanır: ilan başına tek satır, her satırın segmenti,
-görülmemiş plaka değeri yok, ham hasar cevapları veritabanının bayraklarıyla bire bir aynı.
+Eski betiklerin durma koşullarından lib'e düşenler burada sınanır: ilan başına tek satır, her satırın segmenti ve onu
+çözen yol, görülmemiş plaka ya da segment değeri yok, ham hasar cevapları veritabanının bayraklarıyla bire bir aynı.
 """
 import json
 
@@ -31,6 +31,25 @@ def test_every_row_gets_its_features():
 def test_every_plate_value_has_a_kind():
     plates = data.query("SELECT gb_plate_origin FROM car_listings")["gb_plate_origin"]
     assert set(cleaning.plate_kind(plates)) <= {"tr", "blue", "empty"}
+
+
+def test_every_segment_value_has_an_id():
+    segments = data.query("SELECT gb_segment FROM car_listings")["gb_segment"]
+    assert set(cleaning.raw_segment(segments).dropna()) <= set(cleaning.RAW_SEGMENTS.values())
+
+
+def test_segment_paths_agree_with_the_segments():
+    listings = data.add_features(data.load_rows())
+    resolved = [data.resolve_segment(s, m) for s, m in zip(listings["series"], listings["model"])]
+    assert [segment for segment, _ in resolved] == listings["segment"].tolist()
+    assert {path for _, path in resolved} == {"series_map", "base_class", "model_table"}
+
+
+def test_engine_values_are_positive_where_present():
+    # hedonik regresyon yalnız boş güç ve hacmi dışarıda bırakır; sıfır ya da eksi bir değer sessizce girerdi
+    listings = data.add_features(data.load_rows())
+    for column in ["power_hp_val", "engine_cc_val"]:
+        assert (listings[column].dropna() > 0).all(), column
 
 
 def test_raw_damage_answers_equal_the_database_flags():
