@@ -3,7 +3,8 @@ test_real_data.py
 notebooks/lib fonksiyonları gerçek veride (data/cars.duckdb ve data/raw, salt okunur). Yavaş katman: `data` işareti.
 Eski betiklerin durma koşullarından lib'e düşenler burada sınanır: ilan başına tek satır, her satırın segmenti ve onu
 çözen yol, görülmemiş plaka ya da segment değeri yok, ham hasar cevapları veritabanının bayraklarıyla bire bir aynı.
-Defterlerin veri hakkında söylediği ama kendisi göstermediği cümleler de burada sınanır (motor değeri kolonları).
+Defterlerin veri hakkında söylediği ama kendisi durmadığı cümleler de burada sınanır (toplama filtreleri, motor
+değeri kolonları).
 """
 import json
 
@@ -51,6 +52,23 @@ def test_engine_values_are_positive_where_present():
     listings = data.add_features(data.load_rows())
     for column in ["power_hp_val", "engine_cc_val"]:
         assert (listings[column].dropna() > 0).all(), column
+
+
+def test_every_row_is_inside_the_collection_filters():
+    # 1. defter, 1.4: defter filtre ile veriyi yan yana gösterir ama durmaz; veri filtrenin dışına çıkarsa burada durur.
+    # Kategori filtresi (otomobil) sınanmaz: veride onun kolonu yok, kasa tipi kolonu birkaç SUV gösteriyor
+    config = json.loads(data.COLLECTION_CONFIG.read_text(encoding="utf-8"))
+    query = config["listing_query"]
+    rows = data.query("SELECT brand, price, kb_mileage, gb_mileage, kb_year, gb_year, kb_fuel FROM car_listings")
+    assert rows.notna().all().all()
+    assert set(rows["brand"]) == set(config["selected_brands"])
+    for brand, part in rows.groupby("brand"):
+        limits = config["brands"].get(brand, config["brands"]["DEFAULT"])
+        assert part["price"].between(limits["min"], limits["max"]).all(), brand
+    assert (rows[["kb_mileage", "gb_mileage"]].max() <= query["max_km"]).all()
+    assert (rows[["kb_year", "gb_year"]].min() >= query["min_year"]).all()
+    site_fuel = {"LPG": "LPG & Benzin"}                 # filtredeki "LPG" ilanda böyle yazıyor
+    assert set(rows["kb_fuel"]) == {site_fuel.get(fuel, fuel) for fuel in query["fuels"]}
 
 
 @pytest.mark.parametrize("measure", ["engine_cc", "power_hp"])

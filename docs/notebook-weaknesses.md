@@ -15,8 +15,8 @@ sonucun ne kadar güvenle okunabileceğini ya da bir değişikliğin fark edilme
 
 | konu | ne | durum |
 |---|---|---|
-| Toplama filtresi sınırları (1.4) | Verinin toplama filtresinin içinde kaldığı yalnız bir tabloyla gösteriliyor. Fiyat tavanı başlık sayılarında var (`price_at_cap`); kilometre ve yıl sınırının başlık anahtarı yok, değişirse hiçbir test yakalamaz. | açık |
-| Defterdeki değer sabitleri | Defterin kendi yazdığı değerler ("SUV", "bmw", "audi", "Belirtilmemiş") gözlenen değerler kaydında (`db/observed_values.json`) var, ama bu elle kontrol edildi. İki yönlü test yalnız `notebooks/lib` içindeki sabitleri tarıyor, defter kaynaklarını taramıyor. | açık |
+| Etiket olarak yazılan değerler | Defter kaynaklarını tarayan test (aşağıda, "Sonradan giderilenler") yalnız bir kolonla karşılaştırılan değerleri görüyor. Satır etiketi olarak yazılan değerler (`.loc["bmw"]`, `reindex(["bmw", "audi"])`) taranmıyor, çünkü hangi kolona ait oldukları koddan okunmuyor. Bugün yalnız 2. defterin marka tablosunda var; yanlış yazılırsa satır boş kalır ve defter tam sayıya çevirirken durur. | açık |
+| Kategori filtresi (1.4) | Toplama filtresinin "otomobil" kategorisi sınanamıyor: veride kategorinin kolonu yok, kasa tipi kolonu birkaç SUV gösteriyor. Defter bunu tabloda gösteriyor. | açık |
 
 ### Eksik ya da açık kalanlar
 
@@ -32,6 +32,8 @@ sonucun ne kadar güvenle okunabileceğini ya da bir değişikliğin fark edilme
 
 | konu | ne yapıldı |
 |---|---|
+| Toplama filtresi sınırları (1.4) | Defter filtre ile veriyi yan yana gösteriyordu ama veri filtrenin dışına çıksa hiçbir şey durmuyordu. Gerçek veride sınandı, bütün satırlar filtrenin içinde. Test eklendi (`tests/lib/test_real_data.py`): markalar seçili markalarla aynı, fiyat her markanın kendi aralığında, kilometre ve model yılı sınırın içinde, yakıt değerleri filtredekilerle aynı (filtredeki "LPG" ilanda "LPG & Benzin"). Yakıt denetimi "elektrikli yok" cümlesini de koruyor. |
+| Defterdeki değer sabitleri | Defterin bir kolonla karşılaştırdığı değerlerin ("SUV", "bmw", "audi") gözlenen değerler kaydında olduğu elle kontrol edilmişti. Artık bir test defter kaynaklarını tarıyor (`tests/notebooks/test_notebooks.py`): bir veri kolonu yalnız o kolonda görülmüş bir değerle ya da boş değerin dolgusuyla karşılaştırılabilir. "Belirtilmemiş" hasar eşlemesinin bir anahtarı; eşlemenin kayıtla iki yönlü uyumu zaten sınanıyordu (`tests/lib/test_cleaning.py`). |
 | Motor değeri kolonları (2.1) | "Veritabanının `*_val` kolonları aralığın orta noktası" cümlesi sınanmadan yazılmıştı. Gerçek veride sınandı ve bütün satırlarda tutuyor: iki sınır varsa orta nokta, tek sınır varsa o sınır, sınır yoksa boş. Test eklendi (`tests/lib/test_real_data.py`). Aynı yerde ikinci bir test, kuralın bir değeri yalnız sitenin hiç sınır vermediği ilanlarda boş bıraktığını sınıyor: hacim kuralı üst sınırı aldığı için yalnız alt sınırı olan bir hacim ("… cm3 ve üzeri") boş kalırdı. Site hacimde bu biçimi hiç göstermedi; gösterirse önce veritabanı kurulumu görülmemiş değer diye durur, test ondan sonraki adımı (biçim tanıtıldı ama kural uyarlanmadı) yakalar. |
 
 ## 2. defter: fiyatı ne belirliyor
