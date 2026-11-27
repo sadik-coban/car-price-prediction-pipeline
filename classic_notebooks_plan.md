@@ -1,5 +1,7 @@
-> **Durum (2026-11-24): uygulanıyor.** 0. ve 1. aşama commit'lendi (4316eb9, 574a118); 2. aşama yazıldı (commit
-> atılmadı). `1_data_and_cleaning` ve `2_what_drives_price` okumanı bekliyor. Dal: `classic-notebooks`
+> **Durum (2026-11-26): uygulanıyor.** 0., 1. ve 2. aşama commit'lendi (4316eb9, 574a118, 526016d). 1. ve 2. defterin
+> bilinen zayıflıkları tek tek gözden geçirildi (`docs/notebook-weaknesses.md`); 3. aşama (`3_price_model`) yazıldı.
+> 3. defter ve iki defterin zayıflık düzeltmeleri commit'lenmedi; sırada 4. aşama (`4_errors_and_interval`) var.
+> `1_data_and_cleaning`, `2_what_drives_price` ve `3_price_model` okumanı bekliyor. Dal: `classic-notebooks`
 > (`simple-notebooks` be8644a'dan açıldı). Dördüncü sürüm: yapı sıfırdan kurulur, fonksiyon klasörünün adı `lib`,
 > defterlerin kaynağı jupytext ile düz Python dosyasıdır.
 
@@ -28,7 +30,7 @@ analiz baştan, defter olarak yazılır.
 notebooks/                        her defter iki dosya: <ad>.py (kaynak) ve <ad>.ipynb (koşulmuş hali, okunan)
   1_data_and_cleaning             veri, tekilleştirme ve sızıntı, motor kuralı, belirtilmemiş paneller, eksiklik
   2_what_drives_price             bağımlılık, segment kalitesi, hedef, piyasa, hedonik
-  3_price_model                   karşılaştırma ve taban, marka ablasyonu, LOFO, metin bayrağı, son model
+  3_price_model                   karşılaştırma ve taban, marka ablasyonu, LOFO, ekleme sınaması, son model
   4_errors_and_interval           artıklar, büyük hatalar, aralık ve isabet olasılığı, ileri test, serbest metin
   5_shap
   lib/                            import edilen fonksiyonlar; kurulum yok, import anında dosya okumaz, yazmaz
@@ -156,8 +158,8 @@ sonradan istenirse aynı deftere, her Türkçe açıklama hücresinin altına ek
 |---|---|---|
 | 0 | Temiz ağaç: eski zincir kalkar, `db/lib` → `db/dblib`, kapı sadeleşir ve yeşildir. **Yapıldı** | Dalda yalnız veritabanı kolu ve kapı var |
 | 1 | Derleme aracı ve defter testleri (**yapıldı**), `notebooks/lib/` (data, cleaning, missing), `1_data_and_cleaning` (**yazıldı**; 34 başlık sayısı eski kayıtlarla aynı, ilk referans onayınla kaydedildi). Önbellek 3. defterle gelir | Üslubu ve kod/modül dengesini onaylarsın |
-| 2 | `2_what_drives_price` (**yazıldı**; `lib`: association, market, hedonic, folds, spec_rule, plots; 39 başlık sayısı eski kayıtlarla aynı, ilk referans onayınla kaydedildi) | Hafif analizlerin hepsi defterde |
-| 3 | `3_price_model` (ağır adımlar bir kez koşar) | Modelleme defterde |
+| 2 | `2_what_drives_price` (**yazıldı**; `lib`: association, market, hedonic, folds, spec_rule, plots; 39 başlık sayısı eski kayıtlarla aynı, ilk referans onayınla kaydedildi; 2026-11-26'da zayıflık maddeleri işlendi: 40 başlık sayısı, silhouette bütün ilanlarda) | Hafif analizlerin hepsi defterde |
+| 3 | `3_price_model` (**yazıldı**; `lib`: model, cache, errors; eski kayıtlarla karşılaştırılabilen 318 sayı aynı, son tahmin modeli bugünkü servis dosyasıyla bayt bayt aynı; 37 başlık sayısı; metin bayrağı bölümü 2026-11-28'de senin kararınla kaldırıldı: regex bayrağının isabeti bilinmiyordu, sonuç hiçbir kararı beslemiyordu). Ağır adımlar bir kez koşar (`data/cache/`; kayıtsız yaklaşık 12 dakika, kayıtlıyken saniyeler). Eski zincirde olmayan bir ek (2026-11-25, senin kararın): tahmin modeline girmeyen dört ham kolon (`kb_color`, `kb_seller_type`, `kb_trade_available`, `gb_warranty_status`) LOFO'nun yanında (4.2), aynı katlar ve aynı ölçüyle tek tek eklenip sınanır; sonuç ne çıkarsa çıksın tahmin modeline eklenmezler. Her kolonun karıştırılmış bir kopyası da karşılaştırma olarak eklenir ve fark ilanlar üzerinde eşli bootstrap aralığıyla verilir. Sonuç: satıcı tipi, takas ve garanti kat dışı hatayı ölçülebilir biçimde değiştirmiyor; renk küçük ama ölçülebilir bir katkı veriyor, bilerek eklenmiyor. `1_data_and_cleaning` 4.5 buna göre düzeltildi (sınıf "kurala uymuyor, eklenmedi", metin sınamaya atıf yapıyor) | Modelleme defterde |
 | 4 | `4_errors_and_interval` | Hata ve aralık defterde |
 | 5 | `5_shap` | Analizin tamamı yeni yapıda |
 | 6 | Dışa aktarım: servis paketi ve site verisi `lib` üzerinden, önce ayrı bir yola; bugünkü dosyalarla parite | API ve site eski zincire muhtaç değil |
