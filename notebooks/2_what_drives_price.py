@@ -26,7 +26,7 @@
 # | 4. Piyasa | Ham fiyat segmente, kasa tipine, yaşa, km'ye ve markaya göre nasıl değişiyor; doğal kümeler var mı? |
 # | 5. Hedonik regresyon | Fiyatı ne kadar kimlik, ne kadar durum açıklıyor; kimlik sabitken durum ve motor ne diyor? |
 # | Özet | Defterin gösterdikleri |
-# | Başlık sayıları | Defterin ana sonuçları tek tabloda |
+# | Başlık sayıları | Defterin sayıları, hesaplandıkları bölümle, tek tabloda |
 #
 # Defter hiçbir dosya yazmaz; veritabanını yalnız okur. İlan numaraları (`ad_id`) ve satıcıların yazdığı metinler
 # hiçbir çıktıda gösterilmez. Sonuçların sayıları metinde yazılmaz, hücre çıktılarında görünür; metin neye
@@ -75,7 +75,9 @@ pd.set_option("display.max_colwidth", None)   # uzun etiketler tablolarda kesilm
 # türetildiği 1. defterde.
 
 # %%
-listings = data.add_features(data.load_rows())
+SEED = 42   # defterin rastgele adımlarının (karıştırma, KMeans) tohumu
+rows_raw = data.load_rows()
+listings = data.add_features(rows_raw)
 print("İlanlar (satır, kolon):", listings.shape)
 
 # %% [markdown]
@@ -101,20 +103,36 @@ theils.round(3).rename_axis(index="a (belirlenen)", columns="b (bilinen)")
 # %% [markdown]
 # Matrisin araç modeline ait kolonu ve satırı yan yana: araç modeli bilinince her kolonun belirsizliğinin ne kadarı
 # gidiyor, ve tersi.
+#
+# Üçüncü kolon ölçünün tabanı. Bilinen kolonun çok değeri varsa U yukarı sapar: az ilanlı bir araç modelinin ilanları
+# rastlantıyla da birbirine benzer, ölçü bunu bilgi sayar. Araç modeli kolonu ilanlar arasında rastgele karıştırılınca
+# hiçbir bilgi taşımaz ama farklı değer sayısı aynı kalır; U'nun o durumda verdiği değer sapmanın büyüklüğüdür. 10
+# karıştırmanın ortalaması.
 
 # %%
-asymmetry = pd.DataFrame({"given_model": theils["model"], "model_given": theils.loc["model"]}).drop("model")
+SHUFFLES = 10
+rng = np.random.default_rng(SEED)
+shuffled_models = [pd.Series(listings["model"].to_numpy()[rng.permutation(len(listings))], index=listings.index)
+                   for _ in range(SHUFFLES)]
+floor = [np.mean([association.theils_u(listings[a], shuffled) for shuffled in shuffled_models]) for a in categorical]
+print("Araç modelinin farklı değeri:", listings["model"].nunique())
+
+asymmetry = pd.DataFrame({"given_model": theils["model"], "model_given": theils.loc["model"],
+                          "given_shuffled_model": floor}).drop("model")
 
 asymmetry.round(3).rename_axis("kolon").rename(columns={"given_model": "U(kolon | araç modeli)",
-                                                        "model_given": "U(araç modeli | kolon)"})
+                                                        "model_given": "U(araç modeli | kolon)",
+                                                        "given_shuffled_model": "U(kolon | karıştırılmış araç modeli)"})
 
 # %% [markdown]
 # **Ne görüyoruz.** Asimetri bulgunun kendisi. Araç modeli seriyi, markayı ve segmenti neredeyse tamamen belirliyor;
 # ters yönde seri araç modelini ancak kısmen belirliyor. Yani seri, araç modelinin kabalaştırılmış hâli; ondan ayrı
 # bir bilgi değil. Marka hem araç modelinden hem seriden tamamen okunuyor (matriste `brand` satırı): bu veride her
 # seri tek bir markaya ait, marka ayrı bilgi taşımıyor. Segment de seriden neredeyse tamamen okunuyor ama tam değil
-# (2. bölüm). Kasa tipi, çekiş, yakıt ve vitesin de büyük kısmı araç modelinden okunuyor. Tavan, kaput ve bagaj
-# durumları ise segment, marka ve kasa tipi gibi kolonlarla neredeyse hiç bağlı değil.
+# (2. bölüm). Kasa tipi, çekiş, yakıt ve vitesin de büyük kısmı araç modelinden okunuyor; bu satırlarda taban küçük,
+# okuma değişmiyor. Tavan, kaput ve bagaj durumları ise segment, marka ve kasa tipi gibi kolonlarla neredeyse hiç
+# bağlı değil. Araç modeliyle bağlı gibi görünmelerinin önemli bir kısmı taban: karıştırılmış araç modeli de bu üç
+# kolonun belirsizliğinin bir kısmını "açıklıyor". Bu üç satır bir bağ olarak okunmamalı.
 #
 # ### 1.2 Sayısal kolonlar: Spearman korelasyonu
 #
@@ -292,28 +310,39 @@ skewness.round(2).rename({"price": "fiyat", "log_price": "log fiyat"}).rename_ax
     "çarpıklık").to_frame()
 
 # %% [markdown]
-# Fiyat histogramı: sıfırdan en yüksek fiyata kadar 250 bin ₺ genişliğinde kovalar; kesikli çizgi medyan.
+# İki histogram yan yana. Solda fiyat: sıfırdan en yüksek fiyata kadar 250 bin ₺ genişliğinde kovalar. Sağda log
+# fiyat: en düşük değerden en yükseğe eşit genişlikte 60 kova. Log ölçekte eşit aralık eşit oran demek; eksendeki
+# işaretler karşılık gelen fiyatı (milyon ₺) gösteriyor. Kesikli çizgi iki grafikte de medyan.
 
 # %%
-BIN = 250_000
+BIN, LOG_BINS = 250_000, 60
+LOG_TICKS = [0.5, 1, 2, 4]   # log fiyat ekseninde gösterilen fiyatlar (milyon ₺)
 edges = np.arange(0, price.max() + BIN, BIN)
 counts, _ = np.histogram(price, bins=edges)
-print("Kovalara düşen ilan:", counts.sum(), "/", len(price))
+log_counts, log_edges = np.histogram(np.log1p(price), bins=LOG_BINS)
+print("Kovalara düşen ilan: fiyat", counts.sum(), "| log fiyat", log_counts.sum(), "/", len(price))
 
-fig, ax = plt.subplots(figsize=(8, 3.4))
-ax.bar(edges[:-1] / 1e6, counts, width=0.9 * BIN / 1e6, align="edge")
-ax.axvline(price.median() / 1e6, color="black", ls="--", lw=1)
-ax.set(xlabel="fiyat (milyon ₺)", ylabel="ilan")
-ax.set_title("Fiyat histogramı (kesikli çizgi: medyan)", fontsize=11)
+fig, axes = plt.subplots(1, 2, figsize=(10.5, 3.4))
+axes[0].bar(edges[:-1] / 1e6, counts, width=0.9 * BIN / 1e6, align="edge")
+axes[0].axvline(price.median() / 1e6, color="black", ls="--", lw=1)
+axes[0].set(xlabel="fiyat (milyon ₺)", ylabel="ilan")
+axes[0].set_title("Fiyat", fontsize=10)
+axes[1].bar(log_edges[:-1], log_counts, width=0.9 * np.diff(log_edges), align="edge")
+axes[1].axvline(np.log1p(price.median()), color="black", ls="--", lw=1)
+axes[1].set_xticks(np.log1p(np.array(LOG_TICKS) * 1e6), [f"{tick:g}" for tick in LOG_TICKS])
+axes[1].set(xlabel="fiyat (milyon ₺, log ölçek)", ylabel="ilan")
+axes[1].set_title("Log fiyat", fontsize=10)
+fig.suptitle("Fiyat ve log fiyat histogramı (kesikli çizgi: medyan)", fontsize=11)
 fig.tight_layout()
 plt.show()
 
 # %% [markdown]
 # **Ne görüyoruz.** Ham fiyat sağa çarpık: ilanların çoğu ucuz ve orta kovalarda, pahalı uç uzun ve ince bir kuyruk.
 # Son kova toplama tavanında bitiyor (1. defter, 1.4); tavanın üstünde ilan yok. Log dönüşümü dağılımı simetriğe çok
-# yaklaştırıyor. Tahmin modeli log fiyat üzerinde eğitilir (3. defter): log ölçekte fark göreli (yüzde) farka karşılık
-# gelir, yani ucuz ve pahalı araçta aynı yüzde hata aynı ağırlığı taşır. Bu bir modelleme kararı, piyasa bulgusu değil.
-# Bu defterdeki regresyonlar da log fiyat üzerinde.
+# yaklaştırıyor: sağdaki histogramda medyanın iki yanı birbirine yakın, uzun kuyruk yok. Tahmin modeli log fiyat
+# üzerinde eğitilir (3. defter): log ölçekte fark göreli (yüzde) farka karşılık gelir, yani ucuz ve pahalı araçta aynı
+# yüzde hata aynı ağırlığı taşır. Bu bir modelleme kararı, piyasa bulgusu değil. Bu defterdeki regresyonlar da log
+# fiyat üzerinde.
 
 # %% [markdown]
 # ## 4. Piyasa
@@ -441,25 +470,25 @@ plt.show()
 # Piyasayı segment ve kasa tipi gibi açık kolonlarla okuyoruz. Bunların yerine geçebilecek doğal kümeler var mı? 14
 # sayısal öznitelikte boş değerler kolon medyanıyla dolduruluyor, her kolon standartlaştırılıyor (ortalama 0,
 # standart sapma 1) ve KMeans k = 2 … 8 küme için kuruluyor. Her k için silhouette skoru: −1 ile 1 arasında; 1'e yakın
-# değer kümelerin iyi ayrıldığını, 0'a yakın değer iç içe olduğunu söyler. Kümeler bütün ilanlarda kuruluyor, skor
-# rastgele seçilmiş 3.000 ilanda hesaplanıyor (bütün ilanlarda hesaplamak çok yavaş).
+# değer kümelerin iyi ayrıldığını, 0'a yakın değer iç içe olduğunu söyler. Kümeler de skor da bütün ilanlarda
+# hesaplanıyor; bu hücre defterin en uzun süren hücresi (yarım dakika kadar).
 
 # %%
-SEED, K_RANGE, SILHOUETTE_SAMPLE = 42, range(2, 9), 3000
+K_RANGE = range(2, 9)
 numeric = listings[data.NUM].fillna(listings[data.NUM].median())
 scaled = StandardScaler().fit_transform(numeric)
-sample = np.random.default_rng(SEED).choice(len(scaled), SILHOUETTE_SAMPLE, replace=False)
 
 silhouette = {}
 for k in K_RANGE:
     labels = KMeans(k, random_state=SEED, n_init=10).fit(scaled).labels_
-    silhouette[k] = silhouette_score(scaled[sample], labels[sample])
+    silhouette[k] = silhouette_score(scaled, labels)
 
 pd.Series(silhouette).round(3).rename_axis("k").rename("silhouette").to_frame().T
 
 # %% [markdown]
-# **Ne görüyoruz.** Silhouette denenen bütün k değerlerinde düşük, 0.25'in altında: bu ölçekte belirgin bir küme yapısı
-# yok. Kümeler bu yüzden analizde kullanılmıyor; piyasa segment ve kasa tipi gibi açık özniteliklerle okunuyor.
+# **Ne görüyoruz.** Silhouette denenen bütün k değerlerinde düşük: bu ölçekte belirgin bir küme yapısı yok. k
+# değerleri arasındaki farklar da küçük; en yüksek skoru veren k "doğru küme sayısı" diye okunmamalı. Kümeler bu
+# yüzden analizde kullanılmıyor; piyasa segment ve kasa tipi gibi açık özniteliklerle okunuyor.
 
 # %% [markdown]
 # ## 5. Hedonik regresyon
@@ -553,8 +582,9 @@ TERM_NAMES = list(TERM_TR)
 #
 # Aynı ilanlarda altı regresyon: yalnız kimlik (iki düzeyde), yalnız durum, durum ve motor, sonra ikisi birlikte. Her
 # biri için R² (log fiyatın açıklanan payı) iki kez: örneklem içi, yani regresyonun kurulduğu ilanlarda, ve kat dışı.
-# Kat dışı için ilanlar `folds.make_folds` ile beş kata bölünüyor (karıştırılmış, tohum 42; tahmin modelinin kat dışı
-# sayıları da aynı fonksiyonla, 3. defter). `hedonic.oof_predictions` her katın ilanlarını öteki dört katta kurulan
+# Kat dışı için ilanlar `folds.make_folds` ile beş kata bölünüyor (karıştırılmış, tohum 42). Tahmin modelinin katları
+# da aynı fonksiyonla kurulur (3. defter), ama orada bütün ilanlar bölünür, burada yalnız regresyona giren ilanlar:
+# fonksiyon aynı, bölme aynı değil. `hedonic.oof_predictions` her katın ilanlarını öteki dört katta kurulan
 # regresyonla tahmin eder; eğitim katlarında hiç görülmeyen bir araç modelinin kuklası sıfır alır, yani o ilan kalan
 # kolonlardan tahmin edilir. İki R² de log fiyatın genel ortalaması etrafındaki kareler toplamına göre.
 
@@ -658,18 +688,6 @@ effects.round(2).rename(index=TERM_TR, columns={"pct": "etki %", "pct_lo": "alt"
 # ve etkileşim terimleri (yaş², km², yaş×km) tek başına okunmaz; eğrinin bükülmesini taşır. Ağır hasar satırı kaydın
 # olup olmaması, boyalı ve değişen parça satırları her ek parça; +100 hp ve +1 litre satırları öteki motor terimi
 # sabitken.
-#
-# Kimlik sabitlenince hangi terimler belirgin değişiyor? Kimliksiz sütunun aralığının, iki kontrollü sütunun
-# hiçbirinin aralığıyla örtüşmediği terimler:
-
-# %%
-no_identity = coefs["no_identity"]
-apart = pd.Series(True, index=TERM_NAMES)
-for name in ["segment_control", "model_control"]:
-    other = coefs[name]
-    apart &= (no_identity["pct_hi"] < other["pct_lo"]) | (other["pct_hi"] < no_identity["pct_lo"])
-
-print(", ".join(TERM_TR[term] for term in TERM_NAMES if apart[term]))
 
 # %%
 fig, ax = plt.subplots(figsize=(8, 5.2))
@@ -688,38 +706,71 @@ fig.tight_layout()
 plt.show()
 
 # %% [markdown]
+# Kimlik sabitlenince bir katsayı neden değişir? Araç modeli kontrolü regresyonu log fiyatı üç parçaya ayırır: on
+# terimin katkısı, **kimlik bileşeni** (segment, marka, yakıt ve vites kuklaları ile araç modelinin sabit etkisi) ve
+# artık. Kimlik bileşeni aynı on terime regreslenince çıkan katsayı, öteki terimler sabitken o terim bir birim
+# artınca kimlik bileşeninin ne kadar değiştiğini söyler: artıysa, o terimi yüksek olan ilanlar daha pahalı araç
+# modellerindendir. Bu katsayı iki sütunun farkına cebirsel olarak eşittir (dışarıda bırakılan değişken formülü):
+# kimliksiz katsayı = araç modeli kontrolündeki katsayı + bu katsayı. Tabloda katsayı, araç modeline göre kümeli %95
+# aralığı ve iki sütunun farkı, log ölçekte. Aralığı sıfırı dışlayan terimde iki sütunun farkı örnekleme hatasından
+# büyüktür.
+
+# %%
+model_fit = fits["model_control"]
+term_columns = patsy.dmatrix(TERMS, reg_table, return_type="dataframe")[TERM_NAMES]
+identity_part = reg_table["log_price"] - term_columns @ model_fit.params[TERM_NAMES] - model_fit.resid
+identity_fit, _ = hedonic.fit_clustered(reg_table.assign(identity_part=identity_part), f"identity_part ~ {TERMS}",
+                                        cluster="model", tracked=TERM_NAMES)
+identity_link = hedonic.coefficient_table(identity_fit, TERM_NAMES)[["coef", "ci_lo", "ci_hi", "contains_zero"]]
+identity_link["column_gap"] = coefs["no_identity"]["coef"] - coefs["model_control"]["coef"]
+print("Aralığı sıfırı dışlayan terimler:",
+      ", ".join(TERM_TR[term] for term in TERM_NAMES if not identity_link.loc[term, "contains_zero"]))
+
+identity_link.drop(columns="contains_zero").round(4).rename(index=TERM_TR, columns={
+    "coef": "kimlik bileşeniyle ilişki", "ci_lo": "alt", "ci_hi": "üst",
+    "column_gap": "kimlik yok − araç modeli kontrolü"}).rename_axis("terim")
+
+# %% [markdown]
 # **Ne görüyoruz.** Yaş, km, ağır hasar, boyalı ve değişen parça üç sütunda da fiyatla eksi yönde ilişkili ve
-# aralıkları dar. Kimlik sabitlenince en belirgin değişen iki terim km ve +100 hp. **Km** kimlik olmadan daha zayıf
-# görünüyor: yaşı, hasarı ve motoru aynı ilanlar arasında km'si yüksek olanlar ortalamada fiyatı daha yüksek araç
-# modellerinden; kimliksiz katsayı bunu da taşıdığı için km'nin fiyatla ilişkisini küçük gösteriyor. **+100 hp** ise
-# kimlik olmadan çok daha büyük: log ölçekte kimliksiz etkinin yarıdan fazlası segment, marka, yakıt ve vites girince
-# gidiyor; büyük kısmı motorun kendisi değil, aracın sınıfı. Kimliksiz sütunla öteki ikisi arasında terim başına bir
-# fark testi yok; bu iki gözlem aralıkların örtüşmemesine dayanıyor. Motor terimlerinin aralıkları araç modeli
-# kontrolünde segment kontrolündekinden geniş: araç modelinin adı motoru büyük ölçüde belirlediği için orada güç ve
-# hacim yalnız aynı araç modelinin ilanları arasındaki farktan ölçülüyor (5.9).
+# aralıkları dar. Kimlik sabitlenince birkaç terim örnekleme hatasından fazla değişiyor; etki tablosunda en belirgin
+# değişen iki terim km ve +100 hp. **Km** kimlik olmadan daha zayıf görünüyor ve son tablo nedenini gösteriyor: km'nin
+# kimlik bileşeniyle ilişkisi artıda. Yaşı, hasarı ve motoru aynı ilanlar arasında km'si yüksek olanlar ortalamada
+# fiyatı daha yüksek araç modellerinden; kimliksiz katsayı bunu da taşıdığı için km'nin fiyatla ilişkisini küçük
+# gösteriyor. **+100 hp** ise kimlik olmadan çok daha büyük: log ölçekte kimliksiz etkinin yarıdan fazlası segment,
+# marka, yakıt ve vites girince gidiyor; büyük kısmı motorun kendisi değil, aracın sınıfı. Yaşta, boyalı ve değişen
+# parçada da fark sıfırdan ayrılıyor ama etki tablosunda küçük. Motor terimlerinin aralıkları araç modeli kontrolünde
+# segment kontrolündekinden geniş: araç modelinin adı motoru büyük ölçüde belirlediği için orada güç ve hacim yalnız
+# aynı araç modelinin ilanları arasındaki farktan ölçülüyor (5.9).
 #
 # ### 5.5 Güven aralıkları ve sütunların farkı
 #
 # Kümeli standart hatanın ikinci gerekçesi: hata varyansı ilandan ilana eşit değilse sıradan standart hatalar
-# yanlıştır. Breusch–Pagan testi bunu segment kontrolü sütununun artıklarında sınar; küçük p, eşit varyansın
-# reddedilmesi demek.
+# yanlıştır. Breusch–Pagan testi bunu segment kontrolü sütununun artıklarında sınar: test istatistiği (LM) büyüdükçe
+# p küçülür; küçük p, eşit varyansın reddedilmesi demek. p bilgisayarın gösterebildiği en küçük sayının da altına
+# düşerse `0` diye hesaplanır; hücre o durumda sayıyı değil bunu yazar.
 
 # %%
-bp_p = het_breuschpagan(fits["segment_control"].resid, fits["segment_control"].model.exog)[1]
-print("Breusch-Pagan p:", f"{bp_p:.3g}")
+bp_lm, bp_p = het_breuschpagan(fits["segment_control"].resid, fits["segment_control"].model.exog)[:2]
+print(f"Breusch-Pagan LM: {bp_lm:.0f} (serbestlik derecesi {fits['segment_control'].model.exog.shape[1] - 1})")
+print("p:", f"{bp_p:.3g}" if bp_p > 0 else f"gösterilebilen en küçük sayının ({np.finfo(float).tiny:.0e}) altında")
 
 # %% [markdown]
-# Segment kontrolü ile araç modeli kontrolü sütunlarının farkı örnekleme hatasından büyük mü? İki regresyon aynı
-# ilanlarda kurulduğu için farkları, bağımsız iki tahminin farkı gibi sınanamaz. `hedonic.difference_test` her terim
-# için farkın standart hatasını iki regresyonun ilan başına etkilerinin (influence) farkından, yine araç modeline göre
-# kümeli olarak hesaplar ve %5 düzeyinde sınar. Fark log ölçekte: segment kontrolü eksi araç modeli kontrolü.
+# Komşu sütunların farkı örnekleme hatasından büyük mü? Regresyonlar aynı ilanlarda kurulduğu için farkları, bağımsız
+# iki tahminin farkı gibi sınanamaz. `hedonic.difference_test` her terim için farkın standart hatasını iki regresyonun
+# ilan başına etkilerinin (influence) farkından, yine araç modeline göre kümeli olarak hesaplar ve %5 düzeyinde
+# sınar. Tabloda kimliğin girdiği iki adım, fark log ölçekte: kimlik yok eksi segment kontrolü, sonra segment kontrolü
+# eksi araç modeli kontrolü. İki ucun farkı (kimlik yok eksi araç modeli kontrolü) 5.4'teki son tabloda.
 
 # %%
-difference = hedonic.difference_test(fits["segment_control"], fits["model_control"], reg_table["model"], TERM_NAMES)
+STEPS = [("no_identity", "segment_control"), ("segment_control", "model_control")]
+differences = {step: hedonic.difference_test(fits[step[0]], fits[step[1]], reg_table["model"], TERM_NAMES)
+               for step in STEPS}
+difference = differences["segment_control", "model_control"]
 print("Küme (araç modeli):", reg_table["model"].nunique())
 
-shown = difference.round({"diff": 5, "se": 5, "t": 2})
-shown["significant"] = shown["significant"].map({True: "evet", False: "hayır"})
+shown = pd.concat({f"{COLUMNS_TR[a]} − {COLUMNS_TR[b]}": table.round({"diff": 5, "se": 5, "t": 2}).assign(
+    significant=table["significant"].map({True: "evet", False: "hayır"})) for (a, b), table in differences.items()},
+    axis=1)
 shown.rename(index=TERM_TR, columns={"diff": "fark (log)", "se": "standart hata", "significant": "anlamlı (%5)"}
              ).rename_axis("terim")
 
@@ -742,10 +793,12 @@ pd.Series(zero_terms).unstack().loc[["segment_control", "model_control"]].rename
     "model": "araç modeline göre küme", "series": "seriye göre küme"}).rename_axis(index="sütun", columns=None)
 
 # %% [markdown]
-# **Ne görüyoruz.** Breusch–Pagan eşit varyansı açıkça reddediyor; kümeli standart hata bu yüzden de gerekli. Segment
-# ve araç modeli kontrolünün farkı yaş, yaş×km, ağır hasar ve boyalı parçada örnekleme hatasından büyük; km, değişen
-# parça ve motor terimlerinde değil. Anlamlı farklar da etki tablosunda küçük: araç modelini sabitlemek bu terimleri
-# biraz kaydırıyor, yönlerini değiştirmiyor. Seriye göre kümelenince aralığı sıfırı içeren terimler artıyor: aynı
+# **Ne görüyoruz.** Breusch–Pagan eşit varyansı açıkça reddediyor; kümeli standart hata bu yüzden de gerekli. İlk
+# adımda, segment, marka, yakıt ve vites girince, km, ağır hasar, boyalı ve değişen parça ile +100 hp örnekleme
+# hatasından fazla değişiyor; en büyük iki fark km ve +100 hp'de (5.4). İkinci adımda, araç modelinin adı girince,
+# fark yaş, yaş×km, ağır hasar ve boyalı parçada örnekleme hatasından büyük; km, değişen parça ve motor terimlerinde
+# değil. İkinci adımın anlamlı farkları etki tablosunda küçük: araç modelini sabitlemek bu terimleri biraz kaydırıyor,
+# yönlerini değiştirmiyor. Seriye göre kümelenince aralığı sıfırı içeren terimler artıyor: aynı
 # serinin araç modelleri de birbirinden bağımsız değil, bu terimlerin anlamlılığı kümelemenin seçimine bağlı.
 #
 # ### 5.6 Çoklu bağlantı
@@ -899,6 +952,23 @@ engine_effects.round(2).rename(index=TERM_TR, columns={"all": "bütün ilanlar",
                                                        "pct": "etki %", "pct_lo": "alt", "pct_hi": "üst"})
 
 # %% [markdown]
+# Kuralın oranı (1.5) bir seçim. Sonuç ona ne kadar bağlı? Aynı adım daha sıkı (1.25) ve daha gevşek (2) bir oranla:
+# regresyon tablosundan çıkan ilan ve +100 hp'nin etkisi.
+
+# %%
+by_ratio = {}
+for ratio in [1.25, spec_rule.RATIO, 2.0]:
+    flagged, _ = spec_rule.spec_outliers(listings, ratio=ratio)
+    kept = reg_table[~flagged.loc[reg_table.index]]
+    fit, _ = hedonic.fit_clustered(kept, COLUMNS["model_control"][0], cluster="model", absorb="model",
+                                   tracked=TERM_NAMES)
+    by_ratio[ratio] = {"n": len(reg_table) - len(kept),
+                       **hedonic.coefficient_table(fit, ["hp100"]).loc["hp100", ["pct", "pct_lo", "pct_hi"]]}
+
+pd.DataFrame(by_ratio).T.astype({"n": int}).round(2).rename_axis("oran").rename(columns={
+    "n": "çıkarılan ilan", "pct": "+100 hp etki %", "pct_lo": "alt", "pct_hi": "üst"})
+
+# %% [markdown]
 # Güç ve hacim birbirine bağlı; regresyonda ikisi birlikte. Regresyon tablosunda iki kolonun Pearson korelasyonu:
 
 # %%
@@ -908,8 +978,44 @@ print("Güç ile hacmin Pearson korelasyonu:", round(reg_table["power_hp_val"].c
 # **Ne görüyoruz.** Güç araç modellerinin ancak yarısına yakınında ilanlar arasında değişiyor ve araç modeli içindeki
 # yayılımı genel yayılımın küçük bir kesri: araç modeli kontrolünde motor terimleri ince bir farktan ölçülüyor, bu
 # yüzden aralıkları geniş. Bu farkın bir kısmı katalog hatası: motor değeri tutarsız az sayıda ilan çıkarılınca +100
-# hp'nin noktası belirgin kayıyor, aralığı yine geniş. Güç ve hacim güçlü biçimde bağlı: hacmin etkisi güç sabitken
-# kalan kısım; iki katsayı birlikte okunmalı, birimleri farklı olduğu için doğrudan kıyaslanmaz.
+# hp'nin noktası belirgin kayıyor, aralığı yine geniş. Kayma oranın seçimine bağlı değil: işaretlenen ilan sayısı
+# orana göre çok değişiyor, ama +100 hp'nin noktası üç oranda da aynı yere gidiyor; kaymayı en uçtaki birkaç ilan
+# yapıyor. Güç ve hacim güçlü biçimde bağlı: hacmin etkisi güç sabitken kalan kısım; iki katsayı birlikte okunmalı,
+# birimleri farklı olduğu için doğrudan kıyaslanmaz.
+#
+# ### 5.10 Ağır hasar: "belirtilmemiş" ile "yok" aynı mı
+#
+# Ağır hasar terimi kaydı olan ilanı 1, ötekileri 0 sayıyor. Ötekilerin çoğunda sayfa "yok" demiyor, bilgi
+# vermiyor (1. defter, 4.1). Bu iki grubu birleştirmek katsayıyı bozuyor mu? Ham kayıt üç durumlu: var, yok, boş
+# (belirtilmemiş). Terim burada 0/1 yerine üç durumla giriyor, referans "yok"; öteki terimler ve üç sütun aynı. Her
+# sütun için üç satır: bugünkü terim (var, ötekilerin hepsine karşı), "var" ve "belirtilmemiş" (ikisi de "yok"a karşı).
+
+# %%
+record = rows_raw.loc[reg_table.index, "is_heavy_damaged"].astype("boolean")
+damage_table = reg_table.assign(damage_record=np.select(
+    [record.isna().to_numpy(), record.fillna(False).to_numpy(dtype=bool)], ["unspecified", "yes"], default="no"))
+print("Regresyon tablosunda:", damage_table["damage_record"].value_counts().rename(
+    {"unspecified": "belirtilmemiş", "no": "yok", "yes": "var"}).to_dict())
+
+DAMAGE_TERM = "C(damage_record, Treatment('no'))"
+DAMAGE_LEVELS = {f"{DAMAGE_TERM}[T.yes]": "var (yok'a karşı)",
+                 f"{DAMAGE_TERM}[T.unspecified]": "belirtilmemiş (yok'a karşı)"}   # terim -> gösterilen ad
+damage_effects = {}
+for name, (formula, absorb) in COLUMNS.items():
+    fit, _ = hedonic.fit_clustered(damage_table, formula.replace("heavy_damage", DAMAGE_TERM), cluster="model",
+                                   absorb=absorb, tracked=list(DAMAGE_LEVELS))
+    damage_effects[name] = pd.concat([
+        coefs[name].loc[["heavy_damage"]].rename(index={"heavy_damage": "var (ötekilerin hepsine karşı)"}),
+        hedonic.coefficient_table(fit, list(DAMAGE_LEVELS)).rename(index=DAMAGE_LEVELS)])[["pct", "pct_lo", "pct_hi"]]
+
+pd.concat(damage_effects).round(2).rename(index=COLUMNS_TR, level=0).rename(columns={
+    "pct": "etki %", "pct_lo": "alt", "pct_hi": "üst"}).rename_axis(["sütun", "karşılaştırma"])
+
+# %% [markdown]
+# **Ne görüyoruz.** Kimlik sabitken "belirtilmemiş" ilanlar kaydı olmayanlardan neredeyse ayrılmıyor: fark iki
+# kontrollü sütunda da ağır hasar kaydının etkisinin yanında çok küçük. "Var"ın etkisi iki kodlamada birbirine yakın,
+# aralıkları örtüşüyor. Belirtilmemişi "yok" saymak bu regresyonda katsayıyı bozmuyor. Kimlik olmadan belirtilmemiş
+# ilanlar biraz pahalı görünüyor; bu, o ilanların hangi araçlar olduğunu yansıtıyor, kimlik girince küçülüyor.
 
 # %% [markdown]
 # ## Özet
@@ -926,14 +1032,17 @@ print("Güç ile hacmin Pearson korelasyonu:", round(reg_table["power_hp_val"].c
 # - **Hedonik regresyon (5):** kimlik ve durum log fiyatın büyük kısmını birlikte açıklıyor ve bu kısmın çoğu ortak.
 #   Aynı araç modeli içinde yaş, km, ağır hasar, boyalı ve değişen parça fiyatla eksi yönde ilişkili. Yaşın yıllık
 #   etkisi yaşa göre değişiyor; ilk boyalı parça sonrakilerden çok düşürüyor, değişen parça doğrusala yakın. Kimlik
-#   olmadan bakınca km zayıf, güç büyük görünüyor. Motor terimleri araç modeli içinde ince bir farktan ölçüldüğü için
-#   belirsiz.
+#   olmadan bakınca km zayıf, güç büyük görünüyor: km'si yüksek ilanlar daha pahalı araç modellerinden. Motor
+#   terimleri araç modeli içinde ince bir farktan ölçüldüğü için belirsiz. Ağır hasar kaydı belirtilmemiş ilanlar,
+#   kimlik sabitken, kaydı olmayanlardan neredeyse ayrılmıyor.
 
 # %% [markdown]
 # ## Başlık sayıları
 #
-# Defterin ana sonuçları tek tabloda. Anahtarlar kod adı olduğu için İngilizce; sayılar yukarıdaki tablolardaki gibi
-# yuvarlandı. Yüzde etkiler araç modeli kontrolü sütunundan, aksi yazılmadıkça.
+# Defterin sayıları tek tabloda, her biri hesaplandığı bölümle. Tablo iki iş görüyor: sonuçları bir arada gösteriyor
+# ve defter yeniden çalıştırıldığında sayıların değişip değişmediği bu tablodan denetleniyor; bu yüzden kısa
+# tutulmadı. Anahtarlar kod adı olduğu için İngilizce; sayılar yukarıdaki tablolardaki gibi yuvarlandı. Yüzde etkiler
+# araç modeli kontrolü sütunundan, aksi yazılmadıkça.
 
 # %%
 effect = coefs["model_control"]["pct"].round(2)
@@ -941,46 +1050,52 @@ effect_no_identity = coefs["no_identity"]["pct"].round(2)
 step_pct = steps.set_index(["from", "to"])["pct"].round(2)
 count_pct = {column: table["pct"].round(2) for column, table in by_count.items()}
 rows = [
-    ("theils_series_given_model", float(round(theils.loc["series", "model"], 3)), "U(seri | araç modeli)"),
-    ("theils_model_given_series", float(round(theils.loc["model", "series"], 3)), "U(araç modeli | seri)"),
-    ("spearman_age_mileage", float(round(spearman.loc["vehicle_age", "gb_mileage"], 3)), "Spearman: yaş ile km"),
-    ("high_spearman_pairs", len(high_pairs), "|Spearman| 0.5'i aşan sayısal çift"),
-    ("segment_from_model_name", int((segment_path != "series_map").sum()), "segmenti seri eşlemesinden gelmeyen ilan"),
-    ("raw_g_segment_listings", len(g_listings), "sitenin G segmenti dediği ilan"),
-    ("raw_segment_differs", int(differs.sum()), "sitenin segmentinden ayrılan ilan"),
-    ("price_median", int(price.median()), "medyan fiyat (₺)"),
-    ("skew_price", float(skewness.round(2)["price"]), "fiyatın çarpıklığı"),
-    ("skew_log_price", float(skewness.round(2)["log_price"]), "log fiyatın çarpıklığı"),
-    ("bmw_median", int(by_brand.round().loc["bmw", "median"]), "BMW medyan fiyatı (₺)"),
-    ("audi_median", int(by_brand.round().loc["audi", "median"]), "Audi medyan fiyatı (₺)"),
-    ("cliffs_delta", round(delta, 3), "Cliff's delta, BMW ile Audi"),
-    ("best_silhouette", float(round(max(silhouette.values()), 3)), "en yüksek silhouette (k = 2 … 8)"),
-    ("hedonic_listings", len(reg_table), "hedonik regresyondaki ilan"),
-    ("car_model_clusters", int(reg_table["model"].nunique()), "küme: araç modeli"),
+    ("theils_series_given_model", float(round(theils.loc["series", "model"], 3)), "U(seri | araç modeli)", "1.1"),
+    ("theils_model_given_series", float(round(theils.loc["model", "series"], 3)), "U(araç modeli | seri)", "1.1"),
+    ("spearman_age_mileage", float(round(spearman.loc["vehicle_age", "gb_mileage"], 3)), "Spearman: yaş ile km", "1.2"),
+    ("high_spearman_pairs", len(high_pairs), "|Spearman| 0.5'i aşan sayısal çift", "1.2"),
+    ("segment_from_model_name", int((segment_path != "series_map").sum()),
+     "segmenti seri eşlemesinden gelmeyen ilan", "2.1"),
+    ("raw_g_segment_listings", len(g_listings), "sitenin G segmenti dediği ilan", "2.2"),
+    ("raw_segment_differs", int(differs.sum()), "sitenin segmentinden ayrılan ilan", "2.2"),
+    ("price_median", int(price.median()), "medyan fiyat (₺)", "3"),
+    ("skew_price", float(skewness.round(2)["price"]), "fiyatın çarpıklığı", "3"),
+    ("skew_log_price", float(skewness.round(2)["log_price"]), "log fiyatın çarpıklığı", "3"),
+    ("bmw_median", int(by_brand.round().loc["bmw", "median"]), "BMW medyan fiyatı (₺)", "4.3"),
+    ("audi_median", int(by_brand.round().loc["audi", "median"]), "Audi medyan fiyatı (₺)", "4.3"),
+    ("cliffs_delta", round(delta, 3), "Cliff's delta, BMW ile Audi", "4.3"),
+    ("best_silhouette", float(round(max(silhouette.values()), 3)), "en yüksek silhouette (k = 2 … 8)", "4.4"),
+    ("hedonic_listings", len(reg_table), "hedonik regresyondaki ilan", "5.1"),
+    ("car_model_clusters", int(reg_table["model"].nunique()), "küme: araç modeli", "5.1"),
 ]
-rows += [(f"r2_oof_{name}", float(round(ladder.loc[name, "r2_out_of_fold"], 4)), f"kat dışı R²: {LADDER_TR[name]}")
-         for name in LADDER]
+rows += [(f"r2_oof_{name}", float(round(ladder.loc[name, "r2_out_of_fold"], 4)), f"kat dışı R²: {LADDER_TR[name]}",
+          "5.3") for name in LADDER]
 rows += [
-    ("age_pct", float(effect["age"]), "yaş, yıl başına, medyan araçta (%)"),
-    ("km100k_pct", float(effect["km100k"]), "+100 bin km, medyan araçta (%)"),
-    ("heavy_damage_pct", float(effect["heavy_damage"]), "ağır hasar kaydı (%)"),
-    ("painted_pct", float(effect["painted"]), "boyalı parça başına, doğrusal (%)"),
-    ("changed_pct", float(effect["changed"]), "değişen parça başına, doğrusal (%)"),
-    ("hp100_pct", float(effect["hp100"]), "+100 hp (%)"),
-    ("litre_pct", float(effect["litre"]), "+1 litre (%)"),
-    ("no_identity_km100k_pct", float(effect_no_identity["km100k"]), "kimlik yok: +100 bin km (%)"),
-    ("no_identity_hp100_pct", float(effect_no_identity["hp100"]), "kimlik yok: +100 hp (%)"),
-    ("significant_differences", int(difference["significant"].sum()), "iki kontrol sütununun farkı anlamlı terim"),
-    ("vif_max_centred", float(vif["centred"].round(2).max()), "en yüksek VIF, ortalanmış"),
+    ("age_pct", float(effect["age"]), "yaş, yıl başına, medyan araçta (%)", "5.4"),
+    ("km100k_pct", float(effect["km100k"]), "+100 bin km, medyan araçta (%)", "5.4"),
+    ("heavy_damage_pct", float(effect["heavy_damage"]), "ağır hasar kaydı (%)", "5.4"),
+    ("painted_pct", float(effect["painted"]), "boyalı parça başına, doğrusal (%)", "5.4"),
+    ("changed_pct", float(effect["changed"]), "değişen parça başına, doğrusal (%)", "5.4"),
+    ("hp100_pct", float(effect["hp100"]), "+100 hp (%)", "5.4"),
+    ("litre_pct", float(effect["litre"]), "+1 litre (%)", "5.4"),
+    ("no_identity_km100k_pct", float(effect_no_identity["km100k"]), "kimlik yok: +100 bin km (%)", "5.4"),
+    ("no_identity_hp100_pct", float(effect_no_identity["hp100"]), "kimlik yok: +100 hp (%)", "5.4"),
+    ("significant_differences", int(difference["significant"].sum()),
+     "iki kontrol sütununun farkı anlamlı terim", "5.5"),
+    ("vif_max_centred", float(vif["centred"].round(2).max()), "en yüksek VIF, ortalanmış", "5.6"),
     ("hp100_pct_without_spec_outliers", float(engine_effects.round(2).loc["hp100", ("without", "pct")]),
-     "+100 hp, motor değeri tutarsız ilanlar olmadan (%)"),
-    ("age_step_5_10_pct", float(step_pct[5, 10]), "yaş 5-10 arası, yıl başına (%)"),
-    ("age_step_15_20_pct", float(step_pct[15, 20]), "yaş 15-20 arası, yıl başına (%)"),
-    ("painted_1_pct", float(count_pct["painted"][1]), "tek boyalı parça (%)"),
-    ("painted_5plus_pct", float(count_pct["painted"][COUNT_TOP]), "5 ve fazla boyalı parça (%)"),
-    ("changed_1_pct", float(count_pct["changed"][1]), "tek değişen parça (%)"),
+     "+100 hp, motor değeri tutarsız ilanlar olmadan (%)", "5.9"),
+    ("age_step_5_10_pct", float(step_pct[5, 10]), "yaş 5-10 arası, yıl başına (%)", "5.7"),
+    ("age_step_15_20_pct", float(step_pct[15, 20]), "yaş 15-20 arası, yıl başına (%)", "5.7"),
+    ("painted_1_pct", float(count_pct["painted"][1]), "tek boyalı parça (%)", "5.8"),
+    ("painted_5plus_pct", float(count_pct["painted"][COUNT_TOP]), "5 ve fazla boyalı parça (%)", "5.8"),
+    ("changed_1_pct", float(count_pct["changed"][1]), "tek değişen parça (%)", "5.8"),
+    ("damage_unspecified_pct",
+     float(damage_effects["model_control"].round(2).loc["belirtilmemiş (yok'a karşı)", "pct"]),
+     "ağır hasar kaydı belirtilmemiş, kaydı olmayana karşı (%)", "5.10"),
 ]
-headline = {key: value for key, value, _ in rows}
+headline = {key: value for key, value, _, _ in rows}
 
-headline_table = pd.DataFrame(rows, columns=["key", "value", "description"], dtype=object).set_index("key")
-headline_table.rename_axis("anahtar").rename(columns={"value": "değer", "description": "ne"})
+headline_table = pd.DataFrame(rows, columns=["key", "value", "description", "section"], dtype=object).set_index("key")
+headline_table[["value", "section", "description"]].rename_axis("anahtar").rename(
+    columns={"value": "değer", "section": "bölüm", "description": "ne"})

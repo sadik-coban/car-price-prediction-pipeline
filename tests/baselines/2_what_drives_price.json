@@ -1,5 +1,5 @@
 {
-  "accepted": "ilk kayıt: sayılar eski zincirin kabul edilmiş kayıtlarıyla aynı (simple-notebooks: metrics/03_association, 03_segment_quality, 04_target, 05_segmentation, 06_hedonic); kullanıcı onayı 2026-11-24",
+  "accepted": "2. defterin zayıflık maddeleri: yeni anahtar damage_unspecified_pct (ağır hasar üç durumlu sınama, 5.10); best_silhouette 0.242 -> 0.245, skor artık bütün ilanlarda hesaplanıyor; öteki 39 sayı aynı; kullanıcı onayı 2026-11-26",
   "headline": {
     "theils_series_given_model": 0.999,
     "theils_model_given_series": 0.387,
@@ -14,7 +14,7 @@
     "bmw_median": 1575000,
     "audi_median": 1475000,
     "cliffs_delta": 0.066,
-    "best_silhouette": 0.242,
+    "best_silhouette": 0.245,
     "hedonic_listings": 29554,
     "car_model_clusters": 735,
     "r2_oof_identity_segment": 0.3785,
@@ -39,6 +39,7 @@
     "age_step_15_20_pct": -4.69,
     "painted_1_pct": -2.29,
     "painted_5plus_pct": -7.01,
-    "changed_1_pct": -3.7
+    "changed_1_pct": -3.7,
+    "damage_unspecified_pct": -0.82
   }
 }
