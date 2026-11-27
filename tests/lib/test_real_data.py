@@ -106,3 +106,10 @@ def test_raw_damage_answers_equal_the_database_flags():
     assert len(matched) == len(listings)
     rebuilt = cleaning.flags_from_statuses(matched[list(maps["panels"].values())], maps["statuses"])
     assert (rebuilt == matched[rebuilt.columns].fillna(0).astype(int)).all().all()
+    # 1. defter, 3.3'ün ikinci cümlesi: bir parçanın üç bayrağı ya birlikte boş ya birlikte dolu, ve birlikte boş
+    # olması tam olarak "belirtilmemiş" cevabı. Sayım bu yüzden yalnız veritabanından da aynı çıkar
+    unspecified = maps["statuses"]["Belirtilmemiş"]
+    for column in maps["panels"].values():
+        flags = matched[[f"{cleaning.flag_prefix(column)}_{suffix}" for suffix in cleaning.FLAG_OF_ANSWER.values()]]
+        assert flags.isna().sum(axis=1).isin([0, len(flags.columns)]).all(), column
+        assert (flags.isna().all(axis=1) == (matched[column] == unspecified)).all(), column

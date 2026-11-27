@@ -25,7 +25,7 @@
 # | 2. Motor kuralı | Site gücü ve hacmi aralık olarak verdiğinde hangi tek sayı kullanılmalı? |
 # | 3. Belirtilmemiş paneller | Orijinal sayılan "belirtilmemiş" hasar cevabı kaç parçada, kaç ilanda var? |
 # | 4. Eksiklik | Hangi kolonlar boş, hangileri birlikte boş, her ham kolon neden alındı ya da atıldı? |
-# | Başlık sayıları | Defterin ana sonuçları tek tabloda |
+# | Başlık sayıları | Defterin sayıları, hesaplandıkları bölümle, tek tabloda |
 #
 # Defter hiçbir dosya yazmaz; veritabanını, ham sayfaları ve ayar dosyalarını yalnız okur. İlan numaraları (`ad_id`)
 # ve satıcıların yazdığı metinler hiçbir çıktıda gösterilmez. Sonuçların sayıları metinde yazılmaz, hücre
@@ -996,10 +996,12 @@ twin_view.round(1).rename(columns={
 # | yarı sabit | en sık değer ilanların en az %99'unda |
 # | çoğu boş | %40'tan fazla boş |
 # | birlikte boş blok | 4.3'teki bloklardan birinde |
-# | gerekçe kayıtlı değil | hiçbirine uymayan |
+# | kurala uymuyor, eklenmedi | hiçbirine uymayan; tahmin modeline eklenmeleri 3. defterde sınandı (4.2) |
 #
 # `kb_paint_change_summary` sayfanın kendi "Boya-değişen" satırı ("2 değişen, 3 boyalı" gibi): tahmin modelinin zaten
 # kullandığı parça bayraklarının kaba özeti, bu yüzden hasar sayaçları gibi türetilmiş tekrar sayılıyor.
+#
+# Tabloda parça bayrakları tek tek yazılmıyor, sayıları yazılıyor: her parçanın üç bayrağı var ve hepsi aynı sınıfta.
 
 # %%
 IDENTITY = ["ad_id", "url", "listing_date", "ad_title", "location", "scraped_at", "description_text", "eids_model"]
@@ -1015,16 +1017,21 @@ props["top_value_pct"] = [round(100 * raw_listings[c].value_counts(dropna=False,
 # %%
 CLASSES = {"model": "tahmin modelinde", "target": "hedef", "identity": "kimlik / metin / zaman",
            "derived": "türetilmiş tekrar", "twin": "kb/gb ikizi", "quasi_constant": "yarı sabit",
-           "mostly_missing": "çoğu boş", "block": "birlikte boş blok", "no_reason": "gerekçe kayıtlı değil"}
+           "mostly_missing": "çoğu boş", "block": "birlikte boş blok", "not_added": "kurala uymuyor, eklenmedi"}
 
 conditions = [props.index.isin(used), props.index == "price", props.index.isin(IDENTITY),
               props.index.isin(DERIVED), props.index.isin(twins["dropped"]), props["top_value_pct"] >= 99.0,
               props["missing_pct"] > 40, props.index.isin(list(block_of))]
-props["class"] = np.select(conditions, list(CLASSES)[:-1], default="no_reason")
+props["class"] = np.select(conditions, list(CLASSES)[:-1], default="not_added")
 
-class_table = pd.DataFrame({"n": [(props["class"] == k).sum() for k in CLASSES],
-                            "columns": [", ".join(props.index[props["class"] == k]) for k in CLASSES]},
-                           index=list(CLASSES))
+columns_of = {k: list(props.index[props["class"] == k]) for k in CLASSES}
+shown = dict(columns_of)   # tabloda parça bayrakları tek tek yazılmaz, sayısı yazılır
+flags_in_model = [column for column in columns_of["model"] if column in flag_columns]
+shown["model"] = [column for column in columns_of["model"] if column not in flag_columns] + [
+    f"{len(flags_in_model)} parça bayrağı (_degisen, _boyali, _lokal ile biten kolonlar)"]
+
+class_table = pd.DataFrame({"n": [len(columns_of[k]) for k in CLASSES],
+                            "columns": [", ".join(shown[k]) for k in CLASSES]}, index=list(CLASSES))
 class_table.rename(index=CLASSES, columns={"n": "kolon", "columns": "kolonlar"}).rename_axis("sınıf")
 
 # %%
@@ -1036,7 +1043,9 @@ print(f"{len(raw_columns)} ham kolon: {n_in_model} tahmin modelinde ({len(flag_c
 # %% [markdown]
 # **Ne görüyoruz.** Ham kolonların yaklaşık yarısı tahmin modeline giriyor; bunların çoğu parça bayrağı. Atılanların
 # en büyük grubu birlikte boş bloklar; onları ikizler, türetilmiş tekrarlar ve kimlik / metin kolonları izliyor.
-# Gerekçesi kayıtlı olmayan birkaç kolon var: hiçbir kurala uymuyorlar, tahmin modeline de alınmadılar.
+# Hiçbir kurala uymayan birkaç kolon kalıyor: renk, satıcı tipi, takas ve garanti. Öznitelik listesi kurulurken
+# denenmemişlerdi; tahmin modeline eklenmeleri 3. defterde (4.2) sınandı. Satıcı tipi, takas ve garanti eklendiğinde
+# kat dışı hata ölçülebilir biçimde değişmiyor. Renk küçük ama ölçülebilir bir katkı veriyor; bilerek eklenmedi.
 #
 # ### 4.6 Öznitelikler ne kadar boş
 #
@@ -1079,49 +1088,56 @@ feature_missing[feature_missing.index.isin(has_missing)].rename_axis("öznitelik
 # %% [markdown]
 # ## Başlık sayıları
 #
-# Defterin ana sonuçları tek tabloda. Anahtarlar kod adı olduğu için İngilizce; yüzdeler yukarıdaki tablolardaki
-# gibi yuvarlandı.
+# Defterin sayıları tek tabloda, her biri hesaplandığı bölümle. Tablo iki iş görüyor: sonuçları bir arada gösteriyor
+# ve defter yeniden çalıştırıldığında sayıların değişip değişmediği bu tablodan denetleniyor; bu yüzden kısa
+# tutulmadı. Anahtarlar kod adı olduğu için İngilizce; yüzdeler yukarıdaki tablolardaki gibi yuvarlandı.
 
 # %%
 gaps = median_gaps.round(1)
 n_all_unspecified = (unspecified_per_listing == len(status_columns)).sum()
 rows = [
-    ("snapshot_rows", int(n_snapshot_rows), "TR plakalı tarama satırı"),
-    ("listings", int(n_listings), "ilan (ad_id başına en son satır)"),
-    ("snapshots", int(listings["snap"].nunique()), "tarama"),
-    ("bmw_listings", int((listings["brand"] == "bmw").sum()), "BMW ilanı"),
-    ("audi_listings", int((listings["brand"] == "audi").sum()), "Audi ilanı"),
-    ("n_features", len(data.FEATURES), "tahmin modelinin özniteliği"),
-    ("seen_again_listings", int(seen_again.sum()), "birden çok taramada görülen ilan"),
-    ("price_changed_listings", int(price_changed.sum()), "fiyatı değişen ilan"),
-    ("plate_dropped_listings", int(dropped.sum()), "plakası yüzünden dışarıda kalan ilan"),
-    ("price_at_cap", int(footprint["at_cap"]), "fiyatı tam tavanda olan ilan"),
-    ("max_age", int(footprint["max_age"]), "olabilecek en büyük yaş"),
-    ("strict_duplicate_pct", float(duplicate_table.loc["strict", "pct"]), "katı tanımla içerik tekrarı (%)"),
-    ("no_price_duplicate_pct", float(duplicate_table.loc["no_price", "pct"]), "fiyat hariç içerik tekrarı (%)"),
-    ("cc_ranged_listings", int(split_counts.loc["engine_cc", "is_range"]), "hacmi aralıklı ilan"),
-    ("hp_ranged_listings", int(split_counts.loc["power_hp", "is_range"]), "gücü aralıklı ilan"),
-    ("cc_gap_lower", float(gaps.loc["engine_cc", "lower"]), "hacim: alt sınırın medyan uzaklığı (cc)"),
-    ("cc_gap_mid", float(gaps.loc["engine_cc", "mid"]), "hacim: orta noktanın medyan uzaklığı (cc)"),
-    ("cc_gap_upper", float(gaps.loc["engine_cc", "upper"]), "hacim: üst sınırın medyan uzaklığı (cc)"),
-    ("hp_gap_lower", float(gaps.loc["power_hp", "lower"]), "güç: alt sınırın medyan uzaklığı (hp)"),
-    ("hp_gap_mid", float(gaps.loc["power_hp", "mid"]), "güç: orta noktanın medyan uzaklığı (hp)"),
-    ("hp_gap_upper", float(gaps.loc["power_hp", "upper"]), "güç: üst sınırın medyan uzaklığı (hp)"),
-    ("cc_inside_pct", float(position_table.loc["engine_cc", "inside_pct"]), "hacim: referans aralığın içinde (%)"),
-    ("hp_inside_pct", float(position_table.loc["power_hp", "inside_pct"]), "güç: referans aralığın içinde (%)"),
-    ("unspecified_panel_pct", float(round(100 * n_unspecified / n_panel_answers, 1)), "belirtilmemiş parça cevabı (%)"),
-    ("at_least_one_unspecified", int((unspecified_per_listing > 0).sum()), "en az bir parçası belirtilmemiş ilan"),
-    ("all_unspecified", int(n_all_unspecified), "13 parçası da belirtilmemiş ilan"),
-    ("heavy_damage_unspecified_pct", float(coded_pct["is_heavy_damaged"]), "ağır hasar kaydı belirtilmemiş (%)"),
-    ("missing_columns_over_2pct", len(missing_list), "%2'den fazla boş ham kolon"),
-    ("comissing_blocks", len(blocks), "birlikte boş blok"),
-    ("min_block_co_missing_pct", float(block_table["co_missing_pct"].min()), "en düşük blok birlikte boş payı (%)"),
-    ("raw_columns", len(raw_columns), "ham kolon"),
-    ("raw_columns_in_model", int(n_in_model), "tahmin modeline giren ham kolon"),
-    ("raw_columns_dropped", int(n_dropped), "atılan ham kolon"),
-    ("raw_columns_no_reason", int(class_table.loc["no_reason", "n"]), "gerekçesi kayıtlı olmayan ham kolon"),
+    ("snapshot_rows", int(n_snapshot_rows), "TR plakalı tarama satırı", "1.1"),
+    ("listings", int(n_listings), "ilan (ad_id başına en son satır)", "1.1"),
+    ("snapshots", int(listings["snap"].nunique()), "tarama", "Kurulum"),
+    ("bmw_listings", int((listings["brand"] == "bmw").sum()), "BMW ilanı", "Kurulum"),
+    ("audi_listings", int((listings["brand"] == "audi").sum()), "Audi ilanı", "Kurulum"),
+    ("n_features", len(data.FEATURES), "tahmin modelinin özniteliği", "Kurulum"),
+    ("seen_again_listings", int(seen_again.sum()), "birden çok taramada görülen ilan", "1.2"),
+    ("price_changed_listings", int(price_changed.sum()), "fiyatı değişen ilan", "1.2"),
+    ("plate_dropped_listings", int(dropped.sum()), "plakası yüzünden dışarıda kalan ilan", "1.3"),
+    ("price_at_cap", int(footprint["at_cap"]), "fiyatı tam tavanda olan ilan", "1.4"),
+    ("max_age", int(footprint["max_age"]), "olabilecek en büyük yaş", "1.4"),
+    ("strict_duplicate_pct", float(duplicate_table.loc["strict", "pct"]), "katı tanımla içerik tekrarı (%)", "1.5"),
+    ("no_price_duplicate_pct", float(duplicate_table.loc["no_price", "pct"]), "fiyat hariç içerik tekrarı (%)", "1.5"),
+    ("cc_ranged_listings", int(split_counts.loc["engine_cc", "is_range"]), "hacmi aralıklı ilan", "2.2"),
+    ("hp_ranged_listings", int(split_counts.loc["power_hp", "is_range"]), "gücü aralıklı ilan", "2.2"),
+    ("cc_gap_lower", float(gaps.loc["engine_cc", "lower"]), "hacim: alt sınırın medyan uzaklığı (cc)", "2.4"),
+    ("cc_gap_mid", float(gaps.loc["engine_cc", "mid"]), "hacim: orta noktanın medyan uzaklığı (cc)", "2.4"),
+    ("cc_gap_upper", float(gaps.loc["engine_cc", "upper"]), "hacim: üst sınırın medyan uzaklığı (cc)", "2.4"),
+    ("hp_gap_lower", float(gaps.loc["power_hp", "lower"]), "güç: alt sınırın medyan uzaklığı (hp)", "2.4"),
+    ("hp_gap_mid", float(gaps.loc["power_hp", "mid"]), "güç: orta noktanın medyan uzaklığı (hp)", "2.4"),
+    ("hp_gap_upper", float(gaps.loc["power_hp", "upper"]), "güç: üst sınırın medyan uzaklığı (hp)", "2.4"),
+    ("cc_inside_pct", float(position_table.loc["engine_cc", "inside_pct"]),
+     "hacim: referans aralığın içinde (%)", "2.5"),
+    ("hp_inside_pct", float(position_table.loc["power_hp", "inside_pct"]), "güç: referans aralığın içinde (%)", "2.5"),
+    ("unspecified_panel_pct", float(round(100 * n_unspecified / n_panel_answers, 1)),
+     "belirtilmemiş parça cevabı (%)", "3.4"),
+    ("at_least_one_unspecified", int((unspecified_per_listing > 0).sum()),
+     "en az bir parçası belirtilmemiş ilan", "3.4"),
+    ("all_unspecified", int(n_all_unspecified), "13 parçası da belirtilmemiş ilan", "3.4"),
+    ("heavy_damage_unspecified_pct", float(coded_pct["is_heavy_damaged"]), "ağır hasar kaydı belirtilmemiş (%)", "4.1"),
+    ("missing_columns_over_2pct", len(missing_list), "%2'den fazla boş ham kolon", "4.2"),
+    ("comissing_blocks", len(blocks), "birlikte boş blok", "4.3"),
+    ("min_block_co_missing_pct", float(block_table["co_missing_pct"].min()),
+     "en düşük blok birlikte boş payı (%)", "4.3"),
+    ("raw_columns", len(raw_columns), "ham kolon", "4.5"),
+    ("raw_columns_in_model", int(n_in_model), "tahmin modeline giren ham kolon", "4.5"),
+    ("raw_columns_dropped", int(n_dropped), "atılan ham kolon", "4.5"),
+    ("raw_columns_not_added", int(class_table.loc["not_added", "n"]),
+     "hiçbir kurala uymayan, tahmin modeline eklenmeyen ham kolon", "4.5"),
 ]
-headline = {key: value for key, value, _ in rows}
+headline = {key: value for key, value, _, _ in rows}
 
-headline_table = pd.DataFrame(rows, columns=["key", "value", "description"], dtype=object).set_index("key")
-headline_table.rename_axis("anahtar").rename(columns={"value": "değer", "description": "ne"})
+headline_table = pd.DataFrame(rows, columns=["key", "value", "description", "section"], dtype=object).set_index("key")
+headline_table[["value", "section", "description"]].rename_axis("anahtar").rename(
+    columns={"value": "değer", "section": "bölüm", "description": "ne"})

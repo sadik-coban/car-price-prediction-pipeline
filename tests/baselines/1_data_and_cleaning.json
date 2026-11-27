@@ -1,5 +1,5 @@
 {
-  "accepted": "ilk kayıt: sayılar eski zincirin kabul edilmiş kayıtlarıyla aynı (simple-notebooks: metrics/01_dedup_leakage, 01_engine_rule, 01_unspecified_panels, 02_missingness); kullanıcı onayı 2026-11-24",
+  "accepted": "anahtar adı: raw_columns_no_reason -> raw_columns_not_added (4.5 sınıfı 'kurala uymuyor, eklenmedi' oldu); değerlerin hepsi aynı; kullanıcı onayı 2026-11-25",
   "headline": {
     "snapshot_rows": 45159,
     "listings": 29988,
@@ -34,6 +34,6 @@
     "raw_columns": 117,
     "raw_columns_in_model": 53,
     "raw_columns_dropped": 63,
-    "raw_columns_no_reason": 4
+    "raw_columns_not_added": 4
   }
 }
