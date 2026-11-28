@@ -4,8 +4,8 @@ Bu liste `notebooks/` altındaki defterler yazılırken görülen zayıflıklar�
 korunmayan yerler, sınanmadan söylenen cümleler ve gösterim eksikleri. Hiçbiri sayıları yanlış yapmaz; her biri bir
 sonucun ne kadar güvenle okunabileceğini ya da bir değişikliğin fark edilmeden geçip geçemeyeceğini söyler.
 
-- **Kapsam:** `1_data_and_cleaning`, `2_what_drives_price` ve `3_price_model`. Sonraki defterler yazıldıkça eklenir.
-- **Tarih:** 2026-11-24. 1. defterin maddeleri 2026-11-25'te tek tek gözden geçirildi; 3. defterin maddeleri 2026-11-25'te eklendi; 2. defterin maddeleri 2026-11-26'da gerçek veride ölçülüp gözden geçirildi.
+- **Kapsam:** `1_data_and_cleaning`, `2_what_drives_price`, `3_price_model` ve `4_errors_and_interval`. Sonraki defterler yazıldıkça eklenir.
+- **Tarih:** 2026-11-24. 1. defterin maddeleri 2026-11-25'te tek tek gözden geçirildi; 3. defterin maddeleri 2026-11-25'te eklendi; 2. defterin maddeleri 2026-11-26'da gerçek veride ölçülüp gözden geçirildi; 4. defterin maddeleri 2026-11-28'de eklendi.
 - **Durum:** "açık" olanlara dokunulmadı; "bilerek" bir karardır, "bilinen sınır" veriden ya da koddan çözülemeyen yerdir; yöntem eski zincirdekiyle aynı tutuldu. Yöntemi değiştiren bir düzeltme
   sayıları oynatır ve başlık sayılarının (`tests/baselines/`) yeniden kabul edilmesini gerektirir.
 
@@ -108,3 +108,57 @@ Yöntem eski zincirdekiyle aynı; ilk yazımda eski kayıtlarla karşılaştır�
 | Plasebo permütasyonu (4.2) | İlk yazımda dört kolon aynı permütasyonla karıştırılıyordu; dört plasebo birbirinden bağımsız değildi. Her kolon artık kendi permütasyonuyla karıştırılıyor. |
 | Önbelleğin veritabanı yolu | `cache.py` veritabanı yolunu kendisi tanımlıyor. Parmak izi alınan dosyanın defterlerin okuduğu dosya olduğunu bir test sınıyor (`tests/lib/test_cache.py`). |
 | Metin bayrağı bölümü kaldırıldı | 3. defterin eski 5. bölümü ilanın metninde dönüşüm ya da modifiye ifadesi arayan bir regex bayrağı kuruyor ve bayraklı ilanlarda büyük hatanın daha sık olup olmadığına bakıyordu. Karar (2026-11-28, senin): bölüm tamamen kalktı. Gerekçe: bayrak sabit bir kelime listesi, isabeti hiç ölçülmedi ve kaçırdığı biçimler var ("yazılım" geçen 454 ilanın 156'sı bayraksızdı; içinde hem "yazılım vardır" hem "yazılım yok" var); sonuç ("ayrı bir ilişki ölçülmedi") bu yüzden "etki yok" ile "bayrak kötü"yü ayıramıyordu ve hiçbir kararı beslemiyordu. Kalkanlar: bölüm, `lib/text_flags.py`, testi ve altı başlık sayısı; eski 6. bölüm (son tahmin modeli) 5. bölüm oldu. Kalktığı andaki sayılar: 3.228 bayraklı ilan (başlık dahil), olasılık oranı 1,155 [0,962, 1,386]. `lib/errors.py` ve `model.base_oof` şu an hiçbir defterde kullanılmıyor; ikisi de 4. defter için duruyor (`model.py`'ye dokunmak önbelleği baştan koşturur). |
+
+## 4. defter: hatalar ve aralık
+
+Yöntem eski zincirdekiyle aynı (`08_residuals`, `08_large_errors`, `08_conformal_coverage`, `08_forward_test`,
+`10_free_text` ve `07_final_model`'in servis edilen aralık kısmı); kod `lib/interval.py`, `lib/forward.py`,
+`lib/free_text.py` ve `lib/errors.py`'ye eklenen iki fonksiyonla yeniden yazıldı. İlk yazımda eski kayıtlarla
+karşılaştırılan 665 sayının 623'ü aynı, 39'u bilerek hesaplanmıyor (aşağıda "çıkarılanlar"), 3'ü farklı (boş değer
+grupları, aşağıda). Yeni ağır adımlar (çapraz kalibreli ölçek kolu, servis edilen ölçek modeli, ileri test, açıklamalı
+koşum) önbellekten okunuyor; 3. defterin hiçbir kaydı yeniden üretilmiyor.
+
+### Yöntem zayıflıkları
+
+| konu | ne | durum |
+|---|---|---|
+| Aralık kat dışı hatalarla kalibre ediliyor (3) | k ve tek pay, temel koşumun kat dışı hatalarından. Bu hatalar erken durdurmanın iyimserliğini taşıyor (3. defter, 1.3): durma turunu puanlanan kat seçiyor. Aralık bu yüzden biraz dar kalibre edilmiş olabilir; ne kadar olduğu ölçülmedi. | açık |
+| Çapraz kalibrasyon yalnız s düzeyinde (3.2) | Puanlanan katı ne s ne k görüyor; ama hataların kendisi tahmin modelinin çapraz uydurmasından geliyor ve emsal sayımı öteki dört katın tamamını kullanıyor (iç katlara göre ayrılmıyor). Her şeyin öteki dört kattan yeniden kurulduğu sızıntısız kopya eski zincirde depo dışında ölçülmüştü (kapsama 90,11; karar kaydı, 2026-11-23); bu defter onu yeniden üretmiyor. | bilinen sınır |
+| Servis edilen aralığın güvencesi yok (5) | Servis edilen merkez (son tahmin modeli) ve s bütün ilanlarla, k ve skorlar kat modellerinin hatalarıyla kuruluyor. Bu karışık kurulumun sonlu örneklem güvencesi yok; %90 "yaklaşık". Defter bunu söylüyor. | bilerek |
+| Seçim sonuçtan sonra (3.2) | Ölçek modelinin yöntemi, ayarları, monotonluk kısıtı, alt sınırı ve ±%10 toleransı sonuçlar görüldükten sonra kondu; arama yapılmadı ama bağımsız test de kalmadı. Tek tohum: aynı aracın payının tohumdan tohuma ne kadar oynadığı bu defterde ölçülmedi (karar kaydındaki ölçüm: medyan %2,5). | bilerek (2026-11-23 kararı) |
+| Gruplarda kapsama, çoklu karşılaştırma (3.4) | 42 girdi ve 34 görülmeyen grup; her grubun kapsaması tek bir sayı, binom aralığı yok. "En kötü grup" 34 grup arasından seçiliyor; küçük gruplarda (ör. 302 ilanlı "ilk sahip: evet") 3 puanlık fark rastlantı olabilir. Defter bunu söylüyor ama sayısal bir eşik vermiyor. | açık |
+| Girdi eksenlerinde düzelme kısmen tasarım gereği (3.4) | s bu eksenlerin bilgisini görüyor; bu eksenlerde hedefe yakın kapsama, ölçek modelinin işe yaradığının bağımsız kanıtı değil. Bağımsız eksenler görülmeyen eksenler; orada iki kol arasında fark yok. | bilinen sınır |
+| Seviye kayması varsayımı (3.7) | Bütün fiyatları aynı oranda kaydırıyor; gerçek bir kayma araç türüne göre farklı olabilir. Tablo yalnız "dar aralık önce eskir" cümlesinin dayanağı; kaymanın ne kadar olacağını söylemiyor. | bilinen sınır |
+| Büyük hata kırılımları birbirinden ayrılmıyor (2.2, 2.3) | Emsal, yaş, segment ve fiyat düzeyi birlikte değişiyor. 2.3'teki "emsal kovası içinde" tablosu kaba (beş kova) ve F/S grupları küçük (64, 148, 232 ilan). Eski zincirin denetiminde emsal kontrollü olasılık oranları F/S için 1,19 [0,87–1,63], yaş için 1,30 çıkmıştı (`backlog/ideas.md`, 2026-11-23); bu defter çok değişkenli bir model kurmuyor, yalnız "ayrılmadı" diyor. | açık |
+| İleri test tek kurulum (6) | Tek bir zaman farkı, tek eğitim kümesi. MAPE aralığı (araç modeline göre küme bootstrap'i) yalnız test ilanlarının örneklenmesini kapsıyor, tahmin modelini yeniden kurmanın oynamasını kapsamıyor. İleri kuruluma özgü fark (aynı ilanlarda +0,18 puan [0,10, 0,26]) iki şeyi birlikte taşıyor: son taramanın ilanlarının eğitimde olmaması (daha az, daha eski veri) ve taramalar arası fiyat değişimi; tek test bunları ayıramıyor. Farklı `ad_id` ile yeniden yayımlanan aynı araç eğitimde eski fiyatıyla bulunabilir (1. defter, 1.5); etkisi ölçülmedi. | bilinen sınır |
+| İleri testte isabet olasılığı iyimser (6.3) | Ortalama öngörü gerçekleşenden yaklaşık 4 puan yüksek; düzeltilmedi (test ilanlarına bakıp düzeltmek ayar olurdu). | bilerek (2026-11-23 kararı) |
+| Açıklamalı koşum (7) | Tek koşum, tek tohum; kazanç küçük ve beş katta aynı yönde, ama bir aralığı yok (anlamlılık testi kurulmadı). Aynı açıklamayla yeniden yayımlanan ilanlar katlar arasına düşerse metin kolu ikizini tanıyabilir; eski denetimde kazancın yaklaşık %11'i buradan geliyordu (`backlog/ideas.md`, 2026-11-23); bu defterde ölçülmedi, yalnız söyleniyor. Açıklama fiyatı da yazabilir; ölçülen fark bunu da içerir. | açık |
+| İşlenmiş örnekler (5) | Dört örnek tek bir seçim kuralına bağlı (en az 100 ilanlı hücrelerde tahmini en yüksek ilan). "Görülmemiş kategori" örneği yakıt kolonuna kasa tipinin adını yazıyor; yapay bir girdi, yalnız −1 kodunun yolunu gösteriyor. | bilerek |
+
+### Otomatik korunmayan yerler
+
+| konu | ne | durum |
+|---|---|---|
+| Nitel cümleler | "Ölçek modeli her çeyrekte hedefe yakın", "F/S'nin farkı kovalar içinde daralıyor ama kapanmıyor", "18'de sıçrama yok", "gözlenen sayı simetrik karşılaştırmanın aralığında", "ileri testte en dar beşte bir en geniş beşte birden düşük", "10'da N'de gerçekleşen her N'de N/10'un üstünde" gibi cümleler yalnız tablolara dayanıyor. Başlık sayıları (45) bunların bir kısmını dolaylı koruyor; kova içi tablolar, beşte bir tabloları ve "10'da N" tabloları başlıkta yok. Veri değişirse bu cümleler sessizce bayatlayabilir. | açık |
+| Eski kayıtlarla karşılaştırma | 665 sayının karşılaştırması depo dışında yapıldı; depoda eski sayıları koruyan test yok (plan gereği). Koruma bundan sonra başlık sayıları. | bilerek |
+| Başka makine | Yeni ağır adımlar bu makinede iki ayrı süreçte bit bit aynı çıktı ve önbellek kaydıyla aynı. Başka işlemcide ya da BLAS'ta aynı çıkacakları sınanmadı (3. defterle aynı durum). | açık |
+| Ölçek modelinin iş parçacığı | Ölçek modeli her ağaçta ilanların %80'ini çekiyor; iş parçacığı sayısının sonucu değiştirmediği uydurma ilanlarda sınanıyor (`tests/lib/test_interval.py`), gerçek veride sınanmadı. | bilinen sınır |
+| İl gruplaması (3.4) | `location` kolonunun "ilçe, il" biçimine dayanıyor. Biçimi gerçek veride bir test sınıyor (`tests/lib/test_real_data_errors.py`); kolon gözlenen değerler kaydında yok. | bilinen sınır |
+| Emsal tablosu: yaş ve model yılı (5) | Servis edilen emsal (araç modeli, yaş) ile aranıyor, defter (araç modeli, model yılı) ile sayıyor. Bugün bütün ilanlar 2026 taramalarından geldiği için aynı hücreler; bir test sınıyor (`tests/lib/test_interval.py`). Başka bir yılın taraması gelirse test durur. | bilinen sınır |
+
+### Yazım sırasında giderilenler ve çıkarılanlar
+
+| konu | ne yapıldı |
+|---|---|
+| Boş değerler grup dışı kalıyordu (3.4) | Eski kodda görülmeyen eksenler `astype(str)` ile gruplanıyordu; bu pandas sürümünde boş değer NaN kalıyor ve hiçbir gruba girmiyor, yani garantisi boş 6.618 ve takası boş 5.730 ilan sessizce dışarıdaydı. Artık boş değer kendi grubu (`missing`). Görülmeyen grup sayısı 32 → 34; tek payda kendi kapsamasının 3 puan altında kalan grup 4 → 6 (yeni ikisi garanti ve takas boş), ölçek modelinde 4 → 4. Eski yolla yeniden sayınca 32 / 4 / 4 birebir çıkıyor. |
+| %20 tanımının asimetrisi (1.2, 2.1) | "768 fazla / 440 eksik" tek başına tahmin modelinin fazla tahmine eğilimli olduğu gibi okunuyordu (`backlog/ideas.md`, 2026-11-23). Defter tanımın asimetrisini açıklıyor ve yönü eşit tutan 1,2 kat sayımını yanına koyuyor (768 / 812). |
+| ₺ sapmanın işareti (1.3) | Eski kod sapmayı tahmin − gerçek, artığı gerçek − tahmin diye tanımlıyordu; "ortalama yanlılık −₺12K…−₺3K" cümlesinde işaret karışıyordu. Defterde tek işaret var: ₺ artık = gerçek − tahmin, yüzde artıkla aynı yönde. Sayılar aynı, işaret ters. |
+| İleri test "zaman etkisi" okuması (6.1) | 6,78'e karşı 6,49 zaman etkisi diye okunuyordu. Defter aynı test ilanlarının kat dışı MAPE'sini (6,60) ve ilan başına farkın küme bootstrap aralığını (+0,18 [0,10, 0,26]) yan yana veriyor; aralığın neyi kapsadığını yazıyor. |
+| F/S ve yaş "ayrı etken" okuması (2.3) | Defter emsal kovası içinde oranları gösteriyor ve "F/S ayrı etken", "yaş tek başına büyütüyor" okumalarını açıkça dışlıyor. |
+| "Payının 44 katı" (2.4) | Kat sayısı verilmiyor; segmenti adından çözülen ilanların payı hem bütün ilanlarda hem en pahalı çeyrekte yazdırılıyor ve metin oranın tabana göre değiştiğini söylüyor. |
+| Serbest metin ifadeleri (7) | "Ön kayıtlı" ve "yeniden konan ilanlar iki kolu eşit etkiler" cümleleri yok (`backlog/ideas.md`, 2026-11-23); ikiz ilan etkisi ölçülmemiş bir sınır olarak yazılıyor. Kat kat fark tablosu eklendi. |
+| % hata için taban ve tavan | Eski `08_residuals` yüzde hatanın paydasını 10 bin ₺'de, sonucu %500'de kesiyordu. En düşük fiyat 345 bin ₺, en büyük mutlak artık %178; ikisi de hiç bağlamıyordu, kaldırıldı. Tanım `errors.residual_pct`. |
+| Kısmi bağımlılık (3.5) | Eski kod s'yi alt sınırsız okuyordu; defter servis edilen s gibi alt sınırda kırpılmış hâlini kullanıyor. Sınır bağlamıyor, sayılar aynı. |
+| Çalışma sırasında durma denetimleri | Eski kodun `assert` ve "örnekler değişti" denetimleri: `interval.conformal_quantile` artık `ValueError` veriyor; (araç modeli, yaş) = (araç modeli, model yılı) denetimi ve "test ilanları ilan tablosunda aynı fiyatla" denetimi test oldu (`tests/lib/test_interval.py`, `tests/lib/test_forward.py`). Defterde tek `raise` kaldı: "görülmemiş kategori" örneğinin yakıt değeri veride görülmüşse. |
+| İleri testte çeyrek başına ölçek kolu (6.2) | Eski kayıt çeyrek başına yalnız tek pay ve bant kollarını veriyordu; defter ölçek kolunu da ekliyor (yeni sayı, eski kayıtta karşılığı yok). |
+| Çıkarılanlar | Bant başına q (Mondrian) kolu ve kabul aralığı (sahibin kararı); son taramanın ilanlarında kapsama (tarama, yani dönem gruplaması); `08_large_errors`'ın elle seçilmiş üç örnek ilanı (anahtarları gözlenen değerler kaydında olmayan araç modeli adları, notları ilan metni okunarak yazılmıştı); model başına medyan fiyat (yalnız site figürünü besliyordu). Karşılaştırmadaki 39 "hesaplanmıyor" bunlar. |

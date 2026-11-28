@@ -1,7 +1,7 @@
-> **Durum (2026-11-26): uygulanıyor.** 0., 1. ve 2. aşama commit'lendi (4316eb9, 574a118, 526016d). 1. ve 2. defterin
+> **Durum (2026-11-28): uygulanıyor.** 0.–3. aşama commit'lendi ve gönderildi (son: 853fe69). 1. ve 2. defterin
 > bilinen zayıflıkları tek tek gözden geçirildi (`docs/notebook-weaknesses.md`); 3. aşama (`3_price_model`) yazıldı.
-> 3. defter ve iki defterin zayıflık düzeltmeleri commit'lenmedi; sırada 4. aşama (`4_errors_and_interval`) var.
-> `1_data_and_cleaning`, `2_what_drives_price` ve `3_price_model` okumanı bekliyor. Dal: `classic-notebooks`
+> 4. aşama (`4_errors_and_interval`) yazıldı, commit'lenmedi; sırada 5. aşama (`5_shap`) var.
+> Dört defter de okumanı bekliyor. Dal: `classic-notebooks`
 > (`simple-notebooks` be8644a'dan açıldı). Dördüncü sürüm: yapı sıfırdan kurulur, fonksiyon klasörünün adı `lib`,
 > defterlerin kaynağı jupytext ile düz Python dosyasıdır.
 
@@ -38,7 +38,7 @@ notebooks/                        her defter iki dosya: <ad>.py (kaynak) ve <ad>
     cleaning.py  missing.py  association.py  market.py  hedonic.py
     folds.py  spec_rule.py        ortak beş kat; motor tutarlılık kuralı (2. ve 4. defter)
     model.py                      matrisler, LightGBM, taban
-    errors.py  interval.py  shap_tools.py  plots.py
+    errors.py  interval.py  forward.py  free_text.py  shap_tools.py  plots.py
     cache.py                      ağır adımlar için "varsa oku, yoksa koş"
 db/                               veritabanı kolu; mantığı değişmez, yalnız db/lib → db/dblib adı değişir
 tests/                            bütün kontroller burada; defterlerde kontrol hücresi yok
@@ -160,7 +160,7 @@ sonradan istenirse aynı deftere, her Türkçe açıklama hücresinin altına ek
 | 1 | Derleme aracı ve defter testleri (**yapıldı**), `notebooks/lib/` (data, cleaning, missing), `1_data_and_cleaning` (**yazıldı**; 34 başlık sayısı eski kayıtlarla aynı, ilk referans onayınla kaydedildi). Önbellek 3. defterle gelir | Üslubu ve kod/modül dengesini onaylarsın |
 | 2 | `2_what_drives_price` (**yazıldı**; `lib`: association, market, hedonic, folds, spec_rule, plots; 39 başlık sayısı eski kayıtlarla aynı, ilk referans onayınla kaydedildi; 2026-11-26'da zayıflık maddeleri işlendi: 40 başlık sayısı, silhouette bütün ilanlarda) | Hafif analizlerin hepsi defterde |
 | 3 | `3_price_model` (**yazıldı**; `lib`: model, cache, errors; eski kayıtlarla karşılaştırılabilen 318 sayı aynı, son tahmin modeli bugünkü servis dosyasıyla bayt bayt aynı; 37 başlık sayısı; metin bayrağı bölümü 2026-11-28'de senin kararınla kaldırıldı: regex bayrağının isabeti bilinmiyordu, sonuç hiçbir kararı beslemiyordu). Ağır adımlar bir kez koşar (`data/cache/`; kayıtsız yaklaşık 12 dakika, kayıtlıyken saniyeler). Eski zincirde olmayan bir ek (2026-11-25, senin kararın): tahmin modeline girmeyen dört ham kolon (`kb_color`, `kb_seller_type`, `kb_trade_available`, `gb_warranty_status`) LOFO'nun yanında (4.2), aynı katlar ve aynı ölçüyle tek tek eklenip sınanır; sonuç ne çıkarsa çıksın tahmin modeline eklenmezler. Her kolonun karıştırılmış bir kopyası da karşılaştırma olarak eklenir ve fark ilanlar üzerinde eşli bootstrap aralığıyla verilir. Sonuç: satıcı tipi, takas ve garanti kat dışı hatayı ölçülebilir biçimde değiştirmiyor; renk küçük ama ölçülebilir bir katkı veriyor, bilerek eklenmiyor. `1_data_and_cleaning` 4.5 buna göre düzeltildi (sınıf "kurala uymuyor, eklenmedi", metin sınamaya atıf yapıyor) | Modelleme defterde |
-| 4 | `4_errors_and_interval` | Hata ve aralık defterde |
+| 4 | `4_errors_and_interval` (**yazıldı**; `lib`: interval, forward, free_text, `errors`'a iki fonksiyon; eski kayıtlarla karşılaştırılan 665 sayının 623'ü aynı, 39'u bilerek hesaplanmıyor (bant başına q kolu, dönem gruplaması, elle seçilmiş örnek ilanlar), 3'ü boş değer gruplarının düzeltmesi; 46 başlık sayısı, ilk referans onayınla kaydedildi). Bölümler: artıklar, büyük hatalar, %90 aralık (tek pay ve ölçek modeli), isabet olasılığı, servis edilen aralık, ileri test, serbest metin. Dört yeni ağır adım önbellekte (kayıtsız 89 saniye, kayıtlıyken 11 saniye); 3. defterin kayıtları yeniden üretilmiyor | Hata ve aralık defterde |
 | 5 | `5_shap` | Analizin tamamı yeni yapıda |
 | 6 | Dışa aktarım: servis paketi ve site verisi `lib` üzerinden, önce ayrı bir yola; bugünkü dosyalarla parite | API ve site eski zincire muhtaç değil |
 | 7 | README, kurallar, `main`'e birleştirme kararı | Tek yapı |
